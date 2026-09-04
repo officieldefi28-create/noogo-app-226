@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noogo — Espace Partenaire</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#fff8f0;color:#333;padding-bottom:40px}
+header{background:#e8590c;color:white;padding:16px;text-align:center;position:sticky;top:0;z-index:10}
+header h1{margin:0;font-size:20px}
+.conteneur{max-width:480px;margin:0 auto;padding:14px}
+.carte{background:white;border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 2px 7px rgba(0,0,0,.1)}
+.carte h2{margin:0 0 12px;font-size:16px;color:#e8590c}
+label{display:block;font-size:13px;font-weight:bold;margin:10px 0 4px}
+input{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px}
+.btn{width:100%;background:#e8590c;color:white;border:0;border-radius:10px;padding:12px;font-size:15px;font-weight:bold;margin-top:14px}
+.erreur{background:#ffebee;color:#c62828;padding:10px;border-radius:8px;font-size:13px;margin-top:10px}
+.cachee{display:none}
+.stat-grille{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.stat-boite{background:#fff3e0;border-radius:12px;padding:12px;text-align:center}
+.stat-chiffre{font-size:22px;font-weight:bold;color:#e8590c}
+.stat-label{font-size:11px;color:#777;margin-top:2px}
+.ligne-commande{border:1px solid #eee;border-radius:10px;padding:10px;margin-bottom:8px;font-size:13px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold}
+.badge-attente{background:#fff3e0;color:#e65100}
+.badge-livree{background:#e8f5e9;color:#2e7d32}
+.badge-annulee{background:#ffebee;color:#c62828}
+.badge-paye{background:#e3f2fd;color:#1565c0}
+.badge-impaye{background:#fce4ec;color:#ad1457}
+.mon-code{background:#e8590c;color:white;text-align:center;padding:14px;border-radius:12px;font-size:22px;font-weight:bold;letter-spacing:2px;margin-top:10px}
+</style>
+</head>
+<body>
+
+<header><h1>🤝 Noogo — Espace Partenaire</h1></header>
+
+<div class="conteneur">
+
+<div class="carte" id="carte-login">
+<h2>Connexion</h2>
+<label>Numéro de téléphone</label>
+<input type="tel" id="p-tel" placeholder="Votre numéro">
+<label>Mot de passe</label>
+<input type="password" id="p-mdp" placeholder="Votre mot de passe">
+<button class="btn" onclick="connexionPartenaire()">Se connecter</button>
+<div id="erreur-login"></div>
+</div>
+
+<div id="zone-partenaire" class="cachee">
+
+<div class="carte">
+<h2 id="p-nom">—</h2>
+<p>Votre code promo personnel, à partager :</p>
+<div class="mon-code" id="p-code">—</div>
+
+<div class="stat-grille">
+<div class="stat-boite">
+<div class="stat-chiffre" id="p-total-commandes">0</div>
+<div class="stat-label">Commandes totales</div>
+</div>
+<div class="stat-boite">
+<div class="stat-chiffre" id="p-livrees">0</div>
+<div class="stat-label">Livrées</div>
+</div>
+<div class="stat-boite">
+<div class="stat-chiffre" id="p-gagne">0</div>
+<div class="stat-label">FCFA gagnés</div>
+</div>
+<div class="stat-boite">
+<div class="stat-chiffre" id="p-solde">0</div>
+<div class="stat-label">FCFA restant à payer</div>
+</div>
+</div>
+</div>
+
+<div class="carte">
+<h2>📦 Mes dernières commandes</h2>
+<div id="liste-commandes">Chargement...</div>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+function connexionPartenaire(){
+
+let telephone = document.getElementById("p-tel").value;
+let motDePasse = document.getElementById("p-mdp").value;
+
+fetch("/api/partenaire-login", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ telephone, motDePasse })
+})
+.then(r => r.json().then(d => ({ ok: r.ok, d })))
+.then(({ ok, d }) => {
+
+if(!ok){
+document.getElementById("erreur-login").innerHTML = `<div class="erreur">${d.erreur}</div>`;
+return;
+}
+
+sessionStorage.setItem("noogo_jeton_partenaire", d.jeton);
+
+document.getElementById("carte-login").classList.add("cachee");
+document.getElementById("zone-partenaire").classList.remove("cachee");
+
+chargerStats();
+
+})
+.catch(() => {
+document.getElementById("erreur-login").innerHTML = `<div class="erreur">Erreur de connexion au serveur</div>`;
+});
+
+}
+
+function chargerStats(){
+
+let jeton = sessionStorage.getItem("noogo_jeton_partenaire");
+
+fetch("/api/partenaire-stats", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ jeton })
+})
+.then(r => r.json().then(d => ({ ok: r.ok, d })))
+.then(({ ok, d }) => {
+
+if(!ok){
+document.getElementById("carte-login").classList.remove("cachee");
+document.getElementById("zone-partenaire").classList.add("cachee");
+document.getElementById("erreur-login").innerHTML = `<div class="erreur">${d.erreur}</div>`;
+return;
+}
+
+document.getElementById("p-nom").innerText = d.nom;
+document.getElementById("p-code").innerText = d.code;
+document.getElementById("p-total-commandes").innerText = d.nombreCommandesTotal;
+document.getElementById("p-livrees").innerText = d.nombreCommandesLivrees;
+document.getElementById("p-gagne").innerText = d.totalGagne.toLocaleString("fr-FR");
+document.getElementById("p-solde").innerText = d.soldeRestant.toLocaleString("fr-FR");
+
+let zone = document.getElementById("liste-commandes");
+
+if(d.commandes.length === 0){
+zone.innerHTML = "<p>Aucune commande pour l'instant.</p>";
+return;
+}
+
+zone.innerHTML = d.commandes.map(c => {
+
+let badgeLivraison = c.statutLivraison === "livree"
+? '<span class="badge badge-livree">Livrée</span>'
+: c.statutLivraison === "annulee"
+? '<span class="badge badge-annulee">Annulée</span>'
+: '<span class="badge badge-attente">En attente</span>';
+
+let badgeCommission = c.statutLivraison === "livree"
+? (c.statutCommission === "paye"
+? '<span class="badge badge-paye">Payée</span>'
+: '<span class="badge badge-impaye">À payer</span>')
+: "";
+
+return `
+<div class="ligne-commande">
+${new Date(c.date).toLocaleDateString("fr-FR")} —
+${c.montantTotal.toLocaleString("fr-FR")} FCFA —
+commission ${c.commission} FCFA<br>
+${badgeLivraison} ${badgeCommission}
+</div>
+`;
+
+}).join("");
+
+});
+
+}
+
+// Si déjà connecté (jeton en mémoire), on recharge directement
+window.addEventListener("load", () => {
+
+let jeton = sessionStorage.getItem("noogo_jeton_partenaire");
+
+if(jeton){
+document.getElementById("carte-login").classList.add("cachee");
+document.getElementById("zone-partenaire").classList.remove("cachee");
+chargerStats();
+}
+
+});
+
+</script>
+
+</body>
+</html>

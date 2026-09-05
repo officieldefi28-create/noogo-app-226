@@ -1254,6 +1254,57 @@ console.log("Échec de l'enregistrement du Service Worker :", erreur);
 }
 
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
 
+// Ajoute le lien Espace Admin à côté du lien Espace Partenaire (ou en bas si non trouvé)
+let lienPartenaire = document.querySelector('a[href="/partenaire.html"]');
+let lienAdmin = document.createElement("a");
+lienAdmin.href = "/admin.html";
+lienAdmin.style.color = "#aaa";
+lienAdmin.style.fontSize = "12px";
+lienAdmin.style.textDecoration = "underline";
+lienAdmin.style.display = "block";
+lienAdmin.style.marginTop = "8px";
+lienAdmin.innerHTML = "🔐 Espace admin";
+
+if(lienPartenaire && lienPartenaire.parentElement){
+lienPartenaire.parentElement.appendChild(document.createElement("br"));
+lienPartenaire.parentElement.appendChild(lienAdmin);
+} else {
+document.body.appendChild(lienAdmin);
+}
+
+});
+
+// Bandeau d'installation automatique
+let bandeauDiv = document.createElement("div");
+bandeauDiv.id = "bandeau-install-auto";
+bandeauDiv.style.cssText = "display:none;position:fixed;left:0;right:0;bottom:0;background:#e8590c;color:white;padding:14px;z-index:150;box-shadow:0 -3px 12px rgba(0,0,0,.25);align-items:center;gap:12px";
+bandeauDiv.innerHTML = '<span style="flex:1;font-size:14px;font-weight:600">📲 Installez l\'app Noogo pour commander plus vite !</span><button id="btn-installer-auto" style="background:white;color:#e65100;border:0;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:bold;white-space:nowrap">Installer</button><button id="btn-fermer-bandeau-auto" style="background:transparent;color:white;border:0;font-size:20px;padding:0 4px">✕</button>';
+document.body.appendChild(bandeauDiv);
+
+document.getElementById("btn-fermer-bandeau-auto").onclick = function(){
+bandeauDiv.style.display = "none";
+sessionStorage.setItem("noogo_bandeau_ferme", "1");
+};
+
+document.getElementById("btn-installer-auto").onclick = function(){
+if(typeof installerApp === "function"){
+installerApp();
+}
+};
+
+window.addEventListener("beforeinstallprompt", function(e){
+if(!sessionStorage.getItem("noogo_bandeau_ferme")){
+bandeauDiv.style.display = "flex";
+}
+});
+
+window.addEventListener("appinstalled", function(){
+bandeauDiv.style.display = "none";
+});
+
+</script>
 </body>
 </html>

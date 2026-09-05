@@ -61,7 +61,9 @@ module.exports = async (req, res) => {
         const resultats = [];
         const defs = [
           { code: "MARDI", jour: 2 },
-          { code: "SAMEDI", jour: 6 }
+          { code: "SAMEDI", jour: 6 },
+          { code: "FB", jour: null },
+          { code: "TT", jour: null }
         ];
         for (const d of defs) {
           const existe = partenaires.some((p) => (p.code || "") === d.code);
@@ -80,7 +82,7 @@ module.exports = async (req, res) => {
             remiseValeur: 100,
             commissionType: "fixe",
             commissionValeur: 0,
-            joursActifs: [d.jour],
+            joursActifs: d.jour === null ? [2, 6] : [d.jour],
             actif: true,
             motDePasseHache: hacherMotDePasse(motDePasseTemporaire)
           });
@@ -148,4 +150,3 @@ module.exports = async (req, res) => {
     return res.status(500).json({ erreur: "Erreur serveur", details: err.message });
   }
 };
-                                                  

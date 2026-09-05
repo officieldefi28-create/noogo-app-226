@@ -57,6 +57,45 @@ module.exports = async (req, res) => {
         return res.status(200).json({ succes: true, partenaire, motDePasseTemporaire });
       }
 
+      case "modifier_partenaire": {
+        const { partenaireId, nom, telephone, type, code, remiseType, remiseValeur, commissionType, commissionValeur, joursActifs } = data;
+        const p = partenaires.find((p) => p.id === partenaireId);
+        if (!p) return res.status(404).json({ erreur: "Partenaire introuvable" });
+
+        if (code) {
+          const nouveauCode = String(code).toUpperCase();
+          const codeExisteAilleurs = partenaires.some(
+            (autre) => autre.id !== partenaireId && (autre.code || "").toUpperCase() === nouveauCode
+          );
+          if (codeExisteAilleurs) {
+            return res.status(400).json({ erreur: "Ce code promo est déjà utilisé par un autre partenaire" });
+          }
+          p.code = nouveauCode;
+        }
+
+        if (nom !== undefined && nom !== "") p.nom = nom;
+        if (telephone !== undefined && telephone !== "") p.telephone = telephone;
+        if (type !== undefined && type !== "") p.type = type;
+        if (remiseType !== undefined && remiseType !== "") p.remiseType = remiseType;
+        if (remiseValeur !== undefined && remiseValeur !== "") p.remiseValeur = Number(remiseValeur) || 0;
+        if (commissionType !== undefined && commissionType !== "") p.commissionType = commissionType;
+        if (commissionValeur !== undefined && commissionValeur !== "") p.commissionValeur = Number(commissionValeur) || 0;
+        if (joursActifs !== undefined) p.joursActifs = joursActifs;
+
+        await setPartenaires(partenaires);
+        return res.status(200).json({ succes: true, partenaire: p });
+      }
+
+      case "supprimer_partenaire": {
+        const avant = partenaires.length;
+        partenaires = partenaires.filter((p) => p.id !== data.partenaireId);
+        if (partenaires.length === avant) {
+          return res.status(404).json({ erreur: "Partenaire introuvable" });
+        }
+        await setPartenaires(partenaires);
+        return res.status(200).json({ succes: true });
+      }
+
       case "creer_codes_automatiques": {
         const resultats = [];
         const defs = [

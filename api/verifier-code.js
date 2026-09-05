@@ -28,7 +28,9 @@ module.exports = async (req, res) => {
 
     const partenaires = await getPartenaires();
     const codeNormalise = String(code).trim().toUpperCase();
-    const partenaire = partenaires.find((p) => p.code.toUpperCase() === codeNormalise && p.actif);
+    const partenaire = partenaires.find(
+      (p) => (p.code || "").toUpperCase() === codeNormalise && p.actif
+    );
 
     if (!partenaire) {
       return res.status(200).json({ valide: false, message: "Code promo invalide" });

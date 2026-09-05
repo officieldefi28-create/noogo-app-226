@@ -12,24 +12,24 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { telephone, motDePasse } = req.body || {};
+    const { code, motDePasse } = req.body || {};
 
-    if (!telephone || !motDePasse) {
-      return res.status(400).json({ erreur: "Numéro et mot de passe requis" });
+    if (!code || !motDePasse) {
+      return res.status(400).json({ erreur: "Code promo et mot de passe requis" });
     }
 
     const partenaires = await getPartenaires();
-    const telNormalise = telephone.replace(/\s+/g, "");
+    const codeNormalise = String(code).trim().toUpperCase();
     const partenaire = partenaires.find(
-      (p) => (p.telephone || "").replace(/\s+/g, "") === telNormalise
+      (p) => (p.code || "").toUpperCase() === codeNormalise
     );
 
     if (!partenaire || !partenaire.actif) {
-      return res.status(401).json({ erreur: "Numéro ou mot de passe incorrect" });
+      return res.status(401).json({ erreur: "Code ou mot de passe incorrect" });
     }
 
     if (!verifierMotDePasse(motDePasse, partenaire.motDePasseHache)) {
-      return res.status(401).json({ erreur: "Numéro ou mot de passe incorrect" });
+      return res.status(401).json({ erreur: "Code ou mot de passe incorrect" });
     }
 
     const jeton = signerJeton({ partenaireId: partenaire.id, creeLe: Date.now() }, secretJeton);

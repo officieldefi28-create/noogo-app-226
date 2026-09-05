@@ -123,6 +123,7 @@ module.exports = async (req, res) => {
             commissionValeur: 0,
             joursActifs: d.jour === null ? [2, 6] : [d.jour],
             actif: true,
+            auto: true,
             motDePasseHache: hacherMotDePasse(motDePasseTemporaire)
           });
           resultats.push({ code: d.code, statut: "créé" });
@@ -170,6 +171,16 @@ module.exports = async (req, res) => {
         const c = commandes.find((c) => c.id === data.commandeId);
         if (!c) return res.status(404).json({ erreur: "Commande introuvable" });
         c.statutLivraison = "annulee";
+        await setCommandes(commandes);
+        return res.status(200).json({ succes: true });
+      }
+
+      case "supprimer_commande": {
+        const avant = commandes.length;
+        commandes = commandes.filter((c) => c.id !== data.commandeId);
+        if (commandes.length === avant) {
+          return res.status(404).json({ erreur: "Commande introuvable" });
+        }
         await setCommandes(commandes);
         return res.status(200).json({ succes: true });
       }

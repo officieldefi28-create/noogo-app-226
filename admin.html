@@ -110,7 +110,14 @@ input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;fon
 
 <div class="carte">
 <h2>📦 Commandes récentes</h2>
+<div style="display:flex;gap:8px;margin-bottom:10px">
+<select id="tri-commandes" onchange="rafraichirAffichageCommandes()" style="flex:1">
+<option value="recent">Plus récentes d'abord</option>
+<option value="ancien">Plus anciennes d'abord</option>
+</select>
+</div>
 <div id="liste-commandes">Chargement...</div>
+<button class="btn btn-secondaire" id="btn-archives" onclick="basculerArchives()">Voir les commandes archivées</button>
 </div>
 
 </div>
@@ -189,13 +196,16 @@ body: JSON.stringify(corps)
 }
 
 let dernierePartenairesListe = [];
+let dernieresCommandesListe = [];
+let archivesVisibles = false;
 
 function rafraichirTout(){
 appelAdmin("tout_voir").then(({ ok, d }) => {
 if(ok){
 dernierePartenairesListe = d.partenaires || [];
+dernieresCommandesListe = d.commandes || [];
 afficherPartenaires(d.partenaires || []);
-afficherCommandes(d.commandes || [], d.partenaires || []);
+rafraichirAffichageCommandes();
 } else {
 document.getElementById("liste-partenaires").innerHTML = "<p>Erreur : " + (d.erreur || "") + " " + (d.details || "") + "</p>";
 document.getElementById("liste-commandes").innerHTML = "<p>Erreur : " + (d.erreur || "") + " " + (d.details || "") + "</p>";
@@ -203,6 +213,35 @@ document.getElementById("liste-commandes").innerHTML = "<p>Erreur : " + (d.erreu
 }).catch((err) => {
 document.getElementById("liste-partenaires").innerHTML = "<p>Impossible de se connecter à la base de données. " + err.message + "</p>";
 document.getElementById("liste-commandes").innerHTML = "<p>Impossible de se connecter à la base de données. " + err.message + "</p>";
+});
+}
+
+function rafraichirAffichageCommandes(){
+let tri = document.getElementById("tri-commandes").value;
+let liste = dernieresCommandesListe.slice();
+liste.sort((a, b) => tri === "recent" ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date));
+if(!archivesVisibles){
+liste = liste.slice(0, 15);
+}
+afficherCommandes(liste, dernierePartenairesListe);
+document.getElementById("btn-archives").innerText = archivesVisibles
+? "Masquer les archives (afficher seulement les 15 dernières)"
+: "Voir les commandes archivées (" + Math.max(0, dernieresCommandesListe.length - 15) + " de plus)";
+}
+
+function basculerArchives(){
+archivesVisibles = !archivesVisibles;
+rafraichirAffichageCommandes();
+}
+
+function supprimerCommande(id){
+if(!confirm("Supprimer définitivement cette commande ?")) return;
+appelAdmin("supprimer_commande", { commandeId: id }).then(({ ok, d }) => {
+if(!ok){
+alert("Erreur : " + (d.erreur || ""));
+return;
+}
+rafraichirTout();
 });
 }
 
@@ -370,7 +409,7 @@ if(!commandes || commandes.length === 0){
 zone.innerHTML = "<p>Aucune commande pour l'instant.</p>";
 return;
 }
-zone.innerHTML = commandes.slice(0, 40).map(c => {
+zone.innerHTML = commandes.map(c => {
 let badgeLivraison = c.statutLivraison === "livree"
 ? '<span class="badge badge-livree">Livrée</span>'
 : c.statutLivraison === "annulee"
@@ -381,6 +420,17 @@ let badgeCommission = c.commission > 0
 ? '<span class="badge badge-paye">Commission payée</span>'
 : '<span class="badge badge-impaye">Commission impayée</span>')
 : "";
+let partenaireLie = partenaires.find(p => p.id === c.partenaireId);
+let ligneOrigine = "";
+if(c.code){
+if(partenaireLie && partenaireLie.auto){
+ligneOrigine = `🤖 Code automatique <strong>${c.code}</strong> (aucune commission — pour vous-même)`;
+} else if(partenaireLie){
+ligneOrigine = `🤝 Partenaire : <strong>${partenaireLie.nom}</strong> (code ${c.code})`;
+} else {
+ligneOrigine = `Code ${c.code} (partenaire supprimé)`;
+}
+}
 return `
 <div class="ligne-commande">
 ${new Date(c.date).toLocaleString("fr-FR")}<br>
@@ -388,12 +438,14 @@ ${c.nomClient ? "👤 " + c.nomClient + " — " : ""}📞 ${c.telClient || "non 
 ${c.localisation ? "📍 " + c.localisation + "<br>" : ""}
 ${c.modePaiement ? "💳 " + (c.modePaiement === "orange" ? "Orange Money" : c.modePaiement === "wave" ? "Wave" : "Espèces") + "<br>" : ""}
 Total : ${c.montantTotal.toLocaleString("fr-FR")} FCFA
-${c.code ? ` — code ${c.code} (−${c.remise} FCFA, commission ${c.commission} FCFA)` : ""}<br>
+${c.code ? ` — réduction ${c.remise.toLocaleString("fr-FR")} FCFA` : ""}<br>
+${ligneOrigine ? ligneOrigine + "<br>" : ""}
 ${badgeLivraison} ${badgeCommission}
 <div>
 ${c.statutLivraison === "en_attente" ? `<button class="btn-petit btn-vert" onclick="validerLivraison('${c.id}')">Valider la livraison</button>
 <button class="btn-petit btn-rouge" onclick="annulerCommande('${c.id}')">Annuler</button>` : ""}
 ${c.statutLivraison === "livree" && c.commission > 0 && c.statutCommission === "impaye" ? `<button class="btn-petit btn-secondaire" onclick="marquerCommissionPayee('${c.id}')">Marquer commission payée</button>` : ""}
+<button class="btn-petit btn-rouge" onclick="supprimerCommande('${c.id}')">Supprimer</button>
 </div>
 </div>
 `;

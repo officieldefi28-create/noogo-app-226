@@ -18,6 +18,7 @@ input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;fon
 .btn-secondaire{background:#666}
 .btn-vert{background:#2e7d32}
 .btn-rouge{background:#c62828}
+.btn-bleu{background:#1565c0}
 .btn-petit{width:auto;padding:7px 12px;font-size:12px;margin:4px 4px 0 0;border-radius:20px}
 .ligne-partenaire,.ligne-commande{border:1px solid #eee;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px}
 .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold}
@@ -26,11 +27,15 @@ input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;fon
 .badge-annulee{background:#ffebee;color:#c62828}
 .badge-paye{background:#e3f2fd;color:#1565c0}
 .badge-impaye{background:#fce4ec;color:#ad1457}
-.erreur{background:#ffebee;color:#c62828;padding:10px;border-radius:8px;font-size:13px;margin-top:10px}
+.erreur{background:#ffebee;color:#c62828;padding:10px;border-radius:8px;font-size:13px;margin-top:10px;word-break:break-word}
 .succes{background:#e8f5e9;color:#2e7d32;padding:10px;border-radius:8px;font-size:13px;margin-top:10px}
 .jours-case{display:inline-flex;align-items:center;gap:4px;margin:4px 6px 0 0;font-size:12px;font-weight:normal}
 .cachee{display:none}
 .mdp-affiche{background:#fff3e0;padding:10px;border-radius:8px;font-size:14px;font-weight:bold;text-align:center;margin-top:10px}
+.overlay-modif{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 10px}
+.overlay-modif.actif{display:flex}
+.modif-carte{background:white;border-radius:14px;padding:16px;max-width:420px;width:100%;margin-top:20px}
+.modif-carte h2{margin:0 0 12px;font-size:16px;color:#e8590c}
 </style>
 </head>
 <body>
@@ -51,7 +56,7 @@ input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;fon
 
 <div class="carte">
 <h2>⚡ Configuration rapide</h2>
-<button class="btn btn-secondaire" onclick="creerCodesAutomatiques()">Créer les codes Mardi/Samedi (100 FCFA)</button>
+<button class="btn btn-secondaire" onclick="creerCodesAutomatiques()">Créer les codes Mardi/Samedi/FB/TT (100 FCFA)</button>
 <div id="resultat-codes-auto"></div>
 </div>
 
@@ -112,19 +117,62 @@ input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;fon
 
 </div>
 
+<div class="overlay-modif" id="overlay-modif">
+<div class="modif-carte">
+<h2>✏️ Modifier le partenaire</h2>
+<input type="hidden" id="mp-id">
+<label>Nom</label>
+<input type="text" id="mp-nom">
+<label>Numéro de téléphone</label>
+<input type="tel" id="mp-tel">
+<label>Type</label>
+<select id="mp-type">
+<option value="particulier">Particulier</option>
+<option value="personnel">Personnel</option>
+<option value="ecole">École</option>
+<option value="entreprise">Entreprise</option>
+</select>
+<label>Code promo</label>
+<input type="text" id="mp-code">
+<label>Type de réduction client</label>
+<select id="mp-remise-type">
+<option value="pourcentage">Pourcentage (%)</option>
+<option value="fixe">Montant fixe (FCFA)</option>
+</select>
+<label>Valeur de la réduction</label>
+<input type="number" id="mp-remise-valeur">
+<label>Type de commission partenaire</label>
+<select id="mp-commission-type">
+<option value="pourcentage">Pourcentage (%)</option>
+<option value="fixe">Montant fixe (FCFA)</option>
+</select>
+<label>Valeur de la commission</label>
+<input type="number" id="mp-commission-valeur">
+<label>Jours actifs (laisser vide = tous les jours)</label>
+<div>
+<label class="jours-case"><input type="checkbox" value="0" class="mp-jour"> Dim</label>
+<label class="jours-case"><input type="checkbox" value="1" class="mp-jour"> Lun</label>
+<label class="jours-case"><input type="checkbox" value="2" class="mp-jour"> Mar</label>
+<label class="jours-case"><input type="checkbox" value="3" class="mp-jour"> Mer</label>
+<label class="jours-case"><input type="checkbox" value="4" class="mp-jour"> Jeu</label>
+<label class="jours-case"><input type="checkbox" value="5" class="mp-jour"> Ven</label>
+<label class="jours-case"><input type="checkbox" value="6" class="mp-jour"> Sam</label>
+</div>
+<button class="btn" onclick="enregistrerModification()">Enregistrer</button>
+<button class="btn btn-secondaire" onclick="fermerModif()">Annuler</button>
+<div id="resultat-modif"></div>
+</div>
+</div>
+
 <script>
 
 let mdpAdmin = "";
 
 function connexionAdmin(){
   mdpAdmin = document.getElementById("mdp-admin").value;
-
-  // Validation directe du mot de passe
   if (mdpAdmin === "delfioficiel") {
     document.getElementById("carte-login").classList.add("cachee");
     document.getElementById("zone-admin").classList.remove("cachee");
-
-    // Tentative de chargement des données
     rafraichirTout();
   } else {
     document.getElementById("erreur-login").innerHTML = `<div class="erreur">Mot de passe incorrect</div>`;
@@ -132,56 +180,46 @@ function connexionAdmin(){
 }
 
 function appelAdmin(action, donneesSupplementaires){
-
 let corps = Object.assign({ motDePasseAdmin: mdpAdmin, action: action }, donneesSupplementaires || {});
-
 return fetch("/api/admin", {
 method: "POST",
 headers: { "Content-Type": "application/json" },
 body: JSON.stringify(corps)
 }).then(r => r.json().then(d => ({ ok: r.ok, d })));
-
 }
 
-function rafraichirTout(){
+let dernierePartenairesListe = [];
 
+function rafraichirTout(){
 appelAdmin("tout_voir").then(({ ok, d }) => {
 if(ok){
+dernierePartenairesListe = d.partenaires || [];
 afficherPartenaires(d.partenaires || []);
 afficherCommandes(d.commandes || [], d.partenaires || []);
 } else {
-document.getElementById("liste-partenaires").innerHTML = "<p>Mode hors-ligne ou fonction indisponible.</p>";
-document.getElementById("liste-commandes").innerHTML = "<p>Mode hors-ligne ou fonction indisponible.</p>";
+document.getElementById("liste-partenaires").innerHTML = "<p>Erreur : " + (d.erreur || "") + " " + (d.details || "") + "</p>";
+document.getElementById("liste-commandes").innerHTML = "<p>Erreur : " + (d.erreur || "") + " " + (d.details || "") + "</p>";
 }
-}).catch(() => {
-document.getElementById("liste-partenaires").innerHTML = "<p>Impossible de se connecter à la base de données.</p>";
-document.getElementById("liste-commandes").innerHTML = "<p>Impossible de se connecter à la base de données.</p>";
+}).catch((err) => {
+document.getElementById("liste-partenaires").innerHTML = "<p>Impossible de se connecter à la base de données. " + err.message + "</p>";
+document.getElementById("liste-commandes").innerHTML = "<p>Impossible de se connecter à la base de données. " + err.message + "</p>";
 });
-
 }
 
 function creerCodesAutomatiques(){
-
 appelAdmin("creer_codes_automatiques").then(({ ok, d }) => {
-
 let zone = document.getElementById("resultat-codes-auto");
-
 if(!ok){
-zone.innerHTML = `<div class="erreur">${d.erreur}</div>`;
+zone.innerHTML = `<div class="erreur">${d.erreur} ${d.details || ""}</div>`;
 return;
 }
-
 zone.innerHTML = `<div class="succes">Fait ! ${d.resultats.map(r => r.code + " : " + r.statut).join(" — ")}</div>`;
 rafraichirTout();
-
 });
-
 }
 
 function creerPartenaire(){
-
 let jours = Array.from(document.querySelectorAll(".np-jour:checked")).map(c => Number(c.value));
-
 let donnees = {
 nom: document.getElementById("np-nom").value,
 telephone: document.getElementById("np-tel").value,
@@ -193,16 +231,12 @@ commissionType: document.getElementById("np-commission-type").value,
 commissionValeur: document.getElementById("np-commission-valeur").value,
 joursActifs: jours
 };
-
 appelAdmin("creer_partenaire", donnees).then(({ ok, d }) => {
-
 let zone = document.getElementById("resultat-creation");
-
 if(!ok){
-zone.innerHTML = `<div class="erreur">${d.erreur}</div>`;
+zone.innerHTML = `<div class="erreur">${d.erreur} ${d.details || ""}</div>`;
 return;
 }
-
 zone.innerHTML = `
 <div class="succes">Partenaire créé : ${d.partenaire.nom}</div>
 <div class="mdp-affiche">
@@ -210,68 +244,108 @@ Mot de passe temporaire pour ${d.partenaire.nom} :<br>${d.motDePasseTemporaire}<
 <small>Communiquez-le au partenaire, il pourra le changer plus tard.</small>
 </div>
 `;
-
 rafraichirTout();
-
 });
-
 }
 
 function basculerActif(id){
-
 appelAdmin("basculer_actif", { partenaireId: id }).then(() => rafraichirTout());
-
 }
 
 function reinitialiserMotDePasse(id, nom){
-
 appelAdmin("reinitialiser_mot_de_passe", { partenaireId: id }).then(({ ok, d }) => {
-
 if(ok){
 alert(`Nouveau mot de passe pour ${nom} : ${d.motDePasseTemporaire}`);
 }
-
 });
-
 }
 
 function payerToutLeSolde(id, nom){
-
 if(!confirm(`Marquer tout le solde de ${nom} comme payé ?`)) return;
-
 appelAdmin("payer_tout_le_solde", { partenaireId: id }).then(() => rafraichirTout());
+}
 
+function supprimerPartenaire(id, nom){
+if(!confirm(`Supprimer définitivement ${nom} ? Cette action est irréversible.`)) return;
+appelAdmin("supprimer_partenaire", { partenaireId: id }).then(({ ok, d }) => {
+if(!ok){
+alert("Erreur : " + (d.erreur || ""));
+return;
+}
+rafraichirTout();
+});
+}
+
+function ouvrirModif(id){
+let p = dernierePartenairesListe.find(x => x.id === id);
+if(!p) return;
+
+document.getElementById("mp-id").value = p.id;
+document.getElementById("mp-nom").value = p.nom || "";
+document.getElementById("mp-tel").value = p.telephone || "";
+document.getElementById("mp-type").value = p.type || "particulier";
+document.getElementById("mp-code").value = p.code || "";
+document.getElementById("mp-remise-type").value = p.remiseType || "pourcentage";
+document.getElementById("mp-remise-valeur").value = p.remiseValeur || 0;
+document.getElementById("mp-commission-type").value = p.commissionType || "pourcentage";
+document.getElementById("mp-commission-valeur").value = p.commissionValeur || 0;
+
+document.querySelectorAll(".mp-jour").forEach(c => {
+c.checked = (p.joursActifs || []).includes(Number(c.value));
+});
+
+document.getElementById("resultat-modif").innerHTML = "";
+document.getElementById("overlay-modif").classList.add("actif");
+}
+
+function fermerModif(){
+document.getElementById("overlay-modif").classList.remove("actif");
+}
+
+function enregistrerModification(){
+let jours = Array.from(document.querySelectorAll(".mp-jour:checked")).map(c => Number(c.value));
+let donnees = {
+partenaireId: document.getElementById("mp-id").value,
+nom: document.getElementById("mp-nom").value,
+telephone: document.getElementById("mp-tel").value,
+type: document.getElementById("mp-type").value,
+code: document.getElementById("mp-code").value,
+remiseType: document.getElementById("mp-remise-type").value,
+remiseValeur: document.getElementById("mp-remise-valeur").value,
+commissionType: document.getElementById("mp-commission-type").value,
+commissionValeur: document.getElementById("mp-commission-valeur").value,
+joursActifs: jours
+};
+appelAdmin("modifier_partenaire", donnees).then(({ ok, d }) => {
+let zone = document.getElementById("resultat-modif");
+if(!ok){
+zone.innerHTML = `<div class="erreur">${d.erreur || ""} ${d.details || ""}</div>`;
+return;
+}
+fermerModif();
+rafraichirTout();
+});
 }
 
 function validerLivraison(id){
-
 appelAdmin("valider_livraison", { commandeId: id }).then(() => rafraichirTout());
-
 }
 
 function annulerCommande(id){
-
 if(!confirm("Annuler cette commande ?")) return;
-
 appelAdmin("annuler_commande", { commandeId: id }).then(() => rafraichirTout());
-
 }
 
 function marquerCommissionPayee(id){
-
 appelAdmin("marquer_commission_payee", { commandeId: id }).then(() => rafraichirTout());
-
 }
 
 function afficherPartenaires(partenaires){
-
 let zone = document.getElementById("liste-partenaires");
-
 if(!partenaires || partenaires.length === 0){
 zone.innerHTML = "<p>Aucun partenaire pour l'instant.</p>";
 return;
 }
-
 zone.innerHTML = partenaires.map(p => `
 <div class="ligne-partenaire">
 <strong>${p.nom}</strong> — ${p.code}<br>
@@ -281,37 +355,32 @@ Commission : ${p.commissionValeur}${p.commissionType === "pourcentage" ? "%" : "
 ${p.actif ? '<span class="badge badge-livree">Actif</span>' : '<span class="badge badge-annulee">Désactivé</span>'}
 <div>
 <button class="btn-petit ${p.actif ? 'btn-rouge' : 'btn-vert'}" onclick="basculerActif('${p.id}')">${p.actif ? 'Désactiver' : 'Activer'}</button>
+<button class="btn-petit btn-bleu" onclick="ouvrirModif('${p.id}')">Modifier</button>
 <button class="btn-petit btn-secondaire" onclick="reinitialiserMotDePasse('${p.id}','${p.nom}')">Réinitialiser mot de passe</button>
 <button class="btn-petit btn-vert" onclick="payerToutLeSolde('${p.id}','${p.nom}')">Payer tout le solde</button>
+<button class="btn-petit btn-rouge" onclick="supprimerPartenaire('${p.id}','${p.nom}')">Supprimer</button>
 </div>
 </div>
 `).join("");
-
 }
 
 function afficherCommandes(commandes, partenaires){
-
 let zone = document.getElementById("liste-commandes");
-
 if(!commandes || commandes.length === 0){
 zone.innerHTML = "<p>Aucune commande pour l'instant.</p>";
 return;
 }
-
 zone.innerHTML = commandes.slice(0, 40).map(c => {
-
 let badgeLivraison = c.statutLivraison === "livree"
 ? '<span class="badge badge-livree">Livrée</span>'
 : c.statutLivraison === "annulee"
 ? '<span class="badge badge-annulee">Annulée</span>'
 : '<span class="badge badge-attente">En attente</span>';
-
 let badgeCommission = c.commission > 0
 ? (c.statutCommission === "paye"
 ? '<span class="badge badge-paye">Commission payée</span>'
 : '<span class="badge badge-impaye">Commission impayée</span>')
 : "";
-
 return `
 <div class="ligne-commande">
 ${new Date(c.date).toLocaleString("fr-FR")}<br>
@@ -328,64 +397,10 @@ ${c.statutLivraison === "livree" && c.commission > 0 && c.statutCommission === "
 </div>
 </div>
 `;
-
 }).join("");
-
 }
 
 </script>
 
 </body>
 </html>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-
-// Ajoute le lien Espace Admin à côté du lien Espace Partenaire (ou en bas si non trouvé)
-let lienPartenaire = document.querySelector('a[href="/partenaire.html"]');
-let lienAdmin = document.createElement("a");
-lienAdmin.href = "/admin.html";
-lienAdmin.style.color = "#aaa";
-lienAdmin.style.fontSize = "12px";
-lienAdmin.style.textDecoration = "underline";
-lienAdmin.style.display = "block";
-lienAdmin.style.marginTop = "8px";
-lienAdmin.innerHTML = "🔐 Espace admin";
-
-if(lienPartenaire && lienPartenaire.parentElement){
-lienPartenaire.parentElement.appendChild(document.createElement("br"));
-lienPartenaire.parentElement.appendChild(lienAdmin);
-} else {
-document.body.appendChild(lienAdmin);
-}
-
-});
-
-// Bandeau d'installation automatique
-let bandeauDiv = document.createElement("div");
-bandeauDiv.id = "bandeau-install-auto";
-bandeauDiv.style.cssText = "display:none;position:fixed;left:0;right:0;bottom:0;background:#e8590c;color:white;padding:14px;z-index:150;box-shadow:0 -3px 12px rgba(0,0,0,.25);align-items:center;gap:12px";
-bandeauDiv.innerHTML = '<span style="flex:1;font-size:14px;font-weight:600">📲 Installez l\'app Noogo pour commander plus vite !</span><button id="btn-installer-auto" style="background:white;color:#e65100;border:0;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:bold;white-space:nowrap">Installer</button><button id="btn-fermer-bandeau-auto" style="background:transparent;color:white;border:0;font-size:20px;padding:0 4px">✕</button>';
-document.body.appendChild(bandeauDiv);
-
-document.getElementById("btn-fermer-bandeau-auto").onclick = function(){
-bandeauDiv.style.display = "none";
-sessionStorage.setItem("noogo_bandeau_ferme", "1");
-};
-
-document.getElementById("btn-installer-auto").onclick = function(){
-if(typeof installerApp === "function"){
-installerApp();
-}
-};
-
-window.addEventListener("beforeinstallprompt", function(e){
-if(!sessionStorage.getItem("noogo_bandeau_ferme")){
-bandeauDiv.style.display = "flex";
-}
-});
-
-window.addEventListener("appinstalled", function(){
-bandeauDiv.style.display = "none";
-});
-
-</script>

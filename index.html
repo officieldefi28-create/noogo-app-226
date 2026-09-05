@@ -553,6 +553,24 @@ z-index:50
 display:block
 }
 </style>
+<!-- Facebook Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '979621177842469');
+fbq('track', 'PageView');
+</script>
+<noscript>
+<img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=979621177842469&ev=PageView&noscript=1"/>
+</noscript>
+<!-- End Facebook Pixel Code -->
 </head>
 
 <body>
@@ -597,7 +615,7 @@ display:block
 
 <label class="champ-label" for="champ-code">Code promo <span class="facultatif">(si vous en avez un)</span></label>
 <div class="champ-avec-bouton">
-<input type="text" id="champ-code" class="champ-input" placeholder="Ex : ECOLE01" style="text-transform:uppercase">
+<input type="text" id="champ-code" class="champ-input" placeholder="Ex : ECOLE01" style="text-transform:uppercase" onblur="verifierCode()">
 <button type="button" class="btn-localiser" onclick="verifierCode()">✅</button>
 </div>
 <div id="message-code"></div>
@@ -927,7 +945,7 @@ body:JSON.stringify({code, montantTotal: total})
 
 if(d.valide){
 
-codePromoApplique={code: code.toUpperCase(), remise: d.remise};
+codePromoApplique={code: code.toUpperCase(), remise: d.remise, valide: true};
 zoneMessage.className="valide";
 zoneMessage.innerText=`✅ Code valide ! −${d.remise.toLocaleString("fr-FR")} FCFA`;
 
@@ -1254,69 +1272,6 @@ console.log("Échec de l'enregistrement du Service Worker :", erreur);
 }
 
 </script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
 
-// Ajoute le lien Espace Admin à côté du lien Espace Partenaire (ou en bas si non trouvé)
-let lienPartenaire = document.querySelector('a[href="/partenaire.html"]');
-let lienAdmin = document.createElement("a");
-lienAdmin.href = "/admin.html";
-lienAdmin.style.color = "#aaa";
-lienAdmin.style.fontSize = "12px";
-lienAdmin.style.textDecoration = "underline";
-lienAdmin.style.display = "block";
-lienAdmin.style.marginTop = "8px";
-lienAdmin.innerHTML = "🔐 Espace admin";
-
-if(lienPartenaire && lienPartenaire.parentElement){
-lienPartenaire.parentElement.appendChild(document.createElement("br"));
-lienPartenaire.parentElement.appendChild(lienAdmin);
-} else {
-document.body.appendChild(lienAdmin);
-}
-
-});
-
-// Bandeau d'installation automatique
-let bandeauDiv = document.createElement("div");
-bandeauDiv.id = "bandeau-install-auto";
-bandeauDiv.style.cssText = "display:none;position:fixed;left:0;right:0;bottom:0;background:#e8590c;color:white;padding:14px;z-index:150;box-shadow:0 -3px 12px rgba(0,0,0,.25);align-items:center;gap:12px";
-bandeauDiv.innerHTML = '<span style="flex:1;font-size:14px;font-weight:600">📲 Installez l\'app Noogo pour commander plus vite !</span><button id="btn-installer-auto" style="background:white;color:#e65100;border:0;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:bold;white-space:nowrap">Installer</button><button id="btn-fermer-bandeau-auto" style="background:transparent;color:white;border:0;font-size:20px;padding:0 4px">✕</button>';
-document.body.appendChild(bandeauDiv);
-
-document.getElementById("btn-fermer-bandeau-auto").onclick = function(){
-bandeauDiv.style.display = "none";
-sessionStorage.setItem("noogo_bandeau_ferme", "1");
-};
-
-document.getElementById("btn-installer-auto").onclick = function(){
-if(typeof installerApp === "function"){
-installerApp();
-}
-};
-
-window.addEventListener("beforeinstallprompt", function(e){
-if(!sessionStorage.getItem("noogo_bandeau_ferme")){
-bandeauDiv.style.display = "flex";
-}
-});
-
-window.addEventListener("appinstalled", function(){
-bandeauDiv.style.display = "none";
-});
-
-</script> 
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-let champCode = document.getElementById("champ-code");
-if(champCode){
-champCode.addEventListener("blur", function(){
-if(typeof verifierCode === "function"){
-verifierCode();
-}
-});
-}
-});
-</script>
 </body>
 </html>

@@ -1,14 +1,12 @@
-const CACHE_NAME = "papous-cache-v1";
+const CACHE_NAME = "papous-cache-v2";
 
 const FICHIERS_A_METTRE_EN_CACHE = [
-  "/",
-  "/index.html",
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png"
 ];
 
-// Installation : on met en cache les fichiers essentiels du site
+// Installation : on met en cache uniquement les fichiers statiques (icônes, manifest)
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -32,23 +30,26 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Récupération : on sert le cache en priorité, puis le réseau, avec repli hors-ligne
+// Récupération :
+// - Pour les pages HTML et les appels API : toujours essayer le réseau en premier
+//   (garantit d'avoir toujours la dernière version), avec repli sur le cache hors-ligne
+// - Pour le reste (images, icônes, manifest) : cache en priorité (plus rapide)
 self.addEventListener("fetch", (event) => {
-  event.respondWith(
-    caches.match(event.request).then((reponseEnCache) => {
-      if (reponseEnCache) {
-        return reponseEnCache;
-      }
+  const url = new URL(event.request.url);
+  const estPage = event.request.mode === "navigate" || url.pathname.endsWith(".html");
+  const estApi = url.pathname.startsWith("/api/");
 
-      return fetch(event.request)
+  if (estApi) {
+    // Les appels API ne doivent jamais être mis en cache ni interceptés
+    return;
+  }
+
+  if (estPage) {
+    // Stratégie réseau-en-premier pour toujours avoir la dernière version des pages
+    event.respondWith(
+      fetch(event.request)
         .then((reponseReseau) => {
-          // On met aussi en cache les nouvelles requêtes réussies (même origine)
-          if (
-            event.request.method === "GET" &&
-            reponseReseau &&
-            reponseReseau.status === 200 &&
-            event.request.url.startsWith(self.location.origin)
-          ) {
+          if (reponseReseau && reponseReseau.status === 200) {
             const copie = reponseReseau.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, copie);
@@ -57,11 +58,34 @@ self.addEventListener("fetch", (event) => {
           return reponseReseau;
         })
         .catch(() => {
-          // Hors-ligne et pas en cache : on retombe sur la page principale
-          if (event.request.mode === "navigate") {
-            return caches.match("/index.html");
-          }
-        });
+          return caches.match(event.request).then((reponseEnCache) => {
+            return reponseEnCache || caches.match("/index.html");
+          });
+        })
+    );
+    return;
+  }
+
+  // Stratégie cache-en-premier pour les fichiers statiques (images, icônes, manifest)
+  event.respondWith(
+    caches.match(event.request).then((reponseEnCache) => {
+      if (reponseEnCache) {
+        return reponseEnCache;
+      }
+      return fetch(event.request).then((reponseReseau) => {
+        if (
+          event.request.method === "GET" &&
+          reponseReseau &&
+          reponseReseau.status === 200 &&
+          event.request.url.startsWith(self.location.origin)
+        ) {
+          const copie = reponseReseau.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, copie);
+          });
+        }
+        return reponseReseau;
+      });
     })
   );
 });

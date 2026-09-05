@@ -26,7 +26,7 @@ module.exports = async (req, res) => {
       const partenaires = await getPartenaires();
       const codeNormalise = String(data.code).trim().toUpperCase();
       const partenaire = partenaires.find(
-        (p) => p.code.toUpperCase() === codeNormalise && p.actif && jourValide(p)
+        (p) => (p.code || "").toUpperCase() === codeNormalise && p.actif && jourValide(p)
       );
       if (partenaire) {
         remise = calculerMontant(partenaire.remiseType, partenaire.remiseValeur, montantTotal);

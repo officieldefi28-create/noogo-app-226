@@ -15,7 +15,7 @@ header h1{margin:0;font-size:20px}
 label{display:block;font-size:13px;font-weight:bold;margin:10px 0 4px}
 input{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px}
 .btn{width:100%;background:#e8590c;color:white;border:0;border-radius:10px;padding:12px;font-size:15px;font-weight:bold;margin-top:14px}
-.erreur{background:#ffebee;color:#c62828;padding:10px;border-radius:8px;font-size:13px;margin-top:10px}
+.erreur{background:#ffebee;color:#c62828;padding:10px;border-radius:8px;font-size:13px;margin-top:10px;word-break:break-word}
 .cachee{display:none}
 .stat-grille{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
 .stat-boite{background:#fff3e0;border-radius:12px;padding:12px;text-align:center}
@@ -32,28 +32,22 @@ input{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:
 </style>
 </head>
 <body>
-
 <header><h1>🤝 Noogo — Espace Partenaire</h1></header>
-
 <div class="conteneur">
-
 <div class="carte" id="carte-login">
 <h2>Connexion</h2>
-<label>Numéro de téléphone</label>
-<input type="tel" id="p-tel" placeholder="Votre numéro">
+<label>Code promo</label>
+<input type="text" id="p-code" placeholder="Votre code promo" style="text-transform:uppercase">
 <label>Mot de passe</label>
 <input type="password" id="p-mdp" placeholder="Votre mot de passe">
 <button class="btn" onclick="connexionPartenaire()">Se connecter</button>
 <div id="erreur-login"></div>
 </div>
-
 <div id="zone-partenaire" class="cachee">
-
 <div class="carte">
 <h2 id="p-nom">—</h2>
 <p>Votre code promo personnel, à partager :</p>
 <div class="mon-code" id="p-code">—</div>
-
 <div class="stat-grille">
 <div class="stat-boite">
 <div class="stat-chiffre" id="p-total-commandes">0</div>
@@ -72,55 +66,42 @@ input{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:
 <div class="stat-label">FCFA restant à payer</div>
 </div>
 </div>
+<button class="btn" id="btn-reclamer" onclick="reclamerPaiement()" style="background:#c62828">📢 Réclamer mon paiement</button>
+<div id="message-reclamation"></div>
 </div>
-
 <div class="carte">
 <h2>📦 Mes dernières commandes</h2>
 <div id="liste-commandes">Chargement...</div>
 </div>
-
 </div>
-
 </div>
-
 <script>
-
 function connexionPartenaire(){
-
-let telephone = document.getElementById("p-tel").value;
+let code = document.getElementById("p-code").value;
 let motDePasse = document.getElementById("p-mdp").value;
-
 fetch("/api/partenaire-login", {
 method: "POST",
 headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ telephone, motDePasse })
+body: JSON.stringify({ code, motDePasse })
 })
 .then(r => r.json().then(d => ({ ok: r.ok, d })))
 .then(({ ok, d }) => {
-
 if(!ok){
-document.getElementById("erreur-login").innerHTML = `<div class="erreur">${d.erreur}</div>`;
+document.getElementById("erreur-login").innerHTML = `<div class="erreur">${d.erreur} ${d.details || ""}</div>`;
 return;
 }
-
 sessionStorage.setItem("noogo_jeton_partenaire", d.jeton);
-
 document.getElementById("carte-login").classList.add("cachee");
 document.getElementById("zone-partenaire").classList.remove("cachee");
-
 chargerStats();
-
 })
-.catch(() => {
-document.getElementById("erreur-login").innerHTML = `<div class="erreur">Erreur de connexion au serveur</div>`;
+.catch((err) => {
+document.getElementById("erreur-login").innerHTML = `<div class="erreur">Erreur de connexion au serveur : ${err.message}</div>`;
 });
-
 }
 
 function chargerStats(){
-
 let jeton = sessionStorage.getItem("noogo_jeton_partenaire");
-
 fetch("/api/partenaire-stats", {
 method: "POST",
 headers: { "Content-Type": "application/json" },
@@ -128,14 +109,12 @@ body: JSON.stringify({ jeton })
 })
 .then(r => r.json().then(d => ({ ok: r.ok, d })))
 .then(({ ok, d }) => {
-
 if(!ok){
 document.getElementById("carte-login").classList.remove("cachee");
 document.getElementById("zone-partenaire").classList.add("cachee");
-document.getElementById("erreur-login").innerHTML = `<div class="erreur">${d.erreur}</div>`;
+document.getElementById("erreur-login").innerHTML = `<div class="erreur">${d.erreur} ${d.details || ""}</div>`;
 return;
 }
-
 document.getElementById("p-nom").innerText = d.nom;
 document.getElementById("p-code").innerText = d.code;
 document.getElementById("p-total-commandes").innerText = d.nombreCommandesTotal;
@@ -143,27 +122,35 @@ document.getElementById("p-livrees").innerText = d.nombreCommandesLivrees;
 document.getElementById("p-gagne").innerText = d.totalGagne.toLocaleString("fr-FR");
 document.getElementById("p-solde").innerText = d.soldeRestant.toLocaleString("fr-FR");
 
+let btnReclamer = document.getElementById("btn-reclamer");
+if(d.soldeRestant <= 0){
+btnReclamer.style.display = "none";
+} else if(d.reclamationEnCours){
+btnReclamer.disabled = true;
+btnReclamer.innerText = "✅ Réclamation envoyée, en attente";
+btnReclamer.style.opacity = "0.6";
+} else {
+btnReclamer.style.display = "block";
+btnReclamer.disabled = false;
+btnReclamer.innerText = "📢 Réclamer mon paiement";
+btnReclamer.style.opacity = "1";
+}
 let zone = document.getElementById("liste-commandes");
-
 if(d.commandes.length === 0){
 zone.innerHTML = "<p>Aucune commande pour l'instant.</p>";
 return;
 }
-
 zone.innerHTML = d.commandes.map(c => {
-
 let badgeLivraison = c.statutLivraison === "livree"
 ? '<span class="badge badge-livree">Livrée</span>'
 : c.statutLivraison === "annulee"
 ? '<span class="badge badge-annulee">Annulée</span>'
 : '<span class="badge badge-attente">En attente</span>';
-
 let badgeCommission = c.statutLivraison === "livree"
 ? (c.statutCommission === "paye"
 ? '<span class="badge badge-paye">Payée</span>'
 : '<span class="badge badge-impaye">À payer</span>')
 : "";
-
 return `
 <div class="ligne-commande">
 ${new Date(c.date).toLocaleDateString("fr-FR")} —
@@ -172,27 +159,37 @@ commission ${c.commission} FCFA<br>
 ${badgeLivraison} ${badgeCommission}
 </div>
 `;
-
 }).join("");
-
 });
-
 }
 
-// Si déjà connecté (jeton en mémoire), on recharge directement
-window.addEventListener("load", () => {
-
+function reclamerPaiement(){
 let jeton = sessionStorage.getItem("noogo_jeton_partenaire");
+fetch("/api/partenaire-reclamer", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ jeton })
+})
+.then(r => r.json().then(d => ({ ok: r.ok, d })))
+.then(({ ok, d }) => {
+let zone = document.getElementById("message-reclamation");
+if(!ok){
+zone.innerHTML = `<div class="erreur">${d.erreur || ""} ${d.details || ""}</div>`;
+return;
+}
+zone.innerHTML = "";
+chargerStats();
+});
+}
 
+window.addEventListener("load", () => {
+let jeton = sessionStorage.getItem("noogo_jeton_partenaire");
 if(jeton){
 document.getElementById("carte-login").classList.add("cachee");
 document.getElementById("zone-partenaire").classList.remove("cachee");
 chargerStats();
 }
-
 });
-
 </script>
-
 </body>
 </html>

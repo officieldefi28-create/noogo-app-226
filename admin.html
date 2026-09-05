@@ -54,6 +54,8 @@ input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;fon
 
 <div id="zone-admin" class="cachee">
 
+<div id="alerte-reclamations"></div>
+
 <div class="carte">
 <h2>⚡ Configuration rapide</h2>
 <button class="btn btn-secondaire" onclick="creerCodesAutomatiques()">Créer les codes Mardi/Samedi/FB/TT (100 FCFA)</button>
@@ -381,12 +383,27 @@ appelAdmin("marquer_commission_payee", { commandeId: id }).then(() => rafraichir
 
 function afficherPartenaires(partenaires){
 let zone = document.getElementById("liste-partenaires");
+let zoneAlerte = document.getElementById("alerte-reclamations");
+
+let enReclamation = partenaires.filter(p => p.reclamationEnCours);
+if(enReclamation.length > 0){
+zoneAlerte.innerHTML = `
+<div class="carte" style="border:2px solid #c62828">
+<h2 style="color:#c62828">🔔 ${enReclamation.length} partenaire(s) réclament leur paiement</h2>
+${enReclamation.map(p => `<div>• <strong>${p.nom}</strong> (${p.code}) — depuis le ${new Date(p.reclamationDate).toLocaleString("fr-FR")}</div>`).join("")}
+</div>
+`;
+} else {
+zoneAlerte.innerHTML = "";
+}
+
 if(!partenaires || partenaires.length === 0){
 zone.innerHTML = "<p>Aucun partenaire pour l'instant.</p>";
 return;
 }
 zone.innerHTML = partenaires.map(p => `
-<div class="ligne-partenaire">
+<div class="ligne-partenaire" ${p.reclamationEnCours ? 'style="border:2px solid #c62828"' : ""}>
+${p.reclamationEnCours ? '<div class="badge badge-annulee" style="margin-bottom:6px">🔔 Réclame son paiement</div><br>' : ""}
 <strong>${p.nom}</strong> — ${p.code}<br>
 📞 ${p.telephone} — ${p.type}<br>
 Réduction : ${p.remiseValeur}${p.remiseType === "pourcentage" ? "%" : " FCFA"} —

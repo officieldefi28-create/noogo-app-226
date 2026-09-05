@@ -1305,6 +1305,18 @@ window.addEventListener("appinstalled", function(){
 bandeauDiv.style.display = "none";
 });
 
+</script> 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+let champCode = document.getElementById("champ-code");
+if(champCode){
+champCode.addEventListener("blur", function(){
+if(typeof verifierCode === "function"){
+verifierCode();
+}
+});
+}
+});
 </script>
 </body>
 </html>

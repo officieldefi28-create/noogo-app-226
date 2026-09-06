@@ -470,6 +470,20 @@ ${c.statutLivraison === "livree" && c.commission > 0 && c.statutCommission === "
 }
 
 </script>
-
+<script>
+let afficherCommandesOriginal = afficherCommandes;
+afficherCommandes = function(commandes, partenaires){
+afficherCommandesOriginal(commandes, partenaires);
+let zone = document.getElementById("liste-commandes");
+let lignes = zone.querySelectorAll(".ligne-commande");
+commandes.forEach(function(c, i){
+if(c.source && c.source !== "direct" && lignes[i]){
+let div = document.createElement("div");
+div.innerHTML = "🔗 Source : " + c.source;
+lignes[i].appendChild(div);
+}
+});
+};
+</script>
 </body>
 </html>

@@ -614,7 +614,66 @@ afficherPartenaires(dernierePartenairesListe);
 })();
                                  </script>
   
+<!-- SYSTEME DE VERROUILLAGE DU MOT DE PASSE PARTENAIRE -->
+<script>
+(function() {
+  // Attente du chargement
+  window.addEventListener("load", function() {
+    
+    // Interception des clics en phase de capture pour bloquer le script par défaut
+    document.body.addEventListener("click", function(e) {
+      
+      let cible = e.target;
+      if (cible && cible.innerText && cible.innerText.includes("Réinitialiser mot de passe")) {
+        
+        // Bloquer immédiatement l'action automatique par défaut
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
 
+        // 1. Demander le mot de passe personnalisé
+        let nouveauMdp = prompt("Entrez le NOUVEAU mot de passe personnalisé pour ce partenaire :");
+
+        if (nouveauMdp && nouveauMdp.trim() !== "") {
+          let mdpFixe = nouveauMdp.trim();
+
+          // 2. Récupérer le nom du partenaire concerné dans le bloc HTML
+          let blocPartenaire = cible.closest("div") || cible.parentElement;
+          let texteBloc = blocPartenaire ? blocPartenaire.innerText : "";
+
+          // 3. Mettre à jour la base de données locale (localStorage)
+          let partenaires = JSON.parse(localStorage.getItem("partenaires")) || [];
+          let trouve = false;
+
+          partenaires = partenaires.map(p => {
+            // Vérification si le nom ou le code correspond
+            if (texteBloc.includes(p.nom) || (p.code && texteBloc.includes(p.code))) {
+              p.mdp = mdpFixe;
+              p.pass = mdpFixe; // Sécurité si la clé s'appelle 'pass'
+              trouve = true;
+            }
+            return p;
+          });
+
+          // Sauvegarde forcée
+          localStorage.setItem("partenaires", JSON.stringify(partenaires));
+
+          // 4. Mettre à jour l'affichage de l'écran pour éviter le retour au code aléatoire
+          let zoneMdp = document.querySelector(".mdp-temporaire") || document.querySelector("#temp-pass");
+          if (zoneMdp) {
+            zoneMdp.innerText = mdpFixe;
+          }
+
+          alert("✅ Mot de passe enregistré avec succès : " + mdpFixe);
+          location.reload();
+        }
+      }
+    }, true); // Le 'true' permet d'attraper le clic avant le script d'origine
+
+  });
+})();
+        </script>
+  
 
 </body>
 </html>

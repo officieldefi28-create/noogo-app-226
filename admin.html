@@ -562,7 +562,58 @@ afficherPartenaires(dernierePartenairesListe);
 
 })();
 </script>
+<!-- SYSTEME DE MODIFICATION DE MOT DE PASSE PARTENAIRE -->
+<script>
+(function() {
+  // Attendre le chargement complet de la page Admin
+  document.addEventListener("DOMContentLoaded", function() {
+    
+    // Observer les clics sur les cartes des partenaires
+    document.body.addEventListener("click", function(e) {
+      
+      // Si on clique sur un bouton "Réinitialiser mot de passe"
+      if (e.target && e.target.innerText.includes("Réinitialiser mot de passe")) {
+        e.preventDefault();
+        e.stopPropagation();
 
+        // Demander le nouveau mot de passe à l'administrateur
+        let nouveauMdp = prompt("Saisissez le NOUVEAU mot de passe pour ce partenaire :");
+
+        if (nouveauMdp && nouveauMdp.trim() !== "") {
+          let motDePasseNettoye = nouveauMdp.trim();
+
+          // Récupération de la liste des partenaires sauvegardés
+          let partenaires = JSON.parse(localStorage.getItem("partenaires")) || [];
+
+          // Recherche de la carte du partenaire ciblé dans le HTML
+          let cartePartenaire = e.target.closest("[data-id]") || e.target.parentElement;
+          let nomPartenaire = cartePartenaire ? cartePartenaire.innerText : "";
+
+          // Mise à jour dans la base de données (localStorage)
+          let misAJour = false;
+          partenaires = partenaires.map(p => {
+            if (nomPartenaire.includes(p.nom) || nomPartenaire.includes(p.code)) {
+              p.mdp = motDePasseNettoye;
+              misAJour = true;
+            }
+            return p;
+          });
+
+          if (misAJour) {
+            localStorage.setItem("partenaires", JSON.stringify(partenaires));
+            alert("✅ Le mot de passe a été modifié avec succès ! Nouveau mot de passe : " + motDePasseNettoye);
+            location.reload();
+          } else {
+            alert("🔑 Nouveau mot de passe généré : " + motDePasseNettoye + "\n(Pensez à le noter et à le transmettre au partenaire).");
+          }
+        }
+      }
+    });
+
+  });
+})();
+                                 </script>
+  
 
 
 </body>

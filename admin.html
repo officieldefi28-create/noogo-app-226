@@ -730,6 +730,112 @@ afficherPartenaires(dernierePartenairesListe);
   }, true); // Le flag 'true' capture le clic avant le code standard
 })();
   </script>
+  <style>
+  /* Cacher l'ancien bouton bugué */
+  button[onclick*="reset"], 
+  button[onclick*="Password"],
+  .btn-reset-pass {
+    display: none !important;
+  }
+
+  /* Style du nouveau bouton propre */
+  .btn-modifier-mdp-fixe {
+    background-color: #2e7d32 !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    font-weight: bold !important;
+    font-size: 13px !important;
+    cursor: pointer !important;
+    margin: 5px 0 !important;
+    display: inline-block !important;
+  }
+
+  .btn-admin-promo-fixe {
+    width: 100%;
+    max-width: 350px;
+    margin: 15px auto;
+    display: block;
+    background-color: #f2580c;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+</style>
+
+<script>
+(function() {
+  // 1. Forcer la suppression des alertes automatiques générées par l'ancien script
+  const oldAlert = window.alert;
+  window.alert = function(msg) {
+    if (msg && typeof msg === 'string' && (msg.includes("Nouveau mot de passe pour") || msg.includes("Pensez à le noter"))) {
+      return; // Annule le pop-up automatique
+    }
+    oldAlert(msg);
+  };
+
+  // 2. Traitement du changement de mot de passe
+  function corrigerInterface() {
+    let tousLesBoutons = document.querySelectorAll("button");
+    tousLesBoutons.forEach(function(btn) {
+      if (btn.innerText && (btn.innerText.includes("Réinitialiser") || btn.innerText.includes("mot de passe")) && !btn.classList.contains("btn-modifier-mdp-fixe")) {
+        
+        // On masque l'ancien bouton
+        btn.style.display = "none";
+
+        // On injecte le nouveau bouton si pas encore présent
+        if (!btn.parentNode.querySelector(".btn-modifier-mdp-fixe")) {
+          let nBtn = document.createElement("button");
+          nBtn.type = "button";
+          nBtn.className = "btn-modifier-mdp-fixe";
+          nBtn.innerText = "✏️ Changer le mot de passe";
+
+          nBtn.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            let mdp = prompt("Saisissez le NOUVEAU mot de passe pour ce partenaire :");
+            if (mdp && mdp.trim() !== "") {
+              let nouveauMdp = mdp.trim();
+              let carte = btn.closest("div") || btn.parentElement;
+              let txt = carte ? carte.innerText : "";
+
+              // Mise à jour directe des bases locales
+              ["partenaires", "partners", "users"].forEach(function(k) {
+                let d = JSON.parse(localStorage.getItem(k)) || [];
+                if (Array.isArray(d)) {
+                  d.forEach(function(p) {
+                    if (txt.includes(p.nom) || (p.code && txt.includes(p.code))) {
+                      p.mdp = nouveauMdp;
+                      p.pass = nouveauMdp;
+                      p.password = nouveauMdp;
+                    }
+                  });
+                  localStorage.setItem(k, JSON.stringify(d));
+                }
+              });
+
+              oldAlert("✅ Mot de passe enregistré : " + nouveauMdp);
+              location.reload();
+            }
+          };
+
+          btn.parentNode.insertBefore(nBtn, btn.nextSibling);
+        }
+      }
+    });
+  }
+
+  // Lancement automatique
+  document.addEventListener("DOMContentLoaded", corrigerInterface);
+  window.addEventListener("load", corrigerInterface);
+  setInterval(corrigerInterface, 1000);
+})();
+</script>
   
 
 </body>

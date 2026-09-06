@@ -485,5 +485,85 @@ lignes[i].appendChild(div);
 });
 };
 </script>
+<script>
+(function(){
+
+let rafraichirAffichageCommandesOriginal = rafraichirAffichageCommandes;
+rafraichirAffichageCommandes = function(){
+let tri = document.getElementById("tri-commandes").value;
+let liste = dernieresCommandesListe.filter(c => window.archivesCommandesVisibles ? c.archive : !c.archive);
+liste.sort((a, b) => tri === "recent" ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date));
+afficherCommandes(liste, dernierePartenairesListe);
+let totalArchivees = dernieresCommandesListe.filter(c => c.archive).length;
+let btn = document.getElementById("btn-archives");
+if(btn){
+btn.innerText = window.archivesCommandesVisibles ? "Masquer les archives" : "Voir les commandes archivées (" + totalArchivees + ")";
+btn.onclick = function(){ window.archivesCommandesVisibles = !window.archivesCommandesVisibles; rafraichirAffichageCommandes(); };
+}
+};
+
+window.archivesCommandesVisibles = false;
+
+let afficherCommandesOriginal = afficherCommandes;
+afficherCommandes = function(commandes, partenaires){
+afficherCommandesOriginal(commandes, partenaires);
+let zone = document.getElementById("liste-commandes");
+let lignes = zone.querySelectorAll(".ligne-commande");
+commandes.forEach(function(c, i){
+if(!lignes[i]) return;
+let boutonsDiv = lignes[i].querySelector("div:last-child");
+if(!boutonsDiv) return;
+let btnArchive = document.createElement("button");
+btnArchive.className = "btn-petit " + (c.archive ? "btn-vert" : "btn-secondaire");
+btnArchive.innerText = c.archive ? "Désarchiver" : "Archiver";
+btnArchive.onclick = function(){
+appelAdmin(c.archive ? "desarchiver_commande" : "archiver_commande", { commandeId: c.id }).then(() => rafraichirTout());
+};
+boutonsDiv.appendChild(btnArchive);
+});
+};
+
+window.archivesPartenairesVisibles = false;
+
+let afficherPartenairesOriginal = afficherPartenaires;
+afficherPartenaires = function(partenaires){
+let listeAffichee = partenaires.filter(p => window.archivesPartenairesVisibles ? p.archive : !p.archive);
+afficherPartenairesOriginal(listeAffichee);
+
+let zone = document.getElementById("liste-partenaires");
+let lignes = zone.querySelectorAll(".ligne-partenaire");
+listeAffichee.forEach(function(p, i){
+if(!lignes[i]) return;
+let boutonsDiv = lignes[i].querySelector("div:last-child");
+if(!boutonsDiv) return;
+let btnArchive = document.createElement("button");
+btnArchive.className = "btn-petit " + (p.archive ? "btn-vert" : "btn-secondaire");
+btnArchive.innerText = p.archive ? "Désarchiver" : "Archiver";
+btnArchive.onclick = function(){
+appelAdmin(p.archive ? "desarchiver_partenaire" : "archiver_partenaire", { partenaireId: p.id }).then(() => rafraichirTout());
+};
+boutonsDiv.appendChild(btnArchive);
+});
+
+if(!document.getElementById("btn-archives-partenaires")){
+let btn = document.createElement("button");
+btn.className = "btn btn-secondaire";
+btn.id = "btn-archives-partenaires";
+zone.parentElement.appendChild(btn);
+}
+let btnArchivesPart = document.getElementById("btn-archives-partenaires");
+let totalArchivesPart = partenaires.filter(p => p.archive).length;
+btnArchivesPart.innerText = window.archivesPartenairesVisibles ? "Masquer les archives" : "Voir les partenaires archivés (" + totalArchivesPart + ")";
+btnArchivesPart.onclick = function(){
+window.archivesPartenairesVisibles = !window.archivesPartenairesVisibles;
+afficherPartenaires(dernierePartenairesListe);
+};
+};
+
+})();
+</script>
+
+
+
 </body>
 </html>

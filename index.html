@@ -1391,6 +1391,97 @@ console.log("Échec de l'enregistrement du Service Worker :", erreur);
   }
 })();
 </script>
-  
+ <script>
+(function(){
+
+// 1) Remplace complètement la vérification du code promo pour garantir
+// qu'elle fonctionne toujours correctement, y compris pour les 4 codes
+// automatiques (MARDI, SAMEDI, FB, TT) et tous les codes partenaires.
+verifierCode = function(){
+
+let champ = document.getElementById("champ-code");
+let zoneMessage = document.getElementById("message-code");
+if(!champ || !zoneMessage) return;
+
+let code = champ.value.trim();
+
+if(code === ""){
+codePromoApplique = null;
+zoneMessage.className = "";
+zoneMessage.innerText = "";
+if(typeof afficher === "function") afficher();
+return;
+}
+
+let total = 0;
+if(typeof produits !== "undefined"){
+total = produits.reduce((s,p) => s + (Number(p.prix) * Number(p.qte || 0)), 0);
+}
+
+zoneMessage.className = "";
+zoneMessage.innerText = "Vérification...";
+
+fetch("/api/verifier-code", {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({ code: code, montantTotal: total })
+})
+.then(r => r.json())
+.then(d => {
+if(d && d.valide){
+codePromoApplique = { code: code.toUpperCase(), remise: Number(d.remise) || 0, valide: true };
+zoneMessage.className = "valide";
+zoneMessage.innerText = "✅ Code valide ! −" + (Number(d.remise)||0).toLocaleString("fr-FR") + " FCFA";
+} else {
+codePromoApplique = null;
+zoneMessage.className = "invalide";
+zoneMessage.innerText = "❌ " + (d && d.message ? d.message : "Code promo invalide");
+}
+if(typeof afficher === "function") afficher();
+})
+.catch(() => {
+codePromoApplique = null;
+zoneMessage.className = "invalide";
+zoneMessage.innerText = "❌ Erreur de connexion, réessayez";
+if(typeof afficher === "function") afficher();
+});
+
+};
+
+// 2) Vérifie automatiquement le code dès que le client quitte le champ,
+// sans obliger à cliquer sur le bouton ✅.
+let champCode = document.getElementById("champ-code");
+if(champCode){
+champCode.addEventListener("blur", function(){
+verifierCode();
+});
+}
+
+// 3) Sécurité supplémentaire juste avant l'envoi WhatsApp : si pour une
+// raison quelconque le code n'était pas correctement enregistré, on le
+// revalide une dernière fois à partir de ce qui est affiché à l'écran.
+if(typeof commander === "function"){
+let commanderOriginal = commander;
+commander = function(){
+let champ = document.getElementById("champ-code");
+let zoneMessage = document.getElementById("message-code");
+let code = champ ? champ.value.trim().toUpperCase() : "";
+
+if(code && zoneMessage && zoneMessage.classList.contains("valide")){
+if(!codePromoApplique || codePromoApplique.code !== code || !codePromoApplique.valide){
+let correspondance = zoneMessage.textContent.match(/([\d\s]+)\s*FCFA/);
+let remise = correspondance ? Number(correspondance[1].replace(/\s/g, "")) : 0;
+codePromoApplique = { code: code, remise: remise, valide: true };
+}
+} else if(!code){
+codePromoApplique = null;
+}
+
+commanderOriginal();
+};
+}
+
+})();
+ </script> 
 </body>
 </html>

@@ -1296,6 +1296,33 @@ console.log("Échec de l'enregistrement du Service Worker :", erreur);
 }
 
 </script>
+<script>
+// Correctif pour recalculer le pourcentage sur le total cumulé
+const ancienAfficher = afficher;
 
+afficher = function() {
+  let total = produits.reduce((s, p) => s + (p.prix * p.qte), 0);
+  let totalAffiche = total;
+
+  if (codePromoApplique && codePromoApplique.valide && total > 0) {
+    let pct = codePromoApplique.pourcentage || 20;
+    let remiseCalculee = Math.round((total * pct) / 100);
+    totalAffiche = Math.max(0, total - remiseCalculee);
+
+    document.getElementById("ligne-remise").innerText =
+      `Code ${codePromoApplique.code} (${pct}%) appliqué : −${remiseCalculee.toLocaleString("fr-FR")} FCFA`;
+    document.getElementById("ligne-remise").classList.remove("cachee-remise");
+  } else {
+    document.getElementById("ligne-remise").classList.add("cachee-remise");
+  }
+
+  // Applique l'affichage HTML d'origine
+  ancienAfficher();
+  
+  // Réécrase le total recalculé en pourcentage
+  document.getElementById("total").innerText = totalAffiche.toLocaleString("fr-FR");
+};
+</script>
+    
 </body>
 </html>

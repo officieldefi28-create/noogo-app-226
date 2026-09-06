@@ -553,24 +553,6 @@ z-index:50
 display:block
 }
 </style>
-<!-- Facebook Pixel Code -->
-<script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '979621177842469');
-fbq('track', 'PageView');
-</script>
-<noscript>
-<img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=979621177842469&ev=PageView&noscript=1"/>
-</noscript>
-<!-- End Facebook Pixel Code -->
 </head>
 
 <body>
@@ -615,7 +597,7 @@ src="https://www.facebook.com/tr?id=979621177842469&ev=PageView&noscript=1"/>
 
 <label class="champ-label" for="champ-code">Code promo <span class="facultatif">(si vous en avez un)</span></label>
 <div class="champ-avec-bouton">
-<input type="text" id="champ-code" class="champ-input" placeholder="Ex : ECOLE01" style="text-transform:uppercase" onblur="verifierCode()">
+<input type="text" id="champ-code" class="champ-input" placeholder="Ex : ECOLE01" style="text-transform:uppercase">
 <button type="button" class="btn-localiser" onclick="verifierCode()">✅</button>
 </div>
 <div id="message-code"></div>
@@ -945,7 +927,7 @@ body:JSON.stringify({code, montantTotal: total})
 
 if(d.valide){
 
-codePromoApplique={code: code.toUpperCase(), remise: d.remise, valide: true};
+codePromoApplique={code: code.toUpperCase(), remise: d.remise};
 zoneMessage.className="valide";
 zoneMessage.innerText=`✅ Code valide ! −${d.remise.toLocaleString("fr-FR")} FCFA`;
 
@@ -1017,13 +999,6 @@ let total=produits.reduce(
 (s,p)=>s+(p.prix*p.qte),0
 );
 
-// 🔵 META PIXEL
-fbq('track', 'InitiateCheckout', {
-    value: total,
-    currency: 'XOF'
-});
-
-
 let codeUtilise=codePromoApplique&&codePromoApplique.valide?codePromoApplique.code:"";
 
 let modePaiementChoisi=document.querySelector('input[name="paiement"]:checked').value;
@@ -1071,11 +1046,6 @@ total.toLocaleString("fr-FR")+
 let url=
 "https://wa.me/22661682706?text="+
 encodeURIComponent(msg);
-
-fbq('trackCustom', 'WhatsAppOrder', {
-    value: totalFinal,
-    currency: 'XOF'
-});
 
 
 window.open(url,"_blank");
@@ -1127,15 +1097,6 @@ function agrandir(src,nom){
 document.getElementById("zoom-img").src=src;
 document.getElementById("zoom-titre").innerText=nom;
 document.getElementById("zoom-overlay").classList.add("actif");
-
-// 🔵 META PIXEL
-fbq('track', 'ViewContent', {
-    content_name: nom,
-    content_type: 'product'
-});
-
-document.getElementById("zoom-overlay").classList.add("actif");
-
 
 }
 
@@ -1275,9 +1236,6 @@ window.addEventListener("appinstalled", () => {
 evenementInstallation = null;
 fermerBandeauInstall();
 
-// 🔵 META PIXEL
-fbq('trackCustom', 'AppInstall');
-
 });
 
 
@@ -1296,186 +1254,6 @@ console.log("Échec de l'enregistrement du Service Worker :", erreur);
 }
 
 </script>
-<script>
-// Correctif pour recalculer le pourcentage sur le total cumulé
-const ancienAfficher = afficher;
 
-afficher = function() {
-  let total = produits.reduce((s, p) => s + (p.prix * p.qte), 0);
-  let totalAffiche = total;
-
-  if (codePromoApplique && codePromoApplique.valide && total > 0) {
-    let pct = codePromoApplique.pourcentage || 20;
-    let remiseCalculee = Math.round((total * pct) / 100);
-    totalAffiche = Math.max(0, total - remiseCalculee);
-
-    document.getElementById("ligne-remise").innerText =
-      `Code ${codePromoApplique.code} (${pct}%) appliqué : −${remiseCalculee.toLocaleString("fr-FR")} FCFA`;
-    document.getElementById("ligne-remise").classList.remove("cachee-remise");
-  } else {
-    document.getElementById("ligne-remise").classList.add("cachee-remise");
-  }
-
-  // Applique l'affichage HTML d'origine
-  ancienAfficher();
-  
-  // Réécrase le total recalculé en pourcentage
-  document.getElementById("total").innerText = totalAffiche.toLocaleString("fr-FR");
-};
-</script>
-  <!-- Style de correction pour le logo et le titre -->
-<style>
-  /* Cacher le texte en doublon si présent */
-  .header h1, .header h2, header h1, header h2 {
-    display: none !important;
-  }
-  
-  /* Corriger l'affichage du logo transparent */
-  .header img, header img {
-    max-width: 160px !important;
-    height: auto !important;
-    background: transparent !important;
-    mix-blend-mode: multiply; /* Fusionne le fond de l'image avec le fond de la page */
-    filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.15));
-  }
-</style>
-  <!-- BLAOC PROMO AUTOMATIQUE (MARDI & SAMEDI) -->
-<!-- Bouton de réglage (visible pour modifier les paramètres) -->
-<div style="text-align: center; margin: 20px 0;">
-  <button type="button" onclick="ouvrirConfigPromoAuto()" style="background-color: #f2580c; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-    ⚙️ Régler la promo automatique
-  </button>
-</div>
-
-<script>
-(function() {
-  // 1. Récupération des paramètres sauvegardés
-  let configPromo = JSON.parse(localStorage.getItem('promo_auto_config')) || {
-    active: true,
-    type: 'pourcentage', // 'pourcentage' ou 'fixe'
-    valeur: 15          // Valeur par défaut
-  };
-
-  // 2. Détection du jour (2 = Mardi, 6 = Samedi)
-  const aujourdhui = new Date().getDay();
-  const estJourPromo = (aujourdhui === 2 || aujourdhui === 6);
-
-  // 3. Fenêtre de configuration au clic sur le bouton
-  window.ouvrirConfigPromoAuto = function() {
-    let choixType = prompt(
-      "Choisissez le type de réduction :\n" +
-      "Taper '1' pour Pourcentage (%)\n" +
-      "Taper '2' pour Montant Fixe (FCFA)\n" +
-      "Taper '0' pour DÉSACTIVER la promo",
-      configPromo.active ? (configPromo.type === 'pourcentage' ? '1' : '2') : '0'
-    );
-
-    if (choixType === null) return; // Annulation
-
-    if (choixType === '0') {
-      configPromo.active = false;
-      localStorage.setItem('promo_auto_config', JSON.stringify(configPromo));
-      alert("La promotion automatique est désactivée.");
-      location.reload();
-      return;
-    }
-
-    let valeurSaisie = prompt(
-      "Entrez la valeur de la réduction :\n" +
-      "(Exemple : '15' pour 15% ou '500' pour 500 FCFA)",
-      configPromo.valeur
-    );
-
-    if (valeurSaisie === null || valeurSaisie.trim() === "") return;
-
-    configPromo.type = (choixType === '1') ? 'pourcentage' : 'fixe';
-    configPromo.valeur = parseFloat(valeurSaisie);
-    configPromo.active = true;
-
-    localStorage.setItem('promo_auto_config', JSON.stringify(configPromo));
-    alert("Configuration enregistrée avec succès !");
-    location.reload();
-  };
-
-  // 4. Calcul et application automatique au panier
-  if (estJourPromo && configPromo.active) {
-    const originalAfficher = window.afficher;
-    
-    window.afficher = function() {
-      if (typeof originalAfficher === 'function') originalAfficher();
-
-      // Vérification des produits du panier
-      if (typeof produits !== 'undefined' && Array.isArray(produits)) {
-        let totalBrut = produits.reduce((s, p) => s + (p.prix * (p.qte || 0)), 0);
-
-        if (totalBrut > 0) {
-          let reduction = 0;
-          let texteReduction = "";
-
-          if (configPromo.type === 'pourcentage') {
-            reduction = Math.round((totalBrut * configPromo.valeur) / 100);
-            texteReduction = `🎉 Promo auto (${configPromo.valeur}%) : −${reduction.toLocaleString("fr-FR")} FCFA`;
-          } else {
-            reduction = configPromo.valeur;
-            texteReduction = `🎉 Promo auto : −${reduction.toLocaleString("fr-FR")} FCFA`;
-          }
-
-          let totalFinal = Math.max(0, totalBrut - reduction);
-
-          // Affichage dans le HTML
-          let elRemise = document.getElementById("ligne-remise");
-          let elTotal = document.getElementById("total");
-
-          if (elRemise) {
-            elRemise.innerText = texteReduction;
-            elRemise.classList.remove("cachee-remise");
-            elRemise.style.display = "block";
-          }
-          if (elTotal) {
-            elTotal.innerText = totalFinal.toLocaleString("fr-FR");
-          }
-        }
-      }
-    };
-  }
-})();
-      </script>
-<!-- STYLE LOGO TEXTE EN OR & BLANC SANS IMAGE -->
-<style>
-  /* 1. On cache l'image rectangulaire collée en haut */
-  .header img, header img, [class*="logo"] img {
-    display: none !important;
-  }
-
-  /* 2. On transforme le conteneur en texte élégant blanc & or */
-  .header, header {
-    position: relative;
-    padding-top: 15px !important;
-  }
-
-  .header::before, header::before {
-    content: "Noogö";
-    display: block;
-    font-family: 'Fredoka', 'Comfortaa', 'Pacifico', 'Caveat', cursive, sans-serif;
-    font-size: 42px;
-    font-weight: 800;
-    text-align: center;
-    margin-bottom: 5px;
-    
-    /* Effet dégradé Blanc pur vers Or clair */
-    background: linear-gradient(180deg, #FFFFFF 30%, #FFE599 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    
-    /* Ombre portée douce pour donner du relief */
-    filter: drop-shadow(0px 3px 6px rgba(0, 0, 0, 0.3));
-    letter-spacing: 1px;
-  }
-</style>
-    
-
-    
 </body>
-
-
 </html>

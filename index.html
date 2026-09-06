@@ -1017,6 +1017,13 @@ let total=produits.reduce(
 (s,p)=>s+(p.prix*p.qte),0
 );
 
+// 🔵 META PIXEL
+fbq('track', 'InitiateCheckout', {
+    value: total,
+    currency: 'XOF'
+});
+
+
 let codeUtilise=codePromoApplique&&codePromoApplique.valide?codePromoApplique.code:"";
 
 let modePaiementChoisi=document.querySelector('input[name="paiement"]:checked').value;
@@ -1064,6 +1071,11 @@ total.toLocaleString("fr-FR")+
 let url=
 "https://wa.me/22661682706?text="+
 encodeURIComponent(msg);
+
+fbq('trackCustom', 'WhatsAppOrder', {
+    value: totalFinal,
+    currency: 'XOF'
+});
 
 
 window.open(url,"_blank");
@@ -1115,6 +1127,15 @@ function agrandir(src,nom){
 document.getElementById("zoom-img").src=src;
 document.getElementById("zoom-titre").innerText=nom;
 document.getElementById("zoom-overlay").classList.add("actif");
+
+// 🔵 META PIXEL
+fbq('track', 'ViewContent', {
+    content_name: nom,
+    content_type: 'product'
+});
+
+document.getElementById("zoom-overlay").classList.add("actif");
+
 
 }
 
@@ -1253,6 +1274,9 @@ window.addEventListener("appinstalled", () => {
 
 evenementInstallation = null;
 fermerBandeauInstall();
+
+// 🔵 META PIXEL
+fbq('trackCustom', 'AppInstall');
 
 });
 

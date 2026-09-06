@@ -1323,6 +1323,22 @@ afficher = function() {
   document.getElementById("total").innerText = totalAffiche.toLocaleString("fr-FR");
 };
 </script>
+  <!-- Style de correction pour le logo et le titre -->
+<style>
+  /* Cacher le texte en doublon si présent */
+  .header h1, .header h2, header h1, header h2 {
+    display: none !important;
+  }
+  
+  /* Corriger l'affichage du logo transparent */
+  .header img, header img {
+    max-width: 160px !important;
+    height: auto !important;
+    background: transparent !important;
+    mix-blend-mode: multiply; /* Fusionne le fond de l'image avec le fond de la page */
+    filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.15));
+  }
+</style>
     
 </body>
 </html>

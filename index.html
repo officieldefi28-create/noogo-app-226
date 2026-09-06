@@ -1254,6 +1254,143 @@ console.log("Échec de l'enregistrement du Service Worker :", erreur);
 }
 
 </script>
+<!-- ========================================================= -->
+<!-- 1. CORRECTION DU DESIGN DU TITRE (CALLIGRAPHIE NOOGÖ)      -->
+<!-- ========================================================= -->
+<style>
+  /* Cacher l'ancien texte brut en doublon */
+  .header h1, .header h2, header h1, header h2 {
+    display: none !important;
+  }
 
+  /* Création du titre stylisé calligraphié */
+  .header-title-custom {
+    font-family: 'Pacifico', 'Caveat', 'Dancing Script', cursive, sans-serif;
+    font-size: 44px;
+    font-weight: normal;
+    color: #ffffff;
+    text-align: center;
+    margin: 5px 0 10px 0;
+    text-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    letter-spacing: 1px;
+  }
+</style>
+
+<script>
+  // Injection automatique du titre stylisé juste sous le logo carré
+  document.addEventListener("DOMContentLoaded", function() {
+    let headerEl = document.querySelector(".header") || document.querySelector("header");
+    let logoImg = headerEl ? headerEl.querySelector("img") : null;
+    
+    if (logoImg && !document.getElementById("titre-noogo-style")) {
+      let nouveauTitre = document.createElement("div");
+      nouveauTitre.id = "titre-noogo-style";
+      nouveauTitre.className = "header-title-custom";
+      nouveauTitre.innerText = "Noogö";
+      logoImg.parentNode.insertBefore(nouveauTitre, logoImg.nextSibling);
+    }
+  });
+</script>
+
+<!-- ========================================================= -->
+<!-- 2. BOUTON & SYSTEME DE PROMO AUTOMATIQUE (MARDI & SAMEDI) -->
+<!-- ========================================================= -->
+<div style="text-align: center; margin: 25px 0;">
+  <button type="button" onclick="ouvrirConfigPromoAuto()" style="background-color: #f2580c; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+    ⚙️ Régler la promo du Mardi/Samedi
+  </button>
+</div>
+
+<script>
+(function() {
+  // Config stockée dans le navigateur (par défaut 20% en pourcentage)
+  let configPromo = JSON.parse(localStorage.getItem('promo_auto_config')) || {
+    active: true,
+    type: 'pourcentage', 
+    valeur: 20          
+  };
+
+  const aujourdhui = new Date().getDay();
+  const estJourPromo = (aujourdhui === 2 || aujourdhui === 6); // 2 = Mardi, 6 = Samedi
+
+  // Fonction pour modifier les paramètres admin
+  window.ouvrirConfigPromoAuto = function() {
+    let choixType = prompt(
+      "CONFIGURATION PROMO AUTOMATIQUE :\n\n" +
+      "Taper '1' pour Pourcentage (%)\n" +
+      "Taper '2' pour Prix Fixe (FCFA)\n" +
+      "Taper '0' pour DÉSACTIVER la promo",
+      configPromo.active ? (configPromo.type === 'pourcentage' ? '1' : '2') : '0'
+    );
+
+    if (choixType === null) return;
+
+    if (choixType === '0') {
+      configPromo.active = false;
+      localStorage.setItem('promo_auto_config', JSON.stringify(configPromo));
+      alert("La promo automatique est désactivée.");
+      location.reload();
+      return;
+    }
+
+    let valeurSaisie = prompt(
+      "Entrez la valeur de la réduction :\n\n" +
+      "(Ex: tapez '15' pour 15% ou '500' pour 500 FCFA de remise)",
+      configPromo.valeur
+    );
+
+    if (valeurSaisie === null || valeurSaisie.trim() === "") return;
+
+    configPromo.type = (choixType === '1') ? 'pourcentage' : 'fixe';
+    configPromo.valeur = parseFloat(valeurSaisie);
+    configPromo.active = true;
+
+    localStorage.setItem('promo_auto_config', JSON.stringify(configPromo));
+    alert("Configuration enregistrée !");
+    location.reload();
+  };
+
+  // Application automatique sur le total cumulé du panier
+  if (estJourPromo && configPromo.active) {
+    const originalAfficher = window.afficher;
+    
+    window.afficher = function() {
+      if (typeof originalAfficher === 'function') originalAfficher();
+
+      if (typeof produits !== 'undefined' && Array.isArray(produits)) {
+        let totalBrut = produits.reduce((s, p) => s + (p.prix * (p.qte || 0)), 0);
+
+        if (totalBrut > 0) {
+          let reduction = 0;
+          let texteReduction = "";
+
+          if (configPromo.type === 'pourcentage') {
+            reduction = Math.round((totalBrut * configPromo.valeur) / 100);
+            texteReduction = `🎉 Promo auto (${configPromo.valeur}%) : −${reduction.toLocaleString("fr-FR")} FCFA`;
+          } else {
+            reduction = configPromo.valeur;
+            texteReduction = `🎉 Promo auto : −${reduction.toLocaleString("fr-FR")} FCFA`;
+          }
+
+          let totalFinal = Math.max(0, totalBrut - reduction);
+
+          let elRemise = document.getElementById("ligne-remise");
+          let elTotal = document.getElementById("total");
+
+          if (elRemise) {
+            elRemise.innerText = texteReduction;
+            elRemise.classList.remove("cachee-remise");
+            elRemise.style.display = "block";
+          }
+          if (elTotal) {
+            elTotal.innerText = totalFinal.toLocaleString("fr-FR");
+          }
+        }
+      }
+    };
+  }
+})();
+</script>
+  
 </body>
 </html>

@@ -1492,6 +1492,33 @@ el.remove();
 });
 });
 </script>
+<script>
+(function(){
+let ua = navigator.userAgent || "";
+let source = "direct";
 
+if(ua.indexOf("FBAN") !== -1 || ua.indexOf("FBAV") !== -1 || ua.indexOf("FB_IAB") !== -1){
+source = "facebook";
+} else if(ua.indexOf("musical_ly") !== -1 || ua.indexOf("BytedanceWebview") !== -1 || ua.indexOf("TikTok") !== -1){
+source = "tiktok";
+}
+
+if(!sessionStorage.getItem("noogo_source")){
+sessionStorage.setItem("noogo_source", source);
+}
+
+let fetchOriginal = window.fetch;
+window.fetch = function(url, options){
+if(url === "/api/commander" && options && options.body){
+try{
+let corps = JSON.parse(options.body);
+corps.source = sessionStorage.getItem("noogo_source") || "direct";
+options.body = JSON.stringify(corps);
+}catch(e){}
+}
+return fetchOriginal(url, options);
+};
+})();
+</script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "papous-cache-v2";
+const CACHE_NAME = "papous-cache-v3";
 
 const FICHIERS_A_METTRE_EN_CACHE = [
   "/manifest.json",
@@ -6,17 +6,18 @@ const FICHIERS_A_METTRE_EN_CACHE = [
   "/icon-512.png"
 ];
 
-// Installation : on met en cache uniquement les fichiers statiques (icônes, manifest)
+// Installation
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(FICHIERS_A_METTRE_EN_CACHE);
     })
   );
+
   self.skipWaiting();
 });
 
-// Activation : on supprime les anciens caches si le site est mis à jour
+// Activation
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((noms) => {
@@ -27,65 +28,117 @@ self.addEventListener("activate", (event) => {
       );
     })
   );
+
   self.clients.claim();
 });
 
-// Récupération :
-// - Pour les pages HTML et les appels API : toujours essayer le réseau en premier
-//   (garantit d'avoir toujours la dernière version), avec repli sur le cache hors-ligne
-// - Pour le reste (images, icônes, manifest) : cache en priorité (plus rapide)
+// Récupération
 self.addEventListener("fetch", (event) => {
+
   const url = new URL(event.request.url);
-  const estPage = event.request.mode === "navigate" || url.pathname.endsWith(".html");
+
+  // =========================================================
+  // IMPORTANT :
+  // Ne jamais intercepter les requêtes externes.
+  //
+  // Cela laisse Meta Pixel, WhatsApp, Google Maps, etc.
+  // communiquer directement avec leurs serveurs.
+  // =========================================================
+
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
+  // Les appels API ne doivent pas être interceptés
   const estApi = url.pathname.startsWith("/api/");
 
   if (estApi) {
-    // Les appels API ne doivent jamais être mis en cache ni interceptés
     return;
   }
 
+  // Pages HTML : réseau en premier
+  const estPage =
+    event.request.mode === "navigate" ||
+    url.pathname.endsWith(".html");
+
   if (estPage) {
-    // Stratégie réseau-en-premier pour toujours avoir la dernière version des pages
+
     event.respondWith(
       fetch(event.request)
         .then((reponseReseau) => {
-          if (reponseReseau && reponseReseau.status === 200) {
+
+          if (
+            reponseReseau &&
+            reponseReseau.status === 200
+          ) {
+
             const copie = reponseReseau.clone();
+
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, copie);
             });
+
           }
+
           return reponseReseau;
+
         })
         .catch(() => {
-          return caches.match(event.request).then((reponseEnCache) => {
-            return reponseEnCache || caches.match("/index.html");
-          });
+
+          return caches.match(event.request).then(
+            (reponseEnCache) => {
+
+              return (
+                reponseEnCache ||
+                caches.match("/index.html")
+              );
+
+            }
+          );
+
         })
     );
+
     return;
   }
 
-  // Stratégie cache-en-premier pour les fichiers statiques (images, icônes, manifest)
+  // Fichiers statiques : cache en priorité
   event.respondWith(
-    caches.match(event.request).then((reponseEnCache) => {
-      if (reponseEnCache) {
-        return reponseEnCache;
-      }
-      return fetch(event.request).then((reponseReseau) => {
-        if (
-          event.request.method === "GET" &&
-          reponseReseau &&
-          reponseReseau.status === 200 &&
-          event.request.url.startsWith(self.location.origin)
-        ) {
-          const copie = reponseReseau.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, copie);
-          });
+
+    caches.match(event.request).then(
+      (reponseEnCache) => {
+
+        if (reponseEnCache) {
+          return reponseEnCache;
         }
-        return reponseReseau;
-      });
-    })
+
+        return fetch(event.request).then(
+          (reponseReseau) => {
+
+            if (
+              event.request.method === "GET" &&
+              reponseReseau &&
+              reponseReseau.status === 200
+            ) {
+
+              const copie = reponseReseau.clone();
+
+              caches.open(CACHE_NAME).then(
+                (cache) => {
+                  cache.put(event.request, copie);
+                }
+              );
+
+            }
+
+            return reponseReseau;
+
+          }
+        );
+
+      }
+    )
+
   );
+
 });

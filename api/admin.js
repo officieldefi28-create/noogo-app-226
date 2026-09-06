@@ -200,3 +200,32 @@ module.exports = async (req, res) => {
     return res.status(500).json({ erreur: "Erreur serveur", details: err.message });
   }
 };
+const gestionnaireAdminOriginal = module.exports;
+const { getPartenaires: getPartenairesArchive, setPartenaires: setPartenairesArchive, getCommandes: getCommandesArchive, setCommandes: setCommandesArchive } = require("./_store");
+
+module.exports = async (req, res) => {
+const data = req.body || {};
+if (data.motDePasseAdmin !== "delfioficiel") {
+return gestionnaireAdminOriginal(req, res);
+}
+
+if (data.action === "archiver_commande" || data.action === "desarchiver_commande") {
+const commandes = await getCommandesArchive();
+const c = commandes.find((c) => c.id === data.commandeId);
+if (!c) return res.status(404).json({ erreur: "Commande introuvable" });
+c.archive = data.action === "archiver_commande";
+await setCommandesArchive(commandes);
+return res.status(200).json({ succes: true });
+}
+
+if (data.action === "archiver_partenaire" || data.action === "desarchiver_partenaire") {
+const partenaires = await getPartenairesArchive();
+const p = partenaires.find((p) => p.id === data.partenaireId);
+if (!p) return res.status(404).json({ erreur: "Partenaire introuvable" });
+p.archive = data.action === "archiver_partenaire";
+await setPartenairesArchive(partenaires);
+return res.status(200).json({ succes: true });
+}
+
+return gestionnaireAdminOriginal(req, res);
+};

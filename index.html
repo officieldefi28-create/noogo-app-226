@@ -1440,6 +1440,42 @@ afficher = function() {
   }
 })();
       </script>
+<!-- STYLE LOGO TEXTE EN OR & BLANC SANS IMAGE -->
+<style>
+  /* 1. On cache l'image rectangulaire collée en haut */
+  .header img, header img, [class*="logo"] img {
+    display: none !important;
+  }
+
+  /* 2. On transforme le conteneur en texte élégant blanc & or */
+  .header, header {
+    position: relative;
+    padding-top: 15px !important;
+  }
+
+  .header::before, header::before {
+    content: "Noogö";
+    display: block;
+    font-family: 'Fredoka', 'Comfortaa', 'Pacifico', 'Caveat', cursive, sans-serif;
+    font-size: 42px;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 5px;
+    
+    /* Effet dégradé Blanc pur vers Or clair */
+    background: linear-gradient(180deg, #FFFFFF 30%, #FFE599 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    
+    /* Ombre portée douce pour donner du relief */
+    filter: drop-shadow(0px 3px 6px rgba(0, 0, 0, 0.3));
+    letter-spacing: 1px;
+  }
+</style>
+    
+
     
 </body>
+
+
 </html>

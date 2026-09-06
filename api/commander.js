@@ -65,3 +65,30 @@ module.exports = async (req, res) => {
     return res.status(500).json({ erreur: "Erreur lors de la commande", details: err.message });
   }
 };
+const gestionnaireCommanderOriginal = module.exports;
+
+module.exports = async (req, res) => {
+let source = (req.body && req.body.source) || "direct";
+
+let resIntercepte = {
+_status: 200,
+_donnees: null,
+status(code){ this._status = code; return this; },
+json(donnees){ this._donnees = donnees; return this; }
+};
+
+await gestionnaireCommanderOriginal(req, resIntercepte);
+
+if(resIntercepte._donnees && resIntercepte._donnees.commandeId){
+try{
+let commandes = await getCommandes();
+let c = commandes.find(x => x.id === resIntercepte._donnees.commandeId);
+if(c){
+c.source = source;
+await setCommandes(commandes);
+}
+}catch(e){}
+}
+
+return res.status(resIntercepte._status).json(resIntercepte._donnees);
+};

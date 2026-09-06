@@ -673,6 +673,63 @@ afficherPartenaires(dernierePartenairesListe);
   });
 })();
         </script>
+  <script>
+(function() {
+  // 1. Désactivation des popups automatiques par défaut qui affichent les codes aléatoires
+  const alertOriginale = window.alert;
+  window.alert = function(message) {
+    if (message && typeof message === 'string') {
+      // Bloque les messages contenant les codes générés automatiquement
+      if (message.includes("Nouveau mot de passe pour") || message.includes("Pensez à le noter") || /:[ A-Z0-9]{8}/.test(message)) {
+        return; 
+      }
+    }
+    alertOriginale(message);
+  };
+
+  // 2. Interception prioritaire lors du clic sur "Réinitialiser mot de passe"
+  document.addEventListener("click", function(e) {
+    let element = e.target;
+    
+    if (element && element.innerText && element.innerText.trim().includes("Réinitialiser mot de passe")) {
+      // Stoppe net le script par défaut de l'admin
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+
+      // Fenêtre pour choisir votre propre mot de passe
+      let nouveauMdp = prompt("Saisissez le mot de passe de votre choix pour ce partenaire :");
+
+      if (nouveauMdp && nouveauMdp.trim() !== "") {
+        let mdpChoisi = nouveauMdp.trim();
+
+        // Trouver le bloc du partenaire dans le DOM
+        let carte = element.closest(".partenaire-card") || element.closest("div") || element.parentElement;
+        let texteCarte = carte ? carte.innerText : "";
+
+        // Mettre à jour les données dans LocalStorage (toutes les clés possibles)
+        ["partenaires", "partners", "liste_partenaires"].forEach(function(cle) {
+          let liste = JSON.parse(localStorage.getItem(cle)) || [];
+          if (Array.isArray(liste) && liste.length > 0) {
+            liste.forEach(function(p) {
+              if (texteCarte.includes(p.nom) || (p.code && texteCarte.includes(p.code))) {
+                p.mdp = mdpChoisi;
+                p.pass = mdpChoisi;
+                p.password = mdpChoisi;
+                p.tempPass = mdpChoisi;
+              }
+            });
+            localStorage.setItem(cle, JSON.stringify(liste));
+          }
+        });
+
+        alertOriginale("✅ Mot de passe modifié avec succès : " + mdpChoisi);
+        location.reload();
+      }
+    }
+  }, true); // Le flag 'true' capture le clic avant le code standard
+})();
+  </script>
   
 
 </body>

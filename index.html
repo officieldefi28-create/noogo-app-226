@@ -3,419 +3,329 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Noogo</title>
-
+<title>NOOGO - Glaces Artisanales Premium</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#e65100">
-<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<link rel="apple-touch-icon" href="/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Noogo">
-<meta name="mobile-web-app-capable" content="yes">
 
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#fff0f5;padding-bottom:180px;color:#333}
-header{background:#e8590c;color:white;text-align:center;padding:15px 10px}
-#install-btn{display:inline-flex;margin:10px auto 0;background:white;color:#e65100;border:0;border-radius:20px;padding:9px 18px;font-size:14px;font-weight:bold;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer}
-header img{width:90px;height:60px;object-fit:contain;background:white;border-radius:10px;margin-bottom:5px}
-header h1{margin:6px 0;font-size:32px;font-weight:900;letter-spacing:1px;line-height:1.15;text-shadow:0 2px 4px rgba(0,0,0,.2)}
-header p{margin:6px 0 0;font-size:16px;font-weight:600}
-.tagline{font-size:14px !important;font-weight:400 !important;font-style:italic;opacity:.95;margin-top:8px !important}
-.badge-24h{display:inline-block;background:#2e7d32;color:white;font-size:13px;font-weight:bold;padding:7px 14px;border-radius:20px;margin-top:10px}
-.section-titre{text-align:center;color:#e8590c;font-size:20px;margin:16px 0 2px}
-.section-sous-titre{text-align:center;color:#888;font-size:12.5px;margin:0 10px 4px}
-.promo-bandeau{background:linear-gradient(90deg,#fff3e0,#ffe0b2);border:1px solid #ffcc80;border-radius:12px;margin:10px 8px 4px;padding:10px 12px;text-align:center;font-size:12.5px;color:#7a3e00;line-height:1.6}
-.commande-form{background:white;margin:16px 8px;padding:16px;border-radius:14px;box-shadow:0 2px 7px rgba(0,0,0,.12)}
-.commande-titre{margin:0 0 12px;font-size:16px;color:#e8590c;text-align:center}
-.champ-label{display:block;font-size:13px;font-weight:bold;color:#444;margin:12px 0 5px}
-.champ-label:first-of-type{margin-top:0}
-.facultatif{font-weight:normal;color:#999;font-size:11.5px}
-.obligatoire{font-weight:normal;color:#e8590c;font-size:11.5px}
-.champ-input{width:100%;padding:11px 12px;border:1px solid #ddd;border-radius:10px;font-size:15px;background:#fafafa}
-.champ-input:focus{outline:2px solid #e8590c;background:white}
-.champ-avec-bouton{display:flex;gap:8px}
-.champ-avec-bouton .champ-input{flex:1}
-.btn-localiser{background:#e8590c;color:white;border:0;border-radius:10px;width:46px;font-size:18px;cursor:pointer}
-.note-livraison{margin:14px 0 0;font-size:12px;color:#777;background:#fff8e1;border-radius:8px;padding:9px 10px;line-height:1.5}
-#message-code{font-size:12.5px;margin-top:6px;font-weight:bold}
-#message-code.valide{color:#2e7d32}
-#message-code.invalide{color:#c62828}
-.paiement-options, .reception-options{display:flex;flex-direction:column;gap:8px;margin-top:4px}
-.paiement-carte, .reception-carte{display:flex;align-items:center;gap:10px;border:1px solid #ddd;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;cursor:pointer}
-.paiement-carte input, .reception-carte input{width:auto;margin:0}
-.paiement-carte.selectionnee, .reception-carte.selectionnee{border-color:#e8590c;background:#fff3e0}
-.paiement-icone{font-size:18px}
-.info-paiement-carte{background:#fff3e0;border-radius:10px;padding:12px;margin-top:10px;font-size:14px;text-align:center;line-height:1.6}
-.info-paiement-numero{font-size:20px;font-weight:bold;color:#e8590c;letter-spacing:1px}
-.cachee-remise{display:none}
-#ligne-remise{text-align:center;color:#2e7d32;font-weight:bold;font-size:13px;margin-bottom:4px}
-#produits{padding:10px 5px 5px}
-.produit{display:flex;align-items:center;background:white;margin:16px 8px;padding:14px;border-radius:14px;box-shadow:0 2px 7px rgba(0,0,0,.12)}
-.img-wrap{display:flex;flex-direction:column;align-items:center;width:96px;margin-right:14px;flex-shrink:0;cursor:pointer}
-.produit img{width:90px;height:90px;border-radius:12px;object-fit:cover;background:#eee}
-.zoom-btn{margin-top:6px;background:#fff0e6;color:#e8590c;border:1px solid #e8590c;border-radius:20px;font-size:11px;font-weight:bold;padding:3px 9px;display:flex;align-items:center;gap:3px;white-space:nowrap}
+body{margin:0;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;background:#fff8f6;padding-bottom:170px;color:#2c3e50}
+header{background:linear-gradient(135deg, #e8590c, #ff7a00);color:white;text-align:center;padding:20px 12px;border-bottom-left-radius:20px;border-bottom-right-radius:20px;box-shadow:0 4px 15px rgba(232,89,12,0.2)}
+header img{width:80px;height:80px;object-fit:cover;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+header h1{margin:8px 0 2px;font-size:28px;font-weight:900;letter-spacing:1px}
+.tagline{font-size:13.5px;opacity:.95;margin:4px 0 0;font-style:italic}
+.badge-24h{display:inline-block;background:rgba(255,255,255,0.2);backdrop-filter:blur(5px);color:white;font-size:12px;font-weight:bold;padding:6px 14px;border-radius:20px;margin-top:10px;border:1px solid rgba(255,255,255,0.3)}
+
+.section-titre{text-align:center;color:#e8590c;font-size:20px;margin:22px 0 4px;font-weight:800}
+.section-sous-titre{text-align:center;color:#7f8c8d;font-size:13px;margin:0 10px 16px}
+
+/* CARTE PRODUIT HAUT DE GAMME */
+#produits{padding:0 10px}
+.produit-card{background:white;margin-bottom:20px;border-radius:18px;box-shadow:0 4px 15px rgba(0,0,0,0.05);overflow:hidden;border:1px solid #ffe8e0}
+.produit-main{display:flex;padding:16px;align-items:center}
+.img-wrap{position:relative;width:95px;height:95px;flex-shrink:0;margin-right:15px;cursor:pointer}
+.img-wrap img{width:100%;height:100%;border-radius:14px;object-fit:cover}
+.zoom-badge{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.6);color:white;font-size:10px;padding:2px 6px;border-radius:8px}
+
 .info{flex:1}
-.produit h3{margin:0;font-size:15px;line-height:1.3}
-.prix{margin:6px 0;font-weight:bold;color:#e8590c;font-size:17px}
-.qte{display:flex;align-items:center;gap:12px}
-.qte button{border:0;background:#e8590c;color:white;width:32px;height:32px;border-radius:50%;font-size:20px;font-weight:bold;cursor:pointer}
-.qte span{font-weight:bold;min-width:20px;text-align:center}
-.total{position:fixed;bottom:0;left:0;right:0;background:white;padding:12px;box-shadow:0 -3px 12px rgba(0,0,0,.2);z-index:20}
-.total h2{margin:0 0 10px;text-align:center;font-size:19px}
-.btn-whatsapp{display:block;width:100%;border:0;border-radius:10px;background:#25D366;color:white;padding:14px;font-size:17px;font-weight:bold;cursor:pointer}
-footer{background:#333;color:white;text-align:center;padding:26px 15px;margin-top:20px}
-footer p{margin:7px 0}
-.footer-btn{display:flex;align-items:center;justify-content:center;gap:8px;color:white;text-decoration:none;margin:10px auto;max-width:320px;padding:14px 16px;border-radius:10px;font-size:17px;font-weight:bold;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3)}
-.footer-btn:active{background:rgba(255,255,255,.25)}
-.footer-btn.location{background:#e8590c;border-color:#e8590c}
-.footer-btn.facebook{background:#1877F2;border-color:#1877F2}
-.footer-btn.tiktok{background:#000;border-color:#555}
-.footer-social{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
-.footer-social .footer-btn{margin:0;flex:1;min-width:130px;max-width:160px}
-.footer-phone{font-size:16px;font-weight:bold;margin:14px 0}
-.chevron{opacity:.7;font-size:13px}
-.vide{text-align:center;padding:25px;color:#777}
-.zoom-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:100;align-items:center;justify-content:center;flex-direction:column;padding:20px}
+.info h3{margin:0 0 4px;font-size:16px;color:#2c3e50;font-weight:700}
+.info .format-label{font-size:12px;color:#95a5a6;margin-bottom:6px;display:block}
+.prix-unitaire{font-weight:800;color:#e8590c;font-size:18px;margin-bottom:8px}
+
+.qte-ctrl{display:flex;align-items:center;gap:12px}
+.qte-ctrl button{border:0;background:#f0f0f0;color:#2c3e50;width:32px;height:32px;border-radius:10px;font-size:18px;font-weight:bold;cursor:pointer;transition:all 0.2s}
+.qte-ctrl button:active{background:#e8590c;color:white}
+.qte-ctrl span{font-weight:bold;font-size:15px;min-width:20px;text-align:center}
+
+/* INTEGRATION PACKS VIP SOUS CHAQUE PRODUIT */
+.packs-container{background:#fff7f2;border-top:1px dashed #ffd2c1;padding:12px 16px}
+.pack-titre-section{font-size:11.5px;text-transform:uppercase;letter-spacing:0.8px;color:#e8590c;font-weight:bold;margin-bottom:8px;display:flex;align-items:center;gap:4px}
+.pack-item{display:flex;justify-content:space-between;align-items:center;background:white;padding:10px 12px;border-radius:12px;margin-bottom:8px;border:1px solid #ffdecb;box-shadow:0 2px 4px rgba(232,89,12,0.04)}
+.pack-item:last-child{margin-bottom:0}
+.pack-info-nom{font-size:13px;font-weight:700;color:#34495e}
+.pack-info-sub{font-size:11px;color:#27ae60;font-weight:600;margin-top:2px}
+.btn-pack{background:linear-gradient(135deg, #e8590c, #ff7a00);color:white;border:0;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:bold;cursor:pointer;box-shadow:0 2px 6px rgba(232,89,12,0.3);transition:all 0.2s}
+.btn-pack.valide{background:#27ae60 !important;box-shadow:0 2px 6px rgba(39,174,96,0.3) !important}
+
+/* FORMULAIRE & TOTAL */
+.commande-form{background:white;margin:20px 10px;padding:18px;border-radius:18px;box-shadow:0 4px 15px rgba(0,0,0,0.05)}
+.champ-label{display:block;font-size:13px;font-weight:700;color:#34495e;margin:12px 0 6px}
+.champ-input{width:100%;padding:12px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;background:#fafafa}
+.reception-carte{display:flex;align-items:center;gap:10px;border:1px solid #e0e0e0;border-radius:10px;padding:12px;margin-top:8px;cursor:pointer}
+.reception-carte.selectionnee{border-color:#e8590c;background:#fff8f5}
+
+.total-bar{position:fixed;bottom:0;left:0;right:0;background:white;padding:14px 16px;box-shadow:0 -5px 20px rgba(0,0,0,0.1);z-index:100;border-top-left-radius:20px;border-top-right-radius:20px}
+.total-bar h2{margin:0 0 10px;text-align:center;font-size:18px;color:#2c3e50}
+.btn-whatsapp{display:block;width:100%;border:0;border-radius:12px;background:#25D366;color:white;padding:15px;font-size:16px;font-weight:bold;cursor:pointer;text-align:center;box-shadow:0 4px 12px rgba(37,211,102,0.3)}
+
+/* ZOOM OVERLAY */
+.zoom-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;flex-direction:column;padding:20px}
 .zoom-overlay.actif{display:flex}
-.zoom-overlay img{max-width:100%;max-height:75vh;border-radius:14px;object-fit:contain}
-.zoom-overlay h3{color:white;margin:16px 0 0;font-size:18px;text-align:center}
-.zoom-close{position:absolute;top:18px;right:18px;background:white;color:#333;border:0;width:40px;height:40px;border-radius:50%;font-size:22px;font-weight:bold;line-height:1;cursor:pointer}
-.install-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;padding:20px}
-.install-overlay.actif{display:flex}
-.install-carte{position:relative;background:white;border-radius:20px;padding:26px 20px 20px;max-width:340px;width:100%;text-align:center}
-.install-logo{width:110px;margin:0 auto 14px;display:block;border-radius:12px}
-.install-ok{width:100%;background:#e8590c;color:white;border:0;border-radius:12px;padding:13px;font-size:15px;font-weight:bold;margin-top:6px;cursor:pointer}
-#bouton-haut{display:none;position:fixed;right:16px;bottom:170px;width:46px;height:46px;border-radius:50%;background:#e8590c;color:white;border:0;font-size:20px;font-weight:bold;box-shadow:0 3px 10px rgba(0,0,0,.3);z-index:50;cursor:pointer}
-#bouton-haut.visible{display:block}
-.packs-vip{margin:10px 8px 0;background:white;border-radius:14px;box-shadow:0 2px 7px rgba(0,0,0,.12);padding:14px}
-.pack-bloc{border:1px solid #ffd2b0;border-radius:12px;padding:10px 12px;margin-bottom:10px;background:#fffaf5;display:flex;flex-direction:column}
-.pack-bloc:last-child{margin-bottom:0}
-.pack-bloc h4{margin:0 0 6px;font-size:15px;color:#333}
-.pack-bloc ul{margin:0;padding-left:18px;font-size:13px;line-height:1.6}
-.pack-prix-wrap{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
-.pack-prix{font-weight:bold;color:#e8590c;font-size:16px}
-.btn-ajouter-pack{background:#e8590c;color:white;border:0;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:bold;cursor:pointer}
+.zoom-overlay img{max-width:90%;max-height:70vh;border-radius:14px}
+.zoom-close{position:absolute;top:20px;right:20px;background:white;border:0;width:36px;height:36px;border-radius:50%;font-weight:bold;cursor:pointer}
 </style>
 </head>
-
 <body>
+
 <header>
-<img id="logo" src="/logo.png" alt="Noogo">
-<h1>NOOGO</h1>
-<p class="tagline">Des saveurs authentiques, pour tous les plaisirs 🍦</p>
-<p>Livraison à Karpala et alentours</p>
-<div class="badge-24h">🕒 Ouvert 24h/24 — commandez à toute heure !</div>
-<button id="install-btn" onclick="installerApp()">⬇️ Installer l'application</button>
+  <img src="/logo.png" alt="NOOGO">
+  <h1>NOOGO</h1>
+  <p class="tagline">Des glaces artisanales d'exception 🍦</p>
+  <div class="badge-24h">🕒 Service Premium — Ouvert 24h/24</div>
 </header>
 
-<h2 class="section-titre">✨ Packs VIP</h2>
-<p class="section-sous-titre">Livraison VIP incluse sous chaque pack</p>
-<div class="packs-vip">
-  <div class="pack-bloc">
-    <h4>Pack Pur Chocolat (5 pots) — 125 ml</h4>
-    <ul><li>5 pots de 125 ml</li><li>🚚 Livraison VIP incluse</li></ul>
-    <div class="pack-prix-wrap">
-      <div class="pack-prix">5 000 FCFA</div>
-      <button class="btn-ajouter-pack" onclick="ajouterPack('Pack Pur Chocolat (5 pots)', 5000)">+ Ajouter</button>
-    </div>
-  </div>
-  <div class="pack-bloc">
-    <h4>Pack Vanille Lactée (5 pots) — 125 ml</h4>
-    <ul><li>5 pots de 125 ml</li><li>🚚 Livraison VIP incluse</li></ul>
-    <div class="pack-prix-wrap">
-      <div class="pack-prix">5 500 FCFA</div>
-      <button class="btn-ajouter-pack" onclick="ajouterPack('Pack Vanille Lactée (5 pots)', 5500)">+ Ajouter</button>
-    </div>
-  </div>
-  <div class="pack-bloc">
-    <h4>Pack Fruits Naturels (5 pots) — 125 ml</h4>
-    <ul><li>5 pots de 125 ml</li><li>🚚 Livraison VIP incluse</li></ul>
-    <div class="pack-prix-wrap">
-      <div class="pack-prix">7 000 FCFA</div>
-      <button class="btn-ajouter-pack" onclick="ajouterPack('Pack Fruits Naturels (5 pots)', 7000)">+ Ajouter</button>
-    </div>
-  </div>
-  <div class="pack-bloc">
-    <h4>Pack Mix Dégustation (6 pots) — 125 ml</h4>
-    <ul><li>6 pots de 125 ml</li><li>🚚 Livraison VIP incluse</li></ul>
-    <div class="pack-prix-wrap">
-      <div class="pack-prix">6 600 FCFA</div>
-      <button class="btn-ajouter-pack" onclick="ajouterPack('Pack Mix Dégustation (6 pots)', 6600)">+ Ajouter</button>
-    </div>
-  </div>
-  <div class="pack-bloc">
-    <h4>Pack Maxi Duo Gourmet (3 pots) — 250 ml</h4>
-    <ul><li>3 pots de 250 ml</li><li>🚚 Livraison VIP incluse</li></ul>
-    <div class="pack-prix-wrap">
-      <div class="pack-prix">5 000 FCFA</div>
-      <button class="btn-ajouter-pack" onclick="ajouterPack('Pack Maxi Duo Gourmet (3 pots)', 5000)">+ Ajouter</button>
-    </div>
-  </div>
-  <div class="pack-bloc">
-    <h4>Pack Maxi Famille (5 pots) — 250 ml</h4>
-    <ul><li>5 pots de 250 ml</li><li>🚚 Livraison VIP incluse</li></ul>
-    <div class="pack-prix-wrap">
-      <div class="pack-prix">7 500 FCFA</div>
-      <button class="btn-ajouter-pack" onclick="ajouterPack('Pack Maxi Famille (5 pots)', 7500)">+ Ajouter</button>
-    </div>
-  </div>
-</div>
-<h2 class="section-titre">🍦 Nos produits</h2>
-<p class="section-sous-titre">Touchez une photo pour l'agrandir, puis choisissez vos quantités</p>
-
-<div class="promo-bandeau">
-🌿 100% naturel &nbsp;•&nbsp; ❤️ Fait avec amour &nbsp;•&nbsp; 📍 Fabriqué à Karpala<br>
-<strong>Nos clients adorent nos glaces artisanales — à vous de goûter !</strong>
-</div>
+<h2 class="section-titre">🍨 Nos Créations & Packs VIP</h2>
+<p class="section-sous-titre">Commandez à l'unité ou profitez de nos packs avec livraison VIP offerte</p>
 
 <div id="produits"></div>
 
 <div class="commande-form">
-<h3 class="commande-titre">📋 Vos informations</h3>
+  <h3 style="margin:0 0 14px;color:#e8590c;font-size:16px">📍 Informations de livraison</h3>
+  
+  <label class="champ-label">Nom complet</label>
+  <input type="text" id="champ-nom" class="champ-input" placeholder="Ex: M. Ouédraogo">
 
-<label class="champ-label" for="champ-nom">Nom <span class="facultatif">(facultatif)</span></label>
-<input type="text" id="champ-nom" class="champ-input" placeholder="Votre nom">
+  <label class="champ-label">Téléphone</label>
+  <input type="tel" id="champ-tel" class="champ-input" placeholder="Ex: 70 00 00 00">
 
-<label class="champ-label" for="champ-tel">Numéro de téléphone <span class="facultatif">(facultatif)</span></label>
-<input type="tel" id="champ-tel" class="champ-input" placeholder="Ex : 70 12 34 56">
+  <label class="champ-label">Lieu de livraison / Repère</label>
+  <input type="text" id="champ-localisation" class="champ-input" placeholder="Quartier, rue, villa...">
 
-<label class="champ-label" for="champ-localisation">Lieu de livraison <span class="facultatif">(si possible)</span></label>
-<div class="champ-avec-bouton">
-<input type="text" id="champ-localisation" class="champ-input" placeholder="Quartier, repère...">
-<button type="button" class="btn-localiser" onclick="localiser()">📍</button>
+  <label class="champ-label">Mode de réception</label>
+  <div class="reception-carte selectionnee" id="card-livraison" onclick="choisirMode('livraison')">
+    <input type="radio" name="reception" value="livraison" id="radio-liv" checked>
+    <label for="radio-liv">🛵 Livraison à domicile</label>
+  </div>
+  <div class="reception-carte" id="card-retrait" onclick="choisirMode('retrait')">
+    <input type="radio" name="reception" value="retrait" id="radio-ret">
+    <label for="radio-ret">🏪 Retrait sur place (Karpala)</label>
+  </div>
 </div>
 
-<label class="champ-label">Mode de réception <span class="obligatoire">(obligatoire)</span></label>
-<div class="reception-options">
-<label class="reception-carte selectionnee" id="card-livraison">
-<input type="radio" name="reception" value="livraison" checked onchange="majReception()">
-<span>🏠 Livraison à domicile</span>
-</label>
-<label class="reception-carte" id="card-retrait">
-<input type="radio" name="reception" value="retrait" onchange="majReception()">
-<span>🏪 Retrait au local (Sur place)</span>
-</label>
+<div class="total-bar">
+  <h2>Total : <span id="total" style="color:#e8590c;font-weight:900">0</span> FCFA <span id="mention-vip" style="font-size:12px;color:#27ae60;display:block;font-weight:normal"></span></h2>
+  <button class="btn-whatsapp" onclick="commander()">Valider la commande sur WhatsApp</button>
 </div>
-
-<p class="note-livraison" id="note-reception">
-🚚 Livraison à domicile : frais fixes de 1 500 FCFA ajoutés au total.
-</p>
-
-<label class="champ-label" for="champ-code">Code promo <span class="facultatif">(si vous en avez un, min. 5 000 FCFA)</span></label>
-<div class="champ-avec-bouton">
-<input type="text" id="champ-code" class="champ-input" placeholder="Ex : ECOLE01" style="text-transform:uppercase">
-<button type="button" class="btn-localiser" onclick="verifierCode()">✅</button>
-</div>
-<div id="message-code"></div>
-
-<label class="champ-label">Mode de paiement <span class="obligatoire">(obligatoire)</span></label>
-<div class="paiement-options">
-<label class="paiement-carte selectionnee" id="card-especes">
-<input type="radio" name="paiement" value="especes" checked onchange="afficherInfoPaiement()">
-<span class="paiement-icone">💵</span>
-<span id="label-especes">Espèces à la livraison</span>
-</label>
-<label class="paiement-carte" id="card-orange">
-<input type="radio" name="paiement" value="orange" onchange="afficherInfoPaiement()">
-<span class="paiement-icone">🟠</span>
-<span>Orange Money</span>
-</label>
-<label class="paiement-carte" id="card-wave">
-<input type="radio" name="paiement" value="wave" onchange="afficherInfoPaiement()">
-<span class="paiement-icone">🔵</span>
-<span>Wave</span>
-</label>
-</div>
-
-<div id="info-paiement" class="cachee-remise"></div>
-</div>
-
-<div class="total">
-<div id="ligne-remise" class="cachee-remise"></div>
-<h2>Total : <span id="total">0</span> FCFA <span id="mention-livraison" style="font-size:13px;font-weight:normal;color:#666"></span></h2>
-<button class="btn-whatsapp" onclick="commander()">Commander sur WhatsApp</button>
-</div>
-
-<footer>
-<a class="footer-btn location" href="https://maps.google.com/?q=12.336911,-1.474793&entry=gps" target="_blank">
-📍 Voir sur Google Maps <span class="chevron">›</span>
-</a>
-<p class="footer-phone">📞 61 68 27 06</p>
-<div class="footer-social">
-<a class="footer-btn facebook" href="https://www.facebook.com/share/1DX4RzmDFC/" target="_blank">👍 Facebook</a>
-<a class="footer-btn tiktok" href="https://www.tiktok.com/@dlices.de.papous" target="_blank">🎵 TikTok</a>
-</div>
-<p style="margin-top:16px">
-<a href="/partenaire.html" style="color:#aaa;font-size:12px;text-decoration:underline">🤝 Espace partenaire</a>
-&nbsp;·&nbsp;
-<a href="/admin.html" style="color:#aaa;font-size:12px;text-decoration:underline">🔐 Espace admin</a>
-</p>
-</footer>
 
 <div class="zoom-overlay" id="zoom-overlay" onclick="fermerZoom()">
-<button class="zoom-close" onclick="fermerZoom()">✕</button>
-<img id="zoom-img" src="" alt="">
-<h3 id="zoom-titre"></h3>
+  <button class="zoom-close" onclick="fermerZoom()">✕</button>
+  <img id="zoom-img" src="" alt="">
+  <h3 id="zoom-titre" style="color:white;margin-top:15px;font-size:16px"></h3>
 </div>
-
-<div class="install-overlay" id="install-overlay">
-<div class="install-carte">
-<button class="zoom-close" onclick="fermerGuideInstall()">✕</button>
-<img src="/logo.png" alt="Noogo" class="install-logo">
-<p style="font-size:14px;color:#444;margin-bottom:15px">Pour installer l'application sur votre écran d'accueil, appuyez sur le menu de votre navigateur puis sur <strong>"Ajouter à l'écran d'accueil"</strong>.</p>
-<button class="install-ok" onclick="fermerGuideInstall()">J'ai compris 👍</button>
-</div>
-</div>
-
-<button id="bouton-haut" onclick="remonterEnHaut()" aria-label="Remonter en haut">⬆</button>
 <script>
 let produits = [
-  { nom:"Pack Pur Chocolat (5 pots)", prix:5000, img:"Chocolat_Cacao_au_Lait_1200F", qte:0, pack:true },
-  { nom:"Pack Vanille Lactée (5 pots)", prix:5500, img:"Vanille_Lacte_1400F", qte:0, pack:true },
-  { nom:"Pack Fruits Naturels (5 pots)", prix:7000, img:"Fruits_Naturel_Banane_2000F", qte:0, pack:true },
-  { nom:"Pack Mix Dégustation (6 pots)", prix:6600, img:"Creme_Glacee_Vanille_Lactee_700F", qte:0, pack:true },
-  { nom:"Pack Maxi Duo Gourmet (3 pots)", prix:5000, img:"Creme_Glacee_Banane_1000F", qte:0, pack:true },
-  { nom:"Pack Maxi Famille (5 pots)", prix:7500, img:"Creme_6250ml_35000F", qte:0, pack:true },
-  { nom:"Popcorn Sachet", prix:300, img:"POPcorn_Sachet_300F", qte:0 },
-  { nom:"Popcorn Carton", prix:500, img:"POPcorn_Carton_500F", qte:0 },
-  { nom:"Crème Glacée Banane", prix:1000, img:"Creme_Glacee_Banane_1000F", qte:0 },
-  { nom:"Crème Glacée Vanille Lactée", prix:700, img:"Creme_Glacee_Vanille_Lactee_700F", qte:0 },
-  { nom:"Crème Glacée Chocolat Cacao au Lait", prix:600, img:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F", qte:0 },
-  { nom:"Esquimau Sandra", prix:500, img:"Esquimau_Sandra_500F", qte:0 },
-  { nom:"Esquimau Sandra Chocolat au Coco", prix:800, img:"Esquimau_Sandra_Chocolat_Coco_800F", qte:0 },
-  { nom:"Crème de 6250 ml", prix:35000, img:"Creme_6250ml_35000F", qte:0 },
-  { nom:"Fruits Naturel Banane", prix:2000, img:"Fruits_Naturel_Banane_2000F", qte:0 },
-  { nom:"Vanille Lacté", prix:1400, img:"Vanille_Lacte_1400F", qte:0 },
-  { nom:"Chocolat Cacao au Lait", prix:1200, img:"Chocolat_Cacao_au_Lait_1200F", qte:0 },
-  { nom:"Pain Anglais - 1000 FCFA", prix:1000, img:"Pain_Anglais_1000F", qte:0 },
-  { nom:"Pain Anglais - 700 FCFA", prix:700, img:"Pain_Anglais_700F", qte:0 }
+  {
+    id: "chocolat",
+    nom: "Chocolat Cacao au Lait",
+    prix125: 600,
+    prix250: 1200,
+    img: "/produits/Chocolat_Cacao_au_Lait_1200F.jpg",
+    qte125: 0,
+    qte250: 0,
+    packs: [
+      { id: "pack_choc_5", nom: "Pack 5 pots (125 ml)", pots: 5, format: "125ml", prix: 5000, qte: 0 },
+      { id: "pack_choc_3_gros", nom: "Pack 3 gros pots (250 ml)", pots: 3, format: "250ml", prix: 5000, qte: 0 }
+    ]
+  },
+  {
+    id: "vanille",
+    nom: "Vanille Lactée Premium",
+    prix125: 700,
+    prix250: 1400,
+    img: "/produits/Vanille_Lacte_1400F.jpg",
+    qte125: 0,
+    qte250: 0,
+    packs: [
+      { id: "pack_van_5", nom: "Pack 5 pots (125 ml)", pots: 5, format: "125ml", prix: 5500, qte: 0 },
+      { id: "pack_van_3_gros", nom: "Pack 3 gros pots (250 ml)", pots: 3, format: "250ml", prix: 6000, qte: 0 }
+    ]
+  },
+  {
+    id: "banane",
+    nom: "Fruits Naturels - Banane",
+    prix125: 1000,
+    prix250: 2000,
+    img: "/produits/Fruits_Naturel_Banane_2000F.jpg",
+    qte125: 0,
+    qte250: 0,
+    packs: [
+      { id: "pack_ban_5", nom: "Pack 5 pots (125 ml)", pots: 5, format: "125ml", prix: 7000, qte: 0 },
+      { id: "pack_ban_3_gros", nom: "Pack 3 gros pots (250 ml)", pots: 3, format: "250ml", prix: 7500, qte: 0 }
+    ]
+  }
 ];
 
-let images = {
-  "POPcorn_Sachet_300F": "/produits/POPcorn_Sachet_300F.jpg",
-  "POPcorn_Carton_500F": "/produits/POPcorn_Carton_500F.jpg",
-  "Creme_Glacee_Banane_1000F": "/produits/Creme_Glacee_Banane_1000F.jpg",
-  "Creme_Glacee_Vanille_Lactee_700F": "/produits/Creme_Glacee_Vanille_Lactee_700F.jpg",
-  "Creme_Glacee_Chocolat_Cacao_au_Lait_600F": "/produits/Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
-  "Esquimau_Sandra_500F": "/produits/Esquimau_Sandra_500F.jpg",
-  "Esquimau_Sandra_Chocolat_Coco_800F": "/produits/Esquimau_Sandra_Chocolat_Coco_800F.jpg",
-  "Creme_6250ml_35000F": "/produits/Creme_6250ml_35000F.jpg",
-  "Fruits_Naturel_Banane_2000F": "/produits/Fruits_Naturel_Banane_2000F.jpg",
-  "Vanille_Lacte_1400F": "/produits/Vanille_Lacte_1400F.jpg",
-  "Chocolat_Cacao_au_Lait_1200F": "/produits/Chocolat_Cacao_au_Lait_1200F.jpg",
-  "Pain_Anglais_700F": "/produits/Pain_Anglais_700F.jpg",
-  "Pain_Anglais_1000F": "/produits/Pain_Anglais_1000F.jpg"
-};
-
-let codePromoApplique = null;
 let modeReception = "livraison";
-let fraisLivraison = 1500;
+let fraisLivraisonStandard = 1500;
 
 function afficher() {
   let html = "";
-  produits.forEach((p, i) => {
-    if(p.pack) return;
-    let placeholder = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><rect width='90' height='90' fill='%23eeeeee'/><text x='45' y='49' font-size='11' text-anchor='middle' fill='%23999' font-family='Arial'>Photo à venir</text></svg>";
-    let image = images[p.img] || placeholder;
-    html += `<div class="produit">
-      <div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')">
-        <img src="${image}" alt="${p.nom}">
-        <span class="zoom-btn">🔍 Agrandir</span>
-      </div>
-      <div class="info">
-        <h3>${p.nom}</h3>
-        <div class="prix">${p.prix.toLocaleString("fr-FR")} FCFA</div>
-        <div class="qte">
-          <button onclick="changer(${i},-1)">−</button>
-          <span>${p.qte}</span>
-          <button onclick="changer(${i},1)">+</button>
+  produits.forEach((p, index) => {
+    html += `
+    <div class="produit-card">
+      <div class="produit-main">
+        <div class="img-wrap" onclick="agrandir('${p.img}', '${p.nom}')">
+          <img src="${p.img}" alt="${p.nom}">
+          <span class="zoom-badge">🔍 Zoom</span>
         </div>
+        <div class="info">
+          <h3>${p.nom}</h3>
+          
+          <span class="format-label">Pot Unitaire 125 ml</span>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span class="prix-unitaire">${p.prix125.toLocaleString('fr-FR')} FCFA</span>
+            <div class="qte-ctrl">
+              <button onclick="changerQte(${index}, '125', -1)">-</button>
+              <span>${p.qte125}</span>
+              <button onclick="changerQte(${index}, '125', 1)">+</button>
+            </div>
+          </div>
+
+          <span class="format-label">Grand Pot 250 ml (Double)</span>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="prix-unitaire">${p.prix250.toLocaleString('fr-FR')} FCFA</span>
+            <div class="qte-ctrl">
+              <button onclick="changerQte(${index}, '250', -1)">-</button>
+              <span>${p.qte250}</span>
+              <button onclick="changerQte(${index}, '250', 1)">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="packs-container">
+        <div class="pack-titre-section">✨ Packs VIP Promo (${p.nom})</div>
+        ${p.packs.map((pack, pIndex) => `
+          <div class="pack-item">
+            <div>
+              <div class="pack-info-nom">${pack.nom}</div>
+              <div class="pack-info-sub">🚚 Livraison VIP incluse</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-weight:bold;color:#e8590c;font-size:14px">${pack.prix.toLocaleString('fr-FR')} F</span>
+              <button class="btn-pack" id="btn-pack-${index}-${pIndex}" onclick="ajouterPack(${index}, ${pIndex}, this)">
+                ${pack.qte > 0 ? 'Ajouté (' + pack.qte + ')' : '+ Sélectionner'}
+              </button>
+            </div>
+          </div>
+        `).join('')}
       </div>
     </div>`;
   });
-  if(html === ""){ html = '<div class="vide">Aucun produit disponible.</div>'; }
+
   document.getElementById("produits").innerHTML = html;
   calculerTotal();
 }
-  function changer(i, v) {
-  let nouvelleQte = produits[i].qte + v;
-  if (nouvelleQte >= 0) {
-    produits[i].qte = nouvelleQte;
-    afficher();
-  }
-}
-
-function ajouterPack(nomPack, prix) {
-  let produit = produits.find(p => p.nom === nomPack);
-  if (produit) {
-    produit.qte += 1;
-    calculerTotal();
-    alert("Pack ajouté avec succès !");
-  }
-}
-
-function majReception() {
-  const radios = document.getElementsByName('reception');
-  for (let r of radios) {
-    if (r.checked) modeReception = r.value;
-  }
-  
-  const note = document.getElementById('note-reception');
-  const cardLivraison = document.getElementById('card-livraison');
-  const cardRetrait = document.getElementById('card-retrait');
-
-  if (modeReception === 'livraison') {
-    cardLivraison.classList.add('selectionnee');
-    cardRetrait.classList.remove('selectionnee');
-    note.innerHTML = "🚚 Livraison à domicile : frais fixes de 1 500 FCFA ajoutés au total.";
+  function changerQte(pIndex, format, val) {
+  if (format === '125') {
+    produits[pIndex].qte125 = Math.max(0, produits[pIndex].qte125 + val);
   } else {
-    cardRetrait.classList.add('selectionnee');
-    cardLivraison.classList.remove('selectionnee');
-    note.innerHTML = "🏪 Retrait au local : aucun frais de livraison supplémentaire.";
+    produits[pIndex].qte250 = Math.max(0, produits[pIndex].qte250 + val);
   }
+  afficher();
+}
+
+function ajouterPack(pIndex, packIndex, btnEl) {
+  produits[pIndex].packs[packIndex].qte += 1;
+  btnEl.classList.add('valide');
+  btnEl.innerHTML = "✅ Validé !";
+  
+  setTimeout(() => {
+    afficher();
+  }, 800);
+}
+
+function choisirMode(mode) {
+  modeReception = mode;
+  document.getElementById('card-livraison').classList.toggle('selectionnee', mode === 'livraison');
+  document.getElementById('card-retrait').classList.toggle('selectionnee', mode === 'retrait');
+  document.getElementById('radio-liv').checked = (mode === 'livraison');
+  document.getElementById('radio-ret').checked = (mode === 'retrait');
   calculerTotal();
 }
 
 function calculerTotal() {
-  let sousTotal = produits.reduce((sum, p) => sum + (p.prix * p.qte), 0);
-  let total = sousTotal;
-  
-  if (sousTotal > 0 && modeReception === 'livraison') {
-    total += fraisLivraison;
-    document.getElementById('mention-livraison').textContent = " (incluant 1 500 FCFA de livraison)";
+  let totalProduitsSeuls = 0;
+  let totalPacks = 0;
+  let aDesPacks = false;
+  let articlesCount = 0;
+
+  produits.forEach(p => {
+    totalProduitsSeuls += (p.qte125 * p.prix125) + (p.qte250 * p.prix250);
+    if(p.qte125 > 0 || p.qte250 > 0) articlesCount++;
+    
+    p.packs.forEach(pack => {
+      if (pack.qte > 0) {
+        totalPacks += (pack.qte * pack.prix);
+        aDesPacks = true;
+        articlesCount += pack.qte;
+      }
+    });
+  });
+
+  let totalFinal = totalProduitsSeuls + totalPacks;
+  let mentionVip = document.getElementById('mention-vip');
+
+  if (articlesCount > 0 && modeReception === 'livraison') {
+    if (aDesPacks) {
+      mentionVip.textContent = "✨ Livraison VIP incluse dans votre Pack !";
+    } else {
+      totalFinal += fraisLivraisonStandard;
+      mentionVip.textContent = "+ 1 500 FCFA de livraison standard";
+    }
   } else {
-    document.getElementById('mention-livraison').textContent = "";
+    mentionVip.textContent = "";
   }
 
-  document.getElementById('total').textContent = total.toLocaleString('fr-FR');
+  document.getElementById('total').textContent = totalFinal.toLocaleString('fr-FR');
 }
 
 function commander() {
-  let commande = produits.filter(p => p.qte > 0);
-  if (commande.length === 0) {
-    alert("Votre panier est vide ! Veuillez ajouter au moins un produit.");
-    return;
-  }
-
   let nom = document.getElementById('champ-nom').value;
   let tel = document.getElementById('champ-tel').value;
   let loc = document.getElementById('champ-localisation').value;
-  
-  let texte = "*Nouvelle Commande NOOGO*\n\n";
-  if(nom) texte += `👤 Nom: ${nom}\n`;
-  if(tel) texte += `📞 Tel: ${tel}\n`;
-  if(loc) texte += `📍 Lieu: ${loc}\n`;
-  texte += `🛵 Mode: ${modeReception === 'livraison' ? 'Livraison à domicile' : 'Retrait sur place'}\n\n`;
-  texte += "*Détails de la commande :*\n";
-  
-  commande.forEach(p => {
-    texte += `- ${p.nom} x${p.qte} : ${(p.prix * p.qte).toLocaleString('fr-FR')} FCFA\n`;
+
+  let texte = "*NOUVELLE COMMANDE VIP - NOOGO*\n\n";
+  if (nom) texte += `👤 *Client:* ${nom}\n`;
+  if (tel) texte += `📞 *Contact:* ${tel}\n`;
+  if (loc) texte += `📍 *Adresse:* ${loc}\n`;
+  texte += `🛵 *Mode:* ${modeReception === 'livraison' ? 'Livraison à domicile' : 'Retrait sur place'}\n`;
+  texte += "-----------------------------------\n";
+  texte += "*DÉTAILS DU PANIER :*\n\n";
+
+  let totalGeneral = 0;
+
+  produits.forEach(p => {
+    if (p.qte125 > 0) {
+      let st = p.qte125 * p.prix125;
+      totalGeneral += st;
+      texte += `• ${p.nom} (125ml) x${p.qte125} : ${st.toLocaleString('fr-FR')} FCFA\n`;
+    }
+    if (p.qte250 > 0) {
+      let st = p.qte250 * p.prix250;
+      totalGeneral += st;
+      texte += `• ${p.nom} (250ml) x${p.qte250} : ${st.toLocaleString('fr-FR')} FCFA\n`;
+    }
+    p.packs.forEach(pack => {
+      if (pack.qte > 0) {
+        let st = pack.qte * pack.prix;
+        totalGeneral += st;
+        let partLivraison = 1500 * pack.qte;
+        let partProduit = st - partLivraison;
+        texte += `🌟 *${pack.nom} (${p.nom})* x${pack.qte} : ${st.toLocaleString('fr-FR')} FCFA\n`;
+        texte += `   ↳ _Detail: Glaces ${partProduit.toLocaleString('fr-FR')} F | Livraison VIP: ${partLivraison.toLocaleString('fr-FR')} F_\n`;
+      }
+    });
   });
 
-  let totalFinal = document.getElementById('total').textContent;
-  texte += `\n*Total à payer : ${totalFinal} FCFA*`;
+  if (totalGeneral === 0) {
+    alert("Votre panier est vide. Veuillez ajouter un produit ou un pack !");
+    return;
+  }
+
+  let totalAffiche = document.getElementById('total').textContent;
+  texte += "\n-----------------------------------\n";
+  texte += `💰 *TOTAL NET À PAYER : ${totalAffiche} FCFA*`;
 
   let url = `https://wa.me/22661682706?text=${encodeURIComponent(texte)}`;
   window.open(url, '_blank');
@@ -431,32 +341,8 @@ function fermerZoom() {
   document.getElementById('zoom-overlay').classList.remove('actif');
 }
 
-function localiser() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(position => {
-      let lat = position.coords.latitude;
-      let lon = position.coords.longitude;
-      document.getElementById('champ-localisation').value = `https://maps.google.com/?q=${lat},${lon}`;
-    }, () => {
-      alert("Impossible de récupérer votre position.");
-    });
-  }
-}
-
-function remonterEnHaut() {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-window.onscroll = function() {
-  let btn = document.getElementById("bouton-haut");
-  if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
-    btn.classList.add("visible");
-  } else {
-    btn.classList.remove("visible");
-  }
-};
-
 afficher();
 </script>
+
 </body>
 </html>

@@ -476,5 +476,84 @@ calculerTotaux();
 <p style="margin:0">Commande simple, service doux, et packs VIP bien pensés.</p>
 </footer>
 </div>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const packs = [
+    { id: 7, prix: 5000, nom: "Pack Monoparfum Chocolat 5 x 125 ml", desc: "Pack tout compris", deliveryText: "Livraison incluse" },
+    { id: 8, prix: 5500, nom: "Pack Monoparfum Vanille 5 x 125 ml", desc: "Pack tout compris", deliveryText: "Livraison incluse" },
+    { id: 9, prix: 7000, nom: "Pack Monoparfum Banane 5 x 125 ml", desc: "Pack tout compris", deliveryText: "Livraison incluse" },
+    { id: 10, prix: 6600, nom: "Pack Mix 6 x 125 ml", desc: "Pack tout compris", deliveryText: "Livraison incluse" },
+    { id: 11, prix: 5400, nom: "Pack Mix 3 x 250 ml", desc: "Pack tout compris", deliveryText: "Livraison incluse" },
+    { id: 12, prix: 7500, nom: "Pack Famille 5 x 250 ml", desc: "Pack tout compris", deliveryText: "Livraison incluse" }
+  ];
+
+  if (window.produits) {
+    packs.forEach(upd => {
+      const p = window.produits.find(x => x.id === upd.id);
+      if (p) {
+        p.prix = upd.prix;
+        p.nom = upd.nom;
+        p.desc = upd.desc;
+        p.vip = true;
+      }
+    });
+  }
+
+  function updatePackLabels(){
+    document.querySelectorAll("#liste-packs .card").forEach((card, index) => {
+      const pack = packs[index];
+      if (!pack) return;
+
+      const priceEl = card.querySelector(".price");
+      const descEl = card.querySelector(".desc");
+      if (priceEl) priceEl.textContent = `${pack.prix.toLocaleString("fr-FR")} FCFA`;
+      if (descEl) descEl.textContent = "Livraison incluse";
+    });
+  }
+
+  const oldCalculerTotaux = window.calculerTotaux;
+  window.calculerTotaux = function(){
+    let result = oldCalculerTotaux ? oldCalculerTotaux() : { sousTotal: 0, fraisLivraison: 0, total: 0, contientPack: false };
+    const mode = document.querySelector('input[name="modeReception"]:checked')?.value || "retrait";
+    let sousTotal = 0;
+    let contientPack = false;
+
+    if (window.produits && window.panier) {
+      window.produits.forEach(p => {
+        const q = window.panier[p.id] || 0;
+        if (q > 0) {
+          sousTotal += p.prix * q;
+          if (p.section === "packs") contientPack = true;
+        }
+      });
+    }
+
+    let fraisLivraison = 0;
+    if (mode === "livraison") {
+      fraisLivraison = contientPack ? 0 : 1500;
+    }
+
+    const total = Math.max(0, sousTotal + fraisLivraison - (window.remiseAppliquee || 0));
+    const totalEl = document.getElementById("affichage-total");
+    if (totalEl) totalEl.textContent = `Total : ${total.toLocaleString("fr-FR")} FCFA`;
+
+    const msg = document.getElementById("message-code");
+    if (msg) {
+      if (contientPack) {
+        msg.textContent = "Pack sélectionné : livraison incluse.";
+        msg.style.color = "#1e7e34";
+      } else if (mode === "livraison") {
+        msg.textContent = "Livraison à domicile : 1 500 FCFA.";
+        msg.style.color = "#8c4a10";
+      }
+    }
+
+    return { sousTotal, fraisLivraison, total, contientPack };
+  };
+
+  updatePackLabels();
+  if (typeof calculerTotaux === "function") calculerTotaux();
+});
+</script>
 </body>
 </html>

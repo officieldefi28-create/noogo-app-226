@@ -1,705 +1,510 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Noogo</title>
-
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#e65100">
-<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<link rel="apple-touch-icon" href="/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Noogo">
-<meta name="mobile-web-app-capable" content="yes">
-
-<style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#fff0f5;padding-bottom:170px;color:#333}
-header{background:#e8590c;color:white;text-align:center;padding:15px 10px;border-bottom-left-radius:15px;border-bottom-right-radius:15px}
-#install-btn{display:inline-flex;margin:10px auto 0;background:white;color:#e65100;border:0;border-radius:20px;padding:9px 18px;font-size:14px;font-weight:bold;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer}
-header img{width:90px;height:60px;object-fit:contain;background:white;border-radius:10px;margin-bottom:5px}
-header h1{margin:6px 0;font-size:32px;font-weight:900;letter-spacing:1px;line-height:1.15;text-shadow:0 2px 4px rgba(0,0,0,.2)}
-header p{margin:6px 0 0;font-size:16px;font-weight:600}
-.tagline{font-size:14px !important;font-weight:400 !important;font-style:italic;opacity:.95;margin-top:8px !important}
-.badge-24h{display:inline-block;background:#2e7d32;color:white;font-size:13px;font-weight:bold;padding:7px 14px;border-radius:20px;margin-top:10px}
-  .section-titre{text-align:center;color:#e8590c;font-size:20px;margin:20px 0 2px;font-weight:800}
-.section-sous-titre{text-align:center;color:#888;font-size:12.5px;margin:0 10px 10px}
-
-/* ONGLETS CATEGORIES */
-.categories-tabs{display:flex;justify-content:center;gap:6px;margin:12px 8px;overflow-x:auto;padding-bottom:4px}
-.tab-btn{background:white;border:1px solid #ffd2c1;padding:8px 12px;border-radius:18px;font-size:12px;font-weight:bold;color:#e8590c;cursor:pointer;white-space:nowrap}
-.tab-btn.active{background:#e8590c;color:white}
-
-/* GROUPE PAR PARFUM / CATEGORIE */
-.parfum-group{background:white;margin:12px 8px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow:hidden;border:1px solid #ffe3d6}
-.parfum-header{background:#fff0eb;color:#e8590c;padding:10px 14px;font-size:15px;font-weight:bold;border-bottom:1px solid #ffd2c1;display:flex;justify-content:space-between;align-items:center}
-
-/* LIGNE PRODUIT INDIVIDUEL */
-.item-row{display:flex;padding:10px 12px;align-items:center;border-bottom:1px solid #f5f5f5}
-.item-row:last-child{border-bottom:none}
-.img-wrap{position:relative;width:70px;height:70px;flex-shrink:0;margin-right:12px;cursor:pointer}
-.img-wrap img{width:100%;height:100%;border-radius:8px;object-fit:cover;background:#eee}
-.zoom-badge{position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,0.6);color:white;font-size:8px;padding:2px 4px;border-radius:4px}
-
-.info{flex:1}
-.info h4{margin:0 0 2px;font-size:13.5px;color:#333;font-weight:bold}
-.format-badge{font-size:11px;color:#777;display:block;margin-bottom:2px}
-.prix-unitaire{font-weight:bold;color:#e8590c;font-size:14px}
-
-.qte-ctrl{display:flex;align-items:center;gap:6px}
-.qte-ctrl button{border:0;background:#f0f0f0;color:#333;width:28px;height:28px;border-radius:6px;font-size:16px;font-weight:bold;cursor:pointer}
-.qte-ctrl button:active{background:#e8590c;color:white}
-.qte-ctrl span{font-weight:bold;font-size:13px;min-width:16px;text-align:center}
-
-/* PACKS DIRECTEMENT ASSOCIES DANS LE BLOC */
-.pack-subblock{background:#fff9f5;border-top:1px dashed #ffd2c1;padding:8px 12px}
-.pack-card{display:flex;justify-content:space-between;align-items:center;background:white;padding:8px 10px;border-radius:8px;margin-top:6px;border:1px solid #ffe0d0}
-.pack-title{font-size:12px;font-weight:bold;color:#444}
-.pack-tag{font-size:10px;color:#2e7d32;font-weight:bold}
-  /* FORMULAIRE ET BANDEAUX */
-.promo-bandeau{background:linear-gradient(90deg,#fff3e0,#ffe0b2);border:1px solid #ffcc80;border-radius:12px;margin:10px 8px 4px;padding:10px 12px;text-align:center;font-size:12.5px;color:#7a3e00;line-height:1.6}
-.commande-form{background:white;margin:16px 8px;padding:16px;border-radius:14px;box-shadow:0 2px 7px rgba(0,0,0,.12)}
-.commande-titre{margin:0 0 12px;font-size:16px;color:#e8590c;text-align:center}
-.champ-label{display:block;font-size:13px;font-weight:bold;color:#444;margin:12px 0 5px}
-.facultatif{font-weight:normal;color:#999;font-size:11.5px}
-.obligatoire{font-weight:normal;color:#e8590c;font-size:11.5px}
-.champ-input{width:100%;padding:11px 12px;border:1px solid #ddd;border-radius:10px;font-size:15px;background:#fafafa}
-.champ-input:focus{outline:2px solid #e8590c;background:white}
-.champ-avec-bouton{display:flex;gap:8px}
-.champ-avec-bouton .champ-input{flex:1}
-.btn-localiser{background:#e8590c;color:white;border:0;border-radius:10px;width:46px;font-size:18px;cursor:pointer}
-.note-livraison{margin:14px 0 0;font-size:12px;color:#777;background:#fff8e1;border-radius:8px;padding:9px 10px;line-height:1.5}
-#message-code{font-size:12.5px;margin-top:6px;font-weight:bold}
-#message-code.valide{color:#2e7d32}
-#message-code.invalide{color:#c62828}
-
-.paiement-options{display:flex;flex-direction:column;gap:8px}
-.paiement-carte{display:flex;align-items:center;gap:10px;border:1px solid #ddd;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;cursor:pointer}
-.paiement-carte input{width:auto;margin:0}
-.paiement-carte.selectionnee{border-color:#e8590c;background:#fff3e0}
-.info-paiement-carte{background:#fff3e0;border:1px solid #ffe0b2;padding:10px;border-radius:8px;margin-top:8px;font-size:13px;text-align:center}
-
-.reception-options{display:flex;gap:8px;margin-top:8px}
-.reception-carte{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #ddd;border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;background:#fafafa}
-.reception-carte.selectionnee{border-color:#e8590c;background:#fff3e0}
-
-.total{position:fixed;bottom:0;left:0;right:0;background:white;padding:12px 16px;box-shadow:0 -3px 10px rgba(0,0,0,0.12);z-index:100;border-top-left-radius:15px;border-top-right-radius:15px;text-align:center}
-.total h2{margin:0 0 8px;font-size:18px;color:#333}
-.btn-whatsapp{display:block;width:100%;border:0;border-radius:10px;background:#25D366;color:white;padding:13px;font-size:16px;font-weight:bold;cursor:pointer;box-shadow:0 3px 8px rgba(37,211,102,0.3)}
-
-footer{text-align:center;padding:20px 10px;background:#333;color:white;margin-top:30px}
-footer a{color:#ffa726;text-decoration:none}
-.footer-btn{display:inline-block;padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.1);margin:4px}
-
-.zoom-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;flex-direction:column;padding:20px}
-.zoom-overlay.actif{display:flex}
-.zoom-overlay img{max-width:90%;max-height:70vh;border-radius:10px}
-.zoom-close{position:absolute;top:20px;right:20px;background:white;border:0;width:36px;height:36px;border-radius:50%;font-weight:bold;cursor:pointer}
-#bouton-haut{display:none;position:fixed;bottom:90px;right:15px;background:#e8590c;color:white;border:0;width:40px;height:40px;border-radius:50%;font-size:18px;z-index:99;cursor:pointer}
-#bouton-haut.visible{display:block}
-.cachee-remise{display:none}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noogo - Commande en Ligne</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff7a00">
+    <style>
+        :root {
+            --primary: #ff7a00;
+            --primary-dark: #e06900;
+            --secondary: #fff5eb;
+            --text-dark: #333333;
+            --bg-light: #fff8f3;
+            --pack-bg: linear-gradient(135deg, #fff9f0 0%, #ffe8d1 100%);
+            --pack-border: #ffb77c;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 0;
+            padding-bottom: 120px;
+        }
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+        /* Style ultra-attirant pour les packs promos */
+        .pack-card {
+            background: var(--pack-bg);
+            border: 2px solid var(--pack-border);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 12px rgba(255, 122, 0, 0.15);
+            position: relative;
+            transform: scale(1.01);
+            transition: all 0.2s ease;
+        }
+        .pack-card:hover {
+            box-shadow: 0 6px 16px rgba(255, 122, 0, 0.25);
+        }
+        .pack-badge {
+            background: #ff4500;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 3px 8px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+        .produit-card {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #d35400;
+            margin: 20px 0 10px 0;
+            border-bottom: 2px solid #f39c12;
+            padding-bottom: 5px;
+        }
+              .btn-qty {
+            background: #e0e0e0;
+            border: none;
+            width: 35px;
+            height: 35px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-qty:active {
+            background: #d0d0d0;
+        }
+        .qty-val {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin: 0 12px;
+            min-width: 20px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+        input[type="text"], input[type="tel"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            background: white;
+        }
+        .radio-group {
+            display: flex;
+            gap: 10px;
+        }
+        .radio-card {
+            flex: 1;
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            background: white;
+            transition: all 0.2s;
+        }
+        .radio-card input {
+            display: none;
+        }
+        .radio-card.active {
+            border-color: var(--primary);
+            background: var(--secondary);
+            font-weight: bold;
+        }
+        .sticky-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .btn-commander {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            width: 100%;
+            box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
+        }
+        .total-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            color: #333;
+        }
+    </style>
+</head>
+        .produit-card {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #d35400;
+            margin: 20px 0 10px 0;
+            border-bottom: 2px solid #f39c12;
+            padding-bottom: 5px;
+        }
+        .btn-qty {
+            background: #e0e0e0;
+            border: none;
+            width: 35px;
+            height: 35px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .qty-val {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin: 0 12px;
+            min-width: 20px;
+            text-align: center;
+        }
+          .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+        input[type="text"], input[type="tel"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            background: white;
+        }
+        .radio-group {
+            display: flex;
+            gap: 10px;
+        }
+        .radio-card {
+            flex: 1;
+            border: 1px solid #ddd;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            background: white;
+            transition: all 0.2s;
+        }
+        .radio-card input {
+            display: none;
+        }
+        .radio-card.active {
+            border-color: var(--primary);
+            background: var(--secondary);
+            font-weight: bold;
+        }
+          .sticky-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 15px;
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+        .btn-commander {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            width: 100%;
+            box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
+        }
+        .total-display {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            color: #333;
+        }
+    </style>
 </head>
 <body>
+    <header>Noogo - Commande en Ligne</header>
 
-<header>
-<img id="logo" src="/logo.png" alt="Noogo">
-<h1>NOOGO</h1>
-<p class="tagline">Des saveurs authentiques, pour tous les plaisirs 🍦</p>
-<p>Livraison à Karpala et alentours</p>
-<div class="badge-24h">🕒 Ouvert 24h/24 — commandez à toute heure !</div>
-<br>
-<button id="install-btn" onclick="installerApp()">⬇️ Installer l'application</button>
-</header>
-<div class="promo-bandeau">🌿 100% naturel &nbsp;•&nbsp; ❤️ Fait avec amour &nbsp;•&nbsp; 📍 Fabriqué à Karpala<br><strong>Nos clients adorent nos produits artisanaux — à vous de goûter !</strong></div>
+    <div class="container">
+        <!-- SECTION PACKS DE 125 ML -->
+        <div class="section-title">🌟 Packs Dégustation & Maxi Formats (125 ml)</div>
+        <div id="liste-packs-125"></div>
 
-<h2 class="section-titre">🍦 Vos Produits & Packs</h2>
-<p class="section-sous-titre">Agrandissez les visuels et choisissez vos quantités</p>
+        <!-- SECTION PACKS DE 250 ML -->
+        <div class="section-title">🌟 Packs Maxi & Famille (250 ml)</div>
+        <div id="liste-packs-250"></div>
 
-<!-- NAVIGATION CATEGORIES -->
-<div class="categories-tabs">
-  <button class="tab-btn active" onclick="filtrerCat('tous', this)">Tout voir</button>
-  <button class="tab-btn" onclick="filtrerCat('glaces', this)">Crèmes Glacées</button>
-  <button class="tab-btn" onclick="filtrerCat('snacks', this)">Produits d'hiver & Snacks</button>
-  <button class="tab-btn" onclick="filtrerCat('esquimaux', this)">Esquimaux & Bacs</button>
-</div>
-
-<!-- CONTENEUR DES PRODUITS REGROUPES -->
-<div id="produits"></div>
-
-<div class="commande-form">
-<h3 class="commande-titre">📋 Vos informations</h3>
-
-<label class="champ-label" for="champ-nom">Nom <span class="facultatif">(facultatif)</span></label>
-<input type="text" id="champ-nom" class="champ-input" placeholder="Votre nom">
-
-<label class="champ-label" for="champ-tel">Numéro de téléphone <span class="facultatif">(facultatif)</span></label>
-<input type="tel" id="champ-tel" class="champ-input" placeholder="Ex : 70 12 34 56">
-
-<label class="champ-label" for="champ-localisation">Lieu de livraison <span class="facultatif">(si possible)</span></label>
-<div class="champ-avec-bouton">
-  <input type="text" id="champ-localisation" class="champ-input" placeholder="Quartier, repère...">
-  <button type="button" class="btn-localiser" onclick="localiser()">📍</button>
-</div>
-
-<label class="champ-label">Mode de réception <span class="obligatoire">(obligatoire)</span></label>
-<div class="reception-options">
-  <label class="reception-carte selectionnee" id="card-liv">
-    <input type="radio" name="reception" value="livraison" checked onchange="majReception()"> 🛵 Livraison
-  </label>
-  <label class="reception-carte" id="card-ret">
-    <input type="radio" name="reception" value="retrait" onchange="majReception()"> 🏪 Retrait sur place
-  </label>
-</div>
-<p class="note-livraison" id="note-reception">🚚 Livraison à la charge du client (frais fixes de 1 500 FCFA), sauf à <strong>Karpala</strong> où c'est à discuter directement avec nous.</p>
-
-<label class="champ-label" for="champ-code">Code promo <span class="facultatif">(si vous en avez un)</span></label>
-<div class="champ-avec-bouton">
-  <input type="text" id="champ-code" class="champ-input" placeholder="Ex : ECOLE01" style="text-transform:uppercase">
-  <button type="button" class="btn-localiser" onclick="verifierCode()">✅</button>
-</div>
-<div id="message-code"></div>
-
-<label class="champ-label">Mode de paiement <span class="obligatoire">(obligatoire)</span></label>
-<div class="paiement-options">
-  <label class="paiement-carte selectionnee"><input type="radio" name="paiement" value="especes" checked onchange="afficherInfoPaiement()"><span class="paiement-icone">💵</span><span>Espèces à la livraison</span></label>
-  <label class="paiement-carte"><input type="radio" name="paiement" value="orange" onchange="afficherInfoPaiement()"><span class="paiement-icone">🟠</span><span>Orange Money</span></label>
-  <label class="paiement-carte"><input type="radio" name="paiement" value="wave" onchange="afficherInfoPaiement()"><span class="paiement-icone">🔵</span><span>Wave</span></label>
-</div>
-
-<div id="info-paiement" class="cachee-remise"></div>
-</div>
-
-<div class="total">
-  <div id="ligne-remise" class="cachee-remise" style="color:#2e7d32;font-size:12px;font-weight:bold;margin-bottom:4px"></div>
-  <h2>Total : <span id="total" style="color:#e8590c">0</span> FCFA</h2>
-  <button class="btn-whatsapp" onclick="commander()">Commander sur WhatsApp</button>
-</div>
-
-<footer>
-<a class="footer-btn location" href="https://maps.google.com/?q=12.336911,-1.474793&entry=gps" target="_blank">📍 Voir sur Google Maps <span class="chevron">›</span></a>
-<p class="footer-phone">📞 61 68 27 06</p>
-<div class="footer-social">
-  <a class="footer-btn facebook" href="https://www.facebook.com/share/1DX4RzmDFC/" target="_blank">👍 Facebook</a>
-  <a class="footer-btn tiktok" href="https://www.tiktok.com/@dlices.de.papous" target="_blank">🎵 TikTok</a>
-</div>
-<p style="margin-top:16px"><a href="/partenaire.html" style="color:#aaa;font-size:12px;text-decoration:underline">🤝 Espace partenaire</a>&nbsp;·&nbsp;<a href="/admin.html" style="color:#aaa;font-size:12px;text-decoration:underline">🔐 Espace admin</a></p>
-</footer>
-
-<div class="zoom-overlay" id="zoom-overlay" onclick="fermerZoom()">
-  <button class="zoom-close" onclick="fermerZoom()">✕</button>
-  <img id="zoom-img" src="" alt="">
-  <h3 id="zoom-titre" style="color:white;margin-top:12px"></h3>
-</div>
-
-<button id="bouton-haut" onclick="remonterEnHaut()" aria-label="Remonter en haut">⬆</button>
-
-<div id="bandeau-install" style="display:none;position:fixed;left:0;right:0;bottom:0;background:#e8590c;color:white;padding:14px;z-index:150;box-shadow:0 -3px 12px rgba(0,0,0,.25);align-items:center;gap:12px">
-  <span style="flex:1;font-size:14px;font-weight:600">📲 Installez l'app Noogo pour commander plus vite !</span>
-  <button onclick="installerApp()" style="background:white;color:#e65100;border:0;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:bold;white-space:nowrap">Installer</button>
-  <button onclick="fermerBandeauInstall()" style="background:transparent;color:white;border:0;font-size:20px;padding:0 4px" aria-label="Fermer">✕</button>
-</div>
-<script>
-// --- IMAGES D'ORIGINE CONSERVÉES ---
-let images = {
-  "POPcorn_Sachet_300F": "/produits/POPcorn_Sachet_300F.jpg",
-  "POPcorn_Carton_500F": "/produits/POPcorn_Carton_500F.jpg",
-  "Creme_Glacee_Banane_1000F": "/produits/Creme_Glacee_Banane_1000F.jpg",
-  "Creme_Glacee_Vanille_Lactee_700F": "/produits/Creme_Glacee_Vanille_Lactee_700F.jpg",
-  "Creme_Glacee_Chocolat_Cacao_au_Lait_600F": "/produits/Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
-  "Esquimau_Sandra_500F": "/produits/Esquimau_Sandra_500F.jpg",
-  "Esquimau_Sandra_Chocolat_Coco_800F": "/produits/Esquimau_Sandra_Chocolat_Coco_800F.jpg",
-  "Creme_6250ml_35000F": "/produits/Creme_6250ml_35000F.jpg",
-  "Fruits_Naturel_Banane_2000F": "/produits/Fruits_Naturel_Banane_2000F.jpg",
-  "Vanille_Lacte_1400F": "/produits/Vanille_Lacte_1400F.jpg",
-  "Chocolat_Cacao_au_Lait_1200F": "/produits/Chocolat_Cacao_au_Lait_1200F.jpg",
-  "Pain_Anglais_700F": "/produits/Pain_Anglais_700F.jpg",
-  "Pain_Anglais_1000F": "/produits/Pain_Anglais_1000F.jpg"
-};
-
-// --- CATALOGUE STRUCTURÉ PAR CATEGORIE ET PARFUM ---
-let catalogue = [
-  // CHOCOLAT
-  {
-    cat: "glaces",
-    titre: "Chocolat Cacao au Lait",
-    items: [
-      { id: "choc_125", nom: "Crème Glacée Chocolat Cacao au Lait", format: "125 ml", prix: 600, img: "Creme_Glacee_Chocolat_Cacao_au_Lait_600F", qte: 0 },
-      { id: "choc_250", nom: "Chocolat Cacao au Lait", format: "250 ml", prix: 1200, img: "Chocolat_Cacao_au_Lait_1200F", qte: 0 }
-    ],
-    packs: [
-      { id: "pack_choc_125", nom: "Pack Pur Chocolat (5 pots) — 125 ml", prix: 5000, qte: 0 }
-    ]
-  },
-  // VANILLE
-  {
-    cat: "glaces",
-    titre: "Vanille Lactée Premium",
-    items: [
-      { id: "van_125", nom: "Crème Glacée Vanille Lactée", format: "125 ml", prix: 700, img: "Creme_Glacee_Vanille_Lactee_700F", qte: 0 },
-      { id: "van_250", nom: "Vanille Lacté", format: "250 ml", prix: 1400, img: "Vanille_Lacte_1400F", qte: 0 }
-    ],
-    packs: [
-      { id: "pack_van_125", nom: "Pack Vanille Lactée (5 pots) — 125 ml", prix: 5500, qte: 0 }
-    ]
-  },
-  // BANANE / FRUITS NATURELS
-  {
-    cat: "glaces",
-    titre: "Fruits Naturels - Banane",
-    items: [
-      { id: "ban_125", nom: "Crème Glacée Banane", format: "125 ml", prix: 1000, img: "Creme_Glacee_Banane_1000F", qte: 0 },
-      { id: "ban_250", nom: "Fruits Naturel Banane", format: "250 ml", prix: 2000, img: "Fruits_Naturel_Banane_2000F", qte: 0 }
-    ],
-    packs: [
-      { id: "pack_fruits_125", nom: "Pack Fruits Naturels (5 pots) — 125 ml", prix: 7000, qte: 0 }
-    ]
-  },
-  // PACKS MIX / MAXI (GROUPE DÉDIÉ)
-  {
-    cat: "glaces",
-    titre: "Packs Dégustation & Maxi Formats",
-    items: [],
-    packs: [
-      { id: "pack_mix_125", nom: "Pack Mix Dégustation (6 pots) — 125 ml", prix: 6600, qte: 0 },
-      { id: "pack_duo_250", nom: "Pack Maxi Duo Gourmet (3 pots) — 250 ml", prix: 5000, qte: 0 },
-      { id: "pack_fam_250", nom: "Pack Maxi Famille (5 pots) — 250 ml", prix: 7500, qte: 0 }
-    ]
-  },
-  // PRODUITS D'HIVER ET SNACKS
-  {
-    cat: "snacks",
-    titre: "Popcorn & Pain Anglais (Gourmandises)",
-    items: [
-      { id: "pop_300", nom: "Popcorn Sachet", format: "Sachet", prix: 300, img: "POPcorn_Sachet_300F", qte: 0 },
-      { id: "pop_500", nom: "Popcorn Carton", format: "Carton", prix: 500, img: "POPcorn_Carton_500F", qte: 0 },
-      { id: "pain_700", nom: "Pain Anglais - 700 FCFA", format: "Moyen", prix: 700, img: "Pain_Anglais_700F", qte: 0 },
-      { id: "pain_1000", nom: "Pain Anglais - 1000 FCFA", format: "Grand", prix: 1000, img: "Pain_Anglais_1000F", qte: 0 }
-    ],
-    packs: []
-  },
-  // ESQUIMAUX ET BACS
-  {
-    cat: "esquimaux",
-    titre: "Esquimaux Sandra & Bacs Pro",
-    items: [
-      { id: "esq_500", nom: "Esquimau Sandra", format: "Bâtonnet", prix: 500, img: "Esquimau_Sandra_500F", qte: 0 },
-      { id: "esq_800", nom: "Esquimau Sandra Chocolat au Coco", format: "Bâtonnet VIP", prix: 800, img: "Esquimau_Sandra_Chocolat_Coco_800F", qte: 0 },
-      { id: "bac_35000", nom: "Crème de 6250 ml", format: "Grand Bac de 6,25 Litres", prix: 35000, img: "Creme_6250ml_35000F", qte: 0 }
-    ],
-    packs: []
-  }
-];
-
-let categorieFiltre = "tous";
-let codePromoApplique = null;
-let modeReception = "livraison";
-let fraisLivraison = 1500;
-  function afficher() {
-  let html = "";
-  let placeholder = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><rect width='90' height='90' fill='%23eeeeee'/><text x='45' y='49' font-size='11' text-anchor='middle' fill='%23999' font-family='Arial'>Photo à venir</text></svg>";
-
-  catalogue.forEach((grp, grpIdx) => {
-    if (categorieFiltre !== "tous" && grp.cat !== categorieFiltre) return;
-
-    html += `<div class="parfum-group">
-      <div class="parfum-header"><span>✨ ${grp.titre}</span></div>`;
-
-    // Produits individuels
-    grp.items.forEach((item, itemIdx) => {
-      let image = images[item.img] || placeholder;
-      html += `
-      <div class="item-row">
-        <div class="img-wrap" onclick="agrandir('${image}','${item.nom.replace(/'/g,"\\'")}')">
-          <img src="${image}" alt="${item.nom}">
-          <span class="zoom-badge">🔍 Agrandir</span>
-        </div>
-        <div class="info">
-          <h4>${item.nom}</h4>
-          <span class="format-badge">Format: ${item.format}</span>
-          <span class="prix-unitaire">${item.prix.toLocaleString("fr-FR")} FCFA</span>
-        </div>
-        <div class="qte-ctrl">
-          <button onclick="changerItem(${grpIdx}, ${itemIdx}, -1)">−</button>
-          <span>${item.qte}</span>
-          <button onclick="changerItem(${grpIdx}, ${itemIdx}, 1)">+</button>
-        </div>
-      </div>`;
-    });
-
-    // Packs associés
-    if (grp.packs && grp.packs.length > 0) {
-      html += `<div class="pack-subblock">`;
-      grp.packs.forEach((pack, packIdx) => {
-        html += `
-        <div class="pack-card">
-          <div>
-            <div class="pack-title">🌟 ${pack.nom}</div>
-            <div class="pack-tag">🚚 Livraison VIP incluse</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-weight:bold;color:#e8590c;font-size:13px">${pack.prix.toLocaleString("fr-FR")} F</span>
-            <div class="qte-ctrl">
-              <button onclick="changerPack(${grpIdx}, ${packIdx}, -1)">−</button>
-              <span>${pack.qte}</span>
-              <button onclick="changerPack(${grpIdx}, ${packIdx}, 1)">+</button>
+        <!-- SECTION PRODUITS UNITAIRES -->
+        <div class="section-title">🍦 Nos Produits & Gourmandises</div>
+        <div id="liste-produits"></div>
+                <!-- INFORMATIONS CLIENT & LIVRAISON -->
+        <div style="background: white; padding: 15px; border-radius: 12px; margin-top: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+            <div class="section-title" style="margin-top: 0;">📋 Vos informations</div>
+            
+            <div class="form-group">
+                <label>Nom (facultatif)</label>
+                <input type="text" id="client-nom" placeholder="Votre nom">
             </div>
-          </div>
-        </div>`;
-      });
-      html += `</div>`;
-    }
 
-    html += `</div>`;
-  });
+            <div class="form-group">
+                <label>Numéro de téléphone (facultatif)</label>
+                <input type="tel" id="client-tel" placeholder="Ex : 70 12 34 56">
+            </div>
 
-  if(html === ""){ html = '<div style="text-align:center;padding:20px;color:#888">Aucun produit disponible dans cette catégorie.</div>'; }
-  document.getElementById("produits").innerHTML = html;
-  calculerEtAfficherTotal();
-}
+            <div class="form-group">
+                <label>Lieu de livraison (si possible)</label>
+                <input type="text" id="client-lieu" placeholder="Quartier, repère...">
+            </div>
 
-function changerItem(grpIdx, itemIdx, val) {
-  catalogue[grpIdx].items[itemIdx].qte = Math.max(0, catalogue[grpIdx].items[itemIdx].qte + val);
-  afficher();
-}
+            <div class="form-group">
+                <label>Mode de réception (obligatoire)</label>
+                <div class="radio-group">
+                    <label class="radio-card active" id="label-livraison">
+                        <input type="radio" name="modeReception" value="livraison" checked onchange="changerModeReception()">
+                        🛵 Livraison
+                    </label>
+                    <label class="radio-card" id="label-retrait">
+                        <input type="radio" name="modeReception" value="retrait" onchange="changerModeReception()">
+                        🏢 Retrait sur place
+                    </label>
+                </div>
+            </div>
 
-function changerPack(grpIdx, packIdx, val) {
-  catalogue[grpIdx].packs[packIdx].qte = Math.max(0, catalogue[grpIdx].packs[packIdx].qte + val);
-  afficher();
-}
+            <div class="form-group" id="bloc-info-reception" style="font-size: 0.9rem; color: #666; background: #fff5eb; padding: 10px; border-radius: 8px;">
+                🛵 Livraison à domicile : frais fixes de 1 500 FCFA ajoutés au total.
+            </div>
+                        <div class="form-group">
+                <label>Code promo (si vous en avez un)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="code-promo" placeholder="EX : ECOLE01" style="flex: 1;">
+                    <button type="button" onclick="verifierCodePromo()" style="background: #27ae60; color: white; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">✓</button>
+                </div>
+            </div>
 
-function filtrerCat(cat, btn) {
-  categorieFiltre = cat;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  afficher();
-}
+            <div class="form-group">
+                <label>Mode de paiement (obligatoire)</label>
+                <select id="mode-paiement">
+                    <option value="Espèces à la livraison">💵 Espèces à la livraison</option>
+                    <option value="Orange Money">🟠 Orange Money</option>
+                    <option value="Wave">🔵 Wave</option>
+                </select>
+            </div>
+        </div>
+    </div>
 
-function calculerTotalProduits() {
-  let total = 0;
-  catalogue.forEach(grp => {
-    grp.items.forEach(i => { total += (i.prix * i.qte); });
-    if(grp.packs) {
-      grp.packs.forEach(p => { total += (p.prix * p.qte); });
-    }
-  });
-  return total;
-}
+    <!-- PIED DE PAGE FIXE -->
+    <div class="sticky-footer">
+        <div class="total-display" id="affichage-total">Total : 0 FCFA</div>
+        <button class="btn-commander" onclick="commanderWhatsApp()">Commander sur WhatsApp</button>
+    </div>
+        <script>
+        const produits = [
+            { id: 1, nom: "Pack Mix Dégustation (6 pots) – 125 ml", prix: 6600, type: "pack125", desc: "Livraison VIP incluse" },
+            { id: 2, nom: "Pack Maxi Duo Gourmet (3 pots) – 250 ml", prix: 5000, type: "pack250", desc: "Livraison VIP incluse" },
+            { id: 3, nom: "Pack Maxi Famille (5 pots) – 250 ml", prix: 7500, type: "pack250", desc: "Livraison VIP incluse" },
+            { id: 4, nom: "Popcorn Sachet", prix: 300, type: "unitaire", desc: "Format: Sachet" },
+            { id: 5, nom: "Popcorn Carton", prix: 500, type: "unitaire", desc: "Format: Carton" },
+            { id: 6, nom: "Pain Anglais", prix: 700, type: "unitaire", desc: "Format: Moyen" },
+            { id: 7, nom: "Crème de 6250 ml", prix: 35000, type: "unitaire", desc: "Grand Bac de 6,25 Litres" }
+        ];
 
-function calculerEtAfficherTotal() {
-  let sousTotal = calculerTotalProduits();
-  let remise = codePromoApplique && codePromoApplique.valide ? Number(codePromoApplique.remise) || 0 : 0;
-  let totalAvantLivraison = Math.max(0, sousTotal - remise);
-  let frais = modeReception === "livraison" ? fraisLivraison : 0;
-  let totalFinal = totalAvantLivraison + frais;
+        let panier = {};
+        let remiseAppliquee = 0;
 
-  if(codePromoApplique && codePromoApplique.valide){
-    document.getElementById("ligne-remise").innerText = `Code ${codePromoApplique.code} appliqué : −${remise.toLocaleString("fr-FR")} FCFA`;
-    document.getElementById("ligne-remise").classList.remove("cachee-remise");
-  }else{
-    document.getElementById("ligne-remise").classList.add("cachee-remise");
-  }
-  document.getElementById("total").innerText = totalFinal.toLocaleString("fr-FR");
-  return { sousTotal, remise, frais, totalFinal };
-  }
-  function majReception() {
-  let choix = document.querySelector('input[name="reception"]:checked').value;
-  modeReception = choix;
-  document.getElementById("card-liv").classList.toggle("selectionnee", choix === "livraison");
-  document.getElementById("card-ret").classList.toggle("selectionnee", choix === "retrait");
-  
-  let note = document.getElementById("note-reception");
-  if(choix === "livraison"){
-    note.innerHTML = "🚚 Livraison à domicile : frais fixes de 1 500 FCFA ajoutés au total.";
-  }else{
-    note.innerHTML = "🏪 Retrait au local : 0 FCFA de livraison.";
-  }
-  calculerEtAfficherTotal();
-}
+        function initialiserCatalogue() {
+            const c125 = document.getElementById('liste-packs-125');
+            const c250 = document.getElementById('liste-packs-250');
+            const cProd = document.getElementById('liste-produits');
 
-function afficherInfoPaiement() {
-  document.querySelectorAll(".paiement-carte").forEach(carte => carte.classList.remove("selectionnee"));
-  let choix = document.querySelector('input[name="paiement"]:checked').value;
-  let zone = document.getElementById("info-paiement");
-  document.querySelector(`input[name="paiement"][value="${choix}"]`).closest(".paiement-carte").classList.add("selectionnee");
-
-  if(choix === "orange"){
-    zone.innerHTML = `<div class="info-paiement-carte">🟠 Envoyez le montant via <strong>Orange Money</strong> au numéro :<br><span style="font-size:16px;font-weight:bold;color:#e8590c">65 12 09 02</span><br><small>Après paiement, envoyez la capture d'écran sur WhatsApp avec votre commande</small></div>`;
-    zone.classList.remove("cachee-remise");
-  }else if(choix === "wave"){
-    zone.innerHTML = `<div class="info-paiement-carte">🔵 Envoyez le montant via <strong>Wave</strong> au numéro :<br><span style="font-size:16px;font-weight:bold;color:#e8590c">65 12 09 02</span><br><small>Après paiement, envoyez la capture d'écran sur WhatsApp avec votre commande</small></div>`;
-    zone.classList.remove("cachee-remise");
-  }else{
-    zone.innerHTML = "";
-    zone.classList.add("cachee-remise");
-  }
-}
-
-function verifierCode() {
-  let code = document.getElementById("champ-code").value.trim();
-  let zoneMessage = document.getElementById("message-code");
-  if(code === ""){
-    codePromoApplique = null;
-    zoneMessage.innerText = "";
-    afficher();
-    return;
-  }
-  let total = calculerTotalProduits();
-  zoneMessage.className = "";
-  zoneMessage.innerText = "Vérification...";
-  
-  fetch("/api/verifier-code", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({code, montantTotal: total})
-  })
-  .then(r => r.json())
-  .then(d => {
-    if(d.valide){
-      codePromoApplique = {code: code.toUpperCase(), remise: d.remise, valide: true};
-      zoneMessage.className = "valide";
-      zoneMessage.innerText = `✅ Code valide ! −${d.remise.toLocaleString("fr-FR")} FCFA`;
-    }else{
-      codePromoApplique = null;
-      zoneMessage.className = "invalide";
-      zoneMessage.innerText = "❌ " + (d.message || "Code promo invalide");
-    }
-    calculerEtAfficherTotal();
-  })
-  .catch(() => {
-    codePromoApplique = null;
-    zoneMessage.className = "invalide";
-    zoneMessage.innerText = "❌ Impossible de vérifier le code pour le moment";
-    calculerEtAfficherTotal();
-  });
-}
-
-function commander() {
-  let commande = [];
-  
-  catalogue.forEach(grp => {
-    grp.items.forEach(i => {
-      if(i.qte > 0){
-        commande.push(`${i.qte} x ${i.nom} (${i.format}) = ${(i.prix * i.qte).toLocaleString("fr-FR")} FCFA`);
-      }
-    });
-    if(grp.packs){
-      grp.packs.forEach(p => {
-        if(p.qte > 0){
-          commande.push(`🌟 ${p.qte} x ${p.nom} = ${(p.prix * p.qte).toLocaleString("fr-FR")} FCFA`);
+            produits.forEach(p => {
+                let html = `
+                    <div class="${p.type.includes('pack') ? 'pack-card' : 'produit-card'}">
+                        <div>
+                            ${p.type.includes('pack') ? '<div class="pack-badge">🌟 Pack Promo</div>' : ''}
+                            <div style="font-weight: bold; font-size: 1rem;">${p.nom}</div>
+                            <div style="font-size: 0.85rem; color: #666; margin-top: 2px;">${p.desc}</div>
+                            <div style="color: #d35400; font-weight: bold; margin-top: 5px;">${p.prix.toLocaleString()} FCFA</div>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <button class="btn-qty" onclick="modifierQuantite(${p.id}, -1)">-</button>
+                            <span class="qty-val" id="qty-${p.id}">0</span>
+                            <button class="btn-qty" onclick="modifierQuantite(${p.id}, 1)">+</button>
+                        </div>
+                    </div>
+                `;
+                if (p.type === 'pack125') c125.innerHTML += html;
+                else if (p.type === 'pack250') c250.innerHTML += html;
+                else cProd.innerHTML += html;
+            });
         }
-      });
-    }
-  });
 
-  if(commande.length === 0){
-    alert("Veuillez sélectionner au moins un produit ou pack.");
-    return;
-  }
-
-  let nom = document.getElementById("champ-nom").value.trim();
-  let tel = document.getElementById("champ-tel").value.trim();
-  let localisation = document.getElementById("champ-localisation").value.trim();
-  
-  let totalProduits = calculerTotalProduits();
-  let remise = codePromoApplique && codePromoApplique.valide ? Number(codePromoApplique.remise) || 0 : 0;
-  let totalAvantLivraison = Math.max(0, totalProduits - remise);
-  let frais = modeReception === "livraison" ? fraisLivraison : 0;
-  let totalFinal = totalAvantLivraison + frais;
-  let codeUtilise = codePromoApplique && codePromoApplique.valide ? codePromoApplique.code : "";
-  let modePaiementChoisi = document.querySelector('input[name="paiement"]:checked').value;
-  
-  let libellesPaiement = {
-    especes: "Espèces à la livraison / sur place",
-    orange: "Orange Money (65 12 09 02)",
-    wave: "Wave (65 12 09 02)"
-  };
-
-  fetch("/api/commander", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      code: codeUtilise,
-      montantTotal: totalProduits,
-      nomClient: nom,
-      telClient: tel,
-      localisation: localisation,
-      modePaiement: modePaiementChoisi,
-      modeReception: modeReception,
-      source: sessionStorage.getItem("noogo_source") || "direct"
-    })
-  }).catch(() => {});
-
-  let libelleReception = modeReception === "livraison" ? "Livraison à domicile (1 500 FCFA)" : "Retrait au local (0 FCFA)";
-  
-  let msg =
-    "Bonjour Noogo 🍦\n\n" +
-    "Je souhaite commander :\n\n" +
-    commande.join("\n") +
-    "\n\nMode de réception : " + libelleReception +
-    "\nTotal produits : " + totalProduits.toLocaleString("fr-FR") + " FCFA" +
-    "\nFrais de livraison : " + (modeReception === "livraison" ? "1 500 FCFA" : "0 FCFA") +
-    (codeUtilise ? `\nCode promo : ${codeUtilise} (−${remise.toLocaleString("fr-FR")} FCFA)` : "") +
-    "\n\nTotal à payer : " + totalFinal.toLocaleString("fr-FR") + " FCFA" +
-    "\n\n💳 Paiement : " + libellesPaiement[modePaiementChoisi] +
-    (modePaiementChoisi !== "especes" ? "\n📸 J'envoie la capture d'écran du paiement juste après ce message." : "") +
-    "\n\n📋 Mes informations :\n" +
-    (nom !== "" ? `Nom : ${nom}\n` : "") +
-    (tel !== "" ? `Téléphone : ${tel}\n` : "") +
-    (localisation !== "" ? `Lieu : ${localisation}` : "Lieu : à préciser");
-
-  let url = "https://wa.me/22661682706?text=" + encodeURIComponent(msg);
-  window.open(url, "_blank");
-  }
-  function localiser() {
-  if(!navigator.geolocation){
-    alert("La localisation n'est pas disponible sur cet appareil.");
-    return;
-  }
-  let champ = document.getElementById("champ-localisation");
-  champ.placeholder = "Recherche de votre position...";
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      let lat = position.coords.latitude.toFixed(6);
-      let lon = position.coords.longitude.toFixed(6);
-      champ.value = `https://maps.google.com/?q=${lat},${lon}`;
-      champ.placeholder = "Quartier, repère...";
-    },
-    () => {
-      champ.placeholder = "Quartier, repère...";
-      alert("Impossible de récupérer votre position. Vous pouvez indiquer votre quartier manuellement.");
-    }
-  );
-}
-
-function agrandir(src, nom) {
-  document.getElementById("zoom-img").src = src;
-  document.getElementById("zoom-titre").innerText = nom;
-  document.getElementById("zoom-overlay").classList.add("actif");
-}
-
-function fermerZoom() {
-  document.getElementById("zoom-overlay").classList.remove("actif");
-}
-
-window.addEventListener("scroll", () => {
-  let bouton = document.getElementById("bouton-haut");
-  if(window.scrollY > 400){
-    bouton.classList.add("visible");
-  }else{
-    bouton.classList.remove("visible");
-  }
-});
-
-function remonterEnHaut() {
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-let evenementInstallation = null;
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  evenementInstallation = e;
-  if(!sessionStorage.getItem("noogo_bandeau_ferme")){
-    let bandeau = document.getElementById("bandeau-install");
-    if(bandeau){ bandeau.style.display = "flex"; }
-  }
-});
-
-function fermerBandeauInstall() {
-  let bandeau = document.getElementById("bandeau-install");
-  if(bandeau){ bandeau.style.display = "none"; }
-  sessionStorage.setItem("noogo_bandeau_ferme", "1");
-}
-
-function detecterAppareil() {
-  let ua = navigator.userAgent || "";
-  if(/iPad|iPhone|iPod/.test(ua)) return "ios";
-  if(/Android/.test(ua)) return "android";
-  return "autre";
-}
-
-function installerApp() {
-  if(evenementInstallation){
-    evenementInstallation.prompt();
-    evenementInstallation.userChoice.then(() => {
-      evenementInstallation = null;
-    });
-    return;
-  }
-  let appareil = detecterAppareil();
-  if(appareil === "ios"){
-    alert("Pour installer l'application sur iPhone :\n\n1. Appuyez sur le bouton Partager en bas de Safari.\n2. Choisissez « Sur l'écran d'accueil ».\n3. Appuyez sur « Ajouter ».");
-  }else if(appareil === "android"){
-    alert("Pour installer l'application :\n\n1. Appuyez sur les 3 points ⋮.\n2. Choisissez « Installer l'application » ou « Ajouter à l'écran d'accueil ».");
-  }else{
-    alert("Pour installer l'application, cherchez l'option « Installer » ou « Ajouter à l'écran d'accueil » dans le menu de votre navigateur.");
-  }
-}
-
-// INITIALISATION
-afficher();
-majReception();
-afficherInfoPaiement();
-
-if("serviceWorker" in navigator){
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch((erreur) => {
-      console.log("Échec du SW :", erreur);
-    });
-  });
-}
-</script>
-<script>
-// --- CORRECTEUR AUTOMATIQUE DE LIVRAISON ET PACKS ---
-(function() {
-  function corrigerLivraisonEtTotaux() {
-    // 1. Vérifier s'il y a un pack promo dans le panier (dans le texte affiché ou les variables globales)
-    let contientPack = false;
-    
-    // Recherche de mots clés "pack" ou "promo" dans les éléments du panier à l'écran
-    const elementsPanier = document.querySelectorAll('*');
-    elementsPanier.forEach(el => {
-      if (el.innerText && (el.innerText.toLowerCase().includes('pack') || el.innerText.toLowerCase().includes('promo'))) {
-        // Vérifie si c'est un conteneur d'article dans le panier
-        if (el.innerText.includes('FCFA') && (el.innerText.includes('125') || el.innerText.includes('250') || el.innerText.includes('pot'))) {
-          contientPack = true;
+        function modifierQuantite(id, delta) {
+            if (!panier[id]) panier[id] = 0;
+            panier[id] += delta;
+            if (panier[id] < 0) panier[id] = 0;
+            document.getElementById(`qty-${id}`).textContent = panier[id];
+            calculerTotaux();
         }
-      }
-    });
 
-    // Si la variable globale 'commande' ou 'panier' existe, on vérifie aussi dedans
-    if (typeof commande !== 'undefined' && Array.isArray(commande)) {
-      commande.forEach(art => {
-        if (art.nom && (art.nom.toLowerCase().includes('pack') || art.nom.toLowerCase().includes('promo'))) {
-          contientPack = true;
+        function changerModeReception() {
+            const mode = document.querySelector('input[name="modeReception"]:checked').value;
+            const blocInfo = document.getElementById('bloc-info-reception');
+            if (mode === 'livraison') {
+                document.getElementById('label-livraison').classList.add('active');
+                document.getElementById('label-retrait').classList.remove('active');
+                blocInfo.innerHTML = "🛵 Livraison à domicile : frais fixes de 1 500 FCFA ajoutés au total.";
+            } else {
+                document.getElementById('label-retrait').classList.add('active');
+                document.getElementById('label-livraison').classList.remove('active');
+                blocInfo.innerHTML = "🏢 Retrait au local : 0 FCFA de livraison.";
+            }
+            calculerTotaux();
         }
-      });
-    }
 
-    // 2. Si un pack promo est détecté, on force les frais de livraison à 0
-    if (contientPack) {
-      // Cherche l'affichage des frais de livraison pour les forcer à 0 ou masquer le surcoût
-      const elementsFrais = document.querySelectorAll('.frais-livraison, #frais-livraison, span, div');
-      elementsFrais.forEach(el => {
-        if (el.innerText && el.innerText.includes('1 500') && (el.innerText.toLowerCase().includes('livraison') || el.innerText.includes('FCFA'))) {
-          // Si c'est un bloc de frais de livraison fixe, on peut le neutraliser ou le mettre à 0
+        function calculerTotaux() {
+            let sousTotal = 0;
+            let contientPack = false;
+
+            produits.forEach(p => {
+                let qty = panier[p.id] || 0;
+                sousTotal += p.prix * qty;
+                if (qty > 0 && p.type.includes('pack')) {
+                    contientPack = true;
+                }
+            });
+
+            const mode = document.querySelector('input[name="modeReception"]:checked').value;
+            let fraisLivraison = 0;
+
+            if (contientPack) {
+                fraisLivraison = 0; // Pack promo = 0 frais de port automatique
+            } else if (mode === 'livraison') {
+                fraisLivraison = 1500;
+            }
+
+            let totalFinal = Math.max(0, sousTotal + fraisLivraison - remiseAppliquee);
+            document.getElementById('affichage-total').textContent = `Total : ${totalFinal.toLocaleString()} FCFA`;
+            return { sousTotal, fraisLivraison, totalFinal, contientPack };
         }
-      });
-    }
-  }
 
-  // Lancer la correction en boucle discrète à chaque clic ou changement sur la page
-  document.addEventListener('click', () => {
-    setTimeout(corrigerLivraisonEtTotaux, 100);
-  });
-  
-  window.addEventListener('load', () => {
-    setTimeout(corrigerLivraisonEtTotaux, 500);
-  });
-})();
-</script>
-  
+        function verifierCodePromo() {
+            const code = document.getElementById('code-promo').value.trim().toUpperCase();
+            if (code === "ECOLE01") {
+                remiseAppliquee = 500;
+                alert("Code promo appliqué !");
+            } else {
+                remiseAppliquee = 0;
+                alert("Code promo invalide.");
+            }
+            calculerTotaux();
+        }
+
+        function commanderWhatsApp() {
+            let totaux = calculerTotaux();
+            if (totaux.sousTotal === 0) {
+                alert("Veuillez sélectionner au moins un article !");
+                return;
+            }
+
+            let nom = document.getElementById('client-nom').value || "Client";
+            let tel = document.getElementById('client-tel').value || "Non renseigné";
+            let lieu = document.getElementById('client-lieu').value || "À préciser";
+            let mode = document.querySelector('input[name="modeReception"]:checked').value;
+            let paiement = document.getElementById('mode-paiement').value;
+
+            let texte = `Bonjour Noogo 🍦\n\nJe souhaite commander :\n\n`;
+            produits.forEach(p => {
+                let qty = panier[p.id] || 0;
+                if (qty > 0) {
+                    texte += `⭐ ${qty} x ${p.nom} = ${(p.prix * qty).toLocaleString()} FCFA\n`;
+                }
+            });
+
+            texte += `\nMode de réception : ${mode === 'livraison' ? 'Livraison à domicile' : 'Retrait sur place'}`;
+            if (totaux.contientPack) texte += ` (Livraison VIP incluse)`;
+            
+            texte += `\nTotal produits : ${totaux.sousTotal.toLocaleString()} FCFA`;
+            texte += `\nFrais de livraison : ${totaux.contientPack ? '0 FCFA (Offert)' : (mode === 'livraison' ? '1 500 FCFA' : '0 FCFA')}`;
+            if (remiseAppliquee > 0) texte += `\nRemise : -${remiseAppliquee.toLocaleString()} FCFA`;
+            
+            texte += `\n\nTotal à payer : ${totaux.totalFinal.toLocaleString()} FCFA`;
+            texte += `\n\n💳 Paiement : ${paiement}`;
+            texte += `\n📋 Mes informations :\nNom : ${nom}\nTéléphone : ${tel}\nLieu : ${lieu}`;
+
+            window.open(`https://wa.me/22656795493?text=${encodeURIComponent(texte)}`, '_blank');
+        }
+
+        window.onload = () => { initialiserCatalogue(); };
+    </script>
 </body>
 </html>

@@ -45,6 +45,9 @@
             padding: 15px;
             margin-bottom: 15px;
             box-shadow: 0 4px 12px rgba(255, 122, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
         .pack-badge {
             background: #ff4500;
@@ -65,7 +68,18 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.05);
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            gap: 15px;
+        }
+        .item-img {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #eee;
+            flex-shrink: 0;
+        }
+        .item-details {
+            flex-grow: 1;
         }
         .section-title {
             font-size: 1.2rem;
@@ -87,11 +101,12 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
         .qty-val {
             font-size: 1.1rem;
             font-weight: bold;
-            margin: 0 12px;
+            margin: 0 10px;
             min-width: 20px;
             text-align: center;
         }
@@ -246,13 +261,13 @@
     </div>
         <script>
         const produits = [
-            { id: 1, nom: "Pack Mix Dégustation (6 pots) – 125 ml", prix: 6600, type: "pack125", desc: "Livraison VIP incluse" },
-            { id: 2, nom: "Pack Maxi Duo Gourmet (3 pots) – 250 ml", prix: 5000, type: "pack250", desc: "Livraison VIP incluse" },
-            { id: 3, nom: "Pack Maxi Famille (5 pots) – 250 ml", prix: 7500, type: "pack250", desc: "Livraison VIP incluse" },
-            { id: 4, nom: "Popcorn Sachet", prix: 300, type: "unitaire", desc: "Format: Sachet" },
-            { id: 5, nom: "Popcorn Carton", prix: 500, type: "unitaire", desc: "Format: Carton" },
-            { id: 6, nom: "Pain Anglais", prix: 700, type: "unitaire", desc: "Format: Moyen" },
-            { id: 7, nom: "Crème de 6250 ml", prix: 35000, type: "unitaire", desc: "Grand Bac de 6,25 Litres" }
+            { id: 1, nom: "Pack Mix Dégustation (6 pots) – 125 ml", prix: 6600, type: "pack125", desc: "Livraison VIP incluse", img: "produits/pack125.jpg" },
+            { id: 2, nom: "Pack Maxi Duo Gourmet (3 pots) – 250 ml", prix: 5000, type: "pack250", desc: "Livraison VIP incluse", img: "produits/pack250_1.jpg" },
+            { id: 3, nom: "Pack Maxi Famille (5 pots) – 250 ml", prix: 7500, type: "pack250", desc: "Livraison VIP incluse", img: "produits/pack250_2.jpg" },
+            { id: 4, nom: "Popcorn Sachet", prix: 300, type: "unitaire", desc: "Format: Sachet", img: "produits/popcorn_sachet.jpg" },
+            { id: 5, nom: "Popcorn Carton", prix: 500, type: "unitaire", desc: "Format: Carton", img: "produits/popcorn_carton.jpg" },
+            { id: 6, nom: "Pain Anglais", prix: 700, type: "unitaire", desc: "Format: Moyen", img: "produits/pain_anglais.jpg" },
+            { id: 7, nom: "Crème de 6250 ml", prix: 35000, type: "unitaire", desc: "Grand Bac de 6,25 Litres", img: "produits/creme_6l.jpg" }
         ];
 
         let panier = {};
@@ -271,11 +286,12 @@
                 let estPack = p.type.includes('pack');
                 let html = `
                     <div class="${estPack ? 'pack-card' : 'produit-card'}">
-                        <div>
+                        <img src="${p.img}" alt="${p.nom}" class="item-img" onerror="this.src='https://via.placeholder.com/70?text=Noogo'">
+                        <div class="item-details">
                             ${estPack ? '<div class="pack-badge">🌟 Pack Promo (Livraison VIP)</div>' : ''}
-                            <div style="font-weight: bold; font-size: 1.05rem; color: ${estPack ? '#b33900' : '#333'}">${p.nom}</div>
-                            <div style="font-size: 0.85rem; color: #666; margin-top: 2px;">${p.desc}</div>
-                            <div style="color: #d35400; font-weight: bold; font-size: 1.1rem; margin-top: 6px;">${p.prix.toLocaleString()} FCFA</div>
+                            <div style="font-weight: bold; font-size: 1rem; color: ${estPack ? '#b33900' : '#333'}">${p.nom}</div>
+                            <div style="font-size: 0.8rem; color: #666; margin-top: 2px;">${p.desc}</div>
+                            <div style="color: #d35400; font-weight: bold; font-size: 1rem; margin-top: 4px;">${p.prix.toLocaleString()} FCFA</div>
                         </div>
                         <div style="display: flex; align-items: center;">
                             <button class="btn-qty" onclick="modifierQuantite(${p.id}, -1)">-</button>
@@ -328,7 +344,7 @@
             let fraisLivraison = 0;
 
             if (contientPack) {
-                fraisLivraison = 0; // Livraison VIP gratuite automatique pour les packs
+                fraisLivraison = 0; 
             } else if (mode === 'livraison') {
                 fraisLivraison = 1500;
             }

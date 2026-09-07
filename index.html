@@ -1254,6 +1254,90 @@ console.log("Échec de l'enregistrement du Service Worker :", erreur);
 }
 
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const deliveryThreshold = 3000;
 
+  function formatPrice(n) {
+    return (n || 0).toLocaleString("fr-FR");
+  }
+
+  function updateCartTotal() {
+    let total = 0;
+
+    document.querySelectorAll(".cart-item").forEach(function (item) {
+      const price = parseFloat(item.dataset.price || "0");
+      const qty = parseInt(item.querySelector(".qty")?.textContent || "1", 10);
+      total += price * qty;
+    });
+
+    let delivery = 0;
+    const deliveryLine = document.querySelector(".delivery-line");
+    const deliveryAmount = document.querySelector(".delivery-amount");
+
+    if (total > 0 && total < deliveryThreshold) {
+      delivery = 500;
+    }
+
+    if (deliveryLine) deliveryLine.style.display = delivery ? "flex" : "none";
+    if (deliveryAmount) deliveryAmount.textContent = formatPrice(delivery);
+
+    const totalWithDelivery = total + delivery;
+    const totalEl = document.querySelector(".total-amount");
+    if (totalEl) totalEl.textContent = formatPrice(totalWithDelivery);
+
+    const remaining = Math.max(deliveryThreshold - total, 0);
+    const infoEl = document.querySelector(".delivery-info");
+    if (infoEl) {
+      infoEl.textContent =
+        total >= deliveryThreshold
+          ? "Livraison offerte"
+          : `Ajoutez encore ${formatPrice(remaining)} pour la livraison offerte`;
+    }
+  }
+
+  function buildWhatsAppMessage() {
+    const lines = [];
+    lines.push("Bonjour, voici ma commande :");
+    document.querySelectorAll(".cart-item").forEach(function (item) {
+      const name = item.dataset.name || "Article";
+      const price = item.dataset.price || "0";
+      const qty = item.querySelector(".qty")?.textContent || "1";
+      lines.push(`- ${name} x${qty} (${price} FCFA)`);
+    });
+
+    const totalText = document.querySelector(".total-amount")?.textContent || "0";
+    lines.push(`Total : ${totalText} FCFA`);
+    return lines.join("
+");
+  }
+
+  function updateWhatsAppLink() {
+    const btn = document.querySelector("#whatsappBtn");
+    if (!btn) return;
+    const message = buildWhatsAppMessage();
+    btn.href = "https://wa.me/XXXXXXXXXXX?text=" + encodeURIComponent(message);
+  }
+
+  function refreshAll() {
+    updateCartTotal();
+    updateWhatsAppLink();
+  }
+
+  refreshAll();
+
+  document.addEventListener("click", function (e) {
+    if (e.target.matches(".plus, .minus, .add-to-cart, .remove-item")) {
+      setTimeout(refreshAll, 0);
+    }
+  });
+
+  document.addEventListener("input", function (e) {
+    if (e.target.matches(".qty-input")) {
+      setTimeout(refreshAll, 0);
+    }
+  });
+});
+        </script>
 </body>
 </html>

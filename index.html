@@ -557,3 +557,208 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+<script>
+function renduCarte(p){
+const vipClass = p.vip ? "card vip" : "card";
+return `
+<div class="${vipClass}">
+<img class="item-img" src="${p.img}" alt="${p.nom}" onerror="this.src='${imagePlaceholder(p.nom)}'">
+<div class="item-info">
+<h3>${p.nom}</h3>
+<div class="desc">${p.desc}</div>
+<div class="price">${p.prix.toLocaleString("fr-FR")} FCFA</div>
+<div class="qty-row">
+<button class="btn-qty" onclick="modifierQuantite(${p.id}, -1)">−</button>
+<div class="qty" id="qty-${p.id}">0</div>
+<button class="btn-qty" onclick="modifierQuantite(${p.id}, 1)">+</button>
+</div>
+</div>
+</div>`;
+}
+
+function initialiserCatalogue(){
+document.getElementById("liste-125").innerHTML = produits.filter(p=>p.section==="125").map(renduCarte).join("");
+document.getElementById("liste-250").innerHTML = produits.filter(p=>p.section==="250").map(renduCarte).join("");
+document.getElementById("liste-packs").innerHTML = produits.filter(p=>p.section==="packs").map(renduCarte).join("");
+document.getElementById("liste-autres").innerHTML = produits.filter(p=>p.section==="autres").map(renduCarte).join("");
+}
+
+function modifierQuantite(id, delta){
+panier[id] = Math.max(0, (panier[id] || 0) + delta);
+const el = document.getElementById(`qty-${id}`);
+if(el) el.textContent = panier[id];
+calculerTotaux();
+}
+
+function changerModeReception(){
+const mode = document.querySelector('input[name="modeReception"]:checked').value;
+document.getElementById("radio-retrait").classList.toggle("active", mode === "retrait");
+document.getElementById("radio-livraison").classList.toggle("active", mode === "livraison");
+document.getElementById("bloc-lieu").classList.toggle("hidden", mode !== "livraison");
+calculerTotaux();
+}
+                    </script>
+                    <script>
+function calculerTotaux(){
+let sousTotal = 0;
+let contientPack = false;
+
+produits.forEach(p => {
+const q = panier[p.id] || 0;
+if(q > 0){
+sousTotal += p.prix * q;
+if(p.section === "packs") contientPack = true;
+}
+});
+
+const mode = document.querySelector('input[name="modeReception"]:checked').value;
+let fraisLivraison = 0;
+let messageLivraison = "";
+
+if(mode === "livraison"){
+if(contientPack){
+fraisLivraison = 0;
+messageLivraison = "Pack sélectionné : livraison incluse.";
+}else if(sousTotal >= 3000){
+fraisLivraison = 1500;
+messageLivraison = "Livraison validée avec douceur.";
+}else{
+fraisLivraison = 1500;
+messageLivraison = "Livraison disponible : 1 500 FCFA.";
+}
+}
+
+const total = Math.max(0, sousTotal + fraisLivraison - remiseAppliquee);
+document.getElementById("affichage-total").textContent = `Total : ${total.toLocaleString("fr-FR")} FCFA`;
+
+const msg = document.getElementById("message-code");
+if(msg && mode === "livraison"){
+msg.textContent = messageLivraison;
+msg.style.color = "#8c4a10";
+}
+
+return { sousTotal, fraisLivraison, total, contientPack };
+}
+
+function verifierCodePromo(){
+const code = document.getElementById("code-promo").value.trim().toUpperCase();
+const msg = document.getElementById("message-code");
+if(!code){
+remiseAppliquee = 0;
+msg.textContent = "";
+calculerTotaux();
+return;
+}
+if(code === "ECOLE01"){
+remiseAppliquee = 500;
+msg.textContent = "Code valide : remise de 500 FCFA appliquée.";
+msg.style.color = "#1e7e34";
+}else{
+remiseAppliquee = 0;
+msg.textContent = "Code invalide.";
+msg.style.color = "#c0392b";
+}
+calculerTotaux();
+}
+                    </script>
+                    <script>
+function commanderWhatsApp(){
+const { sousTotal, fraisLivraison, total, contientPack } = calculerTotaux();
+if(sousTotal === 0){
+alert("Veuillez sélectionner au moins un article.");
+return;
+}
+
+const nom = document.getElementById("client-nom").value.trim() || "Client";
+const tel = document.getElementById("client-tel").value.trim() || "Non renseigné";
+const mode = document.querySelector('input[name="modeReception"]:checked').value;
+const lieu = mode === "livraison" ? (document.getElementById("client-lieu").value.trim() || "À préciser") : "Retrait sur place";
+const paiement = document.getElementById("mode-paiement").value;
+
+let message = `Bonjour Noogo 🍦
+
+Voici le récapitulatif de ma commande :
+
+`;
+produits.forEach(p => {
+const q = panier[p.id] || 0;
+if(q > 0){
+message += `• ${q} x ${p.nom} = ${(p.prix * q).toLocaleString("fr-FR")} FCFA
+`;
+}
+});
+
+message += `
+Mode de réception : ${mode === "livraison" ? "Livraison à domicile" : "Retrait sur place"}`;
+if(mode === "livraison") message += `
+Lieu : ${lieu}`;
+message += `
+Sous-total : ${sousTotal.toLocaleString("fr-FR")} FCFA`;
+if(contientPack){
+message += `
+Pack : livraison incluse`;
+}else if(mode === "livraison"){
+message += `
+Livraison : 1 500 FCFA`;
+}
+if(remiseAppliquee > 0) message += `
+Remise : -${remiseAppliquee.toLocaleString("fr-FR")} FCFA`;
+message += `
+
+Total à payer : ${total.toLocaleString("fr-FR")} FCFA`;
+message += `
+💳 Paiement : ${paiement}`;
+
+window.open(`https://wa.me/22656795493?text=${encodeURIComponent(message)}`, "_blank");
+}
+                    </script>
+                    <script>
+function afficherResumeAvantWhatsApp(){
+const { sousTotal, fraisLivraison, total, contientPack } = calculerTotaux();
+if(sousTotal === 0){
+alert("Veuillez sélectionner au moins un article.");
+return;
+}
+const lignes = [];
+produits.forEach(p => {
+const q = panier[p.id] || 0;
+if(q > 0) lignes.push(`${q} x ${p.nom}`);
+});
+const mode = document.querySelector('input[name="modeReception"]:checked').value;
+const resume = [
+"Résumé de la commande :",
+"",
+...lignes,
+"",
+`Réception : ${mode === "livraison" ? "Livraison à domicile" : "Retrait sur place"}`,
+`Sous-total : ${sousTotal.toLocaleString("fr-FR")} FCFA`,
+contientPack ? "Pack : livraison incluse" : (mode === "livraison" ? "Livraison : 1 500 FCFA" : "Livraison : 0 FCFA"),
+remiseAppliquee > 0 ? `Remise : -${remiseAppliquee.toLocaleString("fr-FR")} FCFA` : null,
+`Total : ${total.toLocaleString("fr-FR")} FCFA`
+].filter(Boolean).join("
+");
+alert(resume);
+commanderWhatsApp();
+}
+  </script>
+  <script>
+window.addEventListener("load", () => {
+initialiserCatalogue();
+changerModeReception();
+calculerTotaux();
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+document.querySelectorAll("img").forEach(img => {
+img.setAttribute("loading", "lazy");
+img.setAttribute("decoding", "async");
+});
+const btn = document.querySelector(".btn-whatsapp");
+if(btn){
+btn.textContent = "Valider et commander sur WhatsApp";
+btn.onclick = afficherResumeAvantWhatsApp;
+}
+});
+  </script>
+  </body>
+</html>

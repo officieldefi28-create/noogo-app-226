@@ -38,20 +38,13 @@
             margin: 0 auto;
             padding: 15px;
         }
-        /* Style ultra-attirant pour les packs promos */
-        .pack-card {
+                .pack-card {
             background: var(--pack-bg);
             border: 2px solid var(--pack-border);
             border-radius: 12px;
             padding: 15px;
             margin-bottom: 15px;
             box-shadow: 0 4px 12px rgba(255, 122, 0, 0.15);
-            position: relative;
-            transform: scale(1.01);
-            transition: all 0.2s ease;
-        }
-        .pack-card:hover {
-            box-shadow: 0 6px 16px rgba(255, 122, 0, 0.25);
         }
         .pack-badge {
             background: #ff4500;
@@ -61,7 +54,6 @@
             padding: 3px 8px;
             border-radius: 20px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
             display: inline-block;
             margin-bottom: 5px;
         }
@@ -83,7 +75,7 @@
             border-bottom: 2px solid #f39c12;
             padding-bottom: 5px;
         }
-              .btn-qty {
+                .btn-qty {
             background: #e0e0e0;
             border: none;
             width: 35px;
@@ -95,9 +87,6 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-        }
-        .btn-qty:active {
-            background: #d0d0d0;
         }
         .qty-val {
             font-size: 1.1rem;
@@ -124,7 +113,7 @@
             box-sizing: border-box;
             background: white;
         }
-        .radio-group {
+                .radio-group {
             display: flex;
             gap: 10px;
         }
@@ -147,118 +136,6 @@
             font-weight: bold;
         }
         .sticky-footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            padding: 15px;
-            box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 1000;
-        }
-        .btn-commander {
-            background: #25D366;
-            color: white;
-            border: none;
-            padding: 15px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            border-radius: 10px;
-            cursor: pointer;
-            text-align: center;
-            width: 100%;
-            box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);
-        }
-        .total-display {
-            font-size: 1.2rem;
-            font-weight: bold;
-            text-align: center;
-            color: #333;
-        }
-    </style>
-</head>
-        .produit-card {
-            background: white;
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .section-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #d35400;
-            margin: 20px 0 10px 0;
-            border-bottom: 2px solid #f39c12;
-            padding-bottom: 5px;
-        }
-        .btn-qty {
-            background: #e0e0e0;
-            border: none;
-            width: 35px;
-            height: 35px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .qty-val {
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin: 0 12px;
-            min-width: 20px;
-            text-align: center;
-        }
-          .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 0.95rem;
-        }
-        input[type="text"], input[type="tel"], select, textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            box-sizing: border-box;
-            background: white;
-        }
-        .radio-group {
-            display: flex;
-            gap: 10px;
-        }
-        .radio-card {
-            flex: 1;
-            border: 1px solid #ddd;
-            padding: 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            background: white;
-            transition: all 0.2s;
-        }
-        .radio-card input {
-            display: none;
-        }
-        .radio-card.active {
-            border-color: var(--primary);
-            background: var(--secondary);
-            font-weight: bold;
-        }
-          .sticky-footer {
             position: fixed;
             bottom: 0;
             left: 0;
@@ -386,14 +263,19 @@
             const c250 = document.getElementById('liste-packs-250');
             const cProd = document.getElementById('liste-produits');
 
+            if(c125) c125.innerHTML = '';
+            if(c250) c250.innerHTML = '';
+            if(cProd) cProd.innerHTML = '';
+
             produits.forEach(p => {
+                let estPack = p.type.includes('pack');
                 let html = `
-                    <div class="${p.type.includes('pack') ? 'pack-card' : 'produit-card'}">
+                    <div class="${estPack ? 'pack-card' : 'produit-card'}">
                         <div>
-                            ${p.type.includes('pack') ? '<div class="pack-badge">🌟 Pack Promo</div>' : ''}
-                            <div style="font-weight: bold; font-size: 1rem;">${p.nom}</div>
+                            ${estPack ? '<div class="pack-badge">🌟 Pack Promo (Livraison VIP)</div>' : ''}
+                            <div style="font-weight: bold; font-size: 1.05rem; color: ${estPack ? '#b33900' : '#333'}">${p.nom}</div>
                             <div style="font-size: 0.85rem; color: #666; margin-top: 2px;">${p.desc}</div>
-                            <div style="color: #d35400; font-weight: bold; margin-top: 5px;">${p.prix.toLocaleString()} FCFA</div>
+                            <div style="color: #d35400; font-weight: bold; font-size: 1.1rem; margin-top: 6px;">${p.prix.toLocaleString()} FCFA</div>
                         </div>
                         <div style="display: flex; align-items: center;">
                             <button class="btn-qty" onclick="modifierQuantite(${p.id}, -1)">-</button>
@@ -402,13 +284,12 @@
                         </div>
                     </div>
                 `;
-                if (p.type === 'pack125') c125.innerHTML += html;
-                else if (p.type === 'pack250') c250.innerHTML += html;
-                else cProd.innerHTML += html;
+                if (p.type === 'pack125' && c125) c125.innerHTML += html;
+                else if (p.type === 'pack250' && c250) c250.innerHTML += html;
+                else if (cProd) cProd.innerHTML += html;
             });
         }
-
-        function modifierQuantite(id, delta) {
+                    function modifierQuantite(id, delta) {
             if (!panier[id]) panier[id] = 0;
             panier[id] += delta;
             if (panier[id] < 0) panier[id] = 0;
@@ -447,7 +328,7 @@
             let fraisLivraison = 0;
 
             if (contientPack) {
-                fraisLivraison = 0; // Pack promo = 0 frais de port automatique
+                fraisLivraison = 0; // Livraison VIP gratuite automatique pour les packs
             } else if (mode === 'livraison') {
                 fraisLivraison = 1500;
             }
@@ -494,7 +375,7 @@
             if (totaux.contientPack) texte += ` (Livraison VIP incluse)`;
             
             texte += `\nTotal produits : ${totaux.sousTotal.toLocaleString()} FCFA`;
-            texte += `\nFrais de livraison : ${totaux.contientPack ? '0 FCFA (Offert)' : (mode === 'livraison' ? '1 500 FCFA' : '0 FCFA')}`;
+            texte += `\nFrais de livraison : ${totaux.contientPack ? '0 FCFA (VIP Offert)' : (mode === 'livraison' ? '1 500 FCFA' : '0 FCFA')}`;
             if (remiseAppliquee > 0) texte += `\nRemise : -${remiseAppliquee.toLocaleString()} FCFA`;
             
             texte += `\n\nTotal à payer : ${totaux.totalFinal.toLocaleString()} FCFA`;

@@ -405,3 +405,235 @@
     </script>
 </body>
 </html>
+        <!-- INFORMATIONS CLIENT & LIVRAISON -->
+        <div style="background: white; padding: 15px; border-radius: 12px; margin-top: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.05);">
+            <div class="section-title" style="margin-top: 0;">📋 Vos informations</div>
+            
+            <div class="form-group">
+                <label>Nom (facultatif)</label>
+                <input type="text" id="client-nom" placeholder="Votre nom">
+            </div>
+
+            <div class="form-group">
+                <label>Numéro de téléphone (facultatif)</label>
+                <input type="tel" id="client-tel" placeholder="Ex : 70 12 34 56">
+            </div>
+
+            <div class="form-group">
+                <label>Lieu de livraison (si possible)</label>
+                <input type="text" id="client-lieu" placeholder="Quartier, repère...">
+            </div>
+
+            <div class="form-group">
+                <label>Mode de réception (obligatoire)</label>
+                <div class="radio-group">
+                    <label class="radio-card active" id="label-livraison">
+                        <input type="radio" name="modeReception" value="livraison" checked onchange="changerModeReception()">
+                        🛵 Livraison
+                    </label>
+                    <label class="radio-card" id="label-retrait">
+                        <input type="radio" name="modeReception" value="retrait" onchange="changerModeReception()">
+                        🏢 Retrait sur place
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" id="bloc-info-reception" style="font-size: 0.9rem; color: #666; background: #fff5eb; padding: 10px; border-radius: 8px;">
+                🛵 Livraison à domicile : frais fixes de 1 500 FCFA ajoutés au total.
+            </div>
+
+            <div class="form-group">
+                <label>Code promo (si vous en avez un)</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="code-promo" placeholder="EX : ECOLE01" style="flex: 1;">
+                    <button type="button" onclick="verifierCodePromo()" style="background: #27ae60; color: white; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">✓</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Mode de paiement (obligatoire)</label>
+                <select id="mode-paiement">
+                    <option value="Espèces à la livraison">💵 Espèces à la livraison</option>
+                    <option value="Orange Money">🟠 Orange Money</option>
+                    <option value="Wave">🔵 Wave</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- PIED DE PAGE FIXE -->
+    <div class="sticky-footer">
+        <div class="total-display" id="affichage-total">Total : 0 FCFA</div>
+        <button class="btn-commander" onclick="commanderWhatsApp()">Commander sur WhatsApp</button>
+    </div>
+        <script>
+        const produits = [
+            { id: 1, nom: "Pack Mix Dégustation (6 pots) – 125 ml", prix: 6600, type: "pack125", desc: "Livraison VIP incluse", img: "produits/pack125.jpg" },
+            { id: 2, nom: "Pack Maxi Duo Gourmet (3 pots) – 250 ml", prix: 5000, type: "pack250", desc: "Livraison VIP incluse", img: "produits/pack250_1.jpg" },
+            { id: 3, nom: "Pack Maxi Famille (5 pots) – 250 ml", prix: 7500, type: "pack250", desc: "Livraison VIP incluse", img: "produits/pack250_2.jpg" },
+            { id: 4, nom: "Popcorn Sachet", prix: 300, type: "unitaire", desc: "Format: Sachet", img: "produits/popcorn_sachet.jpg" },
+            { id: 5, nom: "Popcorn Carton", prix: 500, type: "unitaire", desc: "Format: Carton", img: "produits/popcorn_carton.jpg" },
+            { id: 6, nom: "Pain Anglais", prix: 700, type: "unitaire", desc: "Format: Moyen", img: "produits/pain_anglais.jpg" },
+            { id: 7, nom: "Crème de 6250 ml", prix: 35000, type: "unitaire", desc: "Grand Bac de 6,25 Litres", img: "produits/creme_6l.jpg" }
+        ];
+
+        let panier = {};
+        let remiseAppliquee = 0;
+
+        function initialiserCatalogue() {
+            const c125 = document.getElementById('liste-packs-125');
+            const c250 = document.getElementById('liste-packs-250');
+            const cProd = document.getElementById('liste-produits');
+
+            if(c125) c125.innerHTML = '';
+            if(c250) c250.innerHTML = '';
+            if(cProd) cProd.innerHTML = '';
+
+            produits.forEach(p => {
+                let estPack = p.type.includes('pack');
+                let html = "";
+
+                if (estPack) {
+                    html = `
+                        <div class="pack-card">
+                            <div class="pack-header-top">
+                                <span style="font-weight: bold; font-size: 1.05rem; color: #b33900;">${p.nom}</span>
+                                <div class="pack-badge">🌟 VIP</div>
+                            </div>
+                            <div class="pack-content-row">
+                                <img src="${p.img}" alt="${p.nom}" class="item-img" onerror="this.src='https://via.placeholder.com/70?text=Noogo'">
+                                <div class="item-details">
+                                    <div style="font-size: 0.85rem; color: #666;">${p.desc}</div>
+                                    <div style="color: #d35400; font-weight: bold; font-size: 1.1rem; margin-top: 4px;">${p.prix.toLocaleString()} FCFA</div>
+                                </div>
+                                <div style="display: flex; align-items: center;">
+                                    <button class="btn-qty" onclick="modifierQuantite(${p.id}, -1)">-</button>
+                                    <span class="qty-val" id="qty-${p.id}">0</span>
+                                    <button class="btn-qty" onclick="modifierQuantite(${p.id}, 1)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html = `
+                        <div class="produit-card">
+                            <img src="${p.img}" alt="${p.nom}" class="item-img" onerror="this.src='https://via.placeholder.com/70?text=Noogo'">
+                            <div class="item-details">
+                                <div style="font-weight: bold; font-size: 1rem; color: #333;">${p.nom}</div>
+                                <div style="font-size: 0.8rem; color: #666; margin-top: 2px;">${p.desc}</div>
+                                <div style="color: #d35400; font-weight: bold; font-size: 1rem; margin-top: 4px;">${p.prix.toLocaleString()} FCFA</div>
+                            </div>
+                            <div style="display: flex; align-items: center;">
+                                <button class="btn-qty" onclick="modifierQuantite(${p.id}, -1)">-</button>
+                                <span class="qty-val" id="qty-${p.id}">0</span>
+                                <button class="btn-qty" onclick="modifierQuantite(${p.id}, 1)">+</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (p.type === 'pack125' && c125) c125.innerHTML += html;
+                else if (p.type === 'pack250' && c250) c250.innerHTML += html;
+                else if (cProd) cProd.innerHTML += html;
+            });
+        }
+                    function modifierQuantite(id, delta) {
+            if (!panier[id]) panier[id] = 0;
+            panier[id] += delta;
+            if (panier[id] < 0) panier[id] = 0;
+            document.getElementById(`qty-${id}`).textContent = panier[id];
+            calculerTotaux();
+        }
+
+        function changerModeReception() {
+            const mode = document.querySelector('input[name="modeReception"]:checked').value;
+            const blocInfo = document.getElementById('bloc-info-reception');
+            if (mode === 'livraison') {
+                document.getElementById('label-livraison').classList.add('active');
+                document.getElementById('label-retrait').classList.remove('active');
+                blocInfo.innerHTML = "🛵 Livraison à domicile : frais fixes de 1 500 FCFA ajoutés au total.";
+            } else {
+                document.getElementById('label-retrait').classList.add('active');
+                document.getElementById('label-livraison').classList.remove('active');
+                blocInfo.innerHTML = "🏢 Retrait au local : 0 FCFA de livraison.";
+            }
+            calculerTotaux();
+        }
+
+        function calculerTotaux() {
+            let sousTotal = 0;
+            let contientPack = false;
+
+            produits.forEach(p => {
+                let qty = panier[p.id] || 0;
+                sousTotal += p.prix * qty;
+                if (qty > 0 && p.type.includes('pack')) {
+                    contientPack = true;
+                }
+            });
+
+            const mode = document.querySelector('input[name="modeReception"]:checked').value;
+            let fraisLivraison = 0;
+
+            if (contientPack) {
+                fraisLivraison = 0; 
+            } else if (mode === 'livraison') {
+                fraisLivraison = 1500;
+            }
+
+            let totalFinal = Math.max(0, sousTotal + fraisLivraison - remiseAppliquee);
+            document.getElementById('affichage-total').textContent = `Total : ${totalFinal.toLocaleString()} FCFA`;
+            return { sousTotal, fraisLivraison, totalFinal, contientPack };
+        }
+
+        function verifierCodePromo() {
+            const code = document.getElementById('code-promo').value.trim().toUpperCase();
+            if (code === "ECOLE01") {
+                remiseAppliquee = 500;
+                alert("Code promo appliqué !");
+            } else {
+                remiseAppliquee = 0;
+                alert("Code promo invalide.");
+            }
+            calculerTotaux();
+        }
+
+        function commanderWhatsApp() {
+            let totaux = calculerTotaux();
+            if (totaux.sousTotal === 0) {
+                alert("Veuillez sélectionner au moins un article !");
+                return;
+            }
+
+            let nom = document.getElementById('client-nom').value || "Client";
+            let tel = document.getElementById('client-tel').value || "Non renseigné";
+            let lieu = document.getElementById('client-lieu').value || "À préciser";
+            let mode = document.querySelector('input[name="modeReception"]:checked').value;
+            let paiement = document.getElementById('mode-paiement').value;
+
+            let texte = `Bonjour Noogo 🍦\n\nJe souhaite commander :\n\n`;
+            produits.forEach(p => {
+                let qty = panier[p.id] || 0;
+                if (qty > 0) {
+                    texte += `⭐ ${qty} x ${p.nom} = ${(p.prix * qty).toLocaleString()} FCFA\n`;
+                }
+            });
+
+            texte += `\nMode de réception : ${mode === 'livraison' ? 'Livraison à domicile' : 'Retrait sur place'}`;
+            if (totaux.contientPack) texte += ` (Livraison VIP incluse)`;
+            
+            texte += `\nTotal produits : ${totaux.sousTotal.toLocaleString()} FCFA`;
+            texte += `\nFrais de livraison : ${totaux.contientPack ? '0 FCFA (VIP Offert)' : (mode === 'livraison' ? '1 500 FCFA' : '0 FCFA')}`;
+            if (remiseAppliquee > 0) texte += `\nRemise : -${remiseAppliquee.toLocaleString()} FCFA`;
+            
+            texte += `\n\nTotal à payer : ${totaux.totalFinal.toLocaleString()} FCFA`;
+            texte += `\n\n💳 Paiement : ${paiement}`;
+            texte += `\n📋 Mes informations :\nNom : ${nom}\nTéléphone : ${tel}\nLieu : ${lieu}`;
+
+            window.open(`https://wa.me/22656795493?text=${encodeURIComponent(texte)}`, '_blank');
+        }
+
+        window.onload = () => { initialiserCatalogue(); };
+    </script>
+</body>
+</html>

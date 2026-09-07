@@ -22,20 +22,18 @@ module.exports = async (req, res) => {
     let partenaireId = null;
     let codeFinal = "";
 
-    if (data.code) {
-      if (montantTotal >= 5000) {
-        const partenaires = await getPartenaires();
-        const codeNormalise = String(data.code).trim().toUpperCase();
-        const partenaire = partenaires.find(
-          (p) => (p.code || "").toUpperCase() === codeNormalise && p.actif && jourValide(p)
-        );
-        if (partenaire) {
-          remise = calculerMontant(partenaire.remiseType, partenaire.remiseValeur, montantTotal);
-          if (remise > montantTotal) remise = montantTotal;
-          commission = calculerMontant(partenaire.commissionType, partenaire.commissionValeur, montantTotal);
-          partenaireId = partenaire.id;
-          codeFinal = partenaire.code;
-        }
+    if (data.code && montantTotal >= 5000) {
+      const partenaires = await getPartenaires();
+      const codeNormalise = String(data.code).trim().toUpperCase();
+      const partenaire = partenaires.find(
+        (p) => (p.code || "").toUpperCase() === codeNormalise && p.actif && jourValide(p)
+      );
+      if (partenaire) {
+        remise = calculerMontant(partenaire.remiseType, partenaire.remiseValeur, montantTotal);
+        if (remise > montantTotal) remise = montantTotal;
+        commission = calculerMontant(partenaire.commissionType, partenaire.commissionValeur, montantTotal);
+        partenaireId = partenaire.id;
+        codeFinal = partenaire.code;
       }
     }
 
@@ -47,14 +45,17 @@ module.exports = async (req, res) => {
       telClient: data.telClient || "",
       localisation: data.localisation || "",
       modePaiement: data.modePaiement || "",
+      modeReception: data.modeReception || "",
       montantTotal,
       code: codeFinal,
       remise,
       commission,
       partenaireId,
       statutLivraison: "en_attente",
-      statutCommission: "impaye"
+      statutCommission: "impaye",
+      source: data.source || "direct"
     };
+
     commandes.push(nouvelleCommande);
     await setCommandes(commandes);
 
@@ -66,32 +67,4 @@ module.exports = async (req, res) => {
   } catch (err) {
     return res.status(500).json({ erreur: "Erreur lors de la commande", details: err.message });
   }
-};
-
-const gestionnaireCommanderOriginal = module.exports;
-
-module.exports = async (req, res) => {
-  let source = (req.body && req.body.source) || "direct";
-
-  let resIntercepte = {
-    _status: 200,
-    _donnees: null,
-    status(code) { this._status = code; return this; },
-    json(donnees) { this._donnees = donnees; return this; }
-  };
-
-  await gestionnaireCommanderOriginal(req, resIntercepte);
-
-  if (resIntercepte._donnees && resIntercepte._donnees.commandeId) {
-    try {
-      let commandes = await getCommandes();
-      let c = commandes.find(x => x.id === resIntercepte._donnees.commandeId);
-      if (c) {
-        c.source = source;
-        await setCommandes(commandes);
-      }
-    } catch (e) {}
-  }
-
-  return res.status(resIntercepte._status).json(resIntercepte._donnees);
 };

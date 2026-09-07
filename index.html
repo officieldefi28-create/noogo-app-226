@@ -1341,3 +1341,650 @@ document.addEventListener("DOMContentLoaded", function () {
         </script>
 </body>
 </html>
+.commande-form{
+background:white;
+margin:16px 8px;
+padding:16px;
+border-radius:14px;
+box-shadow:0 2px 7px rgba(0,0,0,.12)
+}
+.commande-titre{
+margin:0 0 12px;
+font-size:16px;
+color:#e8590c;
+text-align:center
+}
+.champ-label{
+display:block;
+font-size:13px;
+font-weight:bold;
+color:#444;
+margin:12px 0 5px
+}
+.champ-label:first-of-type{margin-top:0}
+.facultatif{
+font-weight:normal;
+color:#999;
+font-size:11.5px
+}
+.obligatoire{
+font-weight:normal;
+color:#e8590c;
+font-size:11.5px
+}
+.champ-input{
+width:100%;
+padding:11px 12px;
+border:1px solid #ddd;
+border-radius:10px;
+font-size:15px;
+background:#fafafa
+}
+.champ-input:focus{
+outline:2px solid #e8590c;
+background:white
+}
+.champ-avec-bouton{
+display:flex;
+gap:8px
+}
+.champ-avec-bouton .champ-input{flex:1}
+.btn-localiser{
+background:#e8590c;
+color:white;
+border:0;
+border-radius:10px;
+width:46px;
+font-size:18px
+}
+.note-livraison{
+margin:14px 0 0;
+font-size:12px;
+color:#777;
+background:#fff8e1;
+border-radius:8px;
+padding:9px 10px;
+line-height:1.5
+}
+#message-code{
+font-size:12.5px;
+margin-top:6px;
+font-weight:bold
+}
+#message-code.valide{color:#2e7d32}
+#message-code.invalide{color:#c62828}
+.paiement-options{
+display:flex;
+flex-direction:column;
+gap:8px
+}
+.paiement-carte{
+display:flex;
+align-items:center;
+gap:10px;
+border:1px solid #ddd;
+border-radius:10px;
+padding:10px 12px;
+font-size:14px;
+font-weight:600;
+cursor:pointer
+}
+.paiement-carte input{
+width:auto;
+margin:0
+}
+.paiement-carte:has(input:checked){
+border-color:#e8590c;
+background:#fff3e0
+}
+.paiement-carte.selectionnee{
+border-color:#e8590c;
+background:#fff3e0
+}
+.paiement-icone{
+font-size:18px
+}
+.info-paiement-carte{
+background:#fff3e0;
+border-radius:10px;
+padding:12px;
+margin-top:10px;
+font-size:14px;
+text-align:center;
+line-height:1.6
+}
+.info-paiement-numero{
+font-size:20px;
+font-weight:bold;
+color:#e8590c;
+letter-spacing:1px
+}
+.cachee-remise{display:none}
+#ligne-remise{
+text-align:center;
+color:#2e7d32;
+font-weight:bold;
+font-size:13px;
+margin-bottom:4px
+}
+#produits{
+padding:10px 5px 5px
+}
+.produit{
+display:flex;
+align-items:center;
+background:white;
+margin:16px 8px;
+padding:14px;
+border-radius:14px;
+box-shadow:0 2px 7px rgba(0,0,0,.12)
+}
+.img-wrap{
+display:flex;
+flex-direction:column;
+align-items:center;
+width:96px;
+margin-right:14px;
+flex-shrink:0
+}
+.produit img{
+width:90px;
+height:90px;
+border-radius:12px;
+object-fit:cover;
+background:#eee
+}
+.zoom-btn{
+margin-top:6px;
+background:#fff0e6;
+color:#e8590c;
+border:1px solid #e8590c;
+border-radius:20px;
+font-size:11px;
+font-weight:bold;
+padding:3px 9px;
+display:flex;
+align-items:center;
+gap:3px;
+white-space:nowrap
+}
+.info{
+flex:1
+}
+.produit h3{
+margin:0;
+font-size:15px;
+line-height:1.3
+}
+.prix{
+margin:6px 0;
+font-weight:bold;
+color:#e8590c;
+font-size:17px
+}
+.qte{
+display:flex;
+align-items:center;
+gap:12px
+}
+.qte button{
+border:0;
+background:#e8590c;
+color:white;
+width:32px;
+height:32px;
+border-radius:50%;
+font-size:20px;
+font-weight:bold
+}
+.qte span{
+font-weight:bold;
+min-width:20px;
+text-align:center
+}
+.total{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+background:white;
+padding:12px;
+box-shadow:0 -3px 12px rgba(0,0,0,.2);
+z-index:20
+}
+.total h2{
+margin:0 0 10px;
+text-align:center;
+font-size:19px
+}
+.btn-whatsapp{
+display:block;
+width:100%;
+border:0;
+border-radius:10px;
+background:#25D366;
+color:white;
+padding:14px;
+font-size:17px;
+font-weight:bold
+}
+footer{
+background:#333;
+color:white;
+text-align:center;
+padding:26px 15px;
+margin-top:20px
+}
+footer p{
+margin:7px 0
+}
+.footer-btn{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:8px;
+color:white;
+text-decoration:none;
+margin:10px auto;
+max-width:320px;
+padding:14px 16px;
+border-radius:10px;
+font-size:17px;
+font-weight:bold;
+background:rgba(255,255,255,.12);
+border:1px solid rgba(255,255,255,.3)
+}
+.footer-btn:active{
+background:rgba(255,255,255,.25)
+}
+.footer-btn.location{
+background:#e8590c;
+border-color:#e8590c
+}
+.footer-btn.facebook{
+background:#1877F2;
+border-color:#1877F2
+}
+.footer-btn.tiktok{
+background:#000;
+border-color:#555
+}
+.footer-social{
+display:flex;
+gap:10px;
+justify-content:center;
+flex-wrap:wrap;
+margin-top:14px
+}
+.footer-social .footer-btn{
+margin:0;
+flex:1;
+min-width:130px;
+max-width:160px
+}
+.footer-phone{
+font-size:16px;
+font-weight:bold;
+margin:14px 0
+}
+.chevron{
+opacity:.7;
+font-size:13px
+}
+.vide{
+text-align:center;
+padding:25px;
+color:#777
+}
+.zoom-overlay{
+display:none;
+position:fixed;
+top:0;
+left:0;
+right:0;
+bottom:0;
+background:rgba(0,0,0,.9);
+z-index:100;
+align-items:center;
+justify-content:center;
+flex-direction:column;
+padding:20px
+}
+.zoom-overlay.actif{
+display:flex
+}
+.zoom-overlay img{
+max-width:100%;
+max-height:75vh;
+border-radius:14px;
+object-fit:contain
+}
+.zoom-overlay h3{
+color:white;
+margin:16px 0 0;
+font-size:18px;
+text-align:center
+}
+.zoom-close{
+position:absolute;
+top:18px;
+right:18px;
+background:white;
+color:#333;
+border:0;
+width:40px;
+height:40px;
+border-radius:50%;
+font-size:22px;
+font-weight:bold;
+line-height:1
+}
+.install-overlay{
+display:none;
+position:fixed;
+top:0;
+left:0;
+right:0;
+bottom:0;
+background:rgba(0,0,0,.75);
+z-index:200;
+align-items:center;
+justify-content:center;
+padding:20px
+}
+.install-overlay.actif{
+display:flex
+}
+.install-carte{
+position:relative;
+background:white;
+border-radius:20px;
+padding:26px 20px 20px;
+max-width:340px;
+width:100%;
+text-align:center
+}
+.install-logo{
+width:110px;
+margin:0 auto 14px;
+display:block;
+border-radius:12px
+}
+.install-etape{
+display:flex;
+align-items:center;
+gap:14px;
+text-align:left;
+background:#fff3e0;
+border-radius:14px;
+padding:12px 14px;
+margin-bottom:12px
+}
+.install-numero{
+background:#e8590c;
+color:white;
+font-weight:bold;
+font-size:18px;
+width:32px;
+height:32px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+flex-shrink:0
+}
+.install-icone{
+font-size:32px;
+flex-shrink:0
+}
+.install-texte{
+font-size:14px;
+color:#444;
+font-weight:600;
+line-height:1.35
+}
+.install-fleche{
+text-align:center;
+font-size:26px;
+color:#e8590c;
+margin:-4px 0 8px
+}
+.install-ok{
+width:100%;
+background:#e8590c;
+color:white;
+border:0;
+border-radius:12px;
+padding:13px;
+font-size:15px;
+font-weight:bold;
+margin-top:6px
+}
+#bouton-haut{
+display:none;
+position:fixed;
+right:16px;
+bottom:170px;
+width:46px;
+height:46px;
+border-radius:50%;
+background:#e8590c;
+color:white;
+border:0;
+font-size:20px;
+font-weight:bold;
+box-shadow:0 3px 10px rgba(0,0,0,.3);
+z-index:50
+}
+#bouton-haut.visible{
+display:block
+}
+</style>
+</head>
+<body>
+
+<header>
+<img id="logo" src="/logo.png" alt="Noogo">
+<h1>NOOGO</h1>
+<p class="tagline">Des saveurs authentiques, pour tous les plaisirs 🍦</p>
+<p>Livraison à Karpala et alentours</p>
+<div class="badge-24h">🕒 Ouvert 24h/24 — commandez à toute heure !</div>
+<button id="install-btn" onclick="installerApp()">⬇️ Installer l'application</button>
+</header>
+
+<h2 class="section-titre">🍦 Nos produits</h2>
+<p class="section-sous-titre">Touchez une photo pour l'agrandir, puis choisissez vos quantités</p>
+
+<div class="promo-bandeau">
+🌿 100% naturel &nbsp;•&nbsp; ❤️ Fait avec amour &nbsp;•&nbsp; 📍 Fabriqué à Karpala<br>
+<strong>Nos clients adorent nos glaces artisanales — à vous de goûter !</strong>
+</div>
+
+<div id="produits"></div>
+<div class="commande-form">
+<h3 class="commande-titre">📋 Vos informations</h3>
+
+<label class="champ-label" for="champ-nom">Nom <span class="facultatif">(facultatif)</span></label>
+<input type="text" id="champ-nom" class="champ-input" placeholder="Votre nom">
+
+<label class="champ-label" for="champ-tel">Numéro de téléphone <span class="facultatif">(facultatif)</span></label>
+<input type="tel" id="champ-tel" class="champ-input" placeholder="Ex : 70 12 34 56">
+
+<label class="champ-label" for="champ-localisation">Lieu de livraison <span class="facultatif">(si possible)</span></label>
+<div class="champ-avec-bouton">
+<input type="text" id="champ-localisation" class="champ-input" placeholder="Quartier, repère...">
+<button type="button" class="btn-localiser" onclick="localiser()">📍</button>
+</div>
+
+<p class="note-livraison">
+🚚 Livraison à la charge du client, sauf à <strong>Karpala</strong> où c'est à discuter directement avec nous.
+</p>
+
+<label class="champ-label" for="champ-code">Code promo <span class="facultatif">(si vous en avez un)</span></label>
+<div class="champ-avec-bouton">
+<input type="text" id="champ-code" class="champ-input" placeholder="Ex : ECOLE01" style="text-transform:uppercase">
+<button type="button" class="btn-localiser" onclick="verifierCode()">✅</button>
+</div>
+<div id="message-code"></div>
+
+<label class="champ-label">Mode de paiement <span class="obligatoire">(obligatoire)</span></label>
+<div class="paiement-options">
+<label class="paiement-carte">
+<input type="radio" name="paiement" value="especes" checked onchange="afficherInfoPaiement()">
+<span class="paiement-icone">💵</span>
+<span>Espèces à la livraison</span>
+</label>
+<label class="paiement-carte">
+<input type="radio" name="paiement" value="orange" onchange="afficherInfoPaiement()">
+<span class="paiement-icone">🟠</span>
+<span>Orange Money</span>
+</label>
+<label class="paiement-carte">
+<input type="radio" name="paiement" value="wave" onchange="afficherInfoPaiement()">
+<span class="paiement-icone">🔵</span>
+<span>Wave</span>
+</label>
+</div>
+
+<div id="info-paiement" class="cachee-remise"></div>
+</div>
+<div class="total">
+<div id="ligne-remise" class="cachee-remise"></div>
+<h2>Total : <span id="total">0</span> FCFA</h2>
+<button class="btn-whatsapp" onclick="commander()">Commander sur WhatsApp</button>
+</div>
+
+<footer>
+<a class="footer-btn location" href="https://maps.google.com/?q=12.336911,-1.474793&entry=gps" target="_blank">
+📍 Voir sur Google Maps <span class="chevron">›</span>
+</a>
+<p class="footer-phone">📞 61 68 27 06</p>
+<div class="footer-social">
+<a class="footer-btn facebook" href="https://www.facebook.com/share/1DX4RzmDFC/" target="_blank">👍 Facebook</a>
+<a class="footer-btn tiktok" href="https://www.tiktok.com/@dlices.de.papous" target="_blank">🎵 TikTok</a>
+</div>
+<p style="margin-top:16px">
+<a href="/partenaire.html" style="color:#aaa;font-size:12px;text-decoration:underline">🤝 Espace partenaire</a>
+&nbsp;·&nbsp;
+<a href="/admin.html" style="color:#aaa;font-size:12px;text-decoration:underline">🔐 Espace admin</a>
+</p>
+</footer>
+
+<div class="zoom-overlay" id="zoom-overlay" onclick="fermerZoom()">
+<button class="zoom-close" onclick="fermerZoom()">✕</button>
+<img id="zoom-img" src="" alt="">
+<h3 id="zoom-titre"></h3>
+</div>
+
+<div class="install-overlay" id="install-overlay">
+<div class="install-carte">
+<button class="zoom-close" onclick="fermerGuideInstall()">✕</button>
+<img src="" alt="Noogo" class="install-logo" id="install-logo-img">
+<div id="install-etapes"></div>
+<button class="install-ok" onclick="fermerGuideInstall()">J'ai compris 👍</button>
+</div>
+</div>
+<button id="bouton-haut" onclick="remonterEnHaut()" aria-label="Remonter en haut">⬆</button>
+
+<div id="bandeau-install" style="display:none;position:fixed;left:0;right:0;bottom:0;background:#e8590c;color:white;padding:14px;z-index:150;box-shadow:0 -3px 12px rgba(0,0,0,.25);align-items:center;gap:12px">
+<span style="flex:1;font-size:14px;font-weight:600">📲 Installez l'app Noogo pour commander plus vite !</span>
+<button onclick="installerApp()" style="background:white;color:#e65100;border:0;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:bold;white-space:nowrap">Installer</button>
+<button onclick="fermerBandeauInstall()" style="background:transparent;color:white;border:0;font-size:20px;padding:0 4px" aria-label="Fermer">✕</button>
+</div>
+
+<script>
+let produits = [
+{nom:"Popcorn Sachet",prix:300,img:"POPcorn_Sachet_300F",qte:0},
+{nom:"Popcorn Carton",prix:500,img:"POPcorn_Carton_500F",qte:0},
+{nom:"Crème Glacée Banane",prix:1000,img:"Creme_Glacee_Banane_1000F",qte:0},
+{nom:"Crème Glacée Vanille Lactée",prix:700,img:"Creme_Glacee_Vanille_Lactee_700F",qte:0},
+{nom:"Crème Glacée Chocolat Cacao au Lait",prix:600,img:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F",qte:0},
+{nom:"Esquimau Sandra",prix:500,img:"Esquimau_Sandra_500F",qte:0},
+{nom:"Esquimau Sandra Chocolat au Coco",prix:800,img:"Esquimau_Sandra_Chocolat_Coco_800F",qte:0},
+{nom:"Crème de 6250 ml",prix:35000,img:"Creme_6250ml_35000F",qte:0},
+{nom:"Fruits Naturel Banane",prix:2000,img:"Fruits_Naturel_Banane_2000F",qte:0},
+{nom:"Vanille Lacté",prix:1400,img:"Vanille_Lacte_1400F",qte:0},
+{nom:"Chocolat Cacao au Lait",prix:1200,img:"Chocolat_Cacao_au_Lait_1200F",qte:0},
+{nom:"Pain Anglais - 1000 FCFA",prix:1000,img:"Pain_Anglais_1000F",qte:0},
+{nom:"Pain Anglais - 700 FCFA",prix:700,img:"Pain_Anglais_700F",qte:0}
+];
+
+let images = {
+"POPcorn_Sachet_300F":"/produits/POPcorn_Sachet_300F.jpg",
+"POPcorn_Carton_500F":"/produits/POPcorn_Carton_500F.jpg",
+"Creme_Glacee_Banane_1000F":"/produits/Creme_Glacee_Banane_1000F.jpg",
+"Creme_Glacee_Vanille_Lactee_700F":"/produits/Creme_Glacee_Vanille_Lactee_700F.jpg",
+"Creme_Glacee_Chocolat_Cacao_au_Lait_600F":"/produits/Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
+"Esquimau_Sandra_500F":"/produits/Esquimau_Sandra_500F.jpg",
+"Esquimau_Sandra_Chocolat_Coco_800F":"/produits/Esquimau_Sandra_Chocolat_Coco_800F.jpg",
+"Creme_6250ml_35000F":"/produits/Creme_6250ml_35000F.jpg",
+"Fruits_Naturel_Banane_2000F":"/produits/Fruits_Naturel_Banane_2000F.jpg",
+"Vanille_Lacte_1400F":"/produits/Vanille_Lacte_1400F.jpg",
+"Chocolat_Cacao_au_Lait_1200F":"/produits/Chocolat_Cacao_au_Lait_1200F.jpg",
+"Pain_Anglais_700F":"/produits/Pain_Anglais_700F.jpg",
+"Pain_Anglais_1000F":"/produits/Pain_Anglais_1000F.jpg"
+};
+
+let codePromoApplique = null;
+function afficher(){let html="";produits.forEach((p,i)=>{let placeholder="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><rect width='90' height='90' fill='%23eeeeee'/><text x='45' y='49' font-size='11' text-anchor='middle' fill='%23999' font-family='Arial'>Photo à venir</text></svg>";let image=images[p.img]||placeholder;html+=`<div class="produit"><div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')"><img src="${image}" alt="${p.nom}"><span class="zoom-btn">🔍 Agrandir</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${p.prix.toLocaleString("fr-FR")} FCFA</div><div class="qte"><button onclick="changer(${i},-1)">−</button><span>${p.qte}</span><button onclick="changer(${i},1)">+</button></div></div></div>`;});if(html==="")html='<div class="vide">Aucun produit disponible.</div>';document.getElementById("produits").innerHTML=html;let total=produits.reduce((s,p)=>s+(p.prix*p.qte),0);let totalAffiche=total;if(codePromoApplique&&codePromoApplique.valide){totalAffiche=Math.max(0,total-codePromoApplique.remise);document.getElementById("ligne-remise").innerText=`Code ${codePromoApplique.code} appliqué : −${codePromoApplique.remise.toLocaleString("fr-FR")} FCFA`;document.getElementById("ligne-remise").classList.remove("cachee-remise");}else{document.getElementById("ligne-remise").classList.add("cachee-remise");}document.getElementById("total").innerText=totalAffiche.toLocaleString("fr-FR");}
+function afficherInfoPaiement(){document.querySelectorAll(".paiement-carte").forEach(c=>c.classList.remove("selectionnee"));let choix=document.querySelector('input[name="paiement"]:checked').value;let zone=document.getElementById("info-paiement");document.querySelector(`input[name="paiement"][value="${choix}"]`).closest(".paiement-carte").classList.add("selectionnee");if(choix==="orange"){zone.innerHTML=`<div class="info-paiement-carte">🟠 Envoyez le montant via <strong>Orange Money</strong> au numéro :<br><span class="info-paiement-numero">65 12 09 02</span><br><small>Après paiement, envoyez la capture d'écran directement sur WhatsApp avec votre commande</small></div>`;zone.classList.remove("cachee-remise");}else if(choix==="wave"){zone.innerHTML=`<div class="info-paiement-carte">🔵 Envoyez le montant via <strong>Wave</strong> au numéro :<br><span class="info-paiement-numero">65 12 09 02</span><br><small>Après paiement, envoyez la capture d'écran directement sur WhatsApp avec votre commande</small></div>`;zone.classList.remove("cachee-remise");}else{zone.innerHTML="";zone.classList.add("cachee-remise");}}
+function verifierCode(){let code=document.getElementById("champ-code").value.trim();let zoneMessage=document.getElementById("message-code");if(code===""){codePromoApplique=null;zoneMessage.innerText="";afficher();return;}let total=produits.reduce((s,p)=>s+(p.prix*p.qte),0);zoneMessage.className="";zoneMessage.innerText="Vérification...";fetch("/api/verifier-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,montantTotal:total})}).then(r=>r.json()).then(d=>{if(d.valide){codePromoApplique={code:code.toUpperCase(),remise:d.remise};zoneMessage.className="valide";zoneMessage.innerText=`✅ Code valide ! −${d.remise.toLocaleString("fr-FR")} FCFA`;}else{codePromoApplique=null;zoneMessage.className="invalide";zoneMessage.innerText="❌ "+(d.message||"Code promo invalide");}afficher();}).catch(()=>{codePromoApplique=null;zoneMessage.className="inva
+  <button id="bouton-haut" onclick="remonterEnHaut()" aria-label="Remonter en haut">⬆</button>
+
+<div id="bandeau-install" style="display:none;position:fixed;left:0;right:0;bottom:0;background:#e8590c;color:white;padding:14px;z-index:150;box-shadow:0 -3px 12px rgba(0,0,0,.25);align-items:center;gap:12px">
+<span style="flex:1;font-size:14px;font-weight:600">📲 Installez l'app Noogo pour commander plus vite !</span>
+<button onclick="installerApp()" style="background:white;color:#e65100;border:0;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:bold;white-space:nowrap">Installer</button>
+<button onclick="fermerBandeauInstall()" style="background:transparent;color:white;border:0;font-size:20px;padding:0 4px" aria-label="Fermer">✕</button>
+</div>
+
+<script>
+let produits = [
+{nom:"Popcorn Sachet",prix:300,img:"POPcorn_Sachet_300F",qte:0},
+{nom:"Popcorn Carton",prix:500,img:"POPcorn_Carton_500F",qte:0},
+{nom:"Crème Glacée Banane",prix:1000,img:"Creme_Glacee_Banane_1000F",qte:0},
+{nom:"Crème Glacée Vanille Lactée",prix:700,img:"Creme_Glacee_Vanille_Lactee_700F",qte:0},
+{nom:"Crème Glacée Chocolat Cacao au Lait",prix:600,img:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F",qte:0},
+{nom:"Esquimau Sandra",prix:500,img:"Esquimau_Sandra_500F",qte:0},
+{nom:"Esquimau Sandra Chocolat au Coco",prix:800,img:"Esquimau_Sandra_Chocolat_Coco_800F",qte:0},
+{nom:"Crème de 6250 ml",prix:35000,img:"Creme_6250ml_35000F",qte:0},
+{nom:"Fruits Naturel Banane",prix:2000,img:"Fruits_Naturel_Banane_2000F",qte:0},
+{nom:"Vanille Lacté",prix:1400,img:"Vanille_Lacte_1400F",qte:0},
+{nom:"Chocolat Cacao au Lait",prix:1200,img:"Chocolat_Cacao_au_Lait_1200F",qte:0},
+{nom:"Pain Anglais - 1000 FCFA",prix:1000,img:"Pain_Anglais_1000F",qte:0},
+{nom:"Pain Anglais - 700 FCFA",prix:700,img:"Pain_Anglais_700F",qte:0}
+];
+
+let images = {
+"POPcorn_Sachet_300F":"/produits/POPcorn_Sachet_300F.jpg",
+"POPcorn_Carton_500F":"/produits/POPcorn_Carton_500F.jpg",
+"Creme_Glacee_Banane_1000F":"/produits/Creme_Glacee_Banane_1000F.jpg",
+"Creme_Glacee_Vanille_Lactee_700F":"/produits/Creme_Glacee_Vanille_Lactee_700F.jpg",
+"Creme_Glacee_Chocolat_Cacao_au_Lait_600F":"/produits/Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
+"Esquimau_Sandra_500F":"/produits/Esquimau_Sandra_500F.jpg",
+"Esquimau_Sandra_Chocolat_Coco_800F":"/produits/Esquimau_Sandra_Chocolat_Coco_800F.jpg",
+"Creme_6250ml_35000F":"/produits/Creme_6250ml_35000F.jpg",
+"Fruits_Naturel_Banane_2000F":"/produits/Fruits_Naturel_Banane_2000F.jpg",
+"Vanille_Lacte_1400F":"/produits/Vanille_Lacte_1400F.jpg",
+"Chocolat_Cacao_au_Lait_1200F":"/produits/Chocolat_Cacao_au_Lait_1200F.jpg",
+"Pain_Anglais_700F":"/produits/Pain_Anglais_700F.jpg",
+"Pain_Anglais_1000F":"/produits/Pain_Anglais_1000F.jpg"
+};
+
+let codePromoApplique = null;
+function afficher(){let html="";produits.forEach((p,i)=>{let placeholder="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><rect width='90' height='90' fill='%23eeeeee'/><text x='45' y='49' font-size='11' text-anchor='middle' fill='%23999' font-family='Arial'>Photo à venir</text></svg>";let image=images[p.img]||placeholder;html+=`<div class="produit"><div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')"><img src="${image}" alt="${p.nom}"><span class="zoom-btn">🔍 Agrandir</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${p.prix.toLocaleString("fr-FR")} FCFA</div><div class="qte"><button onclick="changer(${i},-1)">−</button><span>${p.qte}</span><button onclick="changer(${i},1)">+</button></div></div></div>`;});if(html==="")html='<div class="vide">Aucun produit disponible.</div>';document.getElementById("produits").innerHTML=html;let total=produits.reduce((s,p)=>s+(p.prix*p.qte),0);let totalAffiche=total;if(codePromoApplique&&codePromoApplique.valide){totalAffiche=Math.max(0,total-codePromoApplique.remise);document.getElementById("ligne-remise").innerText=`Code ${codePromoApplique.code} appliqué : −${codePromoApplique.remise.toLocaleString("fr-FR")} FCFA`;document.getElementById("ligne-remise").classList.remove("cachee-remise");}else{document.getElementById("ligne-remise").classList.add("cachee-remise");}document.getElementById("total").innerText=totalAffiche.toLocaleString("fr-FR");}
+function afficherInfoPaiement(){document.querySelectorAll(".paiement-carte").forEach(c=>c.classList.remove("selectionnee"));let choix=document.querySelector('input[name="paiement"]:checked').value;let zone=document.getElementById("info-paiement");document.querySelector(`input[name="paiement"][value="${choix}"]`).closest(".paiement-carte").classList.add("selectionnee");if(choix==="orange"){zone.innerHTML=`<div class="info-paiement-carte">🟠 Envoyez le montant via <strong>Orange Money</strong> au numéro :<br><span class="info-paiement-numero">65 12 09 02</span><br><small>Après paiement, envoyez la capture d'écran directement sur WhatsApp avec votre commande</small></div>`;zone.classList.remove("cachee-remise");}else if(choix==="wave"){zone.innerHTML=`<div class="info-paiement-carte">🔵 Envoyez le montant via <strong>Wave</strong> au numéro :<br><span class="info-paiement-numero">65 12 09 02</span><br><small>Après paiement, envoyez la capture d'écran directement sur WhatsApp avec votre commande</small></div>`;zone.classList.remove("cachee-remise");}else{zone.innerHTML="";zone.classList.add("cachee-remise");}}
+function verifierCode(){let code=document.getElementById("champ-code").value.trim();let zoneMessage=document.getElementById("message-code");if(code===""){codePromoApplique=null;zoneMessage.innerText="";afficher();return;}let total=produits.reduce((s,p)=>s+(p.prix*p.qte),0);zoneMessage.className="";zoneMessage.innerText="Vérification...";fetch("/api/verifier-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,montantTotal:total})}).then(r=>r.json()).then(d=>{if(d.valide){codePromoApplique={code:code.toUpperCase(),remise:d.remise};zoneMessage.className="valide";zoneMessage.innerText=`✅ Code valide ! −${d.remise.toLocaleString("fr-FR")} FCFA`;}else{codePromoApplique=null;zoneMessage.className="invalide";zoneMessage.innerText="❌ "+(d.message||"Code promo invalide");}afficher();}).catch(()=>{codePromoApplique=null;zoneMessage.className="invalide";zoneMessage.innerText="❌ Impossible de vérifier le code pour le moment";afficher();});}
+function changer(i,n){produits[i].qte=Math.max(0,produits[i].qte+n);afficher();}
+function commander(){let commande=[];produits.forEach(p=>{if(p.qte>0)commande.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});if(commande.length===0){alert("Veuillez sélectionner au moins un produit.");return;}let nom=document.getElementById("champ-nom").value.trim();let tel=document.getElementById("champ-tel").value.trim();let loc=document.getElementById("champ-localisation").value.trim();let code=document.getElementById("champ-code").value.trim();let paiement=document.querySelector('input[name="paiement"]:checked').value;let total=document.getElementById("total").innerText;let message=[];message.push("Bonjour, je souhaite passer commande :");if(nom)message.push(`Nom : ${nom}`);if(tel)message.push(`Téléphone : ${tel}`);if(loc)message.push(`Lieu : ${loc}`);if(code)message.push(`Code promo : ${code.toUpperCase()}`);message.push("");message.push(...commande);message.push("");message.push(`Paiement : ${paiement}`);message.push(`Total : ${total} FCFA`);let lien="https://wa.me/22661682706?text="+encodeURIComponent(message.join("
+"));window.open(lien,"_blank");}
+function agrandir(src,titre){document.getElementById("zoom-img").src=src;document.getElementById("zoom-titre").innerText=titre;document.getElementById("zoom-overlay").classList.add("actif");}
+function fermerZoom(){document.getElementById("zoom-overlay").classList.remove("actif");}
+function localiser(){alert("Fonction de localisation à connecter si besoin.");}
+function remonterEnHaut(){window.scrollTo({top:0,behavior:"smooth"});}
+function installerApp(){alert("Installation de l'application à configurer si besoin.");}
+function fermerGuideInstall(){document.getElementById("install-overlay").classList.remove("actif");}
+function fermerBandeauInstall(){document.getElementById("bandeau-install").style.display="none";}
+window.addEventListener("DOMContentLoaded",()=>{afficher();afficherInfoPaiement();});
+</script>
+</body>
+</html>

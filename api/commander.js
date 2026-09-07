@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
     let partenaireId = null;
     let codeFinal = "";
 
-    // Traitement du code promo / partenaire
+    // Traitement du code promo / partenaire (sans restriction de seuil pour coller à ton code initial)
     if (data.code) {
       const partenaires = await getPartenaires();
       const codeNormalise = String(data.code).trim().toUpperCase();
@@ -41,9 +41,10 @@ module.exports = async (req, res) => {
         codeFinal = partenaire.code;
       }
     }
-        const commandes = await getCommandes();
 
-    // Création de l'objet commande enrichi
+    const commandes = await getCommandes();
+
+    // Création de l'objet commande enrichi avec tes champs d'origine + les articles
     const nouvelleCommande = {
       id: "CMD-" + Date.now(),
       date: new Date().toISOString(),
@@ -52,7 +53,7 @@ module.exports = async (req, res) => {
       localisation: data.localisation || "Non renseignée",
       modePaiement: data.modePaiement || "especes",
       modeReception: data.modeReception || "livraison",
-      articles: data.articles || [], // Liste détaillée des pots/packs commandés
+      articles: data.articles || [],
       montantTotal,
       code: codeFinal,
       remise,
@@ -82,3 +83,4 @@ module.exports = async (req, res) => {
     });
   }
 };
+      

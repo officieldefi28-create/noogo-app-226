@@ -110,7 +110,205 @@ footer p{margin:7px 0}
 <div id="produits"></div>
 <div id="produits"></div>
 <div id="packs"></div>
+<div id="produits"></div>
+<div id="packs"></div>
 
+<script>
+let produits = [
+{nom:"Popcorn Sachet",prix:300,fichier:"POPcorn_Sachet_300F.jpg",qte:0},
+{nom:"Popcorn Carton",prix:500,fichier:"POPcorn_Carton_500F.jpg",qte:0},
+{nom:"Crème Glacée Banane",prix:1000,fichier:"Creme_Glacee_Banane_1000F.jpg",qte:0},
+{nom:"Crème Glacée Vanille Lactée",prix:700,fichier:"Creme_Glacee_Vanille_Lactee_700F.jpg",qte:0},
+{nom:"Crème Glacée Chocolat Cacao au Lait",prix:600,fichier:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",qte:0},
+{nom:"Esquimau Sandra",prix:500,fichier:"Esquimau_Sandra_500F.jpg",qte:0},
+{nom:"Esquimau Sandra Chocolat au Coco",prix:800,fichier:"Esquimau_Sandra_Chocolat_Coco_800F.jpg",qte:0},
+{nom:"Crème de 6250 ml",prix:35000,fichier:"Creme_6250ml_35000F.jpg",qte:0},
+{nom:"Fruits Naturel Banane",prix:2000,fichier:"Fruits_Naturel_Banane_2000F.jpg",qte:0},
+{nom:"Vanille Lacté",prix:1400,fichier:"Vanille_Lacte_1400F.jpg",qte:0},
+{nom:"Chocolat Cacao au Lait",prix:1200,fichier:"Chocolat_Cacao_au_Lait_1200F.jpg",qte:0},
+{nom:"Pain Anglais - 1000 FCFA",prix:1000,fichier:"Pain_Anglais_1000F.jpg",qte:0},
+{nom:"Pain Anglais - 700 FCFA",prix:700,fichier:"Pain_Anglais_700F.jpg",qte:0}
+];
+
+let packs = [
+{nom:"Pack Découverte",prix:1500,fichier:"pack-decouverte.jpg",desc:"Un petit pack pratique pour tester.",qte:0},
+{nom:"Pack Famille",prix:2500,fichier:"pack-famille.jpg",desc:"Un pack pour partager.",qte:0},
+{nom:"Pack Fête",prix:4000,fichier:"pack-fete.jpg",desc:"Un pack pour les grandes commandes.",qte:0}
+];
+
+let remise = 0;
+let codeValide = false;
+
+function cheminImage(fichier){
+return "/produit/" + fichier;
+}
+
+function prixAffiche(prix){
+return prix < 1500 ? prix.toLocaleString("fr-FR") + " FCFA" : "Sur commande";
+}
+
+function ligneProduit(p, i){
+return `<div class="produit"><div class="img-wrap" onclick="agrandir('${cheminImage(p.fichier)}','${p.nom.replace(/'/g,"\\'")}')"><img src="${cheminImage(p.fichier)}" alt="${p.nom}"><span class="zoom-btn">🔍 Agrandir</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${prixAffiche(p.prix)}</div><div class="qte"><button onclick="changerProduit(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerProduit(${i},1)">+</button></div></div></div>`;
+}
+
+function lignePack(p, i){
+return `<div class="produit"><div class="img-wrap" onclick="agrandir('${cheminImage(p.fichier)}','${p.nom.replace(/'/g,"\\'")}')"><img src="${cheminImage(p.fichier)}" alt="${p.nom}"><span class="zoom-btn">📦 Pack</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${prixAffiche(p.prix)}</div><p style="margin:6px 0 10px;font-size:13px;color:#666;line-height:1.4">${p.desc}</p><div class="qte"><button onclick="changerPack(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerPack(${i},1)">+</button></div></div></div>`;
+}
+
+function afficherProduits(){
+document.getElementById("produits").innerHTML = produits.map(ligneProduit).join("");
+}
+
+function afficherPacks(){
+let titre = `<h2 class="section-titre">🎁 Packs</h2>`;
+let html = packs.map(lignePack).join("");
+document.getElementById("packs").innerHTML = titre + html;
+}
+
+function changerProduit(i,n){
+produits[i].qte = Math.max(0, produits[i].qte + n);
+actualiser();
+}
+
+function changerPack(i,n){
+packs[i].qte = Math.max(0, packs[i].qte + n);
+actualiser();
+}
+
+function sousTotal(){
+let a = produits.reduce((s,p)=>s + (p.prix*p.qte), 0);
+let b = packs.reduce((s,p)=>s + (p.prix*p.qte), 0);
+return a + b;
+}
+
+function totalFinal(){
+let t = sousTotal();
+if(codeValide) t = Math.max(0, t - remise);
+return t;
+}
+
+function verifierCode(){
+let code = (document.getElementById("champ-code")?.value || "").trim();
+let zone = document.getElementById("message-code");
+if(!zone) return;
+if(code===""){
+codeValide = false;
+remise = 0;
+zone.innerText = "";
+actualiser();
+return;
+}
+zone.className = "";
+zone.innerText = "Vérification...";
+fetch("/api/verifier-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,montantTotal:sousTotal()})})
+.then(r=>r.json())
+.then(d=>{
+if(d.valide){
+codeValide = true;
+remise = Number(d.remise || 0);
+zone.className = "valide";
+zone.innerText = `✅ Code valide ! −${remise.toLocaleString("fr-FR")} FCFA`;
+}else{
+codeValide = false;
+remise = 0;
+zone.className = "invalide";
+zone.innerText = "❌ " + (d.message || "Code invalide");
+}
+actualiser();
+})
+.catch(()=>{
+codeValide = false;
+remise = 0;
+zone.className = "invalide";
+zone.innerText = "❌ Vérification impossible";
+actualiser();
+});
+}
+
+function afficherInfoPaiement(){
+let zone = document.getElementById("info-paiement");
+if(!zone) return;
+let choix = document.querySelector('input[name="paiement"]:checked');
+let v = choix ? choix.value : "especes";
+document.querySelectorAll(".paiement-carte").forEach(c=>c.classList.remove("selectionnee"));
+if(choix) choix.closest(".paiement-carte").classList.add("selectionnee");
+if(v==="orange"){
+zone.innerHTML = `<div class="info-paiement-carte">🟠 Orange Money : <span class="info-paiement-numero">65 12 09 02</span></div>`;
+zone.classList.remove("cachee-remise");
+}else if(v==="wave"){
+zone.innerHTML = `<div class="info-paiement-carte">🔵 Wave : <span class="info-paiement-numero">65 12 09 02</span></div>`;
+zone.classList.remove("cachee-remise");
+}else{
+zone.innerHTML = "";
+zone.classList.add("cachee-remise");
+}
+}
+
+function actualiser(){
+afficherProduits();
+afficherPacks();
+let total = totalFinal();
+let totalEl = document.getElementById("total");
+if(totalEl) totalEl.innerText = total.toLocaleString("fr-FR");
+let remiseEl = document.getElementById("ligne-remise");
+if(remiseEl){
+if(codeValide && remise > 0){
+remiseEl.innerText = `Remise : −${remise.toLocaleString("fr-FR")} FCFA`;
+remiseEl.classList.remove("cachee-remise");
+}else{
+remiseEl.classList.add("cachee-remise");
+}
+}
+}
+
+function commander(){
+let items = [];
+produits.forEach(p=>{if(p.qte>0) items.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});
+packs.forEach(p=>{if(p.qte>0) items.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});
+if(items.length===0){alert("Veuillez sélectionner au moins un produit ou un pack.");return;}
+let nom = document.getElementById("champ-nom")?.value.trim() || "";
+let tel = document.getElementById("champ-tel")?.value.trim() || "";
+let loc = document.getElementById("champ-localisation")?.value.trim() || "";
+let code = document.getElementById("champ-code")?.value.trim() || "";
+let paiement = document.querySelector('input[name="paiement"]:checked')?.value || "especes";
+let livraison = 2000;
+let sous = sousTotal();
+let final = totalFinal() + livraison;
+let msg = [];
+msg.push("Bonjour, je souhaite passer commande :");
+if(nom) msg.push(`Nom : ${nom}`);
+if(tel) msg.push(`Téléphone : ${tel}`);
+if(loc) msg.push(`Lieu : ${loc}`);
+if(code) msg.push(`Code promo : ${code.toUpperCase()}`);
+msg.push("");
+msg.push(...items);
+msg.push("");
+msg.push(`Sous-total : ${sous.toLocaleString("fr-FR")} FCFA`);
+msg.push(`Livraison : ${livraison.toLocaleString("fr-FR")} FCFA`);
+msg.push(`Total à payer : ${final.toLocaleString("fr-FR")} FCFA`);
+msg.push(`Paiement : ${paiement}`);
+let lien = "https://wa.me/22661682706?text=" + encodeURIComponent(msg.join("
+"));
+window.open(lien,"_blank");
+}
+
+function agrandir(src,titre){
+if(!src) return;
+let z = document.getElementById("zoom-overlay");
+let i = document.getElementById("zoom-img");
+let t = document.getElementById("zoom-titre");
+if(i) i.src = src;
+if(t) t.innerText = titre;
+if(z) z.classList.add("actif");
+}
+
+window.addEventListener("DOMContentLoaded",()=>{
+afficherProduits();
+afficherPacks();
+afficherInfoPaiement();
+actualiser();
+});
+</script>
 <script>
 let produits = [
 {nom:"Popcorn Sachet",prix:300,img:"POPcorn_Sachet_300F",qte:0},

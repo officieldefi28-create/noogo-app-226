@@ -3,309 +3,348 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NOOGO - Glaces Artisanales Premium</title>
+<title>Noogo</title>
+
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#e65100">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Noogo">
+<meta name="mobile-web-app-capable" content="yes">
 
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;background:#fff8f6;padding-bottom:170px;color:#2c3e50}
+body{margin:0;font-family:Arial,sans-serif;background:#fff0f5;padding-bottom:170px;color:#333}
+header{background:#e8590c;color:white;text-align:center;padding:15px 10px;border-bottom-left-radius:15px;border-bottom-right-radius:15px}
+#install-btn{display:inline-flex;margin:10px auto 0;background:white;color:#e65100;border:0;border-radius:20px;padding:9px 18px;font-size:14px;font-weight:bold;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer}
+header img{width:90px;height:60px;object-fit:contain;background:white;border-radius:10px;margin-bottom:5px}
+header h1{margin:6px 0;font-size:32px;font-weight:900;letter-spacing:1px;line-height:1.15;text-shadow:0 2px 4px rgba(0,0,0,.2)}
+header p{margin:6px 0 0;font-size:16px;font-weight:600}
+.tagline{font-size:14px !important;font-weight:400 !important;font-style:italic;opacity:.95;margin-top:8px !important}
+.badge-24h{display:inline-block;background:#2e7d32;color:white;font-size:13px;font-weight:bold;padding:7px 14px;border-radius:20px;margin-top:10px}
+  .section-titre{text-align:center;color:#e8590c;font-size:20px;margin:20px 0 2px;font-weight:800}
+.section-sous-titre{text-align:center;color:#888;font-size:12.5px;margin:0 10px 10px}
 
-.lang-bar{background:#d35400;color:white;text-align:right;padding:6px 15px;font-size:12px;font-weight:bold}
-.lang-bar span{cursor:pointer;margin-left:10px;opacity:0.8}
-.lang-bar span.active{opacity:1;text-decoration:underline}
-
-header{background:linear-gradient(135deg, #e8590c, #ff7a00);color:white;text-align:center;padding:20px 12px;border-bottom-left-radius:20px;border-bottom-right-radius:20px;box-shadow:0 4px 15px rgba(232,89,12,0.2)}
-header img{width:80px;height:80px;object-fit:cover;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
-header h1{margin:8px 0 2px;font-size:28px;font-weight:900;letter-spacing:1px}
-.tagline{font-size:13.5px;opacity:.95;margin:4px 0 0;font-style:italic}
-.badge-24h{display:inline-block;background:rgba(255,255,255,0.2);backdrop-filter:blur(5px);color:white;font-size:12px;font-weight:bold;padding:6px 14px;border-radius:20px;margin-top:10px;border:1px solid rgba(255,255,255,0.3)}
-
-.section-titre{text-align:center;color:#e8590c;font-size:20px;margin:22px 0 4px;font-weight:800}
-.section-sous-titre{text-align:center;color:#7f8c8d;font-size:13px;margin:0 10px 16px}
-
-/* NAVIGATION ONGLETS */
-.categories-tabs{display:flex;justify-content:center;gap:8px;margin:15px 10px;overflow-x:auto;padding-bottom:5px}
-.tab-btn{background:white;border:1px solid #ffe8e0;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:bold;color:#e8590c;cursor:pointer;white-space:nowrap}
+/* ONGLETS CATEGORIES */
+.categories-tabs{display:flex;justify-content:center;gap:6px;margin:12px 8px;overflow-x:auto;padding-bottom:4px}
+.tab-btn{background:white;border:1px solid #ffd2c1;padding:8px 12px;border-radius:18px;font-size:12px;font-weight:bold;color:#e8590c;cursor:pointer;white-space:nowrap}
 .tab-btn.active{background:#e8590c;color:white}
 
-/* BLOC PAR PARFUM (BLOC REGROUPANT 125ML + 250ML + PACKS) */
-#produits{padding:0 10px}
-.parfum-group{background:white;margin-bottom:25px;border-radius:18px;box-shadow:0 4px 15px rgba(0,0,0,0.05);overflow:hidden;border:1px solid #ffe8e0}
-.parfum-header{background:#fff0eb;color:#e8590c;padding:12px 16px;font-size:16px;font-weight:800;border-bottom:1px solid #ffd2c1;display:flex;justify-content:space-between;align-items:center}
+/* GROUPE PAR PARFUM / CATEGORIE */
+.parfum-group{background:white;margin:12px 8px;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);overflow:hidden;border:1px solid #ffe3d6}
+.parfum-header{background:#fff0eb;color:#e8590c;padding:10px 14px;font-size:15px;font-weight:bold;border-bottom:1px solid #ffd2c1;display:flex;justify-content:space-between;align-items:center}
 
-/* LIGNE PRODUIT INDIVIDUEL (PETIT OU GRAND POT) */
-.item-row{display:flex;padding:12px 16px;align-items:center;border-bottom:1px solid #f2f2f2}
+/* LIGNE PRODUIT INDIVIDUEL */
+.item-row{display:flex;padding:10px 12px;align-items:center;border-bottom:1px solid #f5f5f5}
 .item-row:last-child{border-bottom:none}
-.img-wrap{position:relative;width:75px;height:75px;flex-shrink:0;margin-right:12px;cursor:pointer}
-.img-wrap img{width:100%;height:100%;border-radius:12px;object-fit:cover}
-.zoom-badge{position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,0.6);color:white;font-size:8px;padding:2px 4px;border-radius:5px}
+.img-wrap{position:relative;width:70px;height:70px;flex-shrink:0;margin-right:12px;cursor:pointer}
+.img-wrap img{width:100%;height:100%;border-radius:8px;object-fit:cover;background:#eee}
+.zoom-badge{position:absolute;bottom:2px;right:2px;background:rgba(0,0,0,0.6);color:white;font-size:8px;padding:2px 4px;border-radius:4px}
 
 .info{flex:1}
-.info h4{margin:0 0 2px;font-size:14px;color:#2c3e50;font-weight:700}
-.format-badge{font-size:11px;color:#7f8c8d;display:block;margin-bottom:4px}
-.prix-unitaire{font-weight:800;color:#e8590c;font-size:15px}
+.info h4{margin:0 0 2px;font-size:13.5px;color:#333;font-weight:bold}
+.format-badge{font-size:11px;color:#777;display:block;margin-bottom:2px}
+.prix-unitaire{font-weight:bold;color:#e8590c;font-size:14px}
 
-.qte-ctrl{display:flex;align-items:center;gap:8px}
-.qte-ctrl button{border:0;background:#f0f0f0;color:#2c3e50;width:28px;height:28px;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer}
+.qte-ctrl{display:flex;align-items:center;gap:6px}
+.qte-ctrl button{border:0;background:#f0f0f0;color:#333;width:28px;height:28px;border-radius:6px;font-size:16px;font-weight:bold;cursor:pointer}
 .qte-ctrl button:active{background:#e8590c;color:white}
-.qte-ctrl span{font-weight:bold;font-size:14px;min-width:18px;text-align:center}
+.qte-ctrl span{font-weight:bold;font-size:13px;min-width:16px;text-align:center}
 
-/* SECTION PACKS PROMO INTEGREE DIRECTEMENT EN BAS DU PARFUM */
-.packs-subgroup{background:#fff8f5;border-top:1px dashed #ffd2c1;padding:10px 14px}
-.packs-subgroup-title{font-size:11px;text-transform:uppercase;letter-spacing:0.8px;color:#e8590c;font-weight:bold;margin-bottom:8px}
-.pack-card-inline{display:flex;justify-content:space-between;align-items:center;background:white;padding:8px 12px;border-radius:10px;margin-bottom:6px;border:1px solid #ffdecb}
-.pack-card-inline:last-child{margin-bottom:0}
+/* PACKS DIRECTEMENT ASSOCIES DANS LE BLOC */
+.pack-subblock{background:#fff9f5;border-top:1px dashed #ffd2c1;padding:8px 12px}
+.pack-card{display:flex;justify-content:space-between;align-items:center;background:white;padding:8px 10px;border-radius:8px;margin-top:6px;border:1px solid #ffe0d0}
+.pack-title{font-size:12px;font-weight:bold;color:#444}
+.pack-tag{font-size:10px;color:#2e7d32;font-weight:bold}
+  /* FORMULAIRE ET BANDEAUX */
+.promo-bandeau{background:linear-gradient(90deg,#fff3e0,#ffe0b2);border:1px solid #ffcc80;border-radius:12px;margin:10px 8px 4px;padding:10px 12px;text-align:center;font-size:12.5px;color:#7a3e00;line-height:1.6}
+.commande-form{background:white;margin:16px 8px;padding:16px;border-radius:14px;box-shadow:0 2px 7px rgba(0,0,0,.12)}
+.commande-titre{margin:0 0 12px;font-size:16px;color:#e8590c;text-align:center}
+.champ-label{display:block;font-size:13px;font-weight:bold;color:#444;margin:12px 0 5px}
+.facultatif{font-weight:normal;color:#999;font-size:11.5px}
+.obligatoire{font-weight:normal;color:#e8590c;font-size:11.5px}
+.champ-input{width:100%;padding:11px 12px;border:1px solid #ddd;border-radius:10px;font-size:15px;background:#fafafa}
+.champ-input:focus{outline:2px solid #e8590c;background:white}
+.champ-avec-bouton{display:flex;gap:8px}
+.champ-avec-bouton .champ-input{flex:1}
+.btn-localiser{background:#e8590c;color:white;border:0;border-radius:10px;width:46px;font-size:18px;cursor:pointer}
+.note-livraison{margin:14px 0 0;font-size:12px;color:#777;background:#fff8e1;border-radius:8px;padding:9px 10px;line-height:1.5}
+#message-code{font-size:12.5px;margin-top:6px;font-weight:bold}
+#message-code.valide{color:#2e7d32}
+#message-code.invalide{color:#c62828}
 
-/* FORMULAIRE, CODE PROMO ET PARTENAIRES */
-.box-section{background:white;margin:20px 10px;padding:18px;border-radius:18px;box-shadow:0 4px 15px rgba(0,0,0,0.05)}
-.champ-label{display:block;font-size:13px;font-weight:700;color:#34495e;margin:10px 0 4px}
-.champ-input{width:100%;padding:11px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;background:#fafafa}
-.reception-carte{display:flex;align-items:center;gap:10px;border:1px solid #e0e0e0;border-radius:10px;padding:10px;margin-top:8px;cursor:pointer}
-.reception-carte.selectionnee{border-color:#e8590c;background:#fff8f5}
+.paiement-options{display:flex;flex-direction:column;gap:8px}
+.paiement-carte{display:flex;align-items:center;gap:10px;border:1px solid #ddd;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;cursor:pointer}
+.paiement-carte input{width:auto;margin:0}
+.paiement-carte.selectionnee{border-color:#e8590c;background:#fff3e0}
+.info-paiement-carte{background:#fff3e0;border:1px solid #ffe0b2;padding:10px;border-radius:8px;margin-top:8px;font-size:13px;text-align:center}
 
-.partenaires-grid{display:flex;gap:15px;justify-content:center;align-items:center;margin-top:10px;flex-wrap:wrap}
+.reception-options{display:flex;gap:8px;margin-top:8px}
+.reception-carte{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #ddd;border-radius:10px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;background:#fafafa}
+.reception-carte.selectionnee{border-color:#e8590c;background:#fff3e0}
 
-.total-bar{position:fixed;bottom:0;left:0;right:0;background:white;padding:14px 16px;box-shadow:0 -5px 20px rgba(0,0,0,0.1);z-index:100;border-top-left-radius:20px;border-top-right-radius:20px}
-.total-bar h2{margin:0 0 10px;text-align:center;font-size:18px;color:#2c3e50}
-.btn-whatsapp{display:block;width:100%;border:0;border-radius:12px;background:#25D366;color:white;padding:15px;font-size:16px;font-weight:bold;cursor:pointer;text-align:center;box-shadow:0 4px 12px rgba(37,211,102,0.3)}
+.total{position:fixed;bottom:0;left:0;right:0;background:white;padding:12px 16px;box-shadow:0 -3px 10px rgba(0,0,0,0.12);z-index:100;border-top-left-radius:15px;border-top-right-radius:15px;text-align:center}
+.total h2{margin:0 0 8px;font-size:18px;color:#333}
+.btn-whatsapp{display:block;width:100%;border:0;border-radius:10px;background:#25D366;color:white;padding:13px;font-size:16px;font-weight:bold;cursor:pointer;box-shadow:0 3px 8px rgba(37,211,102,0.3)}
+
+footer{text-align:center;padding:20px 10px;background:#333;color:white;margin-top:30px}
+footer a{color:#ffa726;text-decoration:none}
+.footer-btn{display:inline-block;padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.1);margin:4px}
 
 .zoom-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:200;align-items:center;justify-content:center;flex-direction:column;padding:20px}
 .zoom-overlay.actif{display:flex}
-.zoom-overlay img{max-width:90%;max-height:70vh;border-radius:14px}
+.zoom-overlay img{max-width:90%;max-height:70vh;border-radius:10px}
 .zoom-close{position:absolute;top:20px;right:20px;background:white;border:0;width:36px;height:36px;border-radius:50%;font-weight:bold;cursor:pointer}
+#bouton-haut{display:none;position:fixed;bottom:90px;right:15px;background:#e8590c;color:white;border:0;width:40px;height:40px;border-radius:50%;font-size:18px;z-index:99;cursor:pointer}
+#bouton-haut.visible{display:block}
+.cachee-remise{display:none}
 </style>
 </head>
 <body>
 
-<div class="lang-bar">
-  <span class="active">FR</span> | <span>EN</span>
-</div>
-
 <header>
-  <img src="/logo.png" alt="NOOGO">
-  <h1>NOOGO</h1>
-  <p class="tagline">Des glaces artisanales d'exception 🍦</p>
-  <div class="badge-24h">🕒 Service Premium — Ouvert 24h/24</div>
+<img id="logo" src="/logo.png" alt="Noogo">
+<h1>NOOGO</h1>
+<p class="tagline">Des saveurs authentiques, pour tous les plaisirs 🍦</p>
+<p>Livraison à Karpala et alentours</p>
+<div class="badge-24h">🕒 Ouvert 24h/24 — commandez à toute heure !</div>
+<br>
+<button id="install-btn" onclick="installerApp()">⬇️ Installer l'application</button>
 </header>
+<div class="promo-bandeau">🌿 100% naturel &nbsp;•&nbsp; ❤️ Fait avec amour &nbsp;•&nbsp; 📍 Fabriqué à Karpala<br><strong>Nos clients adorent nos produits artisanaux — à vous de goûter !</strong></div>
 
-<h2 class="section-titre">🍨 Nos Glaces & Packs VIP</h2>
-<p class="section-sous-titre">Sélectionnez vos parfums, petits pots, grands pots ou packs promotionnels</p>
+<h2 class="section-titre">🍦 Vos Produits & Packs</h2>
+<p class="section-sous-titre">Agrandissez les visuels et choisissez vos quantités</p>
 
 <!-- NAVIGATION CATEGORIES -->
 <div class="categories-tabs">
   <button class="tab-btn active" onclick="filtrerCat('tous', this)">Tout voir</button>
-  <button class="tab-btn" onclick="filtrerCat('pots', this)">Pots Glacés</button>
-  <button class="tab-btn" onclick="filtrerCat('esquimaux', this)">Esquimaux / Bâtonnets</button>
+  <button class="tab-btn" onclick="filtrerCat('glaces', this)">Crèmes Glacées</button>
+  <button class="tab-btn" onclick="filtrerCat('snacks', this)">Produits d'hiver & Snacks</button>
+  <button class="tab-btn" onclick="filtrerCat('esquimaux', this)">Esquimaux & Bacs</button>
 </div>
 
-<!-- EMPLACEMENT DES PRODUITS GENERES PAR PARFUM -->
+<!-- CONTENEUR DES PRODUITS REGROUPES -->
 <div id="produits"></div>
 
-<!-- SECTION CODE PROMO -->
-<div class="box-section">
-  <h3 style="margin:0 0 10px;color:#e8590c;font-size:15px">🎁 Code Promo</h3>
-  <div style="display:flex;gap:8px">
-    <input type="text" id="code-promo" class="champ-input" placeholder="Entrez votre code promo" style="text-transform:uppercase">
-    <button onclick="appliquerCodePromo()" style="background:#e8590c;color:white;border:0;padding:0 15px;border-radius:10px;font-weight:bold;cursor:pointer">Valider</button>
-  </div>
-  <div id="promo-message" style="font-size:12px;margin-top:6px"></div>
+<div class="commande-form">
+<h3 class="commande-titre">📋 Vos informations</h3>
+
+<label class="champ-label" for="champ-nom">Nom <span class="facultatif">(facultatif)</span></label>
+<input type="text" id="champ-nom" class="champ-input" placeholder="Votre nom">
+
+<label class="champ-label" for="champ-tel">Numéro de téléphone <span class="facultatif">(facultatif)</span></label>
+<input type="tel" id="champ-tel" class="champ-input" placeholder="Ex : 70 12 34 56">
+
+<label class="champ-label" for="champ-localisation">Lieu de livraison <span class="facultatif">(si possible)</span></label>
+<div class="champ-avec-bouton">
+  <input type="text" id="champ-localisation" class="champ-input" placeholder="Quartier, repère...">
+  <button type="button" class="btn-localiser" onclick="localiser()">📍</button>
 </div>
 
-<!-- FORMULAIRE DE LIVRAISON -->
-<div class="box-section">
-  <h3 style="margin:0 0 14px;color:#e8590c;font-size:16px">📍 Informations de livraison</h3>
-  
-  <label class="champ-label">Nom complet</label>
-  <input type="text" id="champ-nom" class="champ-input" placeholder="Ex: M. Ouédraogo">
+<label class="champ-label">Mode de réception <span class="obligatoire">(obligatoire)</span></label>
+<div class="reception-options">
+  <label class="reception-carte selectionnee" id="card-liv">
+    <input type="radio" name="reception" value="livraison" checked onchange="majReception()"> 🛵 Livraison
+  </label>
+  <label class="reception-carte" id="card-ret">
+    <input type="radio" name="reception" value="retrait" onchange="majReception()"> 🏪 Retrait sur place
+  </label>
+</div>
+<p class="note-livraison" id="note-reception">🚚 Livraison à la charge du client (frais fixes de 1 500 FCFA), sauf à <strong>Karpala</strong> où c'est à discuter directement avec nous.</p>
 
-  <label class="champ-label">Téléphone</label>
-  <input type="tel" id="champ-tel" class="champ-input" placeholder="Ex: 70 00 00 00">
+<label class="champ-label" for="champ-code">Code promo <span class="facultatif">(si vous en avez un)</span></label>
+<div class="champ-avec-bouton">
+  <input type="text" id="champ-code" class="champ-input" placeholder="Ex : ECOLE01" style="text-transform:uppercase">
+  <button type="button" class="btn-localiser" onclick="verifierCode()">✅</button>
+</div>
+<div id="message-code"></div>
 
-  <label class="champ-label">Lieu de livraison / Repère</label>
-  <input type="text" id="champ-localisation" class="champ-input" placeholder="Quartier, rue, villa...">
-
-  <label class="champ-label">Mode de réception</label>
-  <div class="reception-carte selectionnee" id="card-livraison" onclick="choisirMode('livraison')">
-    <input type="radio" name="reception" value="livraison" id="radio-liv" checked>
-    <label for="radio-liv">🛵 Livraison à domicile</label>
-  </div>
-  <div class="reception-carte" id="card-retrait" onclick="choisirMode('retrait')">
-    <input type="radio" name="reception" value="retrait" id="radio-ret">
-    <label for="radio-ret">🏪 Retrait sur place (Karpala)</label>
-  </div>
+<label class="champ-label">Mode de paiement <span class="obligatoire">(obligatoire)</span></label>
+<div class="paiement-options">
+  <label class="paiement-carte selectionnee"><input type="radio" name="paiement" value="especes" checked onchange="afficherInfoPaiement()"><span class="paiement-icone">💵</span><span>Espèces à la livraison</span></label>
+  <label class="paiement-carte"><input type="radio" name="paiement" value="orange" onchange="afficherInfoPaiement()"><span class="paiement-icone">🟠</span><span>Orange Money</span></label>
+  <label class="paiement-carte"><input type="radio" name="paiement" value="wave" onchange="afficherInfoPaiement()"><span class="paiement-icone">🔵</span><span>Wave</span></label>
 </div>
 
-<!-- PARTENAIRES -->
-<div class="box-section" style="text-align:center">
-  <h4 style="margin:0 0 10px;color:#7f8c8d;font-size:12px;text-transform:uppercase">Moyens de paiement & Partenaires</h4>
-  <div class="partenaires-grid">
-    <span style="font-weight:bold;color:#888">Orange Money</span> •
-    <span style="font-weight:bold;color:#888">Moov Money</span> •
-    <span style="font-weight:bold;color:#888">Wave</span>
-  </div>
+<div id="info-paiement" class="cachee-remise"></div>
 </div>
 
-<!-- FIXE BAS DE PAGE TOTAL -->
-<div class="total-bar">
-  <h2>Total : <span id="total" style="color:#e8590c;font-weight:900">0</span> FCFA <span id="mention-vip" style="font-size:12px;color:#27ae60;display:block;font-weight:normal"></span></h2>
-  <button class="btn-whatsapp" onclick="commander()">Valider la commande sur WhatsApp</button>
+<div class="total">
+  <div id="ligne-remise" class="cachee-remise" style="color:#2e7d32;font-size:12px;font-weight:bold;margin-bottom:4px"></div>
+  <h2>Total : <span id="total" style="color:#e8590c">0</span> FCFA</h2>
+  <button class="btn-whatsapp" onclick="commander()">Commander sur WhatsApp</button>
 </div>
 
-<!-- ZOOM IMAGE OVERLAY -->
+<footer>
+<a class="footer-btn location" href="https://maps.google.com/?q=12.336911,-1.474793&entry=gps" target="_blank">📍 Voir sur Google Maps <span class="chevron">›</span></a>
+<p class="footer-phone">📞 61 68 27 06</p>
+<div class="footer-social">
+  <a class="footer-btn facebook" href="https://www.facebook.com/share/1DX4RzmDFC/" target="_blank">👍 Facebook</a>
+  <a class="footer-btn tiktok" href="https://www.tiktok.com/@dlices.de.papous" target="_blank">🎵 TikTok</a>
+</div>
+<p style="margin-top:16px"><a href="/partenaire.html" style="color:#aaa;font-size:12px;text-decoration:underline">🤝 Espace partenaire</a>&nbsp;·&nbsp;<a href="/admin.html" style="color:#aaa;font-size:12px;text-decoration:underline">🔐 Espace admin</a></p>
+</footer>
+
 <div class="zoom-overlay" id="zoom-overlay" onclick="fermerZoom()">
   <button class="zoom-close" onclick="fermerZoom()">✕</button>
   <img id="zoom-img" src="" alt="">
-  <h3 id="zoom-titre" style="color:white;margin-top:15px;font-size:16px"></h3>
+  <h3 id="zoom-titre" style="color:white;margin-top:12px"></h3>
+</div>
+
+<button id="bouton-haut" onclick="remonterEnHaut()" aria-label="Remonter en haut">⬆</button>
+
+<div id="bandeau-install" style="display:none;position:fixed;left:0;right:0;bottom:0;background:#e8590c;color:white;padding:14px;z-index:150;box-shadow:0 -3px 12px rgba(0,0,0,.25);align-items:center;gap:12px">
+  <span style="flex:1;font-size:14px;font-weight:600">📲 Installez l'app Noogo pour commander plus vite !</span>
+  <button onclick="installerApp()" style="background:white;color:#e65100;border:0;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:bold;white-space:nowrap">Installer</button>
+  <button onclick="fermerBandeauInstall()" style="background:transparent;color:white;border:0;font-size:20px;padding:0 4px" aria-label="Fermer">✕</button>
 </div>
 <script>
-// Structure organisée par Parfum : Chaque format (125ml et 250ml) a SA PROPRE PHOTO
+// --- IMAGES D'ORIGINE CONSERVÉES ---
+let images = {
+  "POPcorn_Sachet_300F": "/produits/POPcorn_Sachet_300F.jpg",
+  "POPcorn_Carton_500F": "/produits/POPcorn_Carton_500F.jpg",
+  "Creme_Glacee_Banane_1000F": "/produits/Creme_Glacee_Banane_1000F.jpg",
+  "Creme_Glacee_Vanille_Lactee_700F": "/produits/Creme_Glacee_Vanille_Lactee_700F.jpg",
+  "Creme_Glacee_Chocolat_Cacao_au_Lait_600F": "/produits/Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
+  "Esquimau_Sandra_500F": "/produits/Esquimau_Sandra_500F.jpg",
+  "Esquimau_Sandra_Chocolat_Coco_800F": "/produits/Esquimau_Sandra_Chocolat_Coco_800F.jpg",
+  "Creme_6250ml_35000F": "/produits/Creme_6250ml_35000F.jpg",
+  "Fruits_Naturel_Banane_2000F": "/produits/Fruits_Naturel_Banane_2000F.jpg",
+  "Vanille_Lacte_1400F": "/produits/Vanille_Lacte_1400F.jpg",
+  "Chocolat_Cacao_au_Lait_1200F": "/produits/Chocolat_Cacao_au_Lait_1200F.jpg",
+  "Pain_Anglais_700F": "/produits/Pain_Anglais_700F.jpg",
+  "Pain_Anglais_1000F": "/produits/Pain_Anglais_1000F.jpg"
+};
+
+// --- CATALOGUE STRUCTURÉ PAR CATEGORIE ET PARFUM ---
 let catalogue = [
+  // CHOCOLAT
   {
-    cat: "pots",
-    parfum: "Chocolat Cacao au Lait",
+    cat: "glaces",
+    titre: "Chocolat Cacao au Lait",
     items: [
-      { id: "choc_125", nom: "Chocolat - Petit Pot", format: "125 ml", prix: 600, img: "/produits/Chocolat_125ml.jpg", qte: 0 },
-      { id: "choc_250", nom: "Chocolat - Grand Pot", format: "250 ml", prix: 1200, img: "/produits/Chocolat_Cacao_au_Lait_1200F.jpg", qte: 0 }
+      { id: "choc_125", nom: "Crème Glacée Chocolat Cacao au Lait", format: "125 ml", prix: 600, img: "Creme_Glacee_Chocolat_Cacao_au_Lait_600F", qte: 0 },
+      { id: "choc_250", nom: "Chocolat Cacao au Lait", format: "250 ml", prix: 1200, img: "Chocolat_Cacao_au_Lait_1200F", qte: 0 }
     ],
     packs: [
-      { id: "pack_choc_125", nom: "Pack 5 Pots Chocolat (125 ml)", prix: 5000, qte: 0 },
-      { id: "pack_choc_250", nom: "Pack 3 Grands Pots Chocolat (250 ml)", prix: 5000, qte: 0 }
+      { id: "pack_choc_125", nom: "Pack Pur Chocolat (5 pots) — 125 ml", prix: 5000, qte: 0 }
     ]
   },
+  // VANILLE
   {
-    cat: "pots",
-    parfum: "Vanille Lactée Premium",
+    cat: "glaces",
+    titre: "Vanille Lactée Premium",
     items: [
-      { id: "van_125", nom: "Vanille - Petit Pot", format: "125 ml", prix: 700, img: "/produits/Vanille_125ml.jpg", qte: 0 },
-      { id: "van_250", nom: "Vanille - Grand Pot", format: "250 ml", prix: 1400, img: "/produits/Vanille_Lacte_1400F.jpg", qte: 0 }
+      { id: "van_125", nom: "Crème Glacée Vanille Lactée", format: "125 ml", prix: 700, img: "Creme_Glacee_Vanille_Lactee_700F", qte: 0 },
+      { id: "van_250", nom: "Vanille Lacté", format: "250 ml", prix: 1400, img: "Vanille_Lacte_1400F", qte: 0 }
     ],
     packs: [
-      { id: "pack_van_125", nom: "Pack 5 Pots Vanille (125 ml)", prix: 5500, qte: 0 },
-      { id: "pack_van_250", nom: "Pack 3 Grands Pots Vanille (250 ml)", prix: 6000, qte: 0 }
+      { id: "pack_van_125", nom: "Pack Vanille Lactée (5 pots) — 125 ml", prix: 5500, qte: 0 }
     ]
   },
+  // BANANE / FRUITS NATURELS
   {
-    cat: "pots",
-    parfum: "Fruits Naturels - Banane",
+    cat: "glaces",
+    titre: "Fruits Naturels - Banane",
     items: [
-      { id: "ban_125", nom: "Banane - Petit Pot", format: "125 ml", prix: 1000, img: "/produits/Banane_125ml.jpg", qte: 0 },
-      { id: "ban_250", nom: "Banane - Grand Pot", format: "250 ml", prix: 2000, img: "/produits/Fruits_Naturel_Banane_2000F.jpg", qte: 0 }
+      { id: "ban_125", nom: "Crème Glacée Banane", format: "125 ml", prix: 1000, img: "Creme_Glacee_Banane_1000F", qte: 0 },
+      { id: "ban_250", nom: "Fruits Naturel Banane", format: "250 ml", prix: 2000, img: "Fruits_Naturel_Banane_2000F", qte: 0 }
     ],
     packs: [
-      { id: "pack_ban_125", nom: "Pack 5 Pots Banane (125 ml)", prix: 7000, qte: 0 },
-      { id: "pack_ban_250", nom: "Pack 3 Grands Pots Banane (250 ml)", prix: 7500, qte: 0 }
+      { id: "pack_fruits_125", nom: "Pack Fruits Naturels (5 pots) — 125 ml", prix: 7000, qte: 0 }
     ]
   },
+  // PACKS MIX / MAXI (GROUPE DÉDIÉ)
+  {
+    cat: "glaces",
+    titre: "Packs Dégustation & Maxi Formats",
+    items: [],
+    packs: [
+      { id: "pack_mix_125", nom: "Pack Mix Dégustation (6 pots) — 125 ml", prix: 6600, qte: 0 },
+      { id: "pack_duo_250", nom: "Pack Maxi Duo Gourmet (3 pots) — 250 ml", prix: 5000, qte: 0 },
+      { id: "pack_fam_250", nom: "Pack Maxi Famille (5 pots) — 250 ml", prix: 7500, qte: 0 }
+    ]
+  },
+  // PRODUITS D'HIVER ET SNACKS
+  {
+    cat: "snacks",
+    titre: "Popcorn & Pain Anglais (Gourmandises)",
+    items: [
+      { id: "pop_300", nom: "Popcorn Sachet", format: "Sachet", prix: 300, img: "POPcorn_Sachet_300F", qte: 0 },
+      { id: "pop_500", nom: "Popcorn Carton", format: "Carton", prix: 500, img: "POPcorn_Carton_500F", qte: 0 },
+      { id: "pain_700", nom: "Pain Anglais - 700 FCFA", format: "Moyen", prix: 700, img: "Pain_Anglais_700F", qte: 0 },
+      { id: "pain_1000", nom: "Pain Anglais - 1000 FCFA", format: "Grand", prix: 1000, img: "Pain_Anglais_1000F", qte: 0 }
+    ],
+    packs: []
+  },
+  // ESQUIMAUX ET BACS
   {
     cat: "esquimaux",
-    parfum: "Esquimaux & Bâtonnets Artisanal",
+    titre: "Esquimaux Sandra & Bacs Pro",
     items: [
-      { id: "esq_choc", nom: "Esquimau Chocolat Croquant", format: "Bâtonnet", prix: 500, img: "/produits/Esquimau_Chocolat.jpg", qte: 0 },
-      { id: "esq_van", nom: "Esquimau Vanille Enrobée", format: "Bâtonnet", prix: 500, img: "/produits/Esquimau_Vanille.jpg", qte: 0 }
-    ],
-    packs: [  // --- POP LACTÉ / POP-CORN AU LAIT ---
-  {
-    cat: "snack",
-    parfum: "Pop-Corn au Lait Gourmand",
-    items: [
-      { id: "pop_300", nom: "Pop Lacté au Lait (Sachet)", format: "Format Individuel", prix: 300, img: "/produits/Popcorn_300.jpg", qte: 0 },
-      { id: "pop_500", nom: "Pop Lacté au Lait (Carton)", format: "Format Familial", prix: 500, img: "/produits/Popcorn_500.jpg", qte: 0 }
+      { id: "esq_500", nom: "Esquimau Sandra", format: "Bâtonnet", prix: 500, img: "Esquimau_Sandra_500F", qte: 0 },
+      { id: "esq_800", nom: "Esquimau Sandra Chocolat au Coco", format: "Bâtonnet VIP", prix: 800, img: "Esquimau_Sandra_Chocolat_Coco_800F", qte: 0 },
+      { id: "bac_35000", nom: "Crème de 6250 ml", format: "Grand Bac de 6,25 Litres", prix: 35000, img: "Creme_6250ml_35000F", qte: 0 }
     ],
     packs: []
-  },
-
-  // --- ESQUIMAUX COCO ---
-  {
-    cat: "esquimaux",
-    parfum: "Esquimaux Coco Artisanal",
-    items: [
-      { id: "esq_coco_500", nom: "Esquimau Coco Onctueux", format: "Bâtonnet Standard", prix: 500, img: "/produits/Esquimau_Coco_500.jpg", qte: 0 },
-      { id: "esq_coco_800", nom: "Esquimau Coco Premium (Grand)", format: "Grand Bâtonnet", prix: 800, img: "/produits/Esquimau_Coco_800.jpg", qte: 0 }
-    ],
-    packs: []
-  },
-
-  // --- PAIN ANGLAIS ---
-  {
-    cat: "boulangerie",
-    parfum: "Pain Anglais Moelleux",
-    items: [
-      { id: "pain_700", nom: "Pain Anglais Artisanal", format: "Moyen Format", prix: 700, img: "/produits/Pain_Anglais_700.jpg", qte: 0 },
-      { id: "pain_1000", nom: "Pain Anglais Artisanal", format: "Grand Format VIP", prix: 1000, img: "/produits/Pain_Anglais_1000.jpg", qte: 0 }
-    ],
-    packs: []
-  },
-
-  // --- GRANDS BACS DE GLACE (6,25 LITRES) ---
-  {
-    cat: "bacs",
-    parfum: "Format Bacs Professionnels & Événements",
-    items: [
-      { id: "bac_6250", nom: "Bac Géant Crème Glacée (6 250 ml)", format: "Bac de 6,25 Litres", prix: 35000, img: "/produits/Bac_Glace_6250ml.jpg", qte: 0 }
-    ],
-    packs: []
-  }
-  ]
   }
 ];
 
 let categorieFiltre = "tous";
+let codePromoApplique = null;
 let modeReception = "livraison";
 let fraisLivraison = 1500;
-let reductionPromo = 0;
-
-function afficher() {
+  function afficher() {
   let html = "";
+  let placeholder = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><rect width='90' height='90' fill='%23eeeeee'/><text x='45' y='49' font-size='11' text-anchor='middle' fill='%23999' font-family='Arial'>Photo à venir</text></svg>";
 
-  catalogue.forEach((pGroup, pGroupIdx) => {
-    if (categorieFiltre !== "tous" && pGroup.cat !== categorieFiltre) return;
+  catalogue.forEach((grp, grpIdx) => {
+    if (categorieFiltre !== "tous" && grp.cat !== categorieFiltre) return;
 
-    html += `
-    <div class="parfum-group">
-      <div class="parfum-header">
-        <span>🍦 ${pGroup.parfum}</span>
-      </div>`;
+    html += `<div class="parfum-group">
+      <div class="parfum-header"><span>✨ ${grp.titre}</span></div>`;
 
-    // 1. D'ABORD LES POTS INDIVIDUELS (125ml et 250ml) AVEC LEURS PHOTOS DÉDIÉES
-    pGroup.items.forEach((item, itemIdx) => {
+    // Produits individuels
+    grp.items.forEach((item, itemIdx) => {
+      let image = images[item.img] || placeholder;
       html += `
       <div class="item-row">
-        <div class="img-wrap" onclick="agrandir('${item.img}', '${item.nom}')">
-          <img src="${item.img}" alt="${item.nom}">
-          <span class="zoom-badge">🔍 Zoom</span>
+        <div class="img-wrap" onclick="agrandir('${image}','${item.nom.replace(/'/g,"\\'")}')">
+          <img src="${image}" alt="${item.nom}">
+          <span class="zoom-badge">🔍 Agrandir</span>
         </div>
         <div class="info">
           <h4>${item.nom}</h4>
           <span class="format-badge">Format: ${item.format}</span>
-          <span class="prix-unitaire">${item.prix.toLocaleString('fr-FR')} FCFA</span>
+          <span class="prix-unitaire">${item.prix.toLocaleString("fr-FR")} FCFA</span>
         </div>
         <div class="qte-ctrl">
-          <button onclick="changerQteItem(${pGroupIdx}, ${itemIdx}, -1)">-</button>
+          <button onclick="changerItem(${grpIdx}, ${itemIdx}, -1)">−</button>
           <span>${item.qte}</span>
-          <button onclick="changerQteItem(${pGroupIdx}, ${itemIdx}, 1)">+</button>
+          <button onclick="changerItem(${grpIdx}, ${itemIdx}, 1)">+</button>
         </div>
       </div>`;
     });
 
-    // 2. JUSTE EN BAS : LES PACKS SPECIFIQUES À CE PARFUM
-    if (pGroup.packs && pGroup.packs.length > 0) {
-      html += `
-      <div class="packs-subgroup">
-        <div class="packs-subgroup-title">✨ Packs Promo VIP (${pGroup.parfum})</div>`;
-      pGroup.packs.forEach((pack, packIdx) => {
+    // Packs associés
+    if (grp.packs && grp.packs.length > 0) {
+      html += `<div class="pack-subblock">`;
+      grp.packs.forEach((pack, packIdx) => {
         html += `
-        <div class="pack-card-inline">
+        <div class="pack-card">
           <div>
-            <div style="font-size:12px;font-weight:bold;color:#34495e">${pack.nom}</div>
-            <div style="font-size:10px;color:#27ae60;font-weight:bold">🚚 Livraison VIP incluse</div>
+            <div class="pack-title">🌟 ${pack.nom}</div>
+            <div class="pack-tag">🚚 Livraison VIP incluse</div>
           </div>
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-weight:bold;color:#e8590c;font-size:13px">${pack.prix.toLocaleString('fr-FR')} F</span>
+            <span style="font-weight:bold;color:#e8590c;font-size:13px">${pack.prix.toLocaleString("fr-FR")} F</span>
             <div class="qte-ctrl">
-              <button onclick="changerQtePack(${pGroupIdx}, ${packIdx}, -1)">-</button>
+              <button onclick="changerPack(${grpIdx}, ${packIdx}, -1)">−</button>
               <span>${pack.qte}</span>
-              <button onclick="changerQtePack(${pGroupIdx}, ${packIdx}, 1)">+</button>
+              <button onclick="changerPack(${grpIdx}, ${packIdx}, 1)">+</button>
             </div>
           </div>
         </div>`;
@@ -316,17 +355,18 @@ function afficher() {
     html += `</div>`;
   });
 
+  if(html === ""){ html = '<div style="text-align:center;padding:20px;color:#888">Aucun produit disponible dans cette catégorie.</div>'; }
   document.getElementById("produits").innerHTML = html;
-  calculerTotal();
+  calculerEtAfficherTotal();
 }
 
-function changerQteItem(pGroupIdx, itemIdx, val) {
-  catalogue[pGroupIdx].items[itemIdx].qte = Math.max(0, catalogue[pGroupIdx].items[itemIdx].qte + val);
+function changerItem(grpIdx, itemIdx, val) {
+  catalogue[grpIdx].items[itemIdx].qte = Math.max(0, catalogue[grpIdx].items[itemIdx].qte + val);
   afficher();
 }
 
-function changerQtePack(pGroupIdx, packIdx, val) {
-  catalogue[pGroupIdx].packs[packIdx].qte = Math.max(0, catalogue[pGroupIdx].packs[packIdx].qte + val);
+function changerPack(grpIdx, packIdx, val) {
+  catalogue[grpIdx].packs[packIdx].qte = Math.max(0, catalogue[grpIdx].packs[packIdx].qte + val);
   afficher();
 }
 
@@ -336,141 +376,280 @@ function filtrerCat(cat, btn) {
   btn.classList.add('active');
   afficher();
 }
-</script>
-<script>
-function choisirMode(mode) {
-  modeReception = mode;
-  document.getElementById('card-livraison').classList.toggle('selectionnee', mode === 'livraison');
-  document.getElementById('card-retrait').classList.toggle('selectionnee', mode === 'retrait');
-  document.getElementById('radio-liv').checked = (mode === 'livraison');
-  document.getElementById('radio-ret').checked = (mode === 'retrait');
-  calculerTotal();
-}
 
-function appliquerCodePromo() {
-  let code = document.getElementById('code-promo').value.trim().toUpperCase();
-  let msg = document.getElementById('promo-message');
-  
-  if (code === "NOOGO10") {
-    reductionPromo = 500;
-    msg.style.color = "#27ae60";
-    msg.textContent = "✅ Code Promo appliqué (-500 FCFA)";
-  } else if(code === "") {
-    reductionPromo = 0;
-    msg.textContent = "";
-  } else {
-    reductionPromo = 0;
-    msg.style.color = "#e74c3c";
-    msg.textContent = "❌ Code promo invalide";
-  }
-  calculerTotal();
-}
-
-function calculerTotal() {
-  let totalProduits = 0;
-  let aDesPacks = false;
-  let nbArticles = 0;
-
-  catalogue.forEach(pGroup => {
-    pGroup.items.forEach(item => {
-      if (item.qte > 0) {
-        totalProduits += (item.qte * item.prix);
-        nbArticles += item.qte;
-      }
-    });
-    if (pGroup.packs) {
-      pGroup.packs.forEach(pack => {
-        if (pack.qte > 0) {
-          totalProduits += (pack.qte * pack.prix);
-          nbArticles += pack.qte;
-          aDesPacks = true;
-        }
-      });
+function calculerTotalProduits() {
+  let total = 0;
+  catalogue.forEach(grp => {
+    grp.items.forEach(i => { total += (i.prix * i.qte); });
+    if(grp.packs) {
+      grp.packs.forEach(p => { total += (p.prix * p.qte); });
     }
   });
+  return total;
+}
 
-  let totalFinal = totalProduits;
-  let mentionVip = document.getElementById('mention-vip');
+function calculerEtAfficherTotal() {
+  let sousTotal = calculerTotalProduits();
+  let remise = codePromoApplique && codePromoApplique.valide ? Number(codePromoApplique.remise) || 0 : 0;
+  let totalAvantLivraison = Math.max(0, sousTotal - remise);
+  let frais = modeReception === "livraison" ? fraisLivraison : 0;
+  let totalFinal = totalAvantLivraison + frais;
 
-  if (nbArticles > 0 && modeReception === 'livraison') {
-    if (aDesPacks) {
-      mentionVip.textContent = "✨ Livraison VIP offerte avec votre Pack !";
-    } else {
-      totalFinal += fraisLivraison;
-      mentionVip.textContent = "+ 1 500 FCFA de livraison standard";
-    }
-  } else {
-    mentionVip.textContent = "";
+  if(codePromoApplique && codePromoApplique.valide){
+    document.getElementById("ligne-remise").innerText = `Code ${codePromoApplique.code} appliqué : −${remise.toLocaleString("fr-FR")} FCFA`;
+    document.getElementById("ligne-remise").classList.remove("cachee-remise");
+  }else{
+    document.getElementById("ligne-remise").classList.add("cachee-remise");
   }
+  document.getElementById("total").innerText = totalFinal.toLocaleString("fr-FR");
+  return { sousTotal, remise, frais, totalFinal };
+  }
+  function majReception() {
+  let choix = document.querySelector('input[name="reception"]:checked').value;
+  modeReception = choix;
+  document.getElementById("card-liv").classList.toggle("selectionnee", choix === "livraison");
+  document.getElementById("card-ret").classList.toggle("selectionnee", choix === "retrait");
+  
+  let note = document.getElementById("note-reception");
+  if(choix === "livraison"){
+    note.innerHTML = "🚚 Livraison à domicile : frais fixes de 1 500 FCFA ajoutés au total.";
+  }else{
+    note.innerHTML = "🏪 Retrait au local : 0 FCFA de livraison.";
+  }
+  calculerEtAfficherTotal();
+}
 
-  totalFinal = Math.max(0, totalFinal - reductionPromo);
+function afficherInfoPaiement() {
+  document.querySelectorAll(".paiement-carte").forEach(carte => carte.classList.remove("selectionnee"));
+  let choix = document.querySelector('input[name="paiement"]:checked').value;
+  let zone = document.getElementById("info-paiement");
+  document.querySelector(`input[name="paiement"][value="${choix}"]`).closest(".paiement-carte").classList.add("selectionnee");
 
-  document.getElementById('total').textContent = totalFinal.toLocaleString('fr-FR');
+  if(choix === "orange"){
+    zone.innerHTML = `<div class="info-paiement-carte">🟠 Envoyez le montant via <strong>Orange Money</strong> au numéro :<br><span style="font-size:16px;font-weight:bold;color:#e8590c">65 12 09 02</span><br><small>Après paiement, envoyez la capture d'écran sur WhatsApp avec votre commande</small></div>`;
+    zone.classList.remove("cachee-remise");
+  }else if(choix === "wave"){
+    zone.innerHTML = `<div class="info-paiement-carte">🔵 Envoyez le montant via <strong>Wave</strong> au numéro :<br><span style="font-size:16px;font-weight:bold;color:#e8590c">65 12 09 02</span><br><small>Après paiement, envoyez la capture d'écran sur WhatsApp avec votre commande</small></div>`;
+    zone.classList.remove("cachee-remise");
+  }else{
+    zone.innerHTML = "";
+    zone.classList.add("cachee-remise");
+  }
+}
+
+function verifierCode() {
+  let code = document.getElementById("champ-code").value.trim();
+  let zoneMessage = document.getElementById("message-code");
+  if(code === ""){
+    codePromoApplique = null;
+    zoneMessage.innerText = "";
+    afficher();
+    return;
+  }
+  let total = calculerTotalProduits();
+  zoneMessage.className = "";
+  zoneMessage.innerText = "Vérification...";
+  
+  fetch("/api/verifier-code", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({code, montantTotal: total})
+  })
+  .then(r => r.json())
+  .then(d => {
+    if(d.valide){
+      codePromoApplique = {code: code.toUpperCase(), remise: d.remise, valide: true};
+      zoneMessage.className = "valide";
+      zoneMessage.innerText = `✅ Code valide ! −${d.remise.toLocaleString("fr-FR")} FCFA`;
+    }else{
+      codePromoApplique = null;
+      zoneMessage.className = "invalide";
+      zoneMessage.innerText = "❌ " + (d.message || "Code promo invalide");
+    }
+    calculerEtAfficherTotal();
+  })
+  .catch(() => {
+    codePromoApplique = null;
+    zoneMessage.className = "invalide";
+    zoneMessage.innerText = "❌ Impossible de vérifier le code pour le moment";
+    calculerEtAfficherTotal();
+  });
 }
 
 function commander() {
-  let nom = document.getElementById('champ-nom').value;
-  let tel = document.getElementById('champ-tel').value;
-  let loc = document.getElementById('champ-localisation').value;
-
-  let texte = "*NOUVELLE COMMANDE - NOOGO*\n\n";
-  if (nom) texte += `👤 *Client:* ${nom}\n`;
-  if (tel) texte += `📞 *Contact:* ${tel}\n`;
-  if (loc) texte += `📍 *Adresse:* ${loc}\n`;
-  texte += `🛵 *Mode:* ${modeReception === 'livraison' ? 'Livraison à domicile' : 'Retrait sur place'}\n`;
-  texte += "-----------------------------------\n";
-  texte += "*DÉTAILS DU PANIER :*\n\n";
-
-  let totalArticles = 0;
-
-  catalogue.forEach(pGroup => {
-    pGroup.items.forEach(item => {
-      if (item.qte > 0) {
-        let st = item.qte * item.prix;
-        totalArticles += st;
-        texte += `• ${item.nom} x${item.qte} : ${st.toLocaleString('fr-FR')} FCFA\n`;
+  let commande = [];
+  
+  catalogue.forEach(grp => {
+    grp.items.forEach(i => {
+      if(i.qte > 0){
+        commande.push(`${i.qte} x ${i.nom} (${i.format}) = ${(i.prix * i.qte).toLocaleString("fr-FR")} FCFA`);
       }
     });
-    if (pGroup.packs) {
-      pGroup.packs.forEach(pack => {
-        if (pack.qte > 0) {
-          let st = pack.qte * pack.prix;
-          totalArticles += st;
-          texte += `🌟 *${pack.nom}* x${pack.qte} : ${st.toLocaleString('fr-FR')} FCFA\n`;
+    if(grp.packs){
+      grp.packs.forEach(p => {
+        if(p.qte > 0){
+          commande.push(`🌟 ${p.qte} x ${p.nom} = ${(p.prix * p.qte).toLocaleString("fr-FR")} FCFA`);
         }
       });
     }
   });
 
-  if (totalArticles === 0) {
-    alert("Votre panier est vide. Veuillez sélectionner un produit !");
+  if(commande.length === 0){
+    alert("Veuillez sélectionner au moins un produit ou pack.");
     return;
   }
 
-  if (reductionPromo > 0) {
-    texte += `\n🎁 *Réduction Code Promo:* -${reductionPromo} FCFA\n`;
+  let nom = document.getElementById("champ-nom").value.trim();
+  let tel = document.getElementById("champ-tel").value.trim();
+  let localisation = document.getElementById("champ-localisation").value.trim();
+  
+  let totalProduits = calculerTotalProduits();
+  let remise = codePromoApplique && codePromoApplique.valide ? Number(codePromoApplique.remise) || 0 : 0;
+  let totalAvantLivraison = Math.max(0, totalProduits - remise);
+  let frais = modeReception === "livraison" ? fraisLivraison : 0;
+  let totalFinal = totalAvantLivraison + frais;
+  let codeUtilise = codePromoApplique && codePromoApplique.valide ? codePromoApplique.code : "";
+  let modePaiementChoisi = document.querySelector('input[name="paiement"]:checked').value;
+  
+  let libellesPaiement = {
+    especes: "Espèces à la livraison / sur place",
+    orange: "Orange Money (65 12 09 02)",
+    wave: "Wave (65 12 09 02)"
+  };
+
+  fetch("/api/commander", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      code: codeUtilise,
+      montantTotal: totalProduits,
+      nomClient: nom,
+      telClient: tel,
+      localisation: localisation,
+      modePaiement: modePaiementChoisi,
+      modeReception: modeReception,
+      source: sessionStorage.getItem("noogo_source") || "direct"
+    })
+  }).catch(() => {});
+
+  let libelleReception = modeReception === "livraison" ? "Livraison à domicile (1 500 FCFA)" : "Retrait au local (0 FCFA)";
+  
+  let msg =
+    "Bonjour Noogo 🍦\n\n" +
+    "Je souhaite commander :\n\n" +
+    commande.join("\n") +
+    "\n\nMode de réception : " + libelleReception +
+    "\nTotal produits : " + totalProduits.toLocaleString("fr-FR") + " FCFA" +
+    "\nFrais de livraison : " + (modeReception === "livraison" ? "1 500 FCFA" : "0 FCFA") +
+    (codeUtilise ? `\nCode promo : ${codeUtilise} (−${remise.toLocaleString("fr-FR")} FCFA)` : "") +
+    "\n\nTotal à payer : " + totalFinal.toLocaleString("fr-FR") + " FCFA" +
+    "\n\n💳 Paiement : " + libellesPaiement[modePaiementChoisi] +
+    (modePaiementChoisi !== "especes" ? "\n📸 J'envoie la capture d'écran du paiement juste après ce message." : "") +
+    "\n\n📋 Mes informations :\n" +
+    (nom !== "" ? `Nom : ${nom}\n` : "") +
+    (tel !== "" ? `Téléphone : ${tel}\n` : "") +
+    (localisation !== "" ? `Lieu : ${localisation}` : "Lieu : à préciser");
+
+  let url = "https://wa.me/22661682706?text=" + encodeURIComponent(msg);
+  window.open(url, "_blank");
   }
-
-  let totalAffiche = document.getElementById('total').textContent;
-  texte += "\n-----------------------------------\n";
-  texte += `💰 *TOTAL À PAYER : ${totalAffiche} FCFA*`;
-
-  let url = `https://wa.me/22661682706?text=${encodeURIComponent(texte)}`;
-  window.open(url, '_blank');
+  function localiser() {
+  if(!navigator.geolocation){
+    alert("La localisation n'est pas disponible sur cet appareil.");
+    return;
+  }
+  let champ = document.getElementById("champ-localisation");
+  champ.placeholder = "Recherche de votre position...";
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      let lat = position.coords.latitude.toFixed(6);
+      let lon = position.coords.longitude.toFixed(6);
+      champ.value = `https://maps.google.com/?q=${lat},${lon}`;
+      champ.placeholder = "Quartier, repère...";
+    },
+    () => {
+      champ.placeholder = "Quartier, repère...";
+      alert("Impossible de récupérer votre position. Vous pouvez indiquer votre quartier manuellement.");
+    }
+  );
 }
 
-function agrandir(src, titre) {
-  document.getElementById('zoom-img').src = src;
-  document.getElementById('zoom-titre').textContent = titre;
-  document.getElementById('zoom-overlay').classList.add('actif');
+function agrandir(src, nom) {
+  document.getElementById("zoom-img").src = src;
+  document.getElementById("zoom-titre").innerText = nom;
+  document.getElementById("zoom-overlay").classList.add("actif");
 }
 
 function fermerZoom() {
-  document.getElementById('zoom-overlay').classList.remove('actif');
+  document.getElementById("zoom-overlay").classList.remove("actif");
 }
 
-afficher();
-</script>
+window.addEventListener("scroll", () => {
+  let bouton = document.getElementById("bouton-haut");
+  if(window.scrollY > 400){
+    bouton.classList.add("visible");
+  }else{
+    bouton.classList.remove("visible");
+  }
+});
 
+function remonterEnHaut() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+let evenementInstallation = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  evenementInstallation = e;
+  if(!sessionStorage.getItem("noogo_bandeau_ferme")){
+    let bandeau = document.getElementById("bandeau-install");
+    if(bandeau){ bandeau.style.display = "flex"; }
+  }
+});
+
+function fermerBandeauInstall() {
+  let bandeau = document.getElementById("bandeau-install");
+  if(bandeau){ bandeau.style.display = "none"; }
+  sessionStorage.setItem("noogo_bandeau_ferme", "1");
+}
+
+function detecterAppareil() {
+  let ua = navigator.userAgent || "";
+  if(/iPad|iPhone|iPod/.test(ua)) return "ios";
+  if(/Android/.test(ua)) return "android";
+  return "autre";
+}
+
+function installerApp() {
+  if(evenementInstallation){
+    evenementInstallation.prompt();
+    evenementInstallation.userChoice.then(() => {
+      evenementInstallation = null;
+    });
+    return;
+  }
+  let appareil = detecterAppareil();
+  if(appareil === "ios"){
+    alert("Pour installer l'application sur iPhone :\n\n1. Appuyez sur le bouton Partager en bas de Safari.\n2. Choisissez « Sur l'écran d'accueil ».\n3. Appuyez sur « Ajouter ».");
+  }else if(appareil === "android"){
+    alert("Pour installer l'application :\n\n1. Appuyez sur les 3 points ⋮.\n2. Choisissez « Installer l'application » ou « Ajouter à l'écran d'accueil ».");
+  }else{
+    alert("Pour installer l'application, cherchez l'option « Installer » ou « Ajouter à l'écran d'accueil » dans le menu de votre navigateur.");
+  }
+}
+
+// INITIALISATION
+afficher();
+majReception();
+afficherInfoPaiement();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((erreur) => {
+      console.log("Échec du SW :", erreur);
+    });
+  });
+}
+</script>
 </body>
 </html>

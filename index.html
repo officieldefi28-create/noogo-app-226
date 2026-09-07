@@ -108,7 +108,219 @@ footer p{margin:7px 0}
 <h2 class="section-titre">🍦 Nos produits</h2>
 <p class="section-sous-titre">Touchez une photo pour l'agrandir, puis choisissez vos quantités</p>
 <div id="produits"></div>
+<div id="produits"></div>
+<div id="packs"></div>
 
+<script>
+let produits = [
+{nom:"Popcorn Sachet",prix:300,img:"POPcorn_Sachet_300F",qte:0},
+{nom:"Popcorn Carton",prix:500,img:"POPcorn_Carton_500F",qte:0},
+{nom:"Crème Glacée Banane",prix:1000,img:"Creme_Glacee_Banane_1000F",qte:0},
+{nom:"Crème Glacée Vanille Lactée",prix:700,img:"Creme_Glacee_Vanille_Lactee_700F",qte:0},
+{nom:"Crème Glacée Chocolat Cacao au Lait",prix:600,img:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F",qte:0},
+{nom:"Esquimau Sandra",prix:500,img:"Esquimau_Sandra_500F",qte:0},
+{nom:"Esquimau Sandra Chocolat au Coco",prix:800,img:"Esquimau_Sandra_Chocolat_Coco_800F",qte:0},
+{nom:"Crème de 6250 ml",prix:35000,img:"Creme_6250ml_35000F",qte:0},
+{nom:"Fruits Naturel Banane",prix:2000,img:"Fruits_Naturel_Banane_2000F",qte:0},
+{nom:"Vanille Lacté",prix:1400,img:"Vanille_Lacte_1400F",qte:0},
+{nom:"Chocolat Cacao au Lait",prix:1200,img:"Chocolat_Cacao_au_Lait_1200F",qte:0},
+{nom:"Pain Anglais - 1000 FCFA",prix:1000,img:"Pain_Anglais_1000F",qte:0},
+{nom:"Pain Anglais - 700 FCFA",prix:700,img:"Pain_Anglais_700F",qte:0}
+];
+
+let packs = [
+{nom:"Pack Découverte",prix:1500,desc:"Petit pack pratique pour tester.",qte:0,img:"pack-decouverte"},
+{nom:"Pack Famille",prix:2500,desc:"Pack plus grand pour partager.",qte:0,img:"pack-famille"},
+{nom:"Pack Fête",prix:4000,desc:"Pack généreux pour les commandes festives.",qte:0,img:"pack-fete"}
+];
+
+let images = {
+"POPcorn_Sachet_300F":"/produits/POPcorn_Sachet_300F.jpg",
+"POPcorn_Carton_500F":"/produits/POPcorn_Carton_500F.jpg",
+"Creme_Glacee_Banane_1000F":"/produits/Creme_Glacee_Banane_1000F.jpg",
+"Creme_Glacee_Vanille_Lactee_700F":"/produits/Creme_Glacee_Vanille_Lactee_700F.jpg",
+"Creme_Glacee_Chocolat_Cacao_au_Lait_600F":"/produits/Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
+"Esquimau_Sandra_500F":"/produits/Esquimau_Sandra_500F.jpg",
+"Esquimau_Sandra_Chocolat_Coco_800F":"/produits/Esquimau_Sandra_Chocolat_Coco_800F.jpg",
+"Creme_6250ml_35000F":"/produits/Creme_6250ml_35000F.jpg",
+"Fruits_Naturel_Banane_2000F":"/produits/Fruits_Naturel_Banane_2000F.jpg",
+"Vanille_Lacte_1400F":"/produits/Vanille_Lacte_1400F.jpg",
+"Chocolat_Cacao_au_Lait_1200F":"/produits/Chocolat_Cacao_au_Lait_1200F.jpg",
+"Pain_Anglais_700F":"/produits/Pain_Anglais_700F.jpg",
+"Pain_Anglais_1000F":"/produits/Pain_Anglais_1000F.jpg",
+"pack-decouverte":"/produits/pack-decouverte.jpg",
+"pack-famille":"/produits/pack-famille.jpg",
+"pack-fete":"/produits/pack-fete.jpg"
+};
+
+let remisePromo = 0;
+let promoValide = false;
+
+function prixVisible(prix){
+return prix < 1500 ? prix.toLocaleString("fr-FR") + " FCFA" : "Sur commande";
+}
+
+function totalProduits(){
+return produits.reduce((s,p)=>s+(p.prix*p.qte),0);
+}
+
+function totalPacks(){
+return packs.reduce((s,p)=>s+(p.prix*p.qte),0);
+}
+
+function totalCommande(){
+let t = totalProduits() + totalPacks();
+if(promoValide) t = Math.max(0, t - remisePromo);
+return t;
+}
+
+function afficherProduits(){
+let html = "";
+produits.forEach((p,i)=>{
+let image = images[p.img] || "";
+html += `<div class="produit"><div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')"><img src="${image}" alt="${p.nom}"><span class="zoom-btn">🔍 Agrandir</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${prixVisible(p.prix)}</div><div class="qte"><button onclick="changerProduit(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerProduit(${i},1)">+</button></div></div></div>`;
+});
+document.getElementById("produits").innerHTML = html;
+}
+
+function afficherPacks(){
+let html = "";
+packs.forEach((p,i)=>{
+let image = images[p.img] || "";
+html += `<div class="produit"><div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')"><img src="${image}" alt="${p.nom}"><span class="zoom-btn">📦 Pack</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${prixVisible(p.prix)}</div><p style="margin:6px 0 10px;font-size:13px;color:#666;line-height:1.4">${p.desc}</p><div class="qte"><button onclick="changerPack(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerPack(${i},1)">+</button></div></div></div>`;
+});
+document.getElementById("packs").innerHTML = html;
+}
+
+function changerProduit(i,n){
+produits[i].qte = Math.max(0, produits[i].qte + n);
+actualiser();
+}
+
+function changerPack(i,n){
+packs[i].qte = Math.max(0, packs[i].qte + n);
+actualiser();
+}
+
+function verifierCode(){
+let code = document.getElementById("champ-code").value.trim();
+let zone = document.getElementById("message-code");
+if(code === ""){
+promoValide = false;
+remisePromo = 0;
+zone.innerText = "";
+actualiser();
+return;
+}
+let t = totalProduits() + totalPacks();
+zone.className = "";
+zone.innerText = "Vérification...";
+fetch("/api/verifier-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,montantTotal:t})})
+.then(r=>r.json())
+.then(d=>{
+if(d.valide){
+promoValide = true;
+remisePromo = Number(d.remise || 0);
+zone.className = "valide";
+zone.innerText = `✅ Code valide ! −${remisePromo.toLocaleString("fr-FR")} FCFA`;
+}else{
+promoValide = false;
+remisePromo = 0;
+zone.className = "invalide";
+zone.innerText = "❌ " + (d.message || "Code promo invalide");
+}
+actualiser();
+})
+.catch(()=>{
+promoValide = false;
+remisePromo = 0;
+zone.className = "invalide";
+zone.innerText = "❌ Impossible de vérifier le code pour le moment";
+actualiser();
+});
+}
+
+function afficherInfoPaiement(){
+document.querySelectorAll(".paiement-carte").forEach(c=>c.classList.remove("selectionnee"));
+let choix = document.querySelector('input[name="paiement"]:checked').value;
+let zone = document.getElementById("info-paiement");
+document.querySelector(`input[name="paiement"][value="${choix}"]`).closest(".paiement-carte").classList.add("selectionnee");
+if(choix==="orange"){
+zone.innerHTML = `<div class="info-paiement-carte">🟠 Envoyez le montant via <strong>Orange Money</strong> au numéro :<br><span class="info-paiement-numero">65 12 09 02</span></div>`;
+zone.classList.remove("cachee-remise");
+}else if(choix==="wave"){
+zone.innerHTML = `<div class="info-paiement-carte">🔵 Envoyez le montant via <strong>Wave</strong> au numéro :<br><span class="info-paiement-numero">65 12 09 02</span></div>`;
+zone.classList.remove("cachee-remise");
+}else{
+zone.innerHTML = "";
+zone.classList.add("cachee-remise");
+}
+}
+
+function actualiser(){
+afficherProduits();
+afficherPacks();
+document.getElementById("total").innerText = totalCommande().toLocaleString("fr-FR");
+if(promoValide && remisePromo > 0){
+document.getElementById("ligne-remise").innerText = `Remise appliquée : −${remisePromo.toLocaleString("fr-FR")} FCFA`;
+document.getElementById("ligne-remise").classList.remove("cachee-remise");
+}else{
+document.getElementById("ligne-remise").classList.add("cachee-remise");
+}
+}
+
+function commander(){
+let items = [];
+produits.forEach(p=>{if(p.qte>0) items.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});
+packs.forEach(p=>{if(p.qte>0) items.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});
+if(items.length===0){alert("Veuillez sélectionner au moins un produit ou un pack.");return;}
+let nom = document.getElementById("champ-nom").value.trim();
+let tel = document.getElementById("champ-tel").value.trim();
+let loc = document.getElementById("champ-localisation").value.trim();
+let code = document.getElementById("champ-code").value.trim();
+let paiement = document.querySelector('input[name="paiement"]:checked').value;
+let livraison = 2000;
+let total = totalCommande();
+let final = total + livraison;
+let msg = [];
+msg.push("Bonjour, je souhaite passer commande :");
+if(nom) msg.push(`Nom : ${nom}`);
+if(tel) msg.push(`Téléphone : ${tel}`);
+if(loc) msg.push(`Lieu : ${loc}`);
+if(code) msg.push(`Code promo : ${code.toUpperCase()}`);
+msg.push("");
+msg.push(...items);
+msg.push("");
+msg.push(`Sous-total : ${total.toLocaleString("fr-FR")} FCFA`);
+msg.push(`Livraison : ${livraison.toLocaleString("fr-FR")} FCFA`);
+msg.push(`Total à payer : ${final.toLocaleString("fr-FR")} FCFA`);
+msg.push(`Paiement : ${paiement}`);
+let lien = "https://wa.me/22661682706?text=" + encodeURIComponent(msg.join("
+"));
+window.open(lien,"_blank");
+}
+
+function agrandir(src,titre){
+if(!src) return;
+document.getElementById("zoom-img").src = src;
+document.getElementById("zoom-titre").innerText = titre;
+document.getElementById("zoom-overlay").classList.add("actif");
+}
+
+function fermerZoom(){document.getElementById("zoom-overlay").classList.remove("actif");}
+function localiser(){alert("Fonction de localisation à connecter si besoin.");}
+function remonterEnHaut(){window.scrollTo({top:0,behavior:"smooth"});}
+function installerApp(){alert("Installation de l'application à configurer si besoin.");}
+function fermerGuideInstall(){document.getElementById("install-overlay").classList.remove("actif");}
+function fermerBandeauInstall(){document.getElementById("bandeau-install").style.display="none";}
+
+window.addEventListener("DOMContentLoaded",()=>{
+afficherProduits();
+afficherPacks();
+afficherInfoPaiement();
+actualiser();
+});
+</script>
 <script>
 let produits = [
 {nom:"Popcorn Sachet",prix:300,img:"POPcorn_Sachet_300F",qte:0},

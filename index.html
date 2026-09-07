@@ -1208,5 +1208,163 @@ function fermerGuideInstall(){document.getElementById("install-overlay").classLi
 function fermerBandeauInstall(){document.getElementById("bandeau-install").style.display="none";}
 window.addEventListener("DOMContentLoaded",()=>{afficher();afficherInfoPaiement();});
 </script>
+<script>
+// Tes packs rattachés directement à chaque produit avec les bons prix et images existantes
+let packs = [
+{nom:"Pack Découverte (Chocolat)", prix:3500, img:"chocolat_125.jpg", desc:"Pack 100% Chocolat avec livraison incluse", qte:0, produitAssocie: "choc"},
+{nom:"Pack Famille (Vanille)", prix:4000, img:"vanille_125.jpg", desc:"Pack 100% Vanille avec livraison incluse", qte:0, produitAssocie: "vanille"},
+{nom:"Pack Fête (Banane)", prix:5000, img:"banane_125.jpg", desc:"Pack 100% Banane avec livraison incluse", qte:0, produitAssocie: "banane"}
+];
+
+let livraisonFixe = 2000;
+let codePromoValide = false;
+let remisePromo = 0;
+
+// Fonction modifiée pour injecter les packs DIRECTEMENT en bas de chaque produit dans le rendu HTML principal
+function afficherProduitsEtPacks() {
+    let container = document.getElementById("produits-container"); // ou ton conteneur principal
+    // Si tu gères l'affichage global via ta fonction 'afficher()', adapte pour insérer le pack sous l'élément correspondant.
+}
+
+function changerPack(i,n){
+    packs[i].qte = Math.max(0, packs[i].qte + n);
+    actualiserTotalEtMessage();
+}
+
+function totalProduits(){
+    return produits.reduce((s,p)=>s + (p.prix * p.qte), 0);
+}
+
+function totalPacks(){
+    return packs.reduce((s,p)=>s + (p.prix * p.qte), 0);
+}
+
+function sousTotal(){
+    return totalProduits() + totalPacks();
+}
+
+function totalAvecPromo(){
+    let t = sousTotal();
+    if(codePromoValide) t = Math.max(0, t - remisePromo);
+    return t;
+}
+
+function actualiserTotalEtMessage(){
+    if(typeof afficher === 'function') afficher();
+    
+    let total = totalAvecPromo();
+    let sousT = sousTotal();
+
+    // Gestion invisible de la livraison : si pas de pack et sous-total < 3000F, on applique la livraison de façon transparente
+    let fraisAppliques = (sousT > 0 && sousT < 3000 && totalPacks() === 0) ? livraisonFixe : 0;
+    let montantGlobalClient = total + fraisAppliques;
+
+    let totalEl = document.getElementById("total");
+    if(totalEl) totalEl.innerText = montantGlobalClient.toLocaleString("fr-FR");
+
+    let ligne = document.getElementById("ligne-remise");
+    if(ligne){
+        if(codePromoValide && remisePromo > 0){
+            ligne.classList.remove("cachee-remise");
+            ligne.innerText = `Remise appliquée : −${remisePromo.toLocaleString("fr-FR")} FCFA`;
+        }else{
+            ligne.classList.add("cachee-remise");
+        }
+    }
+}
+
+function verifierCode(){
+    let code = document.getElementById("champ-code").value.trim();
+    let zone = document.getElementById("message-code");
+    if(code === ""){
+        codePromoValide = false;
+        remisePromo = 0;
+        zone.innerText = "";
+        actualiserTotalEtMessage();
+        return;
+    }
+    zone.className = "";
+    zone.innerText = "Vérification...";
+    fetch("/api/verifier-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,montantTotal:sousTotal()})})
+    .then(r=>r.json())
+    .then(d=>{
+        if(d.valide){
+            codePromoValide = true;
+            remisePromo = Number(d.remise || 0);
+            zone.className = "valide";
+            zone.innerText = `✅ Code valide ! −${remisePromo.toLocaleString("fr-FR")} FCFA`;
+        }else{
+            codePromoValide = false;
+            remisePromo = 0;
+            zone.className = "invalide";
+            zone.innerText = "❌ " + (d.message || "Code promo invalide");
+        }
+        actualiserTotalEtMessage();
+    })
+    .catch(()=>{
+        codePromoValide = false;
+        remisePromo = 0;
+        zone.className = "invalide";
+        zone.innerText = "❌ Impossible de vérifier le code pour le moment";
+        actualiserTotalEtMessage();
+    });
+}
+
+function commander(){
+    let commande = [];
+    produits.forEach(p=>{ if(p.qte>0) commande.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`); });
+    packs.forEach(p=>{ if(p.qte>0) commande.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`); });
+    
+    if(commande.length === 0){
+        alert("Veuillez sélectionner au moins un produit ou un pack.");
+        return;
+    }
+    
+    let nom = document.getElementById("champ-nom")?.value.trim() || "";
+    let tel = document.getElementById("champ-tel")?.value.trim() || "";
+    let loc = document.getElementById("champ-localisation")?.value.trim() || "";
+    let code = document.getElementById("champ-code")?.value.trim() || "";
+    let paiement = document.querySelector('input[name="paiement"]:checked')?.value || "especes";
+    
+    let sous = sousTotal();
+    let total = totalAvecPromo();
+    let fraisAppliques = (sous > 0 && sous < 3000 && totalPacks() === 0) ? livraisonFixe : 0;
+    let final = total + fraisAppliques;
+
+    // Alerte uniquement pour les petits montants hors packs
+    if(fraisAppliques > 0){
+        let valider = confirm("Votre commande est inférieure à 3 000 FCFA. Des frais de livraison de 2 000 FCFA sont appliqués. Voulez-vous valider ?");
+        if(!valider) return;
+    }
+
+    let msg = [];
+    msg.push("🍦 *NOUVELLE COMMANDE NOOGO* 🍦");
+    if(nom) msg.push(`Nom : ${nom}`);
+    if(tel) msg.push(`Téléphone : ${tel}`);
+    if(loc) msg.push(`Lieu : ${loc}`);
+    if(code) msg.push(`Code promo : ${code.toUpperCase()}`);
+    msg.push("");
+    msg.push(...commande);
+    msg.push("");
+    msg.push(`Sous-total : ${sous.toLocaleString("fr-FR")} FCFA`);
+    if(codePromoValide && remisePromo > 0) msg.push(`Remise : −${remisePromo.toLocaleString("fr-FR")} FCFA`);
+    if(fraisAppliques > 0) {
+        msg.push(`Livraison : ${fraisAppliques.toLocaleString("fr-FR")} FCFA`);
+    } else {
+        msg.push(`Livraison : Offerte / Incluse (Pack ou seuil atteint)`);
+    }
+    msg.push(`Total à payer : ${final.toLocaleString("fr-FR")} FCFA`);
+    msg.push(`Paiement : ${paiement}`);
+
+    let lien = "https://wa.me/22661682706?text=" + encodeURIComponent(msg.join("\n"));
+    window.open(lien,"_blank");
+}
+
+window.addEventListener("DOMContentLoaded",()=>{
+    if(typeof afficher === 'function') afficher();
+    actualiserTotalEtMessage();
+});
+</script>
+
 </body>
 </html>

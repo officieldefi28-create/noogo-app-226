@@ -71,6 +71,7 @@
         .sticky-footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px; box-shadow: 0 -4px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
         .btn-commander { background: #25D366; color: white; border: none; padding: 15px; font-size: 1.1rem; font-weight: bold; border-radius: 10px; cursor: pointer; text-align: center; width: 100%; }
         .total-display { font-size: 1.2rem; font-weight: bold; text-align: center; color: #333; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -79,13 +80,13 @@
     <div class="container">
         <div class="welcome-banner">
             <h2>Bienvenue chez Noogo ! 🍦</h2>
-            <p>Commandez vos glaces à l'unité, vos packs par parfum (Vanille, Chocolat, Banane) ou vos packs mélangés en toute simplicité.</p>
+            <p>Goûtez à l'onctuosité de nos glaces artisanales. Faites votre choix ci-dessous !</p>
         </div>
 
-        <div class="section-title">🍦 Petites Boîtes (125 ml) - Unités & Packs</div>
+        <div class="section-title">🍦 Petites Boîtes (125 ml)</div>
         <div id="liste-125"></div>
 
-        <div class="section-title">🍨 Grosses Boîtes (250 ml) - Unités & Packs</div>
+        <div class="section-title">🍨 Grosses Boîtes (250 ml)</div>
         <div id="liste-250"></div>
 
         <div class="section-title">🍿 Autres Gourmandises & Bacs</div>
@@ -95,7 +96,7 @@
             <div class="section-title" style="margin-top: 0;">📋 Vos informations</div>
             
             <div class="form-group">
-                <label>Nom</label>
+                <label>Nom & Prénom</label>
                 <input type="text" id="client-nom" placeholder="Votre nom">
             </div>
 
@@ -105,28 +106,26 @@
             </div>
 
             <div class="form-group">
-                <label>Lieu de livraison</label>
-                <input type="text" id="client-lieu" placeholder="Quartier, repère...">
-            </div>
-
-            <div class="form-group">
                 <label>Mode de réception</label>
                 <div class="radio-group">
-                    <label class="radio-card active" id="label-livraison">
-                        <input type="radio" name="modeReception" value="livraison" checked onchange="changerModeReception()"> 🛵 Livraison (1500F)
-                    </label>
                     <label class="radio-card" id="label-retrait">
                         <input type="radio" name="modeReception" value="retrait" onchange="changerModeReception()"> 🏢 Retrait sur place
+                    </label>
+                    <label class="radio-card active" id="label-livraison">
+                        <input type="radio" name="modeReception" value="livraison" checked onchange="changerModeReception()"> 🛵 Livraison à domicile
                     </label>
                 </div>
             </div>
 
-            <div class="form-group" id="bloc-info-reception" style="font-size: 0.9rem; color: #666; background: #fff5eb; padding: 10px; border-radius: 8px;">
-                🛵 Livraison à domicile : frais fixes de 1 500 FCFA (Offert si un pack est sélectionné).
+            <!-- Ce bloc n'apparaît que si la livraison est sélectionnée -->
+            <div class="form-group" id="bloc-lieu-livraison">
+                <label>Lieu précis de livraison</label>
+                <input type="text" id="client-lieu" placeholder="Quartier, secteur, repère...">
+                <small style="color: #e67e22; display: block; margin-top: 5px;">Frais de livraison fixes : 1 500 FCFA (Offerts si pack inclus)</small>
             </div>
 
             <div class="form-group">
-                <label>Code promo</label>
+                <label>Code promo (Optionnel)</label>
                 <div style="display: flex; gap: 10px;">
                     <input type="text" id="code-promo" placeholder="EX : ECOLE01" style="flex: 1;">
                     <button type="button" onclick="verifierCodePromo()" style="background: #27ae60; color: white; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; cursor: pointer;">✓</button>
@@ -136,7 +135,7 @@
             <div class="form-group">
                 <label>Mode de paiement</label>
                 <select id="mode-paiement">
-                    <option value="Espèces à la livraison">💵 Espèces à la livraison</option>
+                    <option value="Espèces à la livraison">💵 Espèces</option>
                     <option value="Orange Money">🟠 Orange Money</option>
                     <option value="Wave">🔵 Wave</option>
                 </select>
@@ -151,32 +150,21 @@
 
     <script>
         const produits = [
-            // --- PETITES BOÎTES 125 ML (Unités & Packs) ---
-            { id: 1, nom: "Petite Boîte 125ml – Vanille", prix: 1200, type: "125", desc: "Format unitaire 125 ml", img: "produits/vanille_125.jpg" },
-            { id: 2, nom: "Petite Boîte 125ml – Chocolat", prix: 1200, type: "125", desc: "Format unitaire 125 ml", img: "produits/chocolat_125.jpg" },
-            { id: 3, nom: "Petite Boîte 125ml – Banane", prix: 1200, type: "125", desc: "Format unitaire 125 ml", img: "produits/banane_125.jpg" },
+            // Petites boîtes 125 ml
+            { id: 1, nom: "Petite Boîte 125ml – Chocolat", prix: 600, type: "125", desc: "Chocolat intense", img: "produits/chocolat_125.jpg" },
+            { id: 2, nom: "Petite Boîte 125ml – Vanille Lactée", prix: 700, type: "125", desc: "Vanille douce et crémeuse", img: "produits/vanille_125.jpg" },
+            { id: 3, nom: "Petite Boîte 125ml – Banane (Fruit Naturel)", prix: 1000, type: "125", desc: "Pur fruit naturel", img: "produits/banane_125.jpg" },
             
-            { id: 4, nom: "Pack 125ml – 100% Vanille", prix: 6000, type: "125_pack", desc: "Pack pur Vanille (Livraison VIP incluse)", img: "produits/pack125_vanille.jpg" },
-            { id: 5, nom: "Pack 125ml – 100% Chocolat", prix: 6000, type: "125_pack", desc: "Pack pur Chocolat (Livraison VIP incluse)", img: "produits/pack125_chocolat.jpg" },
-            { id: 6, nom: "Pack 125ml – 100% Banane", prix: 6000, type: "125_pack", desc: "Pack pur Banane (Livraison VIP incluse)", img: "produits/pack125_banane.jpg" },
-            { id: 7, nom: "Pack Mélangé 125ml (Vanille, Chocolat, Banane)", prix: 6600, type: "125_pack", desc: "Pack découverte panaché (Livraison VIP incluse)", img: "produits/pack125.jpg" },
+            // Grosses boîtes 250 ml (le double des 125ml)
+            { id: 4, nom: "Grosse Boîte 250ml – Chocolat", prix: 1200, type: "250", desc: "Chocolat intense format double", img: "produits/chocolat_250.jpg" },
+            { id: 5, nom: "Grosse Boîte 250ml – Vanille Lactée", prix: 1400, type: "250", desc: "Vanille lactée format double", img: "produits/vanille_250.jpg" },
+            { id: 6, nom: "Grosse Boîte 250ml – Banane (Fruit Naturel)", prix: 2000, type: "250", desc: "Pur fruit naturel format double", img: "produits/banane_250.jpg" },
 
-            // --- GROSSES BOÎTES 250 ML (Unités & Packs) ---
-            { id: 8, nom: "Grosse Boîte 250ml – Vanille", prix: 2000, type: "250", desc: "Format unitaire 250 ml", img: "produits/vanille_250.jpg" },
-            { id: 9, nom: "Grosse Boîte 250ml – Chocolat", prix: 2000, type: "250", desc: "Format unitaire 250 ml", img: "produits/chocolat_250.jpg" },
-            { id: 10, nom: "Grosse Boîte 250ml – Banane", prix: 2000, type: "250", desc: "Format unitaire 250 ml", img: "produits/banane_250.jpg" },
-
-            { id: 11, nom: "Pack 250ml – 100% Vanille", prix: 5000, type: "250_pack", desc: "Pack gros pots Vanille (Livraison VIP incluse)", img: "produits/pack250_vanille.jpg" },
-            { id: 12, nom: "Pack 250ml – 100% Chocolat", prix: 5000, type: "250_pack", desc: "Pack gros pots Chocolat (Livraison VIP incluse)", img: "produits/pack250_chocolat.jpg" },
-            { id: 13, nom: "Pack 250ml – 100% Banane", prix: 5000, type: "250_pack", desc: "Pack gros pots Banane (Livraison VIP incluse)", img: "produits/pack250_banane.jpg" },
-            { id: 14, nom: "Pack Maxi Duo Gourmet (250ml panaché)", prix: 5000, type: "250_pack", desc: "Pack panaché 3 pots (Livraison VIP incluse)", img: "produits/pack250_1.jpg" },
-            { id: 15, nom: "Pack Maxi Famille Mélangé (250ml panaché)", prix: 7500, type: "250_pack", desc: "Pack panaché 5 pots (Livraison VIP incluse)", img: "produits/pack250_2.jpg" },
-
-            // --- AUTRES GOURMANDISES & BACS ---
-            { id: 16, nom: "Popcorn Sachet", prix: 300, type: "autre", desc: "Format Sachet", img: "produits/popcorn_sachet.jpg" },
-            { id: 17, nom: "Popcorn Carton", prix: 500, type: "autre", desc: "Format Carton", img: "produits/popcorn_carton.jpg" },
-            { id: 18, nom: "Pain Anglais", prix: 700, type: "autre", desc: "Format Moyen", img: "produits/pain_anglais.jpg" },
-            { id: 19, nom: "Crème de 6,25 Litres", prix: 35000, type: "autre", desc: "Grand Bac de 6,25L", img: "produits/creme_6l.jpg" }
+            // Autres gourmandises & bacs
+            { id: 7, nom: "Popcorn Sachet", prix: 300, type: "autre", desc: "Format Sachet", img: "produits/popcorn_sachet.jpg" },
+            { id: 8, nom: "Popcorn Carton", prix: 500, type: "autre", desc: "Format Carton", img: "produits/popcorn_carton.jpg" },
+            { id: 9, nom: "Pain Anglais", prix: 700, type: "autre", desc: "Format Moyen", img: "produits/pain_anglais.jpg" },
+            { id: 10, nom: "Crème de 6,25 Litres", prix: 35000, type: "autre", desc: "Grand Bac professionnel", img: "produits/creme_6l.jpg" }
         ];
 
         let panier = {};
@@ -192,11 +180,8 @@
             cAutre.innerHTML = '';
 
             produits.forEach(p => {
-                let estPack = p.type.includes('pack');
-                let cardClass = estPack ? "pack-card" : "produit-card";
-                
                 let html = `
-                    <div class="${cardClass}">
+                    <div class="produit-card">
                         <img src="${p.img}" alt="${p.nom}" class="item-img" onerror="this.src='https://via.placeholder.com/65?text=Noogo'">
                         <div class="item-details">
                             <div style="font-weight: bold; font-size: 0.9rem; color: #333;">${p.nom}</div>
@@ -211,13 +196,9 @@
                     </div>
                 `;
 
-                if (p.type.startsWith('125')) {
-                    c125.innerHTML += html;
-                } else if (p.type.startsWith('250')) {
-                    c250.innerHTML += html;
-                } else {
-                    cAutre.innerHTML += html;
-                }
+                if (p.type === '125') c125.innerHTML += html;
+                else if (p.type === '250') c250.innerHTML += html;
+                else cAutre.innerHTML += html;
             });
         }
 
@@ -231,37 +212,33 @@
 
         function changerModeReception() {
             const mode = document.querySelector('input[name="modeReception"]:checked').value;
-            const blocInfo = document.getElementById('bloc-info-reception');
+            const blocLieu = document.getElementById('bloc-lieu-livraison');
+            
             if (mode === 'livraison') {
                 document.getElementById('label-livraison').classList.add('active');
                 document.getElementById('label-retrait').classList.remove('active');
-                blocInfo.innerHTML = "🛵 Livraison à domicile : frais fixes de 1 500 FCFA (Offert si un pack est sélectionné).";
+                blocLieu.classList.remove('hidden');
             } else {
                 document.getElementById('label-retrait').classList.add('active');
                 document.getElementById('label-livraison').classList.remove('active');
-                blocInfo.innerHTML = "🏢 Retrait au local : 0 FCFA de livraison.";
+                blocLieu.classList.add('hidden');
             }
             calculerTotaux();
         }
 
         function calculerTotaux() {
             let sousTotal = 0;
-            let contientPack = false;
-
             produits.forEach(p => {
                 let qty = panier[p.id] || 0;
                 sousTotal += p.prix * qty;
-                if (qty > 0 && p.type.includes('pack')) {
-                    contientPack = true;
-                }
             });
 
             const mode = document.querySelector('input[name="modeReception"]:checked').value;
-            let fraisLivraison = (contientPack || mode === 'retrait') ? 0 : 1500;
+            let fraisLivraison = (mode === 'livraison') ? 1500 : 0;
 
             let totalFinal = Math.max(0, sousTotal + fraisLivraison - remiseAppliquee);
             document.getElementById('affichage-total').textContent = `Total : ${totalFinal.toLocaleString()} FCFA`;
-            return { sousTotal, fraisLivraison, totalFinal, contientPack };
+            return { sousTotal, fraisLivraison, totalFinal };
         }
 
         function verifierCodePromo() {
@@ -285,11 +262,11 @@
 
             let nom = document.getElementById('client-nom').value || "Client";
             let tel = document.getElementById('client-tel').value || "Non renseigné";
-            let lieu = document.getElementById('client-lieu').value || "À préciser";
             let mode = document.querySelector('input[name="modeReception"]:checked').value;
+            let lieu = mode === 'livraison' ? (document.getElementById('client-lieu').value || "À préciser") : "Retrait sur place";
             let paiement = document.getElementById('mode-paiement').value;
 
-            let texte = `Bonjour Noogo 🍦\n\nJe souhaite commander :\n\n`;
+            let texte = `Bonjour Noogo 🍦\n\nJe souhaite passer commande :\n\n`;
             produits.forEach(p => {
                 let qty = panier[p.id] || 0;
                 if (qty > 0) {
@@ -297,21 +274,21 @@
                 }
             });
 
-            texte += `\nMode de réception : ${mode === 'livraison' ? 'Livraison à domicile' : 'Retrait sur place'}`;
-            if (totaux.contientPack) texte += ` (Livraison VIP incluse)`;
+            texte += `\nMode : ${mode === 'livraison' ? 'Livraison à domicile' : 'Retrait sur place'}`;
+            if (mode === 'livraison') texte += `\nLieu : ${lieu}`;
             
-            texte += `\nTotal produits : ${totaux.sousTotal.toLocaleString()} FCFA`;
-            texte += `\nFrais de livraison : ${totaux.fraisLivraison.toLocaleString()} FCFA`;
+            texte += `\nSous-total : ${totaux.sousTotal.toLocaleString()} FCFA`;
+            if (mode === 'livraison') texte += `\nFrais de livraison : ${totaux.fraisLivraison.toLocaleString()} FCFA`;
             if (remiseAppliquee > 0) texte += `\nRemise : -${remiseAppliquee.toLocaleString()} FCFA`;
             
             texte += `\n\nTotal à payer : ${totaux.totalFinal.toLocaleString()} FCFA`;
-            texte += `\n\n💳 Paiement : ${paiement}`;
-            texte += `\n📋 Mes informations :\nNom : ${nom}\nTéléphone : ${tel}\nLieu : ${lieu}`;
+            texte += `\n💳 Paiement : ${paiement}`;
+            texte += `\n📋 Infos :\nNom : ${nom}\nTéléphone : ${tel}`;
 
             window.open(`https://wa.me/22656795493?text=${encodeURIComponent(texte)}`, '_blank');
         }
 
-        window.onload = () => { initialiserCatalogue(); };
+        window.onload = () => { initialiserCatalogue(); changerModeReception(); };
     </script>
 </body>
 </html>

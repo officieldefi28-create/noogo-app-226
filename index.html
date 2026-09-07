@@ -40,7 +40,8 @@ header p{margin:6px 0 0;font-size:16px;font-weight:600}
 .note-livraison{margin:14px 0 0;font-size:12px;color:#777;background:#fff8e1;border-radius:8px;padding:9px 10px;line-height:1.5}
 #message-code{font-size:12.5px;margin-top:6px;font-weight:bold}
 #message-code.valide{color:#2e7d32}
-#message-code.invalide{color:#c62828}.paiement-options{display:flex;flex-direction:column;gap:8px}
+#message-code.invalide{color:#c62828}
+.paiement-options{display:flex;flex-direction:column;gap:8px}
 .paiement-carte{display:flex;align-items:center;gap:10px;border:1px solid #ddd;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;cursor:pointer}
 .paiement-carte input{width:auto;margin:0}
 .paiement-carte:has(input:checked){border-color:#e8590c;background:#fff3e0}
@@ -59,15 +60,14 @@ header p{margin:6px 0 0;font-size:16px;font-weight:600}
 .produit h3{margin:0;font-size:15px;line-height:1.3}
 .prix{margin:6px 0;font-weight:bold;color:#e8590c;font-size:17px}
 .qte{display:flex;align-items:center;gap:12px}
-.qte button{border:0;background:#e8590c;color:white;width:32px;height:32px;border-radius:50%;font-size:20px;font-weight:bold}
+.qte button{border:0;background:#e8590c;color:white;width:32px;height:32px;border-radius:50%;font-size:20px;font-weight:bold;cursor:pointer}
 .qte span{font-weight:bold;min-width:20px;text-align:center}
 .total{position:fixed;bottom:0;left:0;right:0;background:white;padding:12px;box-shadow:0 -3px 12px rgba(0,0,0,.2);z-index:20}
 .total h2{margin:0 0 10px;text-align:center;font-size:19px}
-.btn-whatsapp{display:block;width:100%;border:0;border-radius:10px;background:#25D366;color:white;padding:14px;font-size:17px;font-weight:bold}
+.btn-whatsapp{display:block;width:100%;border:0;border-radius:10px;background:#25D366;color:white;padding:14px;font-size:17px;font-weight:bold;cursor:pointer}
 footer{background:#333;color:white;text-align:center;padding:26px 15px;margin-top:20px}
 footer p{margin:7px 0}
 .footer-btn{display:flex;align-items:center;justify-content:center;gap:8px;color:white;text-decoration:none;margin:10px auto;max-width:320px;padding:14px 16px;border-radius:10px;font-size:17px;font-weight:bold;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3)}
-.footer-btn:active{background:rgba(255,255,255,.25)}
 .footer-btn.location{background:#e8590c;border-color:#e8590c}
 .footer-btn.facebook{background:#1877F2;border-color:#1877F2}
 .footer-btn.tiktok{background:#000;border-color:#555}
@@ -75,191 +75,100 @@ footer p{margin:7px 0}
 .footer-social .footer-btn{margin:0;flex:1;min-width:130px;max-width:160px}
 .footer-phone{font-size:16px;font-weight:bold;margin:14px 0}
 .chevron{opacity:.7;font-size:13px}
-.vide{text-align:center;padding:25px;color:#777}.zoom-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:100;align-items:center;justify-content:center;flex-direction:column;padding:20px}
+.vide{text-align:center;padding:25px;color:#777}
+.zoom-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:100;align-items:center;justify-content:center;flex-direction:column;padding:20px}
 .zoom-overlay.actif{display:flex}
 .zoom-overlay img{max-width:100%;max-height:75vh;border-radius:14px;object-fit:contain}
 .zoom-overlay h3{color:white;margin:16px 0 0;font-size:18px;text-align:center}
-.zoom-close{position:absolute;top:18px;right:18px;background:white;color:#333;border:0;width:40px;height:40px;border-radius:50%;font-size:22px;font-weight:bold;line-height:1}
-.install-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;padding:20px}
-.install-overlay.actif{display:flex}
-.install-carte{position:relative;background:white;border-radius:20px;padding:26px 20px 20px;max-width:340px;width:100%;text-align:center}
-.install-logo{width:110px;margin:0 auto 14px;display:block;border-radius:12px}
-.install-etape{display:flex;align-items:center;gap:14px;text-align:left;background:#fff3e0;border-radius:14px;padding:12px 14px;margin-bottom:12px}
-.install-numero{background:#e8590c;color:white;font-weight:bold;font-size:18px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.install-icone{font-size:32px;flex-shrink:0}
-.install-texte{font-size:14px;color:#444;font-weight:600;line-height:1.35}
-.install-fleche{text-align:center;font-size:26px;color:#e8590c;margin:-4px 0 8px}
-.install-ok{width:100%;background:#e8590c;color:white;border:0;border-radius:12px;padding:13px;font-size:15px;font-weight:bold;margin-top:6px}
-#bouton-haut{display:none;position:fixed;right:16px;bottom:170px;width:46px;height:46px;border-radius:50%;background:#e8590c;color:white;border:0;font-size:20px;font-weight:bold;box-shadow:0 3px 10px rgba(0,0,0,.3);z-index:50}
-#bouton-haut.visible{display:block}
+.zoom-close{position:absolute;top:18px;right:18px;background:white;color:#333;border:0;width:40px;height:40px;border-radius:50%;font-size:22px;font-weight:bold;line-height:1;cursor:pointer}
 </style>
 </head>
 <body>
 
 <header>
-<img id="logo" src="/logo.png" alt="Noogo">
+<img id="logo" src="/logo.png" alt="Noogo" onerror="this.style.display='none'">
 <h1>NOOGO</h1>
 <p class="tagline">Des saveurs authentiques, pour tous les plaisirs 🍦</p>
 <p>Livraison à Karpala et alentours</p>
 <div class="badge-24h">🕒 Ouvert 24h/24 — commandez à toute heure !</div>
-<button id="install-btn" onclick="installerApp()">⬇️ Installer l'application</button>
+<br>
+<button id="install-btn" style="display:none;" onclick="installerApp()">⬇️ Installer l'application</button>
 </header>
 
-<h2 class="section-titre">🍦 Nos produits</h2>
+<div class="promo-bandeau">
+🎁 <b>Astuce livraison :</b> Nos packs incluent déjà la livraison ! Pour les articles seuls, la livraison est de 2 000 FCFA (offerte à partir de 3 000 FCFA de commande).
+</div>
+
+<h2 class="section-titre">🍦 Nos produits & Packs</h2>
 <p class="section-sous-titre">Touchez une photo pour l'agrandir, puis choisissez vos quantités</p>
-<div id="packs"></div>
 
-<script>
-let packs = [
-{nom:"Pack Découverte",prix:1500,img:"pack-decouverte.jpg",desc:"Petit pack pratique pour tester.",qte:0},
-{nom:"Pack Famille",prix:2500,img:"pack-famille.jpg",desc:"Pack pour partager à la maison.",qte:0},
-{nom:"Pack Fête",prix:4000,img:"pack-fete.jpg",desc:"Pack généreux pour grandes commandes.",qte:0}
-];
-
-let livraisonFixe = 2000;
-let codePromoValide = false;
-let remisePromo = 0;
-
-function afficherPacks(){
-let html = "";
-packs.forEach((p,i)=>{
-let image = "/produit/" + p.img;
-html += `<div class="produit"><div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')"><img src="${image}" alt="${p.nom}"><span class="zoom-btn">📦 Pack</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${p.prix.toLocaleString("fr-FR")} FCFA</div><p style="margin:6px 0 10px;font-size:13px;color:#666;line-height:1.4">${p.desc}</p><div class="qte"><button onclick="changerPack(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerPack(${i},1)">+</button></div></div></div>`;
-});
-document.getElementById("packs").innerHTML = `<h2 class="section-titre">🎁 Packs</h2>` + html;
-}
-
-function changerPack(i,n){
-packs[i].qte = Math.max(0, packs[i].qte + n);
-actualiserTotalEtMessage();
-}
-
-function totalProduits(){
-return produits.reduce((s,p)=>s + (p.prix * p.qte), 0);
-}
-
-function totalPacks(){
-return packs.reduce((s,p)=>s + (p.prix * p.qte), 0);
-}
-
-function sousTotal(){
-return totalProduits() + totalPacks();
-}
-
-function totalAvecPromo(){
-let t = sousTotal();
-if(codePromoValide) t = Math.max(0, t - remisePromo);
-return t;
-}
-
-function actualiserTotalEtMessage(){
-afficher();
-afficherPacks();
-let total = totalAvecPromo();
-let totalEl = document.getElementById("total");
-if(totalEl) totalEl.innerText = (total + livraisonFixe).toLocaleString("fr-FR");
-let ligne = document.getElementById("ligne-remise");
-if(ligne){
-if(codePromoValide && remisePromo > 0){
-ligne.classList.remove("cachee-remise");
-ligne.innerText = `Remise appliquée : −${remisePromo.toLocaleString("fr-FR")} FCFA`;
-}else{
-ligne.classList.add("cachee-remise");
-}
-}
-let info = document.getElementById("info-livraison");
-if(info){
-info.classList.remove("cachee-remise");
-info.innerText = `Livraison automatique : ${livraisonFixe.toLocaleString("fr-FR")} FCFA`;
-}
-}
-
-function verifierCode(){
-let code = document.getElementById("champ-code").value.trim();
-let zone = document.getElementById("message-code");
-if(code === ""){
-codePromoValide = false;
-remisePromo = 0;
-zone.innerText = "";
-actualiserTotalEtMessage();
-return;
-}
-zone.className = "";
-zone.innerText = "Vérification...";
-fetch("/api/verifier-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,montantTotal:sousTotal()})})
-.then(r=>r.json())
-.then(d=>{
-if(d.valide){
-codePromoValide = true;
-remisePromo = Number(d.remise || 0);
-zone.className = "valide";
-zone.innerText = `✅ Code valide ! −${remisePromo.toLocaleString("fr-FR")} FCFA`;
-}else{
-codePromoValide = false;
-remisePromo = 0;
-zone.className = "invalide";
-zone.innerText = "❌ " + (d.message || "Code promo invalide");
-}
-actualiserTotalEtMessage();
-})
-.catch(()=>{
-codePromoValide = false;
-remisePromo = 0;
-zone.className = "invalide";
-zone.innerText = "❌ Impossible de vérifier le code pour le moment";
-actualiserTotalEtMessage();
-});
-}
-
-function commander(){
-let commande = [];
-produits.forEach(p=>{ if(p.qte>0) commande.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`); });
-packs.forEach(p=>{ if(p.qte>0) commande.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`); });
-if(commande.length === 0){
-alert("Veuillez sélectionner au moins un produit ou un pack.");
-return;
-}
-let nom = document.getElementById("champ-nom")?.value.trim() || "";
-let tel = document.getElementById("champ-tel")?.value.trim() || "";
-let loc = document.getElementById("champ-localisation")?.value.trim() || "";
-let code = document.getElementById("champ-code")?.value.trim() || "";
-let paiement = document.querySelector('input[name="paiement"]:checked')?.value || "especes";
-let sous = sousTotal();
-let total = totalAvecPromo();
-let final = total + livraisonFixe;
-
-let msg = [];
-msg.push("Bonjour, je souhaite passer commande :");
-if(nom) msg.push(`Nom : ${nom}`);
-if(tel) msg.push(`Téléphone : ${tel}`);
-if(loc) msg.push(`Lieu : ${loc}`);
-if(code) msg.push(`Code promo : ${code.toUpperCase()}`);
-msg.push("");
-msg.push(...commande);
-msg.push("");
-msg.push(`Sous-total : ${sous.toLocaleString("fr-FR")} FCFA`);
-msg.push(`Remise : ${codePromoValide ? remisePromo.toLocaleString("fr-FR") : "0"} FCFA`);
-msg.push(`Livraison : ${livraisonFixe.toLocaleString("fr-FR")} FCFA`);
-msg.push(`Total à payer : ${final.toLocaleString("fr-FR")} FCFA`);
-msg.push(`Paiement : ${paiement}`);
-
-let lien = "https://wa.me/22661682706?text=" + encodeURIComponent(msg.join("
-"));
-window.open(lien,"_blank");
-}
-
-window.addEventListener("DOMContentLoaded",()=>{
-afficher();
-afficherPacks();
-actualiserTotalEtMessage();
-afficherInfoPaiement();
-});
-</script>
-<div id="produits"></div>
+<!-- Conteneurs pour afficher les listes -->
 <div id="produits"></div>
 <div id="packs"></div>
-<div id="produits"></div>
-<div id="packs"></div>
+
+<div class="commande-form">
+<h3 class="commande-titre">📋 Vos informations de livraison</h3>
+
+<label class="champ-label">Nom & Prénom <span class="facultatif">(facultatif)</span></label>
+<input type="text" id="champ-nom" class="champ-input" placeholder="Votre nom">
+
+<label class="champ-label">Numéro de téléphone <span class="obligatoire">(obligatoire)</span></label>
+<input type="tel" id="champ-tel" class="champ-input" placeholder="Ex : 70 12 34 56">
+
+<label class="champ-label">Lieu de livraison <span class="facultatif">(Quartier, repère)</span></label>
+<div class="champ-avec-bouton">
+<input type="text" id="champ-localisation" class="champ-input" placeholder="Ex: Karpala, Zone 1...">
+<button type="button" class="btn-localiser" onclick="obtenirLocalisation()" title="Utiliser ma position">📍</button>
+</div>
+
+<label class="champ-label">Code promo <span class="facultatif">(si vous en avez un)</span></label>
+<div class="champ-avec-bouton">
+<input type="text" id="champ-code" class="champ-input" placeholder="EX : ECOLE01" oninput="verifierCode()">
+</div>
+<div id="message-code"></div>
+
+<label class="champ-label" style="margin-top:16px;">Mode de paiement <span class="obligatoire">(obligatoire)</span></label>
+<div class="paiement-options">
+<label class="paiement-carte selectionnee">
+<input type="radio" name="paiement" value="especes" checked onchange="afficherInfoPaiement()">
+<span class="paiement-icone">💵</span> Espèces à la livraison
+</label>
+<label class="paiement-carte">
+<input type="radio" name="paiement" value="orange" onchange="afficherInfoPaiement()">
+<span class="paiement-icone">🟠</span> Orange Money
+</label>
+<label class="paiement-carte">
+<input type="radio" name="paiement" value="wave" onchange="afficherInfoPaiement()">
+<span class="paiement-icone">🔵</span> Wave
+</label>
+</div>
+<div id="info-paiement" class="cachee-remise"></div>
+
+<div class="note-livraison">
+🚚 Livraison à la charge du client (2 000 FCFA), sauf si vous commandez un pack (livraison déjà incluse) ou si votre panier dépasse 3 000 FCFA.
+</div>
+</div>
+
+<div class="total">
+<div id="ligne-remise" class="cachee-remise"></div>
+<h2 id="affichage-total-container">Total : <span id="total">0</span> FCFA</h2>
+<button class="btn-whatsapp" onclick="commander()">Commander sur WhatsApp</button>
+</div>
+
+<!-- Fenêtre modale de zoom image -->
+<div id="zoom-overlay" class="zoom-overlay" onclick="fermerZoom()">
+<button class="zoom-close" onclick="fermerZoom()">×</button>
+<img id="zoom-img" src="" alt="Agrandissement">
+<h3 id="zoom-titre"></h3>
+</div>
+
+<footer style="background:#333;color:white;text-align:center;padding:26px 15px;margin-top:20px">
+<p class="footer-phone">📞 Contact : +226 61 68 27 06</p>
+<div class="footer-social">
+<a href="https://wa.me/22661682706" target="_blank" class="footer-btn location">💬 WhatsApp</a>
+</div>
+<p style="font-size:12px;opacity:0.8;margin-top:15px;">© Noogo - Tous droits réservés</p>
+</footer>
 
 <script>
 let produits = [
@@ -279,11 +188,13 @@ let produits = [
 ];
 
 let packs = [
-{nom:"Pack Découverte",prix:1500,fichier:"pack-decouverte.jpg",desc:"Un petit pack pratique pour tester.",qte:0},
-{nom:"Pack Famille",prix:2500,fichier:"pack-famille.jpg",desc:"Un pack pour partager.",qte:0},
-{nom:"Pack Fête",prix:4000,fichier:"pack-fete.jpg",desc:"Un pack pour les grandes commandes.",qte:0}
+{nom:"Pack Découverte (Petites boîtes)",prix:3500,fichier:"pack-decouverte.jpg",desc:"Pack pratique (livraison incluse).",qte:0},
+{nom:"Pack Famille (Vanille / Chocolat)",prix:4000,fichier:"pack-famille.jpg",desc:"Pack familial (livraison incluse).",qte:0},
+{nom:"Pack Fête (Grand format)",prix:5000,fichier:"pack-fete.jpg",desc:"Pack généreux (livraison incluse).",qte:0},
+{nom:"Pack Mélange Panaché",prix:4500,fichier:"Creme_Glacee_Vanille_Lactee_700F.jpg",desc:"Assortiment petites boîtes (livraison incluse).",qte:0}
 ];
 
+let livraisonFixe = 2000;
 let remise = 0;
 let codeValide = false;
 
@@ -292,7 +203,7 @@ return "/produit/" + fichier;
 }
 
 function prixAffiche(prix){
-return prix < 1500 ? prix.toLocaleString("fr-FR") + " FCFA" : "Sur commande";
+return prix < 1500 ? prix.toLocaleString("fr-FR") + " FCFA" : prix.toLocaleString("fr-FR") + " FCFA";
 }
 
 function ligneProduit(p, i){
@@ -300,7 +211,7 @@ return `<div class="produit"><div class="img-wrap" onclick="agrandir('${cheminIm
 }
 
 function lignePack(p, i){
-return `<div class="produit"><div class="img-wrap" onclick="agrandir('${cheminImage(p.fichier)}','${p.nom.replace(/'/g,"\\'")}')"><img src="${cheminImage(p.fichier)}" alt="${p.nom}"><span class="zoom-btn">📦 Pack</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${prixAffiche(p.prix)}</div><p style="margin:6px 0 10px;font-size:13px;color:#666;line-height:1.4">${p.desc}</p><div class="qte"><button onclick="changerPack(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerPack(${i},1)">+</button></div></div></div>`;
+return `<div class="produit" style="border: 2px dashed #ff9800; background: #fff9f0;"><div class="img-wrap" onclick="agrandir('${cheminImage(p.fichier)}','${p.nom.replace(/'/g,"\\'")}')"><img src="${cheminImage(p.fichier)}" alt="${p.nom}"><span class="zoom-btn">📦 Pack</span></div><div class="info"><h3>🎁 ${p.nom}</h3><div class="prix">${prixAffiche(p.prix)}</div><p style="margin:4px 0 8px;font-size:12.5px;color:#666;line-height:1.3">${p.desc}</p><div class="qte"><button onclick="changerPack(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerPack(${i},1)">+</button></div></div></div>`;
 }
 
 function afficherProduits(){
@@ -308,7 +219,7 @@ document.getElementById("produits").innerHTML = produits.map(ligneProduit).join(
 }
 
 function afficherPacks(){
-let titre = `<h2 class="section-titre">🎁 Packs</h2>`;
+let titre = `<h2 class="section-titre">🎁 Nos Packs & Mélanges (Livraison incluse)</h2>`;
 let html = packs.map(lignePack).join("");
 document.getElementById("packs").innerHTML = titre + html;
 }
@@ -323,16 +234,55 @@ packs[i].qte = Math.max(0, packs[i].qte + n);
 actualiser();
 }
 
-function sousTotal(){
-let a = produits.reduce((s,p)=>s + (p.prix*p.qte), 0);
-let b = packs.reduce((s,p)=>s + (p.prix*p.qte), 0);
-return a + b;
+function sousTotalProduits(){
+return produits.reduce((s,p)=>s + (p.prix*p.qte), 0);
+}
+
+function sousTotalPacks(){
+return packs.reduce((s,p)=>s + (p.prix*p.qte), 0);
+}
+
+function sousTotalGeneral(){
+return sousTotalProduits() + sousTotalPacks();
+}
+
+function calculerFraisLivraison(){
+let tp = sousTotalProduits();
+let tpacks = sousTotalPacks();
+let totalBrut = tp + tpacks;
+
+if (totalBrut === 0) return 0;
+// Si l'utilisateur choisit un pack, la livraison est incluse (frais additionnels à 0)
+if (tpacks > 0) return 0;
+// Si le montant des produits seuls est inférieur à 3000 FCFA, on applique la livraison de 2000 FCFA
+if (tp < 3000) return livraisonFixe;
+// Au-delà de 3000 FCFA, la livraison est offerte
+return 0;
 }
 
 function totalFinal(){
-let t = sousTotal();
+let t = sousTotalGeneral();
 if(codeValide) t = Math.max(0, t - remise);
-return t;
+return t + calculerFraisLivraison();
+}
+
+function actualiser(){
+afficherProduits();
+afficherPacks();
+let total = totalFinal();
+let totalEl = document.getElementById("total");
+if(totalEl) totalEl.innerText = total.toLocaleString("fr-FR");
+
+let remiseEl = document.getElementById("ligne-remise");
+if(remiseEl){
+if(codeValide && remise > 0){
+remiseEl.innerText = `Remise appliquée : −${remise.toLocaleString("fr-FR")} FCFA`;
+remiseEl.classList.remove("cachee-remise");
+}else{
+remiseEl.classList.add("cachee-remise");
+}
+}
+afficherInfoPaiement();
 }
 
 function verifierCode(){
@@ -348,7 +298,7 @@ return;
 }
 zone.className = "";
 zone.innerText = "Vérification...";
-fetch("/api/verifier-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,montantTotal:sousTotal()})})
+fetch("/api/verifier-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,montantTotal:sousTotalGeneral()})})
 .then(r=>r.json())
 .then(d=>{
 if(d.valide){
@@ -392,226 +342,33 @@ zone.classList.add("cachee-remise");
 }
 }
 
-function actualiser(){
-afficherProduits();
-afficherPacks();
-let total = totalFinal();
-let totalEl = document.getElementById("total");
-if(totalEl) totalEl.innerText = total.toLocaleString("fr-FR");
-let remiseEl = document.getElementById("ligne-remise");
-if(remiseEl){
-if(codeValide && remise > 0){
-remiseEl.innerText = `Remise : −${remise.toLocaleString("fr-FR")} FCFA`;
-remiseEl.classList.remove("cachee-remise");
-}else{
-remiseEl.classList.add("cachee-remise");
-}
-}
-}
-
-function commander(){
-let items = [];
-produits.forEach(p=>{if(p.qte>0) items.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});
-packs.forEach(p=>{if(p.qte>0) items.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});
-if(items.length===0){alert("Veuillez sélectionner au moins un produit ou un pack.");return;}
-let nom = document.getElementById("champ-nom")?.value.trim() || "";
-let tel = document.getElementById("champ-tel")?.value.trim() || "";
-let loc = document.getElementById("champ-localisation")?.value.trim() || "";
-let code = document.getElementById("champ-code")?.value.trim() || "";
-let paiement = document.querySelector('input[name="paiement"]:checked')?.value || "especes";
-let livraison = 2000;
-let sous = sousTotal();
-let final = totalFinal() + livraison;
-let msg = [];
-msg.push("Bonjour, je souhaite passer commande :");
-if(nom) msg.push(`Nom : ${nom}`);
-if(tel) msg.push(`Téléphone : ${tel}`);
-if(loc) msg.push(`Lieu : ${loc}`);
-if(code) msg.push(`Code promo : ${code.toUpperCase()}`);
-msg.push("");
-msg.push(...items);
-msg.push("");
-msg.push(`Sous-total : ${sous.toLocaleString("fr-FR")} FCFA`);
-msg.push(`Livraison : ${livraison.toLocaleString("fr-FR")} FCFA`);
-msg.push(`Total à payer : ${final.toLocaleString("fr-FR")} FCFA`);
-msg.push(`Paiement : ${paiement}`);
-let lien = "https://wa.me/22661682706?text=" + encodeURIComponent(msg.join("
-"));
-window.open(lien,"_blank");
-}
-
-function agrandir(src,titre){
-if(!src) return;
-let z = document.getElementById("zoom-overlay");
-let i = document.getElementById("zoom-img");
+function agrandir(src, titre){
+let overlay = document.getElementById("zoom-overlay");
+let img = document.getElementById("zoom-img");
 let t = document.getElementById("zoom-titre");
-if(i) i.src = src;
-if(t) t.innerText = titre;
-if(z) z.classList.add("actif");
+if(overlay && img && t){
+img.src = src;
+t.innerText = titre;
+overlay.classList.add("actif");
+}
 }
 
-window.addEventListener("DOMContentLoaded",()=>{
-afficherProduits();
-afficherPacks();
-afficherInfoPaiement();
-actualiser();
+function fermerZoom(){
+let overlay = document.getElementById("zoom-overlay");
+if(overlay) overlay.classList.remove("actif");
+}
+
+function obtenirLocalisation(){
+if(navigator.geolocation){
+navigator.geolocation.getCurrentPosition(pos => {
+let lat = pos.coords.latitude;
+let lon = pos.coords.longitude;
+document.getElementById("champ-localisation").value = `GPS: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+}, () => {
+alert("Impossible de récupérer votre position.");
 });
-</script>
-<script>
-let produits = [
-{nom:"Popcorn Sachet",prix:300,img:"POPcorn_Sachet_300F",qte:0},
-{nom:"Popcorn Carton",prix:500,img:"POPcorn_Carton_500F",qte:0},
-{nom:"Crème Glacée Banane",prix:1000,img:"Creme_Glacee_Banane_1000F",qte:0},
-{nom:"Crème Glacée Vanille Lactée",prix:700,img:"Creme_Glacee_Vanille_Lactee_700F",qte:0},
-{nom:"Crème Glacée Chocolat Cacao au Lait",prix:600,img:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F",qte:0},
-{nom:"Esquimau Sandra",prix:500,img:"Esquimau_Sandra_500F",qte:0},
-{nom:"Esquimau Sandra Chocolat au Coco",prix:800,img:"Esquimau_Sandra_Chocolat_Coco_800F",qte:0},
-{nom:"Crème de 6250 ml",prix:35000,img:"Creme_6250ml_35000F",qte:0},
-{nom:"Fruits Naturel Banane",prix:2000,img:"Fruits_Naturel_Banane_2000F",qte:0},
-{nom:"Vanille Lacté",prix:1400,img:"Vanille_Lacte_1400F",qte:0},
-{nom:"Chocolat Cacao au Lait",prix:1200,img:"Chocolat_Cacao_au_Lait_1200F",qte:0},
-{nom:"Pain Anglais - 1000 FCFA",prix:1000,img:"Pain_Anglais_1000F",qte:0},
-{nom:"Pain Anglais - 700 FCFA",prix:700,img:"Pain_Anglais_700F",qte:0}
-];
-
-let packs = [
-{nom:"Pack Découverte",prix:1500,desc:"Petit pack pratique pour tester.",qte:0,img:"pack-decouverte"},
-{nom:"Pack Famille",prix:2500,desc:"Pack plus grand pour partager.",qte:0,img:"pack-famille"},
-{nom:"Pack Fête",prix:4000,desc:"Pack généreux pour les commandes festives.",qte:0,img:"pack-fete"}
-];
-
-let images = {
-"POPcorn_Sachet_300F":"/produits/POPcorn_Sachet_300F.jpg",
-"POPcorn_Carton_500F":"/produits/POPcorn_Carton_500F.jpg",
-"Creme_Glacee_Banane_1000F":"/produits/Creme_Glacee_Banane_1000F.jpg",
-"Creme_Glacee_Vanille_Lactee_700F":"/produits/Creme_Glacee_Vanille_Lactee_700F.jpg",
-"Creme_Glacee_Chocolat_Cacao_au_Lait_600F":"/produits/Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
-"Esquimau_Sandra_500F":"/produits/Esquimau_Sandra_500F.jpg",
-"Esquimau_Sandra_Chocolat_Coco_800F":"/produits/Esquimau_Sandra_Chocolat_Coco_800F.jpg",
-"Creme_6250ml_35000F":"/produits/Creme_6250ml_35000F.jpg",
-"Fruits_Naturel_Banane_2000F":"/produits/Fruits_Naturel_Banane_2000F.jpg",
-"Vanille_Lacte_1400F":"/produits/Vanille_Lacte_1400F.jpg",
-"Chocolat_Cacao_au_Lait_1200F":"/produits/Chocolat_Cacao_au_Lait_1200F.jpg",
-"Pain_Anglais_700F":"/produits/Pain_Anglais_700F.jpg",
-"Pain_Anglais_1000F":"/produits/Pain_Anglais_1000F.jpg",
-"pack-decouverte":"/produits/pack-decouverte.jpg",
-"pack-famille":"/produits/pack-famille.jpg",
-"pack-fete":"/produits/pack-fete.jpg"
-};
-
-let remisePromo = 0;
-let promoValide = false;
-
-function prixVisible(prix){
-return prix < 1500 ? prix.toLocaleString("fr-FR") + " FCFA" : "Sur commande";
-}
-
-function totalProduits(){
-return produits.reduce((s,p)=>s+(p.prix*p.qte),0);
-}
-
-function totalPacks(){
-return packs.reduce((s,p)=>s+(p.prix*p.qte),0);
-}
-
-function totalCommande(){
-let t = totalProduits() + totalPacks();
-if(promoValide) t = Math.max(0, t - remisePromo);
-return t;
-}
-
-function afficherProduits(){
-let html = "";
-produits.forEach((p,i)=>{
-let image = images[p.img] || "";
-html += `<div class="produit"><div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')"><img src="${image}" alt="${p.nom}"><span class="zoom-btn">🔍 Agrandir</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${prixVisible(p.prix)}</div><div class="qte"><button onclick="changerProduit(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerProduit(${i},1)">+</button></div></div></div>`;
-});
-document.getElementById("produits").innerHTML = html;
-}
-
-function afficherPacks(){
-let html = "";
-packs.forEach((p,i)=>{
-let image = images[p.img] || "";
-html += `<div class="produit"><div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')"><img src="${image}" alt="${p.nom}"><span class="zoom-btn">📦 Pack</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${prixVisible(p.prix)}</div><p style="margin:6px 0 10px;font-size:13px;color:#666;line-height:1.4">${p.desc}</p><div class="qte"><button onclick="changerPack(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerPack(${i},1)">+</button></div></div></div>`;
-});
-document.getElementById("packs").innerHTML = html;
-}
-
-function changerProduit(i,n){
-produits[i].qte = Math.max(0, produits[i].qte + n);
-actualiser();
-}
-
-function changerPack(i,n){
-packs[i].qte = Math.max(0, packs[i].qte + n);
-actualiser();
-}
-
-function verifierCode(){
-let code = document.getElementById("champ-code").value.trim();
-let zone = document.getElementById("message-code");
-if(code === ""){
-promoValide = false;
-remisePromo = 0;
-zone.innerText = "";
-actualiser();
-return;
-}
-let t = totalProduits() + totalPacks();
-zone.className = "";
-zone.innerText = "Vérification...";
-fetch("/api/verifier-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,montantTotal:t})})
-.then(r=>r.json())
-.then(d=>{
-if(d.valide){
-promoValide = true;
-remisePromo = Number(d.remise || 0);
-zone.className = "valide";
-zone.innerText = `✅ Code valide ! −${remisePromo.toLocaleString("fr-FR")} FCFA`;
-}else{
-promoValide = false;
-remisePromo = 0;
-zone.className = "invalide";
-zone.innerText = "❌ " + (d.message || "Code promo invalide");
-}
-actualiser();
-})
-.catch(()=>{
-promoValide = false;
-remisePromo = 0;
-zone.className = "invalide";
-zone.innerText = "❌ Impossible de vérifier le code pour le moment";
-actualiser();
-});
-}
-
-function afficherInfoPaiement(){
-document.querySelectorAll(".paiement-carte").forEach(c=>c.classList.remove("selectionnee"));
-let choix = document.querySelector('input[name="paiement"]:checked').value;
-let zone = document.getElementById("info-paiement");
-document.querySelector(`input[name="paiement"][value="${choix}"]`).closest(".paiement-carte").classList.add("selectionnee");
-if(choix==="orange"){
-zone.innerHTML = `<div class="info-paiement-carte">🟠 Envoyez le montant via <strong>Orange Money</strong> au numéro :<br><span class="info-paiement-numero">65 12 09 02</span></div>`;
-zone.classList.remove("cachee-remise");
-}else if(choix==="wave"){
-zone.innerHTML = `<div class="info-paiement-carte">🔵 Envoyez le montant via <strong>Wave</strong> au numéro :<br><span class="info-paiement-numero">65 12 09 02</span></div>`;
-zone.classList.remove("cachee-remise");
-}else{
-zone.innerHTML = "";
-zone.classList.add("cachee-remise");
-}
-}
-
-function actualiser(){
-afficherProduits();
-afficherPacks();
-document.getElementById("total").innerText = totalCommande().toLocaleString("fr-FR");
-if(promoValide && remisePromo > 0){
-document.getElementById("ligne-remise").innerText = `Remise appliquée : −${remisePromo.toLocaleString("fr-FR")} FCFA`;
-document.getElementById("ligne-remise").classList.remove("cachee-remise");
-}else{
-document.getElementById("ligne-remise").classList.add("cachee-remise");
+} else {
+alert("La géolocalisation n'est pas supportée par votre navigateur.");
 }
 }
 
@@ -619,752 +376,67 @@ function commander(){
 let items = [];
 produits.forEach(p=>{if(p.qte>0) items.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});
 packs.forEach(p=>{if(p.qte>0) items.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});
-if(items.length===0){alert("Veuillez sélectionner au moins un produit ou un pack.");return;}
-let nom = document.getElementById("champ-nom").value.trim();
-let tel = document.getElementById("champ-tel").value.trim();
-let loc = document.getElementById("champ-localisation").value.trim();
-let code = document.getElementById("champ-code").value.trim();
-let paiement = document.querySelector('input[name="paiement"]:checked').value;
-let livraison = 2000;
-let total = totalCommande();
-let final = total + livraison;
-let msg = [];
-msg.push("Bonjour, je souhaite passer commande :");
-if(nom) msg.push(`Nom : ${nom}`);
-if(tel) msg.push(`Téléphone : ${tel}`);
-if(loc) msg.push(`Lieu : ${loc}`);
-if(code) msg.push(`Code promo : ${code.toUpperCase()}`);
-msg.push("");
-msg.push(...items);
-msg.push("");
-msg.push(`Sous-total : ${total.toLocaleString("fr-FR")} FCFA`);
-msg.push(`Livraison : ${livraison.toLocaleString("fr-FR")} FCFA`);
-msg.push(`Total à payer : ${final.toLocaleString("fr-FR")} FCFA`);
-msg.push(`Paiement : ${paiement}`);
-let lien = "https://wa.me/22661682706?text=" + encodeURIComponent(msg.join("
-"));
-window.open(lien,"_blank");
-}
 
-function agrandir(src,titre){
-if(!src) return;
-document.getElementById("zoom-img").src = src;
-document.getElementById("zoom-titre").innerText = titre;
-document.getElementById("zoom-overlay").classList.add("actif");
-}
-
-function fermerZoom(){document.getElementById("zoom-overlay").classList.remove("actif");}
-function localiser(){alert("Fonction de localisation à connecter si besoin.");}
-function remonterEnHaut(){window.scrollTo({top:0,behavior:"smooth"});}
-function installerApp(){alert("Installation de l'application à configurer si besoin.");}
-function fermerGuideInstall(){document.getElementById("install-overlay").classList.remove("actif");}
-function fermerBandeauInstall(){document.getElementById("bandeau-install").style.display="none";}
-
-window.addEventListener("DOMContentLoaded",()=>{
-afficherProduits();
-afficherPacks();
-afficherInfoPaiement();
-actualiser();
-});
-</script>
-<script>
-let produits = [
-{nom:"Popcorn Sachet",prix:300,img:"POPcorn_Sachet_300F",qte:0},
-{nom:"Popcorn Carton",prix:500,img:"POPcorn_Carton_500F",qte:0},
-{nom:"Crème Glacée Banane",prix:1000,img:"Creme_Glacee_Banane_1000F",qte:0},
-{nom:"Crème Glacée Vanille Lactée",prix:700,img:"Creme_Glacee_Vanille_Lactee_700F",qte:0},
-{nom:"Crème Glacée Chocolat Cacao au Lait",prix:600,img:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F",qte:0},
-{nom:"Esquimau Sandra",prix:500,img:"Esquimau_Sandra_500F",qte:0},
-{nom:"Esquimau Sandra Chocolat au Coco",prix:800,img:"Esquimau_Sandra_Chocolat_Coco_800F",qte:0},
-{nom:"Crème de 6250 ml",prix:35000,img:"Creme_6250ml_35000F",qte:0},
-{nom:"Fruits Naturel Banane",prix:2000,img:"Fruits_Naturel_Banane_2000F",qte:0},
-{nom:"Vanille Lacté",prix:1400,img:"Vanille_Lacte_1400F",qte:0},
-{nom:"Chocolat Cacao au Lait",prix:1200,img:"Chocolat_Cacao_au_Lait_1200F",qte:0},
-{nom:"Pain Anglais - 1000 FCFA",prix:1000,img:"Pain_Anglais_1000F",qte:0},
-{nom:"Pain Anglais - 700 FCFA",prix:700,img:"Pain_Anglais_700F",qte:0}
-];
-
-let images = {
-"POPcorn_Sachet_300F":"/produits/POPcorn_Sachet_300F.jpg",
-"POPcorn_Carton_500F":"/produits/POPcorn_Carton_500F.jpg",
-"Creme_Glacee_Banane_1000F":"/produits/Creme_Glacee_Banane_1000F.jpg",
-"Creme_Glacee_Vanille_Lactee_700F":"/produits/Creme_Glacee_Vanille_Lactee_700F.jpg",
-"Creme_Glacee_Chocolat_Cacao_au_Lait_600F":"/produits/Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
-"Esquimau_Sandra_500F":"/produits/Esquimau_Sandra_500F.jpg",
-"Esquimau_Sandra_Chocolat_Coco_800F":"/produits/Esquimau_Sandra_Chocolat_Coco_800F.jpg",
-"Creme_6250ml_35000F":"/produits/Creme_6250ml_35000F.jpg",
-"Fruits_Naturel_Banane_2000F":"/produits/Fruits_Naturel_Banane_2000F.jpg",
-"Vanille_Lacte_1400F":"/produits/Vanille_Lacte_1400F.jpg",
-"Chocolat_Cacao_au_Lait_1200F":"/produits/Chocolat_Cacao_au_Lait_1200F.jpg",
-"Pain_Anglais_700F":"/produits/Pain_Anglais_700F.jpg",
-"Pain_Anglais_1000F":"/produits/Pain_Anglais_1000F.jpg"
-};
-
-function afficher(){
-let html="";
-produits.forEach((p,i)=>{
-let placeholder="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><rect width='90' height='90' fill='%23eeeeee'/><text x='45' y='49' font-size='11' text-anchor='middle' fill='%23999' font-family='Arial'>Photo à venir</text></svg>";
-let image=images[p.img]||placeholder;
-html+=`<div class="produit"><div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')"><img src="${image}" alt="${p.nom}"><span class="zoom-btn">🔍 Agrandir</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${p.prix.toLocaleString("fr-FR")} FCFA</div><div class="qte"><button onclick="changer(${i},-1)">−</button><span>${p.qte}</span><button onclick="changer(${i},1)">+</button></div></div></div>`;
-});
-if(html==="")html='<div class="vide">Aucun produit disponible.</div>';
-document.getElementById("produits").innerHTML=html;
-}
-window.addEventListener("DOMContentLoaded",()=>{afficher();});
-</script>
-<div class="promo-bandeau">
-🌿 100% naturel &nbsp;•&nbsp; ❤️ Fait avec amour &nbsp;•&nbsp; 📍 Fabriqué à Karpala<br>
-<strong>Nos clients adorent nos glaces artisanales — à vous de goûter !</strong>
-<div id="packs"></div>
-
-<script>
-let packs = [
-{nom:"Pack Découverte",prix:1500,img:"pack-decouverte.jpg",desc:"Petit pack pratique pour tester.",qte:0},
-{nom:"Pack Famille",prix:2500,img:"pack-famille.jpg",desc:"Pack pour partager à la maison.",qte:0},
-{nom:"Pack Fête",prix:4000,img:"pack-fete.jpg",desc:"Pack généreux pour grandes commandes.",qte:0}
-];
-
-let livraisonFixe = 2000;
-let codePromoValide = false;
-let remisePromo = 0;
-
-function afficherPacks(){
-let html = "";
-packs.forEach((p,i)=>{
-let image = "/produit/" + p.img;
-html += `<div class="produit"><div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')"><img src="${image}" alt="${p.nom}"><span class="zoom-btn">📦 Pack</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${p.prix.toLocaleString("fr-FR")} FCFA</div><p style="margin:6px 0 10px;font-size:13px;color:#666;line-height:1.4">${p.desc}</p><div class="qte"><button onclick="changerPack(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerPack(${i},1)">+</button></div></div></div>`;
-});
-document.getElementById("packs").innerHTML = `<h2 class="section-titre">🎁 Packs</h2>` + html;
-}
-
-function changerPack(i,n){
-packs[i].qte = Math.max(0, packs[i].qte + n);
-actualiserTotalEtMessage();
-}
-
-function totalProduits(){
-return produits.reduce((s,p)=>s + (p.prix * p.qte), 0);
-}
-
-function totalPacks(){
-return packs.reduce((s,p)=>s + (p.prix * p.qte), 0);
-}
-
-function sousTotal(){
-return totalProduits() + totalPacks();
-}
-
-function totalAvecPromo(){
-let t = sousTotal();
-if(codePromoValide) t = Math.max(0, t - remisePromo);
-return t;
-}
-
-function actualiserTotalEtMessage(){
-afficher();
-afficherPacks();
-let total = totalAvecPromo();
-let sousT = sousTotal();
-
-// Si le montant est inférieur à 3000 FCFA et aucun pack n'est pris, on ajoute les 2000F de livraison discrètement
-let fraisAppliques = (sousT > 0 && sousT < 3000 && totalPacks() === 0) ? livraisonFixe : 0;
-let montantGlobalClient = total + (fraisAppliques > 0 ? fraisAppliques : 0);
-
-let totalEl = document.getElementById("total");
-if(totalEl) totalEl.innerText = montantGlobalClient.toLocaleString("fr-FR");
-
-let ligne = document.getElementById("ligne-remise");
-if(ligne){
-if(codePromoValide && remisePromo > 0){
-ligne.classList.remove("cachee-remise");
-ligne.innerText = `Remise appliquée : −${remisePromo.toLocaleString("fr-FR")} FCFA`;
-}else{
-ligne.classList.add("cachee-remise");
-}
-}
-let info = document.getElementById("info-livraison");
-if(info){
-info.classList.remove("cachee-remise");
-// On indique juste que la livraison est incluse/gérée de manière transparente
-info.innerText = fraisAppliques > 0 ? `Livraison standard incluse` : `Livraison offerte / incluse`;
-}
-}
-
-function verifierCode(){
-let code = document.getElementById("champ-code").value.trim();
-let zone = document.getElementById("message-code");
-if(code === ""){
-codePromoValide = false;
-remisePromo = 0;
-zone.innerText = "";
-actualiserTotalEtMessage();
-return;
-}
-zone.className = "";
-zone.innerText = "Vérification...";
-fetch("/api/verifier-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,montantTotal:sousTotal()})})
-.then(r=>r.json())
-.then(d=>{
-if(d.valide){
-codePromoValide = true;
-remisePromo = Number(d.remise || 0);
-zone.className = "valide";
-zone.innerText = `✅ Code valide ! −${remisePromo.toLocaleString("fr-FR")} FCFA`;
-}else{
-codePromoValide = false;
-remisePromo = 0;
-zone.className = "invalide";
-zone.innerText = "❌ " + (d.message || "Code promo invalide");
-}
-actualiserTotalEtMessage();
-})
-.catch(()=>{
-codePromoValide = false;
-remisePromo = 0;
-zone.className = "invalide";
-zone.innerText = "❌ Impossible de vérifier le code pour le moment";
-actualiserTotalEtMessage();
-});
-}
-
-function commander(){
-let commande = [];
-produits.forEach(p=>{ if(p.qte>0) commande.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`); });
-packs.forEach(p=>{ if(p.qte>0) commande.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`); });
-if(commande.length === 0){
+if(items.length===0){
 alert("Veuillez sélectionner au moins un produit ou un pack.");
 return;
 }
-let nom = document.getElementById("champ-nom")?.value.trim() || "";
+
+let nom = document.getElementById("champ-nom")?.value.trim() || "Client Noogo";
 let tel = document.getElementById("champ-tel")?.value.trim() || "";
-let loc = document.getElementById("champ-localisation")?.value.trim() || "";
-let code = document.getElementById("champ-code")?.value.trim() || "";
-let paiement = document.querySelector('input[name="paiement"]:checked')?.value || "especes";
-let sous = sousTotal();
-let total = totalAvecPromo();
-
-let fraisAppliques = (sous > 0 && sous < 3000 && totalPacks() === 0) ? livraisonFixe : 0;
-let final = total + (fraisAppliques > 0 ? fraisAppliques : 0);
-
-// Popup d'alerte si commande de moins de 3000 FCFA sans pack
-if(fraisAppliques > 0){
-let validerLivraison = confirm("Votre commande est inférieure à 3 000 FCFA. Des frais de livraison de 2 000 FCFA sont appliqués. Voulez-vous continuer ? (Sinon, optez pour un retrait sur place).");
-if(!validerLivraison) return;
-}
-
-let msg = [];
-msg.push("🍦 *NOUVELLE COMMANDE NOOGO* 🍦");
-if(nom) msg.push(`Nom : ${nom}`);
-if(tel) msg.push(`Téléphone : ${tel}`);
-if(loc) msg.push(`Lieu : ${loc}`);
-if(code) msg.push(`Code promo : ${code.toUpperCase()}`);
-msg.push("");
-msg.push(...commande);
-msg.push("");
-msg.push(`Sous-total : ${sous.toLocaleString("fr-FR")} FCFA`);
-if(codePromoValide && remisePromo > 0) msg.push(`Remise : −${remisePromo.toLocaleString("fr-FR")} FCFA`);
-if(fraisAppliques > 0) {
-msg.push(`Livraison : ${fraisAppliques.toLocaleString("fr-FR")} FCFA`);
-} else {
-msg.push(`Livraison : Offerte / Incluse`);
-}
-msg.push(`Total à payer : ${final.toLocaleString("fr-FR")} FCFA`);
-msg.push(`Paiement : ${paiement}`);
-
-let lien = "https://wa.me/22661682706?text=" + encodeURIComponent(msg.join("\n"));
-window.open(lien,"_blank");
-}
-
-window.addEventListener("DOMContentLoaded",()=>{
-afficher();
-afficherPacks();
-actualiserTotalEtMessage();
-});
-</script>
-
-</div>
-<div id="produits"></div>
-<div id="packs"></div>
-
-<script>
-let produits = [
-{nom:"Popcorn Sachet",prix:300,img:"POPcorn_Sachet_300F",qte:0},
-{nom:"Popcorn Carton",prix:500,img:"POPcorn_Carton_500F",qte:0},
-{nom:"Crème Glacée Banane",prix:1000,img:"Creme_Glacee_Banane_1000F",qte:0},
-{nom:"Crème Glacée Vanille Lactée",prix:700,img:"Creme_Glacee_Vanille_Lactee_700F",qte:0},
-{nom:"Crème Glacée Chocolat Cacao au Lait",prix:600,img:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F",qte:0},
-{nom:"Esquimau Sandra",prix:500,img:"Esquimau_Sandra_500F",qte:0},
-{nom:"Esquimau Sandra Chocolat au Coco",prix:800,img:"Esquimau_Sandra_Chocolat_Coco_800F",qte:0},
-{nom:"Crème de 6250 ml",prix:35000,img:"Creme_6250ml_35000F",qte:0},
-{nom:"Fruits Naturel Banane",prix:2000,img:"Fruits_Naturel_Banane_2000F",qte:0},
-{nom:"Vanille Lacté",prix:1400,img:"Vanille_Lacte_1400F",qte:0},
-{nom:"Chocolat Cacao au Lait",prix:1200,img:"Chocolat_Cacao_au_Lait_1200F",qte:0},
-{nom:"Pain Anglais - 1000 FCFA",prix:1000,img:"Pain_Anglais_1000F",qte:0},
-{nom:"Pain Anglais - 700 FCFA",prix:700,img:"Pain_Anglais_700F",qte:0}
-];
-
-let packs = [
-{nom:"Pack Découverte",prix:1500,desc:"Petit pack pratique pour tester.",qte:0,img:"pack-decouverte"},
-{nom:"Pack Famille",prix:2500,desc:"Pack plus grand pour partager.",qte:0,img:"pack-famille"},
-{nom:"Pack Fête",prix:4000,desc:"Pack généreux pour les commandes festives.",qte:0,img:"pack-fete"}
-];
-
-let images = {
-"POPcorn_Sachet_300F":"/produits/POPcorn_Sachet_300F.jpg",
-"POPcorn_Carton_500F":"/produits/POPcorn_Carton_500F.jpg",
-"Creme_Glacee_Banane_1000F":"/produits/Creme_Glacee_Banane_1000F.jpg",
-"Creme_Glacee_Vanille_Lactee_700F":"/produits/Creme_Glacee_Vanille_Lactee_700F.jpg",
-"Creme_Glacee_Chocolat_Cacao_au_Lait_600F":"/produits/Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
-"Esquimau_Sandra_500F":"/produits/Esquimau_Sandra_500F.jpg",
-"Esquimau_Sandra_Chocolat_Coco_800F":"/produits/Esquimau_Sandra_Chocolat_Coco_800F.jpg",
-"Creme_6250ml_35000F":"/produits/Creme_6250ml_35000F.jpg",
-"Fruits_Naturel_Banane_2000F":"/produits/Fruits_Naturel_Banane_2000F.jpg",
-"Vanille_Lacte_1400F":"/produits/Vanille_Lacte_1400F.jpg",
-"Chocolat_Cacao_au_Lait_1200F":"/produits/Chocolat_Cacao_au_Lait_1200F.jpg",
-"Pain_Anglais_700F":"/produits/Pain_Anglais_700F.jpg",
-"Pain_Anglais_1000F":"/produits/Pain_Anglais_1000F.jpg",
-"pack-decouverte":"/produits/pack-decouverte.jpg",
-"pack-famille":"/produits/pack-famille.jpg",
-"pack-fete":"/produits/pack-fete.jpg"
-};
-
-let remisePromo = 0;
-let promoValide = false;
-
-function prixVisible(prix){
-return prix < 1500 ? prix.toLocaleString("fr-FR") + " FCFA" : "Sur commande";
-}
-
-function totalProduits(){
-return produits.reduce((s,p)=>s+(p.prix*p.qte),0);
-}
-
-function totalPacks(){
-return packs.reduce((s,p)=>s+(p.prix*p.qte),0);
-}
-
-function totalCommande(){
-let t = totalProduits() + totalPacks();
-if(promoValide) t = Math.max(0, t - remisePromo);
-return t;
-}
-
-function afficherProduits(){
-let html = "";
-produits.forEach((p,i)=>{
-let image = images[p.img] || "";
-html += `<div class="produit"><div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')"><img src="${image}" alt="${p.nom}"><span class="zoom-btn">🔍 Agrandir</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${prixVisible(p.prix)}</div><div class="qte"><button onclick="changerProduit(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerProduit(${i},1)">+</button></div></div></div>`;
-});
-document.getElementById("produits").innerHTML = html;
-}
-
-function afficherPacks(){
-let html = "";
-packs.forEach((p,i)=>{
-let image = images[p.img] || "";
-html += `<div class="produit"><div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')"><img src="${image}" alt="${p.nom}"><span class="zoom-btn">📦 Pack</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${prixVisible(p.prix)}</div><p style="margin:6px 0 10px;font-size:13px;color:#666;line-height:1.4">${p.desc}</p><div class="qte"><button onclick="changerPack(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerPack(${i},1)">+</button></div></div></div>`;
-});
-document.getElementById("packs").innerHTML = html;
-}
-
-function changerProduit(i,n){
-produits[i].qte = Math.max(0, produits[i].qte + n);
-actualiser();
-}
-
-function changerPack(i,n){
-packs[i].qte = Math.max(0, packs[i].qte + n);
-actualiser();
-}
-
-function verifierCode(){
-let code = document.getElementById("champ-code").value.trim();
-let zone = document.getElementById("message-code");
-if(code === ""){
-promoValide = false;
-remisePromo = 0;
-zone.innerText = "";
-actualiser();
+if(!tel){
+alert("Veuillez renseigner votre numéro de téléphone pour commander.");
+document.getElementById("champ-tel").focus();
 return;
 }
-let t = totalProduits() + totalPacks();
-zone.className = "";
-zone.innerText = "Vérification...";
-fetch("/api/verifier-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,montantTotal:t})})
-.then(r=>r.json())
-.then(d=>{
-if(d.valide){
-promoValide = true;
-remisePromo = Number(d.remise || 0);
-zone.className = "valide";
-zone.innerText = `✅ Code valide ! −${remisePromo.toLocaleString("fr-FR")} FCFA`;
-}else{
-promoValide = false;
-remisePromo = 0;
-zone.className = "invalide";
-zone.innerText = "❌ " + (d.message || "Code promo invalide");
-}
-actualiser();
-})
-.catch(()=>{
-promoValide = false;
-remisePromo = 0;
-zone.className = "invalide";
-zone.innerText = "❌ Impossible de vérifier le code pour le moment";
-actualiser();
-});
+
+let loc = document.getElementById("champ-localisation")?.value.trim() || "Non spécifié";
+let code = document.getElementById("champ-code")?.value.trim() || "";
+let paiement = document.querySelector('input[name="paiement"]:checked')?.value || "especes";
+
+let sousTProduits = sousTotalProduits();
+let sousTPacks = sousTotalPacks();
+let sousTot = sousTotalGeneral();
+let fraisLivraison = calculerFraisLivraison();
+
+// Vérification du seuil si commande de produits seuls < 3000F
+if(sousTProduits > 0 && sousTProduits < 3000 && sousTPacks === 0 && fraisLivraison > 0){
+let continuer = confirm("Votre commande de produits est inférieure à 3 000 FCFA. Des frais de livraison de 2 000 FCFA sont appliqués. Souhaitez-vous valider ou continuer vos achats pour débloquer la livraison gratuite ?");
+if(!continuer) return;
 }
 
-function afficherInfoPaiement(){
-document.querySelectorAll(".paiement-carte").forEach(c=>c.classList.remove("selectionnee"));
-let choix = document.querySelector('input[name="paiement"]:checked').value;
-let zone = document.getElementById("info-paiement");
-document.querySelector(`input[name="paiement"][value="${choix}"]`).closest(".paiement-carte").classList.add("selectionnee");
-if(choix==="orange"){
-zone.innerHTML = `<div class="info-paiement-carte">🟠 Envoyez le montant via <strong>Orange Money</strong> au numéro :<br><span class="info-paiement-numero">65 12 09 02</span></div>`;
-zone.classList.remove("cachee-remise");
-}else if(choix==="wave"){
-zone.innerHTML = `<div class="info-paiement-carte">🔵 Envoyez le montant via <strong>Wave</strong> au numéro :<br><span class="info-paiement-numero">65 12 09 02</span></div>`;
-zone.classList.remove("cachee-remise");
-}else{
-zone.innerHTML = "";
-zone.classList.add("cachee-remise");
-}
-}
+let final = totalFinal();
 
-function actualiser(){
-afficherProduits();
-afficherPacks();
-document.getElementById("total").innerText = totalCommande().toLocaleString("fr-FR");
-if(promoValide && remisePromo > 0){
-document.getElementById("ligne-remise").innerText = `Remise appliquée : −${remisePromo.toLocaleString("fr-FR")} FCFA`;
-document.getElementById("ligne-remise").classList.remove("cachee-remise");
-}else{
-document.getElementById("ligne-remise").classList.add("cachee-remise");
-}
-}
-
-function commander(){
-let items = [];
-produits.forEach(p=>{if(p.qte>0) items.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});
-packs.forEach(p=>{if(p.qte>0) items.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});
-if(items.length===0){alert("Veuillez sélectionner au moins un produit ou un pack.");return;}
-let nom = document.getElementById("champ-nom").value.trim();
-let tel = document.getElementById("champ-tel").value.trim();
-let loc = document.getElementById("champ-localisation").value.trim();
-let code = document.getElementById("champ-code").value.trim();
-let paiement = document.querySelector('input[name="paiement"]:checked').value;
-let livraison = 2000;
-let total = totalCommande();
-let final = total + livraison;
+// Construction du message WhatsApp ultra-détaillé (pour Admin & Partenaires)
 let msg = [];
-msg.push("Bonjour, je souhaite passer commande :");
-if(nom) msg.push(`Nom : ${nom}`);
-if(tel) msg.push(`Téléphone : ${tel}`);
-if(loc) msg.push(`Lieu : ${loc}`);
-if(code) msg.push(`Code promo : ${code.toUpperCase()}`);
+msg.push("🍦 *NOUVELLE COMMANDE NOOGO* 🍦");
+msg.push(`👤 *Nom :* ${nom}`);
+msg.push(`📞 *Téléphone :* ${tel}`);
+msg.push(`📍 *Lieu :* ${loc}`);
+if(code) msg.push(`🎟️ *Code promo :* ${code.toUpperCase()}`);
 msg.push("");
+msg.push("📦 *Détails des articles :*");
 msg.push(...items);
 msg.push("");
-msg.push(`Sous-total : ${total.toLocaleString("fr-FR")} FCFA`);
-msg.push(`Livraison : ${livraison.toLocaleString("fr-FR")} FCFA`);
-msg.push(`Total à payer : ${final.toLocaleString("fr-FR")} FCFA`);
-msg.push(`Paiement : ${paiement}`);
-let lien = "https://wa.me/22661682706?text=" + encodeURIComponent(msg.join("
-"));
-window.open(lien,"_blank");
+msg.push(`Sous-total : ${sousTot.toLocaleString("fr-FR")} FCFA`);
+if(codeValide && remise > 0) msg.push(`Remise : −${remise.toLocaleString("fr-FR")} FCFA`);
+if(fraisLivraison > 0){
+msg.push(`Frais de livraison : ${fraisLivraison.toLocaleString("fr-FR")} FCFA`);
+} else {
+msg.push(`Livraison : Offerte / Incluse (Pack ou seuil atteint)`);
 }
+msg.push(`💰 *TOTAL À PAYER : ${final.toLocaleString("fr-FR")} FCFA*`);
+msg.push(`💳 *Mode de paiement :* ${paiement.toUpperCase()}`);
 
-function agrandir(src,titre){
-if(!src) return;
-document.getElementById("zoom-img").src = src;
-document.getElementById("zoom-titre").innerText = titre;
-document.getElementById("zoom-overlay").classList.add("actif");
+let lien = "https://wa.me/22661682706?text=" + encodeURIComponent(msg.join("\n"));
+window.open(lien, "_blank");
 }
-
-function fermerZoom(){document.getElementById("zoom-overlay").classList.remove("actif");}
-function localiser(){alert("Fonction de localisation à connecter si besoin.");}
-function remonterEnHaut(){window.scrollTo({top:0,behavior:"smooth"});}
-function installerApp(){alert("Installation de l'application à configurer si besoin.");}
-function fermerGuideInstall(){document.getElementById("install-overlay").classList.remove("actif");}
-function fermerBandeauInstall(){document.getElementById("bandeau-install").style.display="none";}
 
 window.addEventListener("DOMContentLoaded",()=>{
 afficherProduits();
 afficherPacks();
-afficherInfoPaiement();
 actualiser();
 });
 </script>
-<div id="produits"></div><div class="commande-form">
-<h3 class="commande-titre">📋 Vos informations</h3>
-
-<label class="champ-label" for="champ-nom">Nom <span class="facultatif">(facultatif)</span></label>
-<input type="text" id="champ-nom" class="champ-input" placeholder="Votre nom">
-
-<label class="champ-label" for="champ-tel">Numéro de téléphone <span class="facultatif">(facultatif)</span></label>
-<input type="tel" id="champ-tel" class="champ-input" placeholder="Ex : 70 12 34 56">
-
-<label class="champ-label" for="champ-localisation">Lieu de livraison <span class="facultatif">(si possible)</span></label>
-<div class="champ-avec-bouton">
-<input type="text" id="champ-localisation" class="champ-input" placeholder="Quartier, repère...">
-<button type="button" class="btn-localiser" onclick="localiser()">📍</button>
-</div>
-
-<p class="note-livraison">🚚 Livraison à la charge du client, sauf à <strong>Karpala</strong> où c'est à discuter directement avec nous.</p>
-
-<label class="champ-label" for="champ-code">Code promo <span class="facultatif">(si vous en avez un)</span></label>
-<div class="champ-avec-bouton">
-<input type="text" id="champ-code" class="champ-input" placeholder="Ex : ECOLE01" style="text-transform:uppercase">
-<button type="button" class="btn-localiser" onclick="verifierCode()">✅</button>
-</div>
-<div id="message-code"></div>
-
-<label class="champ-label">Mode de paiement <span class="obligatoire">(obligatoire)</span></label>
-<div class="paiement-options">
-<label class="paiement-carte"><input type="radio" name="paiement" value="especes" checked onchange="afficherInfoPaiement()"><span class="paiement-icone">💵</span><span>Espèces à la livraison</span></label>
-<label class="paiement-carte"><input type="radio" name="paiement" value="orange" onchange="afficherInfoPaiement()"><span class="paiement-icone">🟠</span><span>Orange Money</span></label>
-<label class="paiement-carte"><input type="radio" name="paiement" value="wave" onchange="afficherInfoPaiement()"><span class="paiement-icone">🔵</span><span>Wave</span></label>
-</div>
-
-<div id="info-paiement" class="cachee-remise"></div>
-</div>
-
-<div class="total">
-<div id="ligne-remise" class="cachee-remise"></div>
-<h2>Total : <span id="total">0</span> FCFA</h2>
-<button class="btn-whatsapp" onclick="commander()">Commander sur WhatsApp</button>
-</div>
-
-<footer>
-<a class="footer-btn location" href="https://maps.google.com/?q=12.336911,-1.474793&entry=gps" target="_blank">📍 Voir sur Google Maps <span class="chevron">›</span></a>
-<p class="footer-phone">📞 61 68 27 06</p>
-<div class="footer-social">
-<a class="footer-btn facebook" href="https://www.facebook.com/share/1DX4RzmDFC/" target="_blank">👍 Facebook</a>
-<a class="footer-btn tiktok" href="https://www.tiktok.com/@dlices.de.papous" target="_blank">🎵 TikTok</a>
-</div>
-<p style="margin-top:16px">
-<a href="/partenaire.html" style="color:#aaa;font-size:12px;text-decoration:underline">🤝 Espace partenaire</a>
-&nbsp;·&nbsp;
-<a href="/admin.html" style="color:#aaa;font-size:12px;text-decoration:underline">🔐 Espace admin</a>
-</p>
-</footer>
-
-<div class="zoom-overlay" id="zoom-overlay" onclick="fermerZoom()">
-<button class="zoom-close" onclick="fermerZoom()">✕</button>
-<img id="zoom-img" src="" alt="">
-<h3 id="zoom-titre"></h3>
-</div>
-
-<div class="install-overlay" id="install-overlay">
-<div class="install-carte">
-<button class="zoom-close" onclick="fermerGuideInstall()">✕</button>
-<img src="" alt="Noogo" class="install-logo" id="install-logo-img">
-<div id="install-etapes"></div>
-<button class="install-ok" onclick="fermerGuideInstall()">J'ai compris 👍</button>
-</div>
-</div>
-
-<button id="bouton-haut" onclick="remonterEnHaut()" aria-label="Remonter en haut">⬆</button>
-
-<div id="bandeau-install" style="display:none;position:fixed;left:0;right:0;bottom:0;background:#e8590c;color:white;padding:14px;z-index:150;box-shadow:0 -3px 12px rgba(0,0,0,.25);align-items:center;gap:12px">
-<span style="flex:1;font-size:14px;font-weight:600">📲 Installez l'app Noogo pour commander plus vite !</span>
-<button onclick="installerApp()" style="background:white;color:#e65100;border:0;border-radius:20px;padding:9px 16px;font-size:13px;font-weight:bold;white-space:nowrap">Installer</button>
-<button onclick="fermerBandeauInstall()" style="background:transparent;color:white;border:0;font-size:20px;padding:0 4px" aria-label="Fermer">✕</button>
-</div>
-
-<script>
-let produits = [
-{nom:"Popcorn Sachet",prix:300,img:"POPcorn_Sachet_300F",qte:0},
-{nom:"Popcorn Carton",prix:500,img:"POPcorn_Carton_500F",qte:0},
-{nom:"Crème Glacée Banane",prix:1000,img:"Creme_Glacee_Banane_1000F",qte:0},
-{nom:"Crème Glacée Vanille Lactée",prix:700,img:"Creme_Glacee_Vanille_Lactee_700F",qte:0},
-{nom:"Crème Glacée Chocolat Cacao au Lait",prix:600,img:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F",qte:0},
-{nom:"Esquimau Sandra",prix:500,img:"Esquimau_Sandra_500F",qte:0},
-{nom:"Esquimau Sandra Chocolat au Coco",prix:800,img:"Esquimau_Sandra_Chocolat_Coco_800F",qte:0},
-{nom:"Crème de 6250 ml",prix:35000,img:"Creme_6250ml_35000F",qte:0},
-{nom:"Fruits Naturel Banane",prix:2000,img:"Fruits_Naturel_Banane_2000F",qte:0},
-{nom:"Vanille Lacté",prix:1400,img:"Vanille_Lacte_1400F",qte:0},
-{nom:"Chocolat Cacao au Lait",prix:1200,img:"Chocolat_Cacao_au_Lait_1200F",qte:0},
-{nom:"Pain Anglais - 1000 FCFA",prix:1000,img:"Pain_Anglais_1000F",qte:0},
-{nom:"Pain Anglais - 700 FCFA",prix:700,img:"Pain_Anglais_700F",qte:0}
-];
-let images={
-"POPcorn_Sachet_300F":"/produits/POPcorn_Sachet_300F.jpg","POPcorn_Carton_500F":"/produits/POPcorn_Carton_500F.jpg","Creme_Glacee_Banane_1000F":"/produits/Creme_Glacee_Banane_1000F.jpg","Creme_Glacee_Vanille_Lactee_700F":"/produits/Creme_Glacee_Vanille_Lactee_700F.jpg","Creme_Glacee_Chocolat_Cacao_au_Lait_600F":"/produits/Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg","Esquimau_Sandra_500F":"/produits/Esquimau_Sandra_500F.jpg","Esquimau_Sandra_Chocolat_Coco_800F":"/produits/Esquimau_Sandra_Chocolat_Coco_800F.jpg","Creme_6250ml_35000F":"/produits/Creme_6250ml_35000F.jpg","Fruits_Naturel_Banane_2000F":"/produits/Fruits_Naturel_Banane_2000F.jpg","Vanille_Lacte_1400F":"/produits/Vanille_Lacte_1400F.jpg","Chocolat_Cacao_au_Lait_1200F":"/produits/Chocolat_Cacao_au_Lait_1200F.jpg","Pain_Anglais_700F":"/produits/Pain_Anglais_700F.jpg","Pain_Anglais_1000F":"/produits/Pain_Anglais_1000F.jpg"
-};
-let codePromoApplique=null;
-function afficher(){let html="";produits.forEach((p,i)=>{let placeholder="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><rect width='90' height='90' fill='%23eeeeee'/><text x='45' y='49' font-size='11' text-anchor='middle' fill='%23999' font-family='Arial'>Photo à venir</text></svg>";let image=images[p.img]||placeholder;html+=`<div class="produit"><div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')"><img src="${image}" alt="${p.nom}"><span class="zoom-btn">🔍 Agrandir</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${p.prix.toLocaleString("fr-FR")} FCFA</div><div class="qte"><button onclick="changer(${i},-1)">−</button><span>${p.qte}</span><button onclick="changer(${i},1)">+</button></div></div></div>`;});if(html==="")html='<div class="vide">Aucun produit disponible.</div>';document.getElementById("produits").innerHTML=html;let total=produits.reduce((s,p)=>s+(p.prix*p.qte),0);let totalAffiche=total;if(codePromoApplique&&codePromoApplique.valide){totalAffiche=Math.max(0,total-codePromoApplique.remise);document.getElementById("ligne-remise").innerText=`Code ${codePromoApplique.code} appliqué : −${codePromoApplique.remise.toLocaleString("fr-FR")} FCFA`;document.getElementById("ligne-remise").classList.remove("cachee-remise");}else{document.getElementById("ligne-remise").classList.add("cachee-remise");}document.getElementById("total").innerText=totalAffiche.toLocaleString("fr-FR");}
-function afficherInfoPaiement(){document.querySelectorAll(".paiement-carte").forEach(c=>c.classList.remove("selectionnee"));let choix=document.querySelector('input[name="paiement"]:checked').value;let zone=document.getElementById("info-paiement");document.querySelector(`input[name="paiement"][value="${choix}"]`).closest(".paiement-carte").classList.add("selectionnee");if(choix==="orange"){zone.innerHTML=`<div class="info-paiement-carte">🟠 Envoyez le montant via <strong>Orange Money</strong> au numéro :<br><span class="info-paiement-numero">65 12 09 02</span><br><small>Après paiement, envoyez la capture d'écran directement sur WhatsApp avec votre commande</small></div>`;zone.classList.remove("cachee-remise");}else if(choix==="wave"){zone.innerHTML=`<div class="info-paiement-carte">🔵 Envoyez le montant via <strong>Wave</strong> au numéro :<br><span class="info-paiement-numero">65 12 09 02</span><br><small>Après paiement, envoyez la capture d'écran directement sur WhatsApp avec votre commande</small></div>`;zone.classList.remove("cachee-remise");}else{zone.innerHTML="";zone.classList.add("cachee-remise");}}
-function verifierCode(){let code=document.getElementById("champ-code").value.trim();let zoneMessage=document.getElementById("message-code");if(code===""){codePromoApplique=null;zoneMessage.innerText="";afficher();return;}let total=produits.reduce((s,p)=>s+(p.prix*p.qte),0);zoneMessage.className="";zoneMessage.innerText="Vérification...";fetch("/api/verifier-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,montantTotal:total})}).then(r=>r.json()).then(d=>{if(d.valide){codePromoApplique={code:code.toUpperCase(),remise:d.remise};zoneMessage.className="valide";zoneMessage.innerText=`✅ Code valide ! −${d.remise.toLocaleString("fr-FR")} FCFA`;}else{codePromoApplique=null;zoneMessage.className="invalide";zoneMessage.innerText="❌ "+(d.message||"Code promo invalide");}afficher();}).catch(()=>{codePromoApplique=null;zoneMessage.className="invalide";zoneMessage.innerText="❌ Impossible de vérifier le code pour le moment";afficher();});}
-function changer(i,n){produits[i].qte=Math.max(0,produits[i].qte+n);afficher();}
-function commander(){let commande=[];produits.forEach(p=>{if(p.qte>0)commande.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});if(commande.length===0){alert("Veuillez sélectionner au moins un produit.");return;}let nom=document.getElementById("champ-nom").value.trim();let tel=document.getElementById("champ-tel").value.trim();let loc=document.getElementById("champ-localisation").value.trim();let code=document.getElementById("champ-code").value.trim();let paiement=document.querySelector('input[name="paiement"]:checked').value;let total=document.getElementById("total").innerText;let message=[];message.push("Bonjour, je souhaite passer commande :");if(nom)message.push(`Nom : ${nom}`);if(tel)message.push(`Téléphone : ${tel}`);if(loc)message.push(`Lieu : ${loc}`);if(code)message.push(`Code promo : ${code.toUpperCase()}`);message.push("");message.push(...commande);message.push("");message.push(`Paiement : ${paiement}`);message.push(`Total : ${total} FCFA`);let lien="https://wa.me/22661682706?text="+encodeURIComponent(message.join("
-"));window.open(lien,"_blank");}
-function agrandir(src,titre){document.getElementById("zoom-img").src=src;document.getElementById("zoom-titre").innerText=titre;document.getElementById("zoom-overlay").classList.add("actif");}
-function fermerZoom(){document.getElementById("zoom-overlay").classList.remove("actif");}
-function localiser(){alert("Fonction de localisation à connecter si besoin.");}
-function remonterEnHaut(){window.scrollTo({top:0,behavior:"smooth"});}
-function installerApp(){alert("Installation de l'application à configurer si besoin.");}
-function fermerGuideInstall(){document.getElementById("install-overlay").classList.remove("actif");}
-function fermerBandeauInstall(){document.getElementById("bandeau-install").style.display="none";}
-window.addEventListener("DOMContentLoaded",()=>{afficher();afficherInfoPaiement();});
-</script>
-<script>
-// Tes packs rattachés directement à chaque produit avec les bons prix et images existantes
-let packs = [
-{nom:"Pack Découverte (Chocolat)", prix:3500, img:"chocolat_125.jpg", desc:"Pack 100% Chocolat avec livraison incluse", qte:0, produitAssocie: "choc"},
-{nom:"Pack Famille (Vanille)", prix:4000, img:"vanille_125.jpg", desc:"Pack 100% Vanille avec livraison incluse", qte:0, produitAssocie: "vanille"},
-{nom:"Pack Fête (Banane)", prix:5000, img:"banane_125.jpg", desc:"Pack 100% Banane avec livraison incluse", qte:0, produitAssocie: "banane"}
-];
-
-let livraisonFixe = 2000;
-let codePromoValide = false;
-let remisePromo = 0;
-
-// Fonction modifiée pour injecter les packs DIRECTEMENT en bas de chaque produit dans le rendu HTML principal
-function afficherProduitsEtPacks() {
-    let container = document.getElementById("produits-container"); // ou ton conteneur principal
-    // Si tu gères l'affichage global via ta fonction 'afficher()', adapte pour insérer le pack sous l'élément correspondant.
-}
-
-function changerPack(i,n){
-    packs[i].qte = Math.max(0, packs[i].qte + n);
-    actualiserTotalEtMessage();
-}
-
-function totalProduits(){
-    return produits.reduce((s,p)=>s + (p.prix * p.qte), 0);
-}
-
-function totalPacks(){
-    return packs.reduce((s,p)=>s + (p.prix * p.qte), 0);
-}
-
-function sousTotal(){
-    return totalProduits() + totalPacks();
-}
-
-function totalAvecPromo(){
-    let t = sousTotal();
-    if(codePromoValide) t = Math.max(0, t - remisePromo);
-    return t;
-}
-
-function actualiserTotalEtMessage(){
-    if(typeof afficher === 'function') afficher();
-    
-    let total = totalAvecPromo();
-    let sousT = sousTotal();
-
-    // Gestion invisible de la livraison : si pas de pack et sous-total < 3000F, on applique la livraison de façon transparente
-    let fraisAppliques = (sousT > 0 && sousT < 3000 && totalPacks() === 0) ? livraisonFixe : 0;
-    let montantGlobalClient = total + fraisAppliques;
-
-    let totalEl = document.getElementById("total");
-    if(totalEl) totalEl.innerText = montantGlobalClient.toLocaleString("fr-FR");
-
-    let ligne = document.getElementById("ligne-remise");
-    if(ligne){
-        if(codePromoValide && remisePromo > 0){
-            ligne.classList.remove("cachee-remise");
-            ligne.innerText = `Remise appliquée : −${remisePromo.toLocaleString("fr-FR")} FCFA`;
-        }else{
-            ligne.classList.add("cachee-remise");
-        }
-    }
-}
-
-function verifierCode(){
-    let code = document.getElementById("champ-code").value.trim();
-    let zone = document.getElementById("message-code");
-    if(code === ""){
-        codePromoValide = false;
-        remisePromo = 0;
-        zone.innerText = "";
-        actualiserTotalEtMessage();
-        return;
-    }
-    zone.className = "";
-    zone.innerText = "Vérification...";
-    fetch("/api/verifier-code",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,montantTotal:sousTotal()})})
-    .then(r=>r.json())
-    .then(d=>{
-        if(d.valide){
-            codePromoValide = true;
-            remisePromo = Number(d.remise || 0);
-            zone.className = "valide";
-            zone.innerText = `✅ Code valide ! −${remisePromo.toLocaleString("fr-FR")} FCFA`;
-        }else{
-            codePromoValide = false;
-            remisePromo = 0;
-            zone.className = "invalide";
-            zone.innerText = "❌ " + (d.message || "Code promo invalide");
-        }
-        actualiserTotalEtMessage();
-    })
-    .catch(()=>{
-        codePromoValide = false;
-        remisePromo = 0;
-        zone.className = "invalide";
-        zone.innerText = "❌ Impossible de vérifier le code pour le moment";
-        actualiserTotalEtMessage();
-    });
-}
-
-function commander(){
-    let commande = [];
-    produits.forEach(p=>{ if(p.qte>0) commande.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`); });
-    packs.forEach(p=>{ if(p.qte>0) commande.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`); });
-    
-    if(commande.length === 0){
-        alert("Veuillez sélectionner au moins un produit ou un pack.");
-        return;
-    }
-    
-    let nom = document.getElementById("champ-nom")?.value.trim() || "";
-    let tel = document.getElementById("champ-tel")?.value.trim() || "";
-    let loc = document.getElementById("champ-localisation")?.value.trim() || "";
-    let code = document.getElementById("champ-code")?.value.trim() || "";
-    let paiement = document.querySelector('input[name="paiement"]:checked')?.value || "especes";
-    
-    let sous = sousTotal();
-    let total = totalAvecPromo();
-    let fraisAppliques = (sous > 0 && sous < 3000 && totalPacks() === 0) ? livraisonFixe : 0;
-    let final = total + fraisAppliques;
-
-    // Alerte uniquement pour les petits montants hors packs
-    if(fraisAppliques > 0){
-        let valider = confirm("Votre commande est inférieure à 3 000 FCFA. Des frais de livraison de 2 000 FCFA sont appliqués. Voulez-vous valider ?");
-        if(!valider) return;
-    }
-
-    let msg = [];
-    msg.push("🍦 *NOUVELLE COMMANDE NOOGO* 🍦");
-    if(nom) msg.push(`Nom : ${nom}`);
-    if(tel) msg.push(`Téléphone : ${tel}`);
-    if(loc) msg.push(`Lieu : ${loc}`);
-    if(code) msg.push(`Code promo : ${code.toUpperCase()}`);
-    msg.push("");
-    msg.push(...commande);
-    msg.push("");
-    msg.push(`Sous-total : ${sous.toLocaleString("fr-FR")} FCFA`);
-    if(codePromoValide && remisePromo > 0) msg.push(`Remise : −${remisePromo.toLocaleString("fr-FR")} FCFA`);
-    if(fraisAppliques > 0) {
-        msg.push(`Livraison : ${fraisAppliques.toLocaleString("fr-FR")} FCFA`);
-    } else {
-        msg.push(`Livraison : Offerte / Incluse (Pack ou seuil atteint)`);
-    }
-    msg.push(`Total à payer : ${final.toLocaleString("fr-FR")} FCFA`);
-    msg.push(`Paiement : ${paiement}`);
-
-    let lien = "https://wa.me/22661682706?text=" + encodeURIComponent(msg.join("\n"));
-    window.open(lien,"_blank");
-}
-
-window.addEventListener("DOMContentLoaded",()=>{
-    if(typeof afficher === 'function') afficher();
-    actualiserTotalEtMessage();
-});
-</script>
-
 </body>
 </html>

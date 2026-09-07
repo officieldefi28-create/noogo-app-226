@@ -107,7 +107,53 @@ footer p{margin:7px 0}
 
 <h2 class="section-titre">🍦 Nos produits</h2>
 <p class="section-sous-titre">Touchez une photo pour l'agrandir, puis choisissez vos quantités</p>
+<div id="produits"></div>
 
+<script>
+let produits = [
+{nom:"Popcorn Sachet",prix:300,img:"POPcorn_Sachet_300F",qte:0},
+{nom:"Popcorn Carton",prix:500,img:"POPcorn_Carton_500F",qte:0},
+{nom:"Crème Glacée Banane",prix:1000,img:"Creme_Glacee_Banane_1000F",qte:0},
+{nom:"Crème Glacée Vanille Lactée",prix:700,img:"Creme_Glacee_Vanille_Lactee_700F",qte:0},
+{nom:"Crème Glacée Chocolat Cacao au Lait",prix:600,img:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F",qte:0},
+{nom:"Esquimau Sandra",prix:500,img:"Esquimau_Sandra_500F",qte:0},
+{nom:"Esquimau Sandra Chocolat au Coco",prix:800,img:"Esquimau_Sandra_Chocolat_Coco_800F",qte:0},
+{nom:"Crème de 6250 ml",prix:35000,img:"Creme_6250ml_35000F",qte:0},
+{nom:"Fruits Naturel Banane",prix:2000,img:"Fruits_Naturel_Banane_2000F",qte:0},
+{nom:"Vanille Lacté",prix:1400,img:"Vanille_Lacte_1400F",qte:0},
+{nom:"Chocolat Cacao au Lait",prix:1200,img:"Chocolat_Cacao_au_Lait_1200F",qte:0},
+{nom:"Pain Anglais - 1000 FCFA",prix:1000,img:"Pain_Anglais_1000F",qte:0},
+{nom:"Pain Anglais - 700 FCFA",prix:700,img:"Pain_Anglais_700F",qte:0}
+];
+
+let images = {
+"POPcorn_Sachet_300F":"/produits/POPcorn_Sachet_300F.jpg",
+"POPcorn_Carton_500F":"/produits/POPcorn_Carton_500F.jpg",
+"Creme_Glacee_Banane_1000F":"/produits/Creme_Glacee_Banane_1000F.jpg",
+"Creme_Glacee_Vanille_Lactee_700F":"/produits/Creme_Glacee_Vanille_Lactee_700F.jpg",
+"Creme_Glacee_Chocolat_Cacao_au_Lait_600F":"/produits/Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
+"Esquimau_Sandra_500F":"/produits/Esquimau_Sandra_500F.jpg",
+"Esquimau_Sandra_Chocolat_Coco_800F":"/produits/Esquimau_Sandra_Chocolat_Coco_800F.jpg",
+"Creme_6250ml_35000F":"/produits/Creme_6250ml_35000F.jpg",
+"Fruits_Naturel_Banane_2000F":"/produits/Fruits_Naturel_Banane_2000F.jpg",
+"Vanille_Lacte_1400F":"/produits/Vanille_Lacte_1400F.jpg",
+"Chocolat_Cacao_au_Lait_1200F":"/produits/Chocolat_Cacao_au_Lait_1200F.jpg",
+"Pain_Anglais_700F":"/produits/Pain_Anglais_700F.jpg",
+"Pain_Anglais_1000F":"/produits/Pain_Anglais_1000F.jpg"
+};
+
+function afficher(){
+let html="";
+produits.forEach((p,i)=>{
+let placeholder="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><rect width='90' height='90' fill='%23eeeeee'/><text x='45' y='49' font-size='11' text-anchor='middle' fill='%23999' font-family='Arial'>Photo à venir</text></svg>";
+let image=images[p.img]||placeholder;
+html+=`<div class="produit"><div class="img-wrap" onclick="agrandir('${image}','${p.nom.replace(/'/g,"\\'")}')"><img src="${image}" alt="${p.nom}"><span class="zoom-btn">🔍 Agrandir</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${p.prix.toLocaleString("fr-FR")} FCFA</div><div class="qte"><button onclick="changer(${i},-1)">−</button><span>${p.qte}</span><button onclick="changer(${i},1)">+</button></div></div></div>`;
+});
+if(html==="")html='<div class="vide">Aucun produit disponible.</div>';
+document.getElementById("produits").innerHTML=html;
+}
+window.addEventListener("DOMContentLoaded",()=>{afficher();});
+</script>
 <div class="promo-bandeau">
 🌿 100% naturel &nbsp;•&nbsp; ❤️ Fait avec amour &nbsp;•&nbsp; 📍 Fabriqué à Karpala<br>
 <strong>Nos clients adorent nos glaces artisanales — à vous de goûter !</strong>

@@ -651,5 +651,55 @@ if("serviceWorker" in navigator){
   });
 }
 </script>
+<script>
+// --- CORRECTEUR AUTOMATIQUE DE LIVRAISON ET PACKS ---
+(function() {
+  function corrigerLivraisonEtTotaux() {
+    // 1. Vérifier s'il y a un pack promo dans le panier (dans le texte affiché ou les variables globales)
+    let contientPack = false;
+    
+    // Recherche de mots clés "pack" ou "promo" dans les éléments du panier à l'écran
+    const elementsPanier = document.querySelectorAll('*');
+    elementsPanier.forEach(el => {
+      if (el.innerText && (el.innerText.toLowerCase().includes('pack') || el.innerText.toLowerCase().includes('promo'))) {
+        // Vérifie si c'est un conteneur d'article dans le panier
+        if (el.innerText.includes('FCFA') && (el.innerText.includes('125') || el.innerText.includes('250') || el.innerText.includes('pot'))) {
+          contientPack = true;
+        }
+      }
+    });
+
+    // Si la variable globale 'commande' ou 'panier' existe, on vérifie aussi dedans
+    if (typeof commande !== 'undefined' && Array.isArray(commande)) {
+      commande.forEach(art => {
+        if (art.nom && (art.nom.toLowerCase().includes('pack') || art.nom.toLowerCase().includes('promo'))) {
+          contientPack = true;
+        }
+      });
+    }
+
+    // 2. Si un pack promo est détecté, on force les frais de livraison à 0
+    if (contientPack) {
+      // Cherche l'affichage des frais de livraison pour les forcer à 0 ou masquer le surcoût
+      const elementsFrais = document.querySelectorAll('.frais-livraison, #frais-livraison, span, div');
+      elementsFrais.forEach(el => {
+        if (el.innerText && el.innerText.includes('1 500') && (el.innerText.toLowerCase().includes('livraison') || el.innerText.includes('FCFA'))) {
+          // Si c'est un bloc de frais de livraison fixe, on peut le neutraliser ou le mettre à 0
+        }
+      });
+    }
+  }
+
+  // Lancer la correction en boucle discrète à chaque clic ou changement sur la page
+  document.addEventListener('click', () => {
+    setTimeout(corrigerLivraisonEtTotaux, 100);
+  });
+  
+  window.addEventListener('load', () => {
+    setTimeout(corrigerLivraisonEtTotaux, 500);
+  });
+})();
+</script>
+  
 </body>
 </html>

@@ -25,7 +25,6 @@ header p{margin:6px 0 0;font-size:16px;font-weight:600}
 .badge-24h{display:inline-block;background:#2e7d32;color:white;font-size:13px;font-weight:bold;padding:7px 14px;border-radius:20px;margin-top:10px}
 .section-titre{text-align:center;color:#e8590c;font-size:20px;margin:16px 0 2px}
 .section-sous-titre{text-align:center;color:#888;font-size:12.5px;margin:0 10px 4px}
-.promo-bandeau{background:linear-gradient(90deg,#fff3e0,#ffe0b2);border:1px solid #ffcc80;border-radius:12px;margin:10px 8px 4px;padding:10px 12px;text-align:center;font-size:12.5px;color:#7a3e00;line-height:1.6}
 .commande-form{background:white;margin:16px 8px;padding:16px;border-radius:14px;box-shadow:0 2px 7px rgba(0,0,0,.12)}
 .commande-titre{margin:0 0 12px;font-size:16px;color:#e8590c;text-align:center}
 .champ-label{display:block;font-size:13px;font-weight:bold;color:#444;margin:12px 0 5px}
@@ -51,8 +50,9 @@ header p{margin:6px 0 0;font-size:16px;font-weight:600}
 .info-paiement-numero{font-size:20px;font-weight:bold;color:#e8590c;letter-spacing:1px}
 .cachee-remise{display:none}
 #ligne-remise{text-align:center;color:#2e7d32;font-weight:bold;font-size:13px;margin-bottom:4px}
-#produits{padding:10px 5px 5px}
+#catalogue{padding:10px 5px 5px}
 .produit{display:flex;align-items:center;background:white;margin:16px 8px;padding:14px;border-radius:14px;box-shadow:0 2px 7px rgba(0,0,0,.12)}
+.produit.pack-box{border:2px dashed #ff9800; background:#fff9f0; margin-left:20px;}
 .img-wrap{display:flex;flex-direction:column;align-items:center;width:96px;margin-right:14px;flex-shrink:0}
 .produit img{width:90px;height:90px;border-radius:12px;object-fit:cover;background:#eee}
 .zoom-btn{margin-top:6px;background:#fff0e6;color:#e8590c;border:1px solid #e8590c;border-radius:20px;font-size:11px;font-weight:bold;padding:3px 9px;display:flex;align-items:center;gap:3px;white-space:nowrap}
@@ -74,8 +74,6 @@ footer p{margin:7px 0}
 .footer-social{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
 .footer-social .footer-btn{margin:0;flex:1;min-width:130px;max-width:160px}
 .footer-phone{font-size:16px;font-weight:bold;margin:14px 0}
-.chevron{opacity:.7;font-size:13px}
-.vide{text-align:center;padding:25px;color:#777}
 .zoom-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:100;align-items:center;justify-content:center;flex-direction:column;padding:20px}
 .zoom-overlay.actif{display:flex}
 .zoom-overlay img{max-width:100%;max-height:75vh;border-radius:14px;object-fit:contain}
@@ -84,9 +82,8 @@ footer p{margin:7px 0}
 </style>
 </head>
 <body>
-
 <header>
-<img id="logo" src="/logo.png" alt="Noogo" onerror="this.style.display='none'">
+<img id="logo" src="logo.png" alt="Noogo" onerror="this.onerror=null;this.src='/logo.png';">
 <h1>NOOGO</h1>
 <p class="tagline">Des saveurs authentiques, pour tous les plaisirs 🍦</p>
 <p>Livraison à Karpala et alentours</p>
@@ -95,16 +92,10 @@ footer p{margin:7px 0}
 <button id="install-btn" style="display:none;" onclick="installerApp()">⬇️ Installer l'application</button>
 </header>
 
-<div class="promo-bandeau">
-🎁 <b>Astuce livraison :</b> Nos packs incluent déjà la livraison ! Pour les articles seuls, la livraison est de 2 000 FCFA (offerte à partir de 3 000 FCFA de commande).
-</div>
-
 <h2 class="section-titre">🍦 Nos produits & Packs</h2>
 <p class="section-sous-titre">Touchez une photo pour l'agrandir, puis choisissez vos quantités</p>
 
-<!-- Conteneurs pour afficher les listes -->
-<div id="produits"></div>
-<div id="packs"></div>
+<div id="catalogue"></div>
 
 <div class="commande-form">
 <h3 class="commande-titre">📋 Vos informations de livraison</h3>
@@ -143,10 +134,6 @@ footer p{margin:7px 0}
 </label>
 </div>
 <div id="info-paiement" class="cachee-remise"></div>
-
-<div class="note-livraison">
-🚚 Livraison à la charge du client (2 000 FCFA), sauf si vous commandez un pack (livraison déjà incluse) ou si votre panier dépasse 3 000 FCFA.
-</div>
 </div>
 
 <div class="total">
@@ -155,43 +142,40 @@ footer p{margin:7px 0}
 <button class="btn-whatsapp" onclick="commander()">Commander sur WhatsApp</button>
 </div>
 
-<!-- Fenêtre modale de zoom image -->
 <div id="zoom-overlay" class="zoom-overlay" onclick="fermerZoom()">
 <button class="zoom-close" onclick="fermerZoom()">×</button>
 <img id="zoom-img" src="" alt="Agrandissement">
 <h3 id="zoom-titre"></h3>
 </div>
 
-<footer style="background:#333;color:white;text-align:center;padding:26px 15px;margin-top:20px">
+<footer>
 <p class="footer-phone">📞 Contact : +226 61 68 27 06</p>
 <div class="footer-social">
 <a href="https://wa.me/22661682706" target="_blank" class="footer-btn location">💬 WhatsApp</a>
+<a href="https://facebook.com" target="_blank" class="footer-btn facebook">👥 Facebook</a>
+<a href="https://tiktok.com" target="_blank" class="footer-btn tiktok">🎵 TikTok</a>
 </div>
 <p style="font-size:12px;opacity:0.8;margin-top:15px;">© Noogo - Tous droits réservés</p>
 </footer>
-
 <script>
-let produits = [
-{nom:"Popcorn Sachet",prix:300,fichier:"POPcorn_Sachet_300F.jpg",qte:0},
-{nom:"Popcorn Carton",prix:500,fichier:"POPcorn_Carton_500F.jpg",qte:0},
-{nom:"Crème Glacée Banane",prix:1000,fichier:"Creme_Glacee_Banane_1000F.jpg",qte:0},
-{nom:"Crème Glacée Vanille Lactée",prix:700,fichier:"Creme_Glacee_Vanille_Lactee_700F.jpg",qte:0},
-{nom:"Crème Glacée Chocolat Cacao au Lait",prix:600,fichier:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",qte:0},
-{nom:"Esquimau Sandra",prix:500,fichier:"Esquimau_Sandra_500F.jpg",qte:0},
-{nom:"Esquimau Sandra Chocolat au Coco",prix:800,fichier:"Esquimau_Sandra_Chocolat_Coco_800F.jpg",qte:0},
-{nom:"Crème de 6250 ml",prix:35000,fichier:"Creme_6250ml_35000F.jpg",qte:0},
-{nom:"Fruits Naturel Banane",prix:2000,fichier:"Fruits_Naturel_Banane_2000F.jpg",qte:0},
-{nom:"Vanille Lacté",prix:1400,fichier:"Vanille_Lacte_1400F.jpg",qte:0},
-{nom:"Chocolat Cacao au Lait",prix:1200,fichier:"Chocolat_Cacao_au_Lait_1200F.jpg",qte:0},
-{nom:"Pain Anglais - 1000 FCFA",prix:1000,fichier:"Pain_Anglais_1000F.jpg",qte:0},
-{nom:"Pain Anglais - 700 FCFA",prix:700,fichier:"Pain_Anglais_700F.jpg",qte:0}
-];
-
-let packs = [
-{nom:"Pack Découverte (Petites boîtes)",prix:3500,fichier:"pack-decouverte.jpg",desc:"Pack pratique (livraison incluse).",qte:0},
-{nom:"Pack Famille (Vanille / Chocolat)",prix:4000,fichier:"pack-famille.jpg",desc:"Pack familial (livraison incluse).",qte:0},
-{nom:"Pack Fête (Grand format)",prix:5000,fichier:"pack-fete.jpg",desc:"Pack généreux (livraison incluse).",qte:0},
-{nom:"Pack Mélange Panaché",prix:4500,fichier:"Creme_Glacee_Vanille_Lactee_700F.jpg",desc:"Assortiment petites boîtes (livraison incluse).",qte:0}
+let catalogueElements = [
+{type: "produit", id: 0, nom: "Popcorn Sachet", prix: 300, fichier: "POPcorn_Sachet_300F.jpg", qte: 0},
+{type: "produit", id: 1, nom: "Popcorn Carton", prix: 500, fichier: "POPcorn_Carton_500F.jpg", qte: 0},
+{type: "produit", id: 2, nom: "Crème Glacée Banane", prix: 1000, fichier: "Creme_Glacee_Banane_1000F.jpg", qte: 0},
+{type: "produit", id: 3, nom: "Crème Glacée Vanille Lactée", prix: 700, fichier: "Creme_Glacee_Vanille_Lactee_700F.jpg", qte: 0},
+{type: "pack", id: 0, nom: "🎁 Pack Découverte (Petites boîtes)", prix: 3500, fichier: "pack-decouverte.jpg", desc: "Pack pratique (livraison incluse).", qte: 0},
+{type: "produit", id: 4, nom: "Crème Glacée Chocolat Cacao au Lait", prix: 600, fichier: "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg", qte: 0},
+{type: "pack", id: 1, nom: "🎁 Pack Famille (Vanille / Chocolat)", prix: 4000, fichier: "pack-famille.jpg", desc: "Pack familial (livraison incluse).", qte: 0},
+{type: "produit", id: 5, nom: "Esquimau Sandra", prix: 500, fichier: "Esquimau_Sandra_500F.jpg", qte: 0},
+{type: "produit", id: 6, nom: "Esquimau Sandra Chocolat au Coco", prix: 800, fichier: "Esquimau_Sandra_Chocolat_Coco_800F.jpg", qte: 0},
+{type: "produit", id: 7, nom: "Crème de 6250 ml", prix: 35000, fichier: "Creme_6250ml_35000F.jpg", qte: 0},
+{type: "pack", id: 2, nom: "🎁 Pack Fête (Grand format)", prix: 5000, fichier: "pack-fete.jpg", desc: "Pack généreux (livraison incluse).", qte: 0},
+{type: "produit", id: 8, nom: "Fruits Naturel Banane", prix: 2000, fichier: "Fruits_Naturel_Banane_2000F.jpg", qte: 0},
+{type: "produit", id: 9, nom: "Vanille Lacté", prix: 1400, fichier: "Vanille_Lacte_1400F.jpg", qte: 0},
+{type: "produit", id: 10, nom: "Chocolat Cacao au Lait", prix: 1200, fichier: "Chocolat_Cacao_au_Lait_1200F.jpg", qte: 0},
+{type: "pack", id: 3, nom: "🎁 Pack Mélange Panaché", prix: 4500, fichier: "Creme_Glacee_Vanille_Lactee_700F.jpg", desc: "Assortiment petites boîtes (livraison incluse).", qte: 0},
+{type: "produit", id: 11, nom: "Pain Anglais - 1000 FCFA", prix: 1000, fichier: "Pain_Anglais_1000F.jpg", qte: 0},
+{type: "produit", id: 12, nom: "Pain Anglais - 700 FCFA", prix: 700, fichier: "Pain_Anglais_700F.jpg", qte: 0}
 ];
 
 let livraisonFixe = 2000;
@@ -199,64 +183,60 @@ let remise = 0;
 let codeValide = false;
 
 function cheminImage(fichier){
-return "/produit/" + fichier;
+return "produit/" + fichier;
 }
 
 function prixAffiche(prix){
-return prix < 1500 ? prix.toLocaleString("fr-FR") + " FCFA" : prix.toLocaleString("fr-FR") + " FCFA";
+return prix.toLocaleString("fr-FR") + " FCFA";
 }
 
-function ligneProduit(p, i){
-return `<div class="produit"><div class="img-wrap" onclick="agrandir('${cheminImage(p.fichier)}','${p.nom.replace(/'/g,"\\'")}')"><img src="${cheminImage(p.fichier)}" alt="${p.nom}"><span class="zoom-btn">🔍 Agrandir</span></div><div class="info"><h3>${p.nom}</h3><div class="prix">${prixAffiche(p.prix)}</div><div class="qte"><button onclick="changerProduit(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerProduit(${i},1)">+</button></div></div></div>`;
+function afficherCatalogue(){
+let html = "";
+catalogueElements.forEach((el, index) => {
+let imgPath = cheminImage(el.fichier);
+let fallbackPath = el.fichier; // Solution de secours directe si le dossier racine change
+
+if(el.type === "produit"){
+html += `<div class="produit">
+<div class="img-wrap" onclick="agrandir('${imgPath}','${el.nom.replace(/'/g,"\\'")}')"><img src="${imgPath}" alt="${el.nom}" onerror="this.onerror=null;this.src='${fallbackPath}';"><span class="zoom-btn">🔍 Agrandir</span></div>
+<div class="info"><h3>${el.nom}</h3><div class="prix">${prixAffiche(el.prix)}</div>
+<div class="qte"><button onclick="changerQte(${index},-1)">−</button><span>${el.qte}</span><button onclick="changerQte(${index},1)">+</button></div></div>
+</div>`;
+} else {
+html += `<div class="produit pack-box">
+<div class="img-wrap" onclick="agrandir('${imgPath}','${el.nom.replace(/'/g,"\\'")}')"><img src="${imgPath}" alt="${el.nom}" onerror="this.onerror=null;this.src='${fallbackPath}';"><span class="zoom-btn">📦 Pack</span></div>
+<div class="info"><h3>${el.nom}</h3><div class="prix">${prixAffiche(el.prix)}</div><p style="margin:4px 0 8px;font-size:12.5px;color:#666;line-height:1.3">${el.desc}</p>
+<div class="qte"><button onclick="changerQte(${index},-1)">−</button><span>${el.qte}</span><button onclick="changerQte(${index},1)">+</button></div></div>
+</div>`;
+}
+});
+document.getElementById("catalogue").innerHTML = html;
 }
 
-function lignePack(p, i){
-return `<div class="produit" style="border: 2px dashed #ff9800; background: #fff9f0;"><div class="img-wrap" onclick="agrandir('${cheminImage(p.fichier)}','${p.nom.replace(/'/g,"\\'")}')"><img src="${cheminImage(p.fichier)}" alt="${p.nom}"><span class="zoom-btn">📦 Pack</span></div><div class="info"><h3>🎁 ${p.nom}</h3><div class="prix">${prixAffiche(p.prix)}</div><p style="margin:4px 0 8px;font-size:12.5px;color:#666;line-height:1.3">${p.desc}</p><div class="qte"><button onclick="changerPack(${i},-1)">−</button><span>${p.qte}</span><button onclick="changerPack(${i},1)">+</button></div></div></div>`;
-}
-
-function afficherProduits(){
-document.getElementById("produits").innerHTML = produits.map(ligneProduit).join("");
-}
-
-function afficherPacks(){
-let titre = `<h2 class="section-titre">🎁 Nos Packs & Mélanges (Livraison incluse)</h2>`;
-let html = packs.map(lignePack).join("");
-document.getElementById("packs").innerHTML = titre + html;
-}
-
-function changerProduit(i,n){
-produits[i].qte = Math.max(0, produits[i].qte + n);
-actualiser();
-}
-
-function changerPack(i,n){
-packs[i].qte = Math.max(0, packs[i].qte + n);
+function changerQte(i, n){
+catalogueElements[i].qte = Math.max(0, catalogueElements[i].qte + n);
 actualiser();
 }
 
 function sousTotalProduits(){
-return produits.reduce((s,p)=>s + (p.prix*p.qte), 0);
+return catalogueElements.filter(el => el.type === "produit").reduce((s,p)=>s + (p.prix*p.qte), 0);
 }
 
 function sousTotalPacks(){
-return packs.reduce((s,p)=>s + (p.prix*p.qte), 0);
+return catalogueElements.filter(el => el.type === "pack").reduce((s,p)=>s + (p.prix*p.qte), 0);
 }
 
 function sousTotalGeneral(){
-return sousTotalProduits() + sousTotalPacks();
+return catalogueElements.reduce((s,p)=>s + (p.prix*p.qte), 0);
 }
 
 function calculerFraisLivraison(){
 let tp = sousTotalProduits();
 let tpacks = sousTotalPacks();
 let totalBrut = tp + tpacks;
-
 if (totalBrut === 0) return 0;
-// Si l'utilisateur choisit un pack, la livraison est incluse (frais additionnels à 0)
 if (tpacks > 0) return 0;
-// Si le montant des produits seuls est inférieur à 3000 FCFA, on applique la livraison de 2000 FCFA
 if (tp < 3000) return livraisonFixe;
-// Au-delà de 3000 FCFA, la livraison est offerte
 return 0;
 }
 
@@ -267,8 +247,7 @@ return t + calculerFraisLivraison();
 }
 
 function actualiser(){
-afficherProduits();
-afficherPacks();
+afficherCatalogue();
 let total = totalFinal();
 let totalEl = document.getElementById("total");
 if(totalEl) totalEl.innerText = total.toLocaleString("fr-FR");
@@ -374,8 +353,9 @@ alert("La géolocalisation n'est pas supportée par votre navigateur.");
 
 function commander(){
 let items = [];
-produits.forEach(p=>{if(p.qte>0) items.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});
-packs.forEach(p=>{if(p.qte>0) items.push(`${p.qte} x ${p.nom} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`);});
+catalogueElements.forEach(el => {
+if(el.qte > 0) items.push(`${el.qte} x ${el.nom} = ${(el.prix * el.qte).toLocaleString("fr-FR")} FCFA`);
+});
 
 if(items.length===0){
 alert("Veuillez sélectionner au moins un produit ou un pack.");
@@ -399,7 +379,6 @@ let sousTPacks = sousTotalPacks();
 let sousTot = sousTotalGeneral();
 let fraisLivraison = calculerFraisLivraison();
 
-// Vérification du seuil si commande de produits seuls < 3000F
 if(sousTProduits > 0 && sousTProduits < 3000 && sousTPacks === 0 && fraisLivraison > 0){
 let continuer = confirm("Votre commande de produits est inférieure à 3 000 FCFA. Des frais de livraison de 2 000 FCFA sont appliqués. Souhaitez-vous valider ou continuer vos achats pour débloquer la livraison gratuite ?");
 if(!continuer) return;
@@ -407,7 +386,6 @@ if(!continuer) return;
 
 let final = totalFinal();
 
-// Construction du message WhatsApp ultra-détaillé (pour Admin & Partenaires)
 let msg = [];
 msg.push("🍦 *NOUVELLE COMMANDE NOOGO* 🍦");
 msg.push(`👤 *Nom :* ${nom}`);
@@ -423,7 +401,7 @@ if(codeValide && remise > 0) msg.push(`Remise : −${remise.toLocaleString("fr-F
 if(fraisLivraison > 0){
 msg.push(`Frais de livraison : ${fraisLivraison.toLocaleString("fr-FR")} FCFA`);
 } else {
-msg.push(`Livraison : Offerte / Incluse (Pack ou seuil atteint)`);
+msg.push(`Livraison : Offerte / Incluse`);
 }
 msg.push(`💰 *TOTAL À PAYER : ${final.toLocaleString("fr-FR")} FCFA*`);
 msg.push(`💳 *Mode de paiement :* ${paiement.toUpperCase()}`);
@@ -433,8 +411,6 @@ window.open(lien, "_blank");
 }
 
 window.addEventListener("DOMContentLoaded",()=>{
-afficherProduits();
-afficherPacks();
 actualiser();
 });
 </script>

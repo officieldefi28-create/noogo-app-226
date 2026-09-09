@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noogo — Admin</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#fff8f0;color:#333;padding-bottom:40px}
+header{background:#e8590c;color:#fff;padding:16px;text-align:center;position:sticky;top:0;z-index:10}
+header h1{margin:0;font-size:20px}
+.conteneur{max-width:500px;margin:0 auto;padding:14px}
+.carte{background:#fff;border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 2px 7px rgba(0,0,0,.1)}
+.carte h2{margin:0 0 12px;font-size:16px;color:#e8590c}
+label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px}
+input,select{width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;outline:none}
+input:focus,select:focus{border-color:#e8590c}
+.btn{width:100%;background:#e8590c;color:#fff;border:0;border-radius:10px;padding:12px;font-size:15px;font-weight:700;margin-top:12px;cursor:pointer}
+.btn:active{opacity:.85}
+.btn-sec{background:#666}
+.btn-vert{background:#2e7d32}
+.btn-rouge{background:#c62828}
+.btn-bleu{background:#1565c0}
+.btn-petit{width:auto;padding:6px 12px;font-size:12px;margin:3px 3px 0 0;border-radius:20px}
+.ligne-part{border:1px solid #eee;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px}
+.ligne-cmd{border:1px solid #eee;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
+.badge-attente{background:#fff3e0;color:#e65100}
+.badge-livree{background:#e8f5e9;color:#2e7d32}
+.badge-annulee{background:#ffebee;color:#c62828}
+.badge-paye{background:#e3f2fd;color:#1565c0}
+.badge-impaye{background:#fce4ec;color:#ad1457}
+.erreur{background:#ffebee;color:#c62828;padding:10px;border-radius:8px;font-size:13px;margin-top:8px;word-break:break-word}
+.succes{background:#e8f5e9;color:#2e7d32;padding:10px;border-radius:8px;font-size:13px;margin-top:8px}
+.jours-case{display:inline-flex;align-items:center;gap:4px;margin:4px 6px 0 0;font-size:12px;font-weight:400}
+.cachee{display:none}
+.mdp-affiche{background:#fff3e0;padding:12px;border-radius:8px;font-size:15px;font-weight:700;text-align:center;margin-top:10px;letter-spacing:1px}
+/* Overlay modifier partenaire */
+.overlay-mod{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 10px}
+.overlay-mod.actif{display:flex}
+.mod-carte{background:#fff;border-radius:14px;padding:16px;max-width:440px;width:100%;margin-top:20px}
+.mod-carte h2{margin:0 0 12px;font-size:16px;color:#e8590c}
+/* Toggle produit */
+.ligne-produit{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid #eee;border-radius:10px;margin-bottom:8px;font-size:13px}
+.toggle-switch{position:relative;width:48px;height:26px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:26px;transition:.3s}
+.toggle-slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle-switch input:checked + .toggle-slider{background:#2e7d32}
+.toggle-switch input:checked + .toggle-slider:before{transform:translateX(22px)}
+.nom-produit{flex:1;line-height:1.3}
+.cat-titre{font-weight:700;color:#e8590c;font-size:12px;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+</style>
+</head>
+<body>
+
+<header><h1>🔐 Noogo — Espace Admin</h1></header>
+
+<div class="conteneur">
+
+<!-- LOGIN -->
+<div class="carte" id="carte-login">
+  <h2>Connexion Admin</h2>
+  <label>Mot de passe</label>
+  <input type="password" id="mdp-admin" placeholder="Mot de passe admin" onkeydown="if(event.key==='Enter')connexion()">
+  <button class="btn" onclick="connexion()">Se connecter</button>
+  <div id="err-login"></div>
+</div>
+
+<div id="zone-admin" class="cachee">
+
+<!-- ALERTES RÉCLAMATIONS -->
+<div id="alerte-reclamations"></div>
+
+<!-- CONFIG RAPIDE -->
+<div class="carte">
+  <h2>⚡ Configuration rapide</h2>
+  <button class="btn btn-sec" onclick="creerCodesAuto()">Créer codes MARDI / SAMEDI / FB / TT</button>
+  <div id="res-codes-auto"></div>
+</div>
+
+<!-- GESTION PRODUITS -->
+<div class="carte">
+  <h2>📦 Disponibilité des produits</h2>
+  <p style="font-size:12.5px;color:#777;margin:0 0 10px">Activez ou désactivez les produits visibles sur le site. Les produits désactivés n'apparaissent pas aux clients.</p>
+  <div id="liste-produits-admin">Chargement...</div>
+  <button class="btn btn-sec" style="margin-top:12px" onclick="resetProduitsEtat()">↺ Tout réactiver</button>
+  <div id="res-produits"></div>
+</div>
+
+<!-- NOUVEAU PARTENAIRE -->
+<div class="carte">
+  <h2>➕ Nouveau partenaire</h2>
+  <label>Nom</label>
+  <input type="text" id="np-nom" placeholder="Ex : École Saint Joseph">
+  <label>Téléphone</label>
+  <input type="tel" id="np-tel" placeholder="Ex : 70123456">
+  <label>Type</label>
+  <select id="np-type">
+    <option value="particulier">Particulier</option>
+    <option value="personnel">Personnel</option>
+    <option value="ecole">École</option>
+    <option value="entreprise">Entreprise</option>
+  </select>
+  <label>Code promo</label>
+  <input type="text" id="np-code" placeholder="Ex : ECOLE01" style="text-transform:uppercase">
+  <label>Mot de passe personnalisé</label>
+  <input type="text" id="np-mdp" placeholder="Choisissez un mot de passe facile à retenir">
+  <label>Type de réduction client</label>
+  <select id="np-remise-type">
+    <option value="pourcentage">Pourcentage (%)</option>
+    <option value="fixe">Montant fixe (FCFA)</option>
+  </select>
+  <label>Valeur de la réduction</label>
+  <input type="number" id="np-remise-valeur" placeholder="Ex : 10">
+  <label>Type de commission partenaire</label>
+  <select id="np-commission-type">
+    <option value="pourcentage">Pourcentage (%)</option>
+    <option value="fixe">Montant fixe (FCFA)</option>
+  </select>
+  <label>Valeur de la commission</label>
+  <input type="number" id="np-commission-valeur" placeholder="Ex : 5">
+  <label>Jours actifs <small style="font-weight:400">(vide = tous les jours)</small></label>
+  <div>
+    <label class="jours-case"><input type="checkbox" value="0" class="np-jour"> Dim</label>
+    <label class="jours-case"><input type="checkbox" value="1" class="np-jour"> Lun</label>
+    <label class="jours-case"><input type="checkbox" value="2" class="np-jour"> Mar</label>
+    <label class="jours-case"><input type="checkbox" value="3" class="np-jour"> Mer</label>
+    <label class="jours-case"><input type="checkbox" value="4" class="np-jour"> Jeu</label>
+    <label class="jours-case"><input type="checkbox" value="5" class="np-jour"> Ven</label>
+    <label class="jours-case"><input type="checkbox" value="6" class="np-jour"> Sam</label>
+  </div>
+  <button class="btn" onclick="creerPartenaire()">Créer le partenaire</button>
+  <div id="res-creation"></div>
+</div>
+
+<!-- PARTENAIRES -->
+<div class="carte">
+  <h2>👥 Partenaires</h2>
+  <div id="liste-partenaires">Chargement...</div>
+</div>
+
+<!-- COMMANDES -->
+<div class="carte">
+  <h2>📦 Commandes</h2>
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <select id="tri-cmd" onchange="triCommandes()" style="flex:1">
+      <option value="recent">Plus récentes d'abord</option>
+      <option value="ancien">Plus anciennes d'abord</option>
+    </select>
+    <select id="filtre-cmd" onchange="triCommandes()" style="flex:1">
+      <option value="toutes">Toutes</option>
+      <option value="en_attente">En attente</option>
+      <option value="livree">Livrées</option>
+      <option value="annulee">Annulées</option>
+    </select>
+  </div>
+  <div id="liste-commandes">Chargement...</div>
+  <button class="btn btn-sec" id="btn-plus" onclick="voirPlus()" style="margin-top:8px">Voir plus de commandes</button>
+</div>
+
+</div><!-- /zone-admin -->
+</div>
+
+<!-- OVERLAY MODIFIER PARTENAIRE -->
+<div class="overlay-mod" id="overlay-mod">
+  <div class="mod-carte">
+    <h2>✏️ Modifier le partenaire</h2>
+    <input type="hidden" id="mp-id">
+    <label>Nom</label><input type="text" id="mp-nom">
+    <label>Téléphone</label><input type="tel" id="mp-tel">
+    <label>Type</label>
+    <select id="mp-type">
+      <option value="particulier">Particulier</option>
+      <option value="personnel">Personnel</option>
+      <option value="ecole">École</option>
+      <option value="entreprise">Entreprise</option>
+    </select>
+    <label>Code promo</label><input type="text" id="mp-code" style="text-transform:uppercase">
+    <label>Nouveau mot de passe <small style="font-weight:400">(laisser vide = inchangé)</small></label>
+    <input type="text" id="mp-mdp" placeholder="Nouveau mot de passe personnalisé">
+    <label>Type de réduction</label>
+    <select id="mp-remise-type">
+      <option value="pourcentage">Pourcentage (%)</option>
+      <option value="fixe">Montant fixe (FCFA)</option>
+    </select>
+    <label>Valeur réduction</label><input type="number" id="mp-remise-valeur">
+    <label>Type de commission</label>
+    <select id="mp-commission-type">
+      <option value="pourcentage">Pourcentage (%)</option>
+      <option value="fixe">Montant fixe (FCFA)</option>
+    </select>
+    <label>Valeur commission</label><input type="number" id="mp-commission-valeur">
+    <label>Jours actifs</label>
+    <div>
+      <label class="jours-case"><input type="checkbox" value="0" class="mp-jour"> Dim</label>
+      <label class="jours-case"><input type="checkbox" value="1" class="mp-jour"> Lun</label>
+      <label class="jours-case"><input type="checkbox" value="2" class="mp-jour"> Mar</label>
+      <label class="jours-case"><input type="checkbox" value="3" class="mp-jour"> Mer</label>
+      <label class="jours-case"><input type="checkbox" value="4" class="mp-jour"> Jeu</label>
+      <label class="jours-case"><input type="checkbox" value="5" class="mp-jour"> Ven</label>
+      <label class="jours-case"><input type="checkbox" value="6" class="mp-jour"> Sam</label>
+    </div>
+    <button class="btn" onclick="enregistrerMod()">Enregistrer</button>
+    <button class="btn btn-sec" onclick="fermerMod()">Annuler</button>
+    <div id="res-mod"></div>
+  </div>
+</div>
+
+<script>
+// ===================== DONNÉES PRODUITS =====================
+const PRODUITS_LISTE = [
+  // Crèmes petits pots
+  {id:"banane-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"Crème Glacée Banane 1 000 FCFA"},
+  {id:"vanille-p", cat:"🍦 Crèmes Petits Pots (125ml)", nom:"Crème Glacée Vanille 700 FCFA"},
+  {id:"choco-p",   cat:"🍦 Crèmes Petits Pots (125ml)", nom:"Crème Glacée Chocolat 600 FCFA"},
+  {id:"fraise-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"Crème Glacée Fraise 700 FCFA"},
+  {id:"pk-ban-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Banane Petit (5 pots) 7 000 FCFA"},
+  {id:"pk-van-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Vanille Petit (5 pots) 5 500 FCFA"},
+  {id:"pk-cho-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Chocolat Petit (5 pots) 5 000 FCFA"},
+  {id:"pk-fra-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Fraise Petit (5 pots) 5 500 FCFA"},
+  {id:"pk-mix-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Découverte Mix Petit 6 000 FCFA"},
+  // Crèmes grands pots
+  {id:"banane-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"Fruits Naturel Banane 2 000 FCFA"},
+  {id:"vanille-g", cat:"🍨 Crèmes Grands Pots (250ml)", nom:"Vanille Lactée Grand 1 400 FCFA"},
+  {id:"choco-g",   cat:"🍨 Crèmes Grands Pots (250ml)", nom:"Chocolat Cacao au Lait Grand 1 200 FCFA"},
+  {id:"fraise-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"Crème Fraise Grand 1 400 FCFA"},
+  {id:"pk-ban-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Banane Grand (4 pots) 10 000 FCFA"},
+  {id:"pk-van-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Vanille Grand (4 pots) 7 600 FCFA"},
+  {id:"pk-cho-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Chocolat Grand (4 pots) 6 800 FCFA"},
+  {id:"pk-fra-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Fraise Grand (4 pots) 7 600 FCFA"},
+  {id:"pk-mix-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Mix Grand Format 10 000 FCFA"},
+  // Autres
+  {id:"pop-sachet",cat:"🍿 Popcorn",  nom:"Popcorn Sachet 300 FCFA"},
+  {id:"pop-carton",cat:"🍿 Popcorn",  nom:"Popcorn Carton 500 FCFA"},
+  {id:"pain-700",  cat:"🥖 Pain",     nom:"Pain Anglais 700 FCFA"},
+  {id:"pain-1000", cat:"🥖 Pain",     nom:"Pain Anglais 1 000 FCFA"},
+  {id:"esq-500",   cat:"🍨 Esquimau", nom:"Esquimau Sandra 500 FCFA"},
+  {id:"esq-800",   cat:"🍨 Esquimau", nom:"Esquimau Sandra Chocolat Coco 800 FCFA"},
+  {id:"creme-6250",cat:"📦 Gros Format", nom:"Crème Glacée 6250ml 35 000 FCFA"},
+  {id:"pk-ceremonie",cat:"📦 Gros Format", nom:"🎁 Pack Fête/Cérémonie (2 seaux) 72 000 FCFA"},
+];
+
+// ===================== ÉTAT =====================
+let mdpAdmin = "";
+let partenairesListe = [];
+let commandesListe = [];
+let produitsEtat = {};
+let nbVisible = 15;
+const JOURS = ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
+
+// ===================== CONNEXION =====================
+function connexion() {
+  mdpAdmin = document.getElementById("mdp-admin").value;
+  if (mdpAdmin === "delfioficiel") {
+    document.getElementById("carte-login").classList.add("cachee");
+    document.getElementById("zone-admin").classList.remove("cachee");
+    rafraichirTout();
+    chargerProduitsEtat();
+  } else {
+    document.getElementById("err-login").innerHTML = `<div class="erreur">Mot de passe incorrect</div>`;
+  }
+}
+
+// ===================== API =====================
+function apiAdmin(action, extras) {
+  return fetch("/api/admin", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({motDePasseAdmin: mdpAdmin, action, ...extras})
+  }).then(r => r.json().then(d => ({ok: r.ok, d})));
+}
+
+// ===================== TOUT CHARGER =====================
+function rafraichirTout() {
+  apiAdmin("tout_voir").then(({ok, d}) => {
+    if (!ok) { alert("Erreur: " + (d.erreur || "")); return; }
+    partenairesListe = d.partenaires || [];
+    commandesListe = (d.commandes || []).sort((a,b) => new Date(b.date)-new Date(a.date));
+    afficherPartenaires(partenairesListe);
+    triCommandes();
+    afficherAlertes(partenairesListe);
+  });
+}
+
+// ===================== PRODUITS DISPONIBILITÉ =====================
+function chargerProduitsEtat() {
+  fetch("/api/admin", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({action:"get_produits_etat"})
+  }).then(r => r.json()).then(d => {
+    produitsEtat = d.etat || {};
+    afficherProduitsAdmin();
+  }).catch(() => afficherProduitsAdmin());
+}
+
+function afficherProduitsAdmin() {
+  const cats = [...new Set(PRODUITS_LISTE.map(p => p.cat))];
+  let html = "";
+  cats.forEach(cat => {
+    html += `<div class="cat-titre">${cat}</div>`;
+    PRODUITS_LISTE.filter(p => p.cat === cat).forEach(p => {
+      const actif = p.id in produitsEtat ? produitsEtat[p.id] : true;
+      html += `<div class="ligne-produit">
+        <span class="nom-produit">${p.nom}</span>
+        <label class="toggle-switch">
+          <input type="checkbox" ${actif ? "checked" : ""} onchange="toggleProduit('${p.id}', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>`;
+    });
+  });
+  document.getElementById("liste-produits-admin").innerHTML = html;
+}
+
+function toggleProduit(produitId, actif) {
+  apiAdmin("set_produit_etat", {produitId, actif}).then(({ok, d}) => {
+    if (!ok) { alert("Erreur: " + (d.erreur||"")); chargerProduitsEtat(); return; }
+    produitsEtat[produitId] = actif;
+    document.getElementById("res-produits").innerHTML = `<div class="succes">✅ ${produitId} : ${actif ? "activé" : "désactivé"}</div>`;
+    setTimeout(() => { document.getElementById("res-produits").innerHTML = ""; }, 2000);
+  });
+}
+
+function resetProduitsEtat() {
+  if (!confirm("Réactiver tous les produits ?")) return;
+  apiAdmin("reset_produits_etat").then(({ok}) => {
+    if (ok) { produitsEtat = {}; afficherProduitsAdmin(); document.getElementById("res-produits").innerHTML = `<div class="succes">✅ Tous les produits réactivés</div>`; }
+  });
+}
+
+// ===================== ALERTES RÉCLAMATIONS =====================
+function afficherAlertes(partenaires) {
+  const recs = partenaires.filter(p => p.reclamationEnCours);
+  const zone = document.getElementById("alerte-reclamations");
+  if (recs.length === 0) { zone.innerHTML = ""; return; }
+  zone.innerHTML = `<div class="carte" style="border:2px solid #e65100">
+    <h2>🔔 Réclamations en attente (${recs.length})</h2>
+    ${recs.map(p => `<p>${p.nom} (${p.code}) — <a href="tel:${p.telephone}">${p.telephone}</a></p>`).join("")}
+  </div>`;
+}
+
+// ===================== PARTENAIRES =====================
+function afficherPartenaires(liste) {
+  if (!liste.length) { document.getElementById("liste-partenaires").innerHTML = "<p style='color:#888;font-size:13px'>Aucun partenaire</p>"; return; }
+  document.getElementById("liste-partenaires").innerHTML = liste.map(p => {
+    const jours = p.joursActifs && p.joursActifs.length ? p.joursActifs.map(j => JOURS[j]).join(", ") : "Tous les jours";
+    const remise = p.remiseType === "pourcentage" ? `${p.remiseValeur}%` : `${(p.remiseValeur||0).toLocaleString("fr-FR")} FCFA`;
+    const com = p.commissionType === "pourcentage" ? `${p.commissionValeur}%` : `${(p.commissionValeur||0).toLocaleString("fr-FR")} FCFA`;
+    return `<div class="ligne-part">
+      <strong>${p.nom}</strong> · Code : <code>${p.code}</code>
+      ${p.actif ? '<span class="badge" style="background:#e8f5e9;color:#2e7d32">✅ Actif</span>' : '<span class="badge" style="background:#ffebee;color:#c62828">⏸ Inactif</span>'}
+      ${p.reclamationEnCours ? '<span class="badge" style="background:#fff3e0;color:#e65100">🔔 Réclame</span>' : ""}
+      <br><span style="color:#888">Tél : ${p.telephone||"—"} · Type : ${p.type||"—"} · Jours : ${jours}</span>
+      <br><span style="color:#888">Remise : ${remise} · Commission : ${com}</span>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">
+        <button class="btn btn-bleu btn-petit" onclick="ouvrirMod('${p.id}')">✏️ Modifier</button>
+        <button class="btn btn-sec btn-petit" onclick="reinitMdp('${p.id}','${p.nom}')">🔑 Changer MDP</button>
+        <button class="btn ${p.actif?"btn-rouge":"btn-vert"} btn-petit" onclick="bascActif('${p.id}')">${p.actif?"⏸ Désactiver":"✅ Activer"}</button>
+        <button class="btn btn-rouge btn-petit" onclick="supprimerPart('${p.id}','${p.nom}')">🗑️ Supprimer</button>
+        ${p.reclamationEnCours ? `<button class="btn btn-vert btn-petit" onclick="solderPart('${p.id}')">💰 Payer solde</button>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function creerCodesAuto() {
+  apiAdmin("creer_codes_automatiques").then(({ok, d}) => {
+    document.getElementById("res-codes-auto").innerHTML = ok
+      ? `<div class="succes">${d.resultats.map(r => r.code + " : " + r.statut).join(" — ")}</div>`
+      : `<div class="erreur">${d.erreur}</div>`;
+    rafraichirTout();
+  });
+}
+
+function creerPartenaire() {
+  const jours = Array.from(document.querySelectorAll(".np-jour:checked")).map(c => Number(c.value));
+  const mdp = document.getElementById("np-mdp").value.trim();
+  if (!mdp) { document.getElementById("res-creation").innerHTML = `<div class="erreur">Veuillez définir un mot de passe pour ce partenaire</div>`; return; }
+  apiAdmin("creer_partenaire", {
+    nom: document.getElementById("np-nom").value,
+    telephone: document.getElementById("np-tel").value,
+    type: document.getElementById("np-type").value,
+    code: document.getElementById("np-code").value.toUpperCase(),
+    motDePasse: mdp,
+    remiseType: document.getElementById("np-remise-type").value,
+    remiseValeur: document.getElementById("np-remise-valeur").value,
+    commissionType: document.getElementById("np-commission-type").value,
+    commissionValeur: document.getElementById("np-commission-valeur").value,
+    joursActifs: jours
+  }).then(({ok, d}) => {
+    const z = document.getElementById("res-creation");
+    if (!ok) { z.innerHTML = `<div class="erreur">${d.erreur}</div>`; return; }
+    z.innerHTML = `<div class="succes">✅ Partenaire créé : ${d.partenaire.nom}</div>
+      <div class="mdp-affiche">🔑 Mot de passe : ${d.motDePasseTemporaire || mdp}</div>`;
+    rafraichirTout();
+  });
+}
+
+function bascActif(id) { apiAdmin("basculer_actif", {partenaireId:id}).then(() => rafraichirTout()); }
+
+function reinitMdp(id, nom) {
+  const mdp = prompt(`Nouveau mot de passe pour ${nom} (facile à retenir) :`);
+  if (!mdp || !mdp.trim()) return;
+  apiAdmin("reinitialiser_mot_de_passe", {partenaireId:id, motDePassePerso: mdp.trim()}).then(({ok, d}) => {
+    if (!ok) { alert("Erreur: " + (d.erreur||"")); return; }
+    alert(`✅ Nouveau mot de passe pour ${nom} : ${d.motDePasseTemporaire || mdp.trim()}`);
+    rafraichirTout();
+  });
+}
+
+function supprimerPart(id, nom) {
+  if (!confirm(`Supprimer ${nom} définitivement ?`)) return;
+  apiAdmin("supprimer_partenaire", {partenaireId:id}).then(() => rafraichirTout());
+}
+
+function solderPart(id) {
+  apiAdmin("payer_tout_le_solde", {partenaireId:id}).then(() => { alert("Solde payé !"); rafraichirTout(); });
+}
+
+// Modifier partenaire
+function ouvrirMod(id) {
+  const p = partenairesListe.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById("mp-id").value = p.id;
+  document.getElementById("mp-nom").value = p.nom||"";
+  document.getElementById("mp-tel").value = p.telephone||"";
+  document.getElementById("mp-type").value = p.type||"particulier";
+  document.getElementById("mp-code").value = p.code||"";
+  document.getElementById("mp-mdp").value = "";
+  document.getElementById("mp-remise-type").value = p.remiseType||"pourcentage";
+  document.getElementById("mp-remise-valeur").value = p.remiseValeur||0;
+  document.getElementById("mp-commission-type").value = p.commissionType||"pourcentage";
+  document.getElementById("mp-commission-valeur").value = p.commissionValeur||0;
+  document.querySelectorAll(".mp-jour").forEach(cb => {
+    cb.checked = p.joursActifs && p.joursActifs.includes(Number(cb.value));
+  });
+  document.getElementById("res-mod").innerHTML = "";
+  document.getElementById("overlay-mod").classList.add("actif");
+}
+
+function fermerMod() { document.getElementById("overlay-mod").classList.remove("actif"); }
+
+function enregistrerMod() {
+  const jours = Array.from(document.querySelectorAll(".mp-jour:checked")).map(c => Number(c.value));
+  const mdp = document.getElementById("mp-mdp").value.trim();
+  const data = {
+    partenaireId: document.getElementById("mp-id").value,
+    nom: document.getElementById("mp-nom").value,
+    telephone: document.getElementById("mp-tel").value,
+    type: document.getElementById("mp-type").value,
+    code: document.getElementById("mp-code").value.toUpperCase(),
+    remiseType: document.getElementById("mp-remise-type").value,
+    remiseValeur: document.getElementById("mp-remise-valeur").value,
+    commissionType: document.getElementById("mp-commission-type").value,
+    commissionValeur: document.getElementById("mp-commission-valeur").value,
+    joursActifs: jours
+  };
+  if (mdp) data.motDePassePerso = mdp;
+  apiAdmin("modifier_partenaire", data).then(({ok, d}) => {
+    if (!ok) { document.getElementById("res-mod").innerHTML = `<div class="erreur">${d.erreur}</div>`; return; }
+    fermerMod();
+    rafraichirTout();
+  });
+}
+
+// ===================== COMMANDES =====================
+function triCommandes() {
+  const tri = document.getElementById("tri-cmd").value;
+  const filtre = document.getElementById("filtre-cmd").value;
+  let liste = commandesListe.slice();
+  if (filtre !== "toutes") liste = liste.filter(c => c.statutLivraison === filtre);
+  if (tri === "ancien") liste.reverse();
+  afficherCommandes(liste.slice(0, nbVisible));
+  document.getElementById("btn-plus").style.display = liste.length > nbVisible ? "block" : "none";
+}
+
+function voirPlus() { nbVisible += 15; triCommandes(); }
+
+function afficherCommandes(liste) {
+  if (!liste.length) { document.getElementById("liste-commandes").innerHTML = `<p style='color:#888;font-size:13px'>Aucune commande</p>`; return; }
+  document.getElementById("liste-commandes").innerHTML = liste.map(c => {
+    const date = new Date(c.date).toLocaleString("fr-FR");
+    const statutLiv = {en_attente:"badge-attente", livree:"badge-livree", annulee:"badge-annulee"}[c.statutLivraison] || "badge-attente";
+    const statutCom = c.statutCommission === "paye" ? "badge-paye" : "badge-impaye";
+    const part = partenairesListe.find(p => p.id === c.partenaireId);
+
+    // Articles résumé
+    const articles = (c.articles || []).map(a => `${a.nom} ×${a.qte}`).join(", ");
+    const livStr = c.modeReception === "retrait" ? "Retrait au local" :
+      (c.fraisLivraison > 0 ? `Livraison ${c.fraisLivraison.toLocaleString("fr-FR")} FCFA` : "Livraison gratuite/incluse");
+
+    return `<div class="ligne-cmd">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <strong>${c.nomClient || "Client Noogo"}</strong>
+          <span class="badge ${statutLiv}">${c.statutLivraison?.replace("_"," ")}</span>
+        </div>
+        <strong style="color:#e8590c">${(c.montantTotal||0).toLocaleString("fr-FR")} FCFA</strong>
+      </div>
+      <div style="color:#888;font-size:12px;margin-top:3px">${date} · 📞 ${c.telClient || "—"}</div>
+      <div style="font-size:12px;margin-top:3px">📍 ${c.localisation||"—"} · 💳 ${c.modePaiement||"—"}</div>
+      ${articles ? `<div style="font-size:12px;margin-top:3px;color:#555">📦 ${articles}</div>` : ""}
+      <div style="font-size:12px;margin-top:2px;color:#555">🚚 ${livStr}</div>
+      ${c.remise > 0 ? `<div style="font-size:12px;color:#2e7d32">🎟️ Code ${c.codePromo||""} · Remise : −${c.remise.toLocaleString("fr-FR")} FCFA</div>` : ""}
+      ${part ? `<div style="font-size:12px">👥 Partenaire : ${part.nom} (${part.code}) · Com : <span class="badge ${statutCom}">${c.statutCommission||"—"}</span></div>` : ""}
+      <div style="margin-top:7px;display:flex;flex-wrap:wrap;gap:4px">
+        ${c.statutLivraison === "en_attente" ? `<button class="btn btn-vert btn-petit" onclick="validerLivraison('${c.id}')">✅ Livraison faite</button>
+        <button class="btn btn-rouge btn-petit" onclick="annulerCmd('${c.id}')">❌ Annuler</button>` : ""}
+        ${c.partenaireId && c.statutCommission !== "paye" && c.statutLivraison === "livree" ? `<button class="btn btn-bleu btn-petit" onclick="marquerCom('${c.id}')">💰 Commission payée</button>` : ""}
+        <button class="btn btn-rouge btn-petit" onclick="supprimerCmd('${c.id}')">🗑️ Supprimer</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function validerLivraison(id) {
+  apiAdmin("valider_livraison", {commandeId: id}).then(({ok, d}) => {
+    if (!ok) alert("Erreur : " + (d?.erreur || "Action non reconnue"));
+    rafraichirTout();
+  });
+}
+function annulerCmd(id) {
+  if (!confirm("Annuler cette commande ?")) return;
+  apiAdmin("annuler_commande", {commandeId: id}).then(({ok, d}) => {
+    if (!ok) alert("Erreur : " + (d?.erreur || "Action non reconnue"));
+    rafraichirTout();
+  });
+}
+function supprimerCmd(id) {
+  if (!confirm("Supprimer définitivement cette commande ?")) return;
+  apiAdmin("supprimer_commande", {commandeId: id}).then(({ok, d}) => {
+    if (!ok) alert("Erreur : " + (d?.erreur || "Action non reconnue"));
+    rafraichirTout();
+  });
+}
+function marquerCom(id) {
+  apiAdmin("marquer_commission_payee", {commandeId: id}).then(({ok, d}) => {
+    if (!ok) alert("Erreur : " + (d?.erreur || "Action non reconnue"));
+    rafraichirTout();
+  });
+}
+
+// Connexion avec touche Entrée
+document.getElementById("mdp-admin")?.addEventListener("keydown", e => { if (e.key === "Enter") connexion(); });
+</script>
+</body>
+</html>

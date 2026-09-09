@@ -89,6 +89,108 @@ header h1{margin:0;font-size:18px}
   <button class="btn-commander" onclick="commanderWhatsApp()">💬 Commander sur WhatsApp</button>
 </div>
 <script>
+<script>
+const CATALOGUE = [
+  {id:"banane-p",  cat:"Petits Pots", nom:"Crème Glacée Banane", prix:1000},
+  {id:"vanille-p", cat:"Petits Pots", nom:"Crème Glacée Vanille", prix:700},
+  {id:"choco-p",   cat:"Petits Pots", nom:"Crème Glacée Chocolat", prix:600},
+  {id:"fraise-p",  cat:"Petits Pots", nom:"Crème Glacée Fraise", prix:700},
+  {id:"pk-ban-p",  cat:"Packs", nom:"🎁 Pack Banane Petit Format", prix:7000, nb:"5 Pots"},
+  {id:"pk-van-p",  cat:"Packs", nom:"🎁 Pack Vanille Petit Format", prix:5500, nb:"5 Pots"},
+  {id:"pk-cho-p",  cat:"Packs", nom:"🎁 Pack Chocolat Petit Format", prix:5000, nb:"5 Pots"},
+  {id:"pk-fra-p",  cat:"Packs", nom:"🎁 Pack Fraise Petit Format", prix:5500, nb:"5 Pots"},
+  {id:"pk-mix-p",  cat:"Packs", nom:"🎁 Pack Découverte Mix Petit", prix:6000, nb:"Mix 5 Pots"},
+  {id:"ceremonie", cat:"Gros Format", nom:"🎁 Pack Fête / Cérémonie", prix:72000, nb:"2 Seaux"}
+];
+
+let panier = {};
+
+function afficherCatalogue() {
+  let html = "";
+  CATALOGUE.forEach(p => {
+    const isPack = p.id.startsWith("pk-") || p.id === "ceremonie";
+    const isMix = p.id.includes("mix");
+    const qte = panier[p.id] || 0;
+
+    let htmlVisuel = "";
+    if (isMix) {
+      htmlVisuel = `
+        <div class="pack-photos-grille">
+          <img src="vanille-p.jpg" alt="Vanille" onerror="this.src='vanille.jpg'">
+          <img src="choco-p.jpg" alt="Chocolat" onerror="this.src='chocolat.jpg'">
+          <img src="fraise-p.jpg" alt="Fraise" onerror="this.src='fraise.jpg'">
+          <img src="banane-p.jpg" alt="Banane" onerror="this.src='banane.jpg'">
+        </div>`;
+    } else if (isPack) {
+      let imgRef = p.id.includes("ban") ? "banane-p.jpg" : (p.id.includes("cho") ? "choco-p.jpg" : (p.id.includes("fra") ? "fraise-p.jpg" : "vanille-p.jpg"));
+      if(p.id === "ceremonie") imgRef = "creme-6250.jpg";
+      
+      htmlVisuel = `
+        <div class="pack-photos-grille ${p.id === 'ceremonie' ? 'deux-photos' : ''}">
+          <img src="${imgRef}" alt="Pot">
+          <img src="${imgRef}" alt="Pot">
+          ${p.id !== 'ceremonie' ? `<img src="${imgRef}" alt="Pot"><img src="${imgRef}" alt="Pot">` : ''}
+        </div>`;
+    } else {
+      htmlVisuel = `<img src="${p.id}.jpg" alt="${p.nom}" class="img-produit-simple" onerror="this.src='vanille-p.jpg'">`;
+    }
+
+    html += `
+      <div class="carte-produit ${isPack ? 'est-pack' : ''}">
+        ${isPack ? `<div class="badge-nb-boites">📦 ${p.nb}</div>` : ''}
+        ${htmlVisuel}
+        <div class="infos-produit">
+          <h3 class="nom-produit">${p.nom}</h3>
+          <div class="prix-produit">${p.prix.toLocaleString("fr-FR")} FCFA</div>
+          <div style="display:flex; align-items:center; gap:10px; margin-top:8px;">
+            <button onclick="modifierQte('${p.id}', -1)" style="width:30px;height:30px;border-radius:50%;border:1px solid #ddd;background:#fff;font-weight:bold;cursor:pointer">-</button>
+            <span style="font-weight:700;font-size:15px">${qte}</span>
+            <button onclick="modifierQte('${p.id}', 1)" style="width:30px;height:30px;border-radius:50%;border:0;background:#e8590c;color:#fff;font-weight:bold;cursor:pointer">+</button>
+          </div>
+        </div>
+      </div>`;
+  });
+  document.getElementById("liste-catalogue").innerHTML = html;
+  calculerTotal();
+}
+
+function modifierQte(id, delta) {
+  if (!panier[id]) panier[id] = 0;
+  panier[id] += delta;
+  if (panier[id] <= 0) delete panier[id];
+  afficherCatalogue();
+}
+
+function calculerTotal() {
+  let total = 0;
+  for (let id in panier) {
+    const prod = CATALOGUE.front ? CATALOGUE.find(p => p.id === id) : CATALOGUE.find(p => p.id === id);
+    if (prod) total += prod.prix * panier[id];
+  }
+  document.getElementById("total-prix").innerText = total.toLocaleString("fr-FR") + " FCFA";
+}
+
+function commanderWhatsApp() {
+  let texte = "Bonjour Noogo, je souhaite commander :%0A";
+  let total = 0;
+  for (let id in panier) {
+    const prod = CATALOGUE.find(p => p.id === id);
+    if (prod && panier[id] > 0) {
+      texte += `- ${prod.nom} x${panier[id]} (${(prod.prix * panier[id]).toLocaleString("fr-FR")} FCFA)%0A`;
+      total += prod.prix * panier[id];
+    }
+  }
+  if (total === 0) {
+    alert("Votre panier est vide !");
+    return;
+  }
+  texte += `%0ATotal : ${total.toLocaleString("fr-FR")} FCFA`;
+  window.open(`https://wa.me/22600000000?text=${texte}`, '_blank');
+}
+
+afficherCatalogue();
+</script>
+
 const CATALOGUE = [
   {id:"banane-p",  cat:"Petits Pots", nom:"Crème Glacée Banane", prix:1000},
   {id:"vanille-p", cat:"Petits Pots", nom:"Crème Glacée Vanille", prix:700},

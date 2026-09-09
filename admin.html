@@ -7,35 +7,49 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:#fff8f0;color:#333;padding-bottom:40px}
-header{background:#e8590c;color:white;padding:16px;text-align:center;position:sticky;top:0;z-index:10}
+header{background:#e8590c;color:#fff;padding:16px;text-align:center;position:sticky;top:0;z-index:10}
 header h1{margin:0;font-size:20px}
-.conteneur{max-width:480px;margin:0 auto;padding:14px}
-.carte{background:white;border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 2px 7px rgba(0,0,0,.1)}
+.conteneur{max-width:500px;margin:0 auto;padding:14px}
+.carte{background:#fff;border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 2px 7px rgba(0,0,0,.1)}
 .carte h2{margin:0 0 12px;font-size:16px;color:#e8590c}
-label{display:block;font-size:13px;font-weight:bold;margin:10px 0 4px}
-input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px}
-.btn{width:100%;background:#e8590c;color:white;border:0;border-radius:10px;padding:12px;font-size:15px;font-weight:bold;margin-top:14px}
-.btn-secondaire{background:#666}
+label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px}
+input,select{width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;outline:none}
+input:focus,select:focus{border-color:#e8590c}
+.btn{width:100%;background:#e8590c;color:#fff;border:0;border-radius:10px;padding:12px;font-size:15px;font-weight:700;margin-top:12px;cursor:pointer}
+.btn:active{opacity:.85}
+.btn-sec{background:#666}
 .btn-vert{background:#2e7d32}
 .btn-rouge{background:#c62828}
 .btn-bleu{background:#1565c0}
-.btn-petit{width:auto;padding:7px 12px;font-size:12px;margin:4px 4px 0 0;border-radius:20px}
-.ligne-partenaire,.ligne-commande{border:1px solid #eee;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold}
+.btn-petit{width:auto;padding:6px 12px;font-size:12px;margin:3px 3px 0 0;border-radius:20px}
+.ligne-part{border:1px solid #eee;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px}
+.ligne-cmd{border:1px solid #eee;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
 .badge-attente{background:#fff3e0;color:#e65100}
 .badge-livree{background:#e8f5e9;color:#2e7d32}
 .badge-annulee{background:#ffebee;color:#c62828}
 .badge-paye{background:#e3f2fd;color:#1565c0}
 .badge-impaye{background:#fce4ec;color:#ad1457}
-.erreur{background:#ffebee;color:#c62828;padding:10px;border-radius:8px;font-size:13px;margin-top:10px;word-break:break-word}
-.succes{background:#e8f5e9;color:#2e7d32;padding:10px;border-radius:8px;font-size:13px;margin-top:10px}
-.jours-case{display:inline-flex;align-items:center;gap:4px;margin:4px 6px 0 0;font-size:12px;font-weight:normal}
+.erreur{background:#ffebee;color:#c62828;padding:10px;border-radius:8px;font-size:13px;margin-top:8px;word-break:break-word}
+.succes{background:#e8f5e9;color:#2e7d32;padding:10px;border-radius:8px;font-size:13px;margin-top:8px}
+.jours-case{display:inline-flex;align-items:center;gap:4px;margin:4px 6px 0 0;font-size:12px;font-weight:400}
 .cachee{display:none}
-.mdp-affiche{background:#fff3e0;padding:10px;border-radius:8px;font-size:14px;font-weight:bold;text-align:center;margin-top:10px}
-.overlay-modif{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 10px}
-.overlay-modif.actif{display:flex}
-.modif-carte{background:white;border-radius:14px;padding:16px;max-width:420px;width:100%;margin-top:20px}
-.modif-carte h2{margin:0 0 12px;font-size:16px;color:#e8590c}
+.mdp-affiche{background:#fff3e0;padding:12px;border-radius:8px;font-size:15px;font-weight:700;text-align:center;margin-top:10px;letter-spacing:1px}
+/* Overlay modifier partenaire */
+.overlay-mod{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 10px}
+.overlay-mod.actif{display:flex}
+.mod-carte{background:#fff;border-radius:14px;padding:16px;max-width:440px;width:100%;margin-top:20px}
+.mod-carte h2{margin:0 0 12px;font-size:16px;color:#e8590c}
+/* Toggle produit */
+.ligne-produit{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid #eee;border-radius:10px;margin-bottom:8px;font-size:13px}
+.toggle-switch{position:relative;width:48px;height:26px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:26px;transition:.3s}
+.toggle-slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle-switch input:checked + .toggle-slider{background:#2e7d32}
+.toggle-switch input:checked + .toggle-slider:before{transform:translateX(22px)}
+.nom-produit{flex:1;line-height:1.3}
+.cat-titre{font-weight:700;color:#e8590c;font-size:12px;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.5px}
 </style>
 </head>
 <body>
@@ -44,799 +58,478 @@ input,select{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;fon
 
 <div class="conteneur">
 
+<!-- LOGIN -->
 <div class="carte" id="carte-login">
-<h2>Connexion</h2>
-<label>Mot de passe administrateur</label>
-<input type="password" id="mdp-admin" placeholder="Mot de passe">
-<button class="btn" onclick="connexionAdmin()">Se connecter</button>
-<div id="erreur-login"></div>
+  <h2>Connexion Admin</h2>
+  <label>Mot de passe</label>
+  <input type="password" id="mdp-admin" placeholder="Mot de passe admin" onkeydown="if(event.key==='Enter')connexion()">
+  <button class="btn" onclick="connexion()">Se connecter</button>
+  <div id="err-login"></div>
 </div>
 
 <div id="zone-admin" class="cachee">
 
+<!-- ALERTES RÉCLAMATIONS -->
 <div id="alerte-reclamations"></div>
 
+<!-- CONFIG RAPIDE -->
 <div class="carte">
-<h2>⚡ Configuration rapide</h2>
-<button class="btn btn-secondaire" onclick="creerCodesAutomatiques()">Créer les codes Mardi/Samedi/FB/TT (100 FCFA)</button>
-<div id="resultat-codes-auto"></div>
+  <h2>⚡ Configuration rapide</h2>
+  <button class="btn btn-sec" onclick="creerCodesAuto()">Créer codes MARDI / SAMEDI / FB / TT</button>
+  <div id="res-codes-auto"></div>
 </div>
 
+<!-- GESTION PRODUITS -->
 <div class="carte">
-<h2>➕ Nouveau partenaire</h2>
-<label>Nom</label>
-<input type="text" id="np-nom" placeholder="Ex : École Saint Joseph">
-<label>Numéro de téléphone (identifiant de connexion)</label>
-<input type="tel" id="np-tel" placeholder="Ex : 70123456">
-<label>Type</label>
-<select id="np-type">
-<option value="particulier">Particulier</option>
-<option value="personnel">Personnel</option>
-<option value="ecole">École</option>
-<option value="entreprise">Entreprise</option>
-</select>
-<label>Code promo</label>
-<input type="text" id="np-code" placeholder="Ex : ECOLE01">
-<label>Type de réduction client</label>
-<select id="np-remise-type">
-<option value="pourcentage">Pourcentage (%)</option>
-<option value="fixe">Montant fixe (FCFA)</option>
-</select>
-<label>Valeur de la réduction</label>
-<input type="number" id="np-remise-valeur" placeholder="Ex : 10">
-<label>Type de commission partenaire</label>
-<select id="np-commission-type">
-<option value="pourcentage">Pourcentage (%)</option>
-<option value="fixe">Montant fixe (FCFA)</option>
-</select>
-<label>Valeur de la commission</label>
-<input type="number" id="np-commission-valeur" placeholder="Ex : 5">
-<label>Jours actifs (laisser vide = tous les jours)</label>
-<div>
-<label class="jours-case"><input type="checkbox" value="0" class="np-jour"> Dim</label>
-<label class="jours-case"><input type="checkbox" value="1" class="np-jour"> Lun</label>
-<label class="jours-case"><input type="checkbox" value="2" class="np-jour"> Mar</label>
-<label class="jours-case"><input type="checkbox" value="3" class="np-jour"> Mer</label>
-<label class="jours-case"><input type="checkbox" value="4" class="np-jour"> Jeu</label>
-<label class="jours-case"><input type="checkbox" value="5" class="np-jour"> Ven</label>
-<label class="jours-case"><input type="checkbox" value="6" class="np-jour"> Sam</label>
-</div>
-<button class="btn" onclick="creerPartenaire()">Créer le partenaire</button>
-<div id="resultat-creation"></div>
+  <h2>📦 Disponibilité des produits</h2>
+  <p style="font-size:12.5px;color:#777;margin:0 0 10px">Activez ou désactivez les produits visibles sur le site. Les produits désactivés n'apparaissent pas aux clients.</p>
+  <div id="liste-produits-admin">Chargement...</div>
+  <button class="btn btn-sec" style="margin-top:12px" onclick="resetProduitsEtat()">↺ Tout réactiver</button>
+  <div id="res-produits"></div>
 </div>
 
+<!-- NOUVEAU PARTENAIRE -->
 <div class="carte">
-<h2>👥 Partenaires</h2>
-<div id="liste-partenaires">Chargement...</div>
+  <h2>➕ Nouveau partenaire</h2>
+  <label>Nom</label>
+  <input type="text" id="np-nom" placeholder="Ex : École Saint Joseph">
+  <label>Téléphone</label>
+  <input type="tel" id="np-tel" placeholder="Ex : 70123456">
+  <label>Type</label>
+  <select id="np-type">
+    <option value="particulier">Particulier</option>
+    <option value="personnel">Personnel</option>
+    <option value="ecole">École</option>
+    <option value="entreprise">Entreprise</option>
+  </select>
+  <label>Code promo</label>
+  <input type="text" id="np-code" placeholder="Ex : ECOLE01" style="text-transform:uppercase">
+  <label>Mot de passe personnalisé</label>
+  <input type="text" id="np-mdp" placeholder="Choisissez un mot de passe facile à retenir">
+  <label>Type de réduction client</label>
+  <select id="np-remise-type">
+    <option value="pourcentage">Pourcentage (%)</option>
+    <option value="fixe">Montant fixe (FCFA)</option>
+  </select>
+  <label>Valeur de la réduction</label>
+  <input type="number" id="np-remise-valeur" placeholder="Ex : 10">
+  <label>Type de commission partenaire</label>
+  <select id="np-commission-type">
+    <option value="pourcentage">Pourcentage (%)</option>
+    <option value="fixe">Montant fixe (FCFA)</option>
+  </select>
+  <label>Valeur de la commission</label>
+  <input type="number" id="np-commission-valeur" placeholder="Ex : 5">
+  <label>Jours actifs <small style="font-weight:400">(vide = tous les jours)</small></label>
+  <div>
+    <label class="jours-case"><input type="checkbox" value="0" class="np-jour"> Dim</label>
+    <label class="jours-case"><input type="checkbox" value="1" class="np-jour"> Lun</label>
+    <label class="jours-case"><input type="checkbox" value="2" class="np-jour"> Mar</label>
+    <label class="jours-case"><input type="checkbox" value="3" class="np-jour"> Mer</label>
+    <label class="jours-case"><input type="checkbox" value="4" class="np-jour"> Jeu</label>
+    <label class="jours-case"><input type="checkbox" value="5" class="np-jour"> Ven</label>
+    <label class="jours-case"><input type="checkbox" value="6" class="np-jour"> Sam</label>
+  </div>
+  <button class="btn" onclick="creerPartenaire()">Créer le partenaire</button>
+  <div id="res-creation"></div>
 </div>
 
+<!-- PARTENAIRES -->
 <div class="carte">
-<h2>📦 Commandes récentes</h2>
-<div style="display:flex;gap:8px;margin-bottom:10px">
-<select id="tri-commandes" onchange="rafraichirAffichageCommandes()" style="flex:1">
-<option value="recent">Plus récentes d'abord</option>
-<option value="ancien">Plus anciennes d'abord</option>
-</select>
-</div>
-<div id="liste-commandes">Chargement...</div>
-<button class="btn btn-secondaire" id="btn-archives" onclick="basculerArchives()">Voir les commandes archivées</button>
+  <h2>👥 Partenaires</h2>
+  <div id="liste-partenaires">Chargement...</div>
 </div>
 
+<!-- COMMANDES -->
+<div class="carte">
+  <h2>📦 Commandes</h2>
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <select id="tri-cmd" onchange="triCommandes()" style="flex:1">
+      <option value="recent">Plus récentes d'abord</option>
+      <option value="ancien">Plus anciennes d'abord</option>
+    </select>
+    <select id="filtre-cmd" onchange="triCommandes()" style="flex:1">
+      <option value="toutes">Toutes</option>
+      <option value="en_attente">En attente</option>
+      <option value="livree">Livrées</option>
+      <option value="annulee">Annulées</option>
+    </select>
+  </div>
+  <div id="liste-commandes">Chargement...</div>
+  <button class="btn btn-sec" id="btn-plus" onclick="voirPlus()" style="margin-top:8px">Voir plus de commandes</button>
 </div>
 
+</div><!-- /zone-admin -->
 </div>
 
-<div class="overlay-modif" id="overlay-modif">
-<div class="modif-carte">
-<h2>✏️ Modifier le partenaire</h2>
-<input type="hidden" id="mp-id">
-<label>Nom</label>
-<input type="text" id="mp-nom">
-<label>Numéro de téléphone</label>
-<input type="tel" id="mp-tel">
-<label>Type</label>
-<select id="mp-type">
-<option value="particulier">Particulier</option>
-<option value="personnel">Personnel</option>
-<option value="ecole">École</option>
-<option value="entreprise">Entreprise</option>
-</select>
-<label>Code promo</label>
-<input type="text" id="mp-code">
-<label>Type de réduction client</label>
-<select id="mp-remise-type">
-<option value="pourcentage">Pourcentage (%)</option>
-<option value="fixe">Montant fixe (FCFA)</option>
-</select>
-<label>Valeur de la réduction</label>
-<input type="number" id="mp-remise-valeur">
-<label>Type de commission partenaire</label>
-<select id="mp-commission-type">
-<option value="pourcentage">Pourcentage (%)</option>
-<option value="fixe">Montant fixe (FCFA)</option>
-</select>
-<label>Valeur de la commission</label>
-<input type="number" id="mp-commission-valeur">
-<label>Jours actifs (laisser vide = tous les jours)</label>
-<div>
-<label class="jours-case"><input type="checkbox" value="0" class="mp-jour"> Dim</label>
-<label class="jours-case"><input type="checkbox" value="1" class="mp-jour"> Lun</label>
-<label class="jours-case"><input type="checkbox" value="2" class="mp-jour"> Mar</label>
-<label class="jours-case"><input type="checkbox" value="3" class="mp-jour"> Mer</label>
-<label class="jours-case"><input type="checkbox" value="4" class="mp-jour"> Jeu</label>
-<label class="jours-case"><input type="checkbox" value="5" class="mp-jour"> Ven</label>
-<label class="jours-case"><input type="checkbox" value="6" class="mp-jour"> Sam</label>
-</div>
-<button class="btn" onclick="enregistrerModification()">Enregistrer</button>
-<button class="btn btn-secondaire" onclick="fermerModif()">Annuler</button>
-<div id="resultat-modif"></div>
-</div>
+<!-- OVERLAY MODIFIER PARTENAIRE -->
+<div class="overlay-mod" id="overlay-mod">
+  <div class="mod-carte">
+    <h2>✏️ Modifier le partenaire</h2>
+    <input type="hidden" id="mp-id">
+    <label>Nom</label><input type="text" id="mp-nom">
+    <label>Téléphone</label><input type="tel" id="mp-tel">
+    <label>Type</label>
+    <select id="mp-type">
+      <option value="particulier">Particulier</option>
+      <option value="personnel">Personnel</option>
+      <option value="ecole">École</option>
+      <option value="entreprise">Entreprise</option>
+    </select>
+    <label>Code promo</label><input type="text" id="mp-code" style="text-transform:uppercase">
+    <label>Nouveau mot de passe <small style="font-weight:400">(laisser vide = inchangé)</small></label>
+    <input type="text" id="mp-mdp" placeholder="Nouveau mot de passe personnalisé">
+    <label>Type de réduction</label>
+    <select id="mp-remise-type">
+      <option value="pourcentage">Pourcentage (%)</option>
+      <option value="fixe">Montant fixe (FCFA)</option>
+    </select>
+    <label>Valeur réduction</label><input type="number" id="mp-remise-valeur">
+    <label>Type de commission</label>
+    <select id="mp-commission-type">
+      <option value="pourcentage">Pourcentage (%)</option>
+      <option value="fixe">Montant fixe (FCFA)</option>
+    </select>
+    <label>Valeur commission</label><input type="number" id="mp-commission-valeur">
+    <label>Jours actifs</label>
+    <div>
+      <label class="jours-case"><input type="checkbox" value="0" class="mp-jour"> Dim</label>
+      <label class="jours-case"><input type="checkbox" value="1" class="mp-jour"> Lun</label>
+      <label class="jours-case"><input type="checkbox" value="2" class="mp-jour"> Mar</label>
+      <label class="jours-case"><input type="checkbox" value="3" class="mp-jour"> Mer</label>
+      <label class="jours-case"><input type="checkbox" value="4" class="mp-jour"> Jeu</label>
+      <label class="jours-case"><input type="checkbox" value="5" class="mp-jour"> Ven</label>
+      <label class="jours-case"><input type="checkbox" value="6" class="mp-jour"> Sam</label>
+    </div>
+    <button class="btn" onclick="enregistrerMod()">Enregistrer</button>
+    <button class="btn btn-sec" onclick="fermerMod()">Annuler</button>
+    <div id="res-mod"></div>
+  </div>
 </div>
 
 <script>
+// ===================== DONNÉES PRODUITS =====================
+const PRODUITS_LISTE = [
+  // Crèmes petits pots
+  {id:"banane-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"Crème Glacée Banane 1 000 FCFA"},
+  {id:"vanille-p", cat:"🍦 Crèmes Petits Pots (125ml)", nom:"Crème Glacée Vanille 700 FCFA"},
+  {id:"choco-p",   cat:"🍦 Crèmes Petits Pots (125ml)", nom:"Crème Glacée Chocolat 600 FCFA"},
+  {id:"fraise-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"Crème Glacée Fraise 700 FCFA"},
+  {id:"pk-ban-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Banane Petit (5 pots) 7 000 FCFA"},
+  {id:"pk-van-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Vanille Petit (5 pots) 5 500 FCFA"},
+  {id:"pk-cho-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Chocolat Petit (5 pots) 5 000 FCFA"},
+  {id:"pk-fra-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Fraise Petit (5 pots) 5 500 FCFA"},
+  {id:"pk-mix-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Découverte Mix Petit 6 000 FCFA"},
+  // Crèmes grands pots
+  {id:"banane-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"Fruits Naturel Banane 2 000 FCFA"},
+  {id:"vanille-g", cat:"🍨 Crèmes Grands Pots (250ml)", nom:"Vanille Lactée Grand 1 400 FCFA"},
+  {id:"choco-g",   cat:"🍨 Crèmes Grands Pots (250ml)", nom:"Chocolat Cacao au Lait Grand 1 200 FCFA"},
+  {id:"fraise-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"Crème Fraise Grand 1 400 FCFA"},
+  {id:"pk-ban-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Banane Grand (4 pots) 10 000 FCFA"},
+  {id:"pk-van-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Vanille Grand (4 pots) 7 600 FCFA"},
+  {id:"pk-cho-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Chocolat Grand (4 pots) 6 800 FCFA"},
+  {id:"pk-fra-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Fraise Grand (4 pots) 7 600 FCFA"},
+  {id:"pk-mix-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Mix Grand Format 10 000 FCFA"},
+  // Autres
+  {id:"pop-sachet",cat:"🍿 Popcorn",  nom:"Popcorn Sachet 300 FCFA"},
+  {id:"pop-carton",cat:"🍿 Popcorn",  nom:"Popcorn Carton 500 FCFA"},
+  {id:"pain-700",  cat:"🥖 Pain",     nom:"Pain Anglais 700 FCFA"},
+  {id:"pain-1000", cat:"🥖 Pain",     nom:"Pain Anglais 1 000 FCFA"},
+  {id:"esq-500",   cat:"🍨 Esquimau", nom:"Esquimau Sandra 500 FCFA"},
+  {id:"esq-800",   cat:"🍨 Esquimau", nom:"Esquimau Sandra Chocolat Coco 800 FCFA"},
+  {id:"creme-6250",cat:"📦 Gros Format", nom:"Crème Glacée 6250ml 35 000 FCFA"},
+  {id:"pk-ceremonie",cat:"📦 Gros Format", nom:"🎁 Pack Fête/Cérémonie (2 seaux) 72 000 FCFA"},
+];
 
+// ===================== ÉTAT =====================
 let mdpAdmin = "";
+let partenairesListe = [];
+let commandesListe = [];
+let produitsEtat = {};
+let nbVisible = 15;
+const JOURS = ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
 
-function connexionAdmin(){
+// ===================== CONNEXION =====================
+function connexion() {
   mdpAdmin = document.getElementById("mdp-admin").value;
   if (mdpAdmin === "delfioficiel") {
     document.getElementById("carte-login").classList.add("cachee");
     document.getElementById("zone-admin").classList.remove("cachee");
     rafraichirTout();
+    chargerProduitsEtat();
   } else {
-    document.getElementById("erreur-login").innerHTML = `<div class="erreur">Mot de passe incorrect</div>`;
+    document.getElementById("err-login").innerHTML = `<div class="erreur">Mot de passe incorrect</div>`;
   }
 }
 
-function appelAdmin(action, donneesSupplementaires){
-let corps = Object.assign({ motDePasseAdmin: mdpAdmin, action: action }, donneesSupplementaires || {});
-return fetch("/api/admin", {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify(corps)
-}).then(r => r.json().then(d => ({ ok: r.ok, d })));
+// ===================== API =====================
+function apiAdmin(action, extras) {
+  return fetch("/api/admin", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({motDePasseAdmin: mdpAdmin, action, ...extras})
+  }).then(r => r.json().then(d => ({ok: r.ok, d})));
 }
 
-let dernierePartenairesListe = [];
-let dernieresCommandesListe = [];
-let archivesVisibles = false;
-
-function rafraichirTout(){
-appelAdmin("tout_voir").then(({ ok, d }) => {
-if(ok){
-dernierePartenairesListe = d.partenaires || [];
-dernieresCommandesListe = d.commandes || [];
-afficherPartenaires(d.partenaires || []);
-rafraichirAffichageCommandes();
-} else {
-document.getElementById("liste-partenaires").innerHTML = "<p>Erreur : " + (d.erreur || "") + " " + (d.details || "") + "</p>";
-document.getElementById("liste-commandes").innerHTML = "<p>Erreur : " + (d.erreur || "") + " " + (d.details || "") + "</p>";
-}
-}).catch((err) => {
-document.getElementById("liste-partenaires").innerHTML = "<p>Impossible de se connecter à la base de données. " + err.message + "</p>";
-document.getElementById("liste-commandes").innerHTML = "<p>Impossible de se connecter à la base de données. " + err.message + "</p>";
-});
-}
-
-function rafraichirAffichageCommandes(){
-let tri = document.getElementById("tri-commandes").value;
-let liste = dernieresCommandesListe.slice();
-liste.sort((a, b) => tri === "recent" ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date));
-if(!archivesVisibles){
-liste = liste.slice(0, 15);
-}
-afficherCommandes(liste, dernierePartenairesListe);
-document.getElementById("btn-archives").innerText = archivesVisibles
-? "Masquer les archives (afficher seulement les 15 dernières)"
-: "Voir les commandes archivées (" + Math.max(0, dernieresCommandesListe.length - 15) + " de plus)";
-}
-
-function basculerArchives(){
-archivesVisibles = !archivesVisibles;
-rafraichirAffichageCommandes();
-}
-
-function supprimerCommande(id){
-if(!confirm("Supprimer définitivement cette commande ?")) return;
-appelAdmin("supprimer_commande", { commandeId: id }).then(({ ok, d }) => {
-if(!ok){
-alert("Erreur : " + (d.erreur || ""));
-return;
-}
-rafraichirTout();
-});
-}
-
-function creerCodesAutomatiques(){
-appelAdmin("creer_codes_automatiques").then(({ ok, d }) => {
-let zone = document.getElementById("resultat-codes-auto");
-if(!ok){
-zone.innerHTML = `<div class="erreur">${d.erreur} ${d.details || ""}</div>`;
-return;
-}
-zone.innerHTML = `<div class="succes">Fait ! ${d.resultats.map(r => r.code + " : " + r.statut).join(" — ")}</div>`;
-rafraichirTout();
-});
-}
-
-function creerPartenaire(){
-let jours = Array.from(document.querySelectorAll(".np-jour:checked")).map(c => Number(c.value));
-let donnees = {
-nom: document.getElementById("np-nom").value,
-telephone: document.getElementById("np-tel").value,
-type: document.getElementById("np-type").value,
-code: document.getElementById("np-code").value,
-remiseType: document.getElementById("np-remise-type").value,
-remiseValeur: document.getElementById("np-remise-valeur").value,
-commissionType: document.getElementById("np-commission-type").value,
-commissionValeur: document.getElementById("np-commission-valeur").value,
-joursActifs: jours
-};
-appelAdmin("creer_partenaire", donnees).then(({ ok, d }) => {
-let zone = document.getElementById("resultat-creation");
-if(!ok){
-zone.innerHTML = `<div class="erreur">${d.erreur} ${d.details || ""}</div>`;
-return;
-}
-zone.innerHTML = `
-<div class="succes">Partenaire créé : ${d.partenaire.nom}</div>
-<div class="mdp-affiche">
-Mot de passe temporaire pour ${d.partenaire.nom} :<br>${d.motDePasseTemporaire}<br>
-<small>Communiquez-le au partenaire, il pourra le changer plus tard.</small>
-</div>
-`;
-rafraichirTout();
-});
-}
-
-function basculerActif(id){
-appelAdmin("basculer_actif", { partenaireId: id }).then(() => rafraichirTout());
-}
-
-function reinitialiserMotDePasse(id, nom){
-appelAdmin("reinitialiser_mot_de_passe", { partenaireId: id }).then(({ ok, d }) => {
-if(ok){
-alert(`Nouveau mot de passe pour ${nom} : ${d.motDePasseTemporaire}`);
-}
-});
-}
-
-function payerToutLeSolde(id, nom){
-if(!confirm(`Marquer tout le solde de ${nom} comme payé ?`)) return;
-appelAdmin("payer_tout_le_solde", { partenaireId: id }).then(() => rafraichirTout());
-}
-
-function supprimerPartenaire(id, nom){
-if(!confirm(`Supprimer définitivement ${nom} ? Cette action est irréversible.`)) return;
-appelAdmin("supprimer_partenaire", { partenaireId: id }).then(({ ok, d }) => {
-if(!ok){
-alert("Erreur : " + (d.erreur || ""));
-return;
-}
-rafraichirTout();
-});
-}
-
-function ouvrirModif(id){
-let p = dernierePartenairesListe.find(x => x.id === id);
-if(!p) return;
-
-document.getElementById("mp-id").value = p.id;
-document.getElementById("mp-nom").value = p.nom || "";
-document.getElementById("mp-tel").value = p.telephone || "";
-document.getElementById("mp-type").value = p.type || "particulier";
-document.getElementById("mp-code").value = p.code || "";
-document.getElementById("mp-remise-type").value = p.remiseType || "pourcentage";
-document.getElementById("mp-remise-valeur").value = p.remiseValeur || 0;
-document.getElementById("mp-commission-type").value = p.commissionType || "pourcentage";
-document.getElementById("mp-commission-valeur").value = p.commissionValeur || 0;
-
-document.querySelectorAll(".mp-jour").forEach(c => {
-c.checked = (p.joursActifs || []).includes(Number(c.value));
-});
-
-document.getElementById("resultat-modif").innerHTML = "";
-document.getElementById("overlay-modif").classList.add("actif");
-}
-
-function fermerModif(){
-document.getElementById("overlay-modif").classList.remove("actif");
-}
-
-function enregistrerModification(){
-let jours = Array.from(document.querySelectorAll(".mp-jour:checked")).map(c => Number(c.value));
-let donnees = {
-partenaireId: document.getElementById("mp-id").value,
-nom: document.getElementById("mp-nom").value,
-telephone: document.getElementById("mp-tel").value,
-type: document.getElementById("mp-type").value,
-code: document.getElementById("mp-code").value,
-remiseType: document.getElementById("mp-remise-type").value,
-remiseValeur: document.getElementById("mp-remise-valeur").value,
-commissionType: document.getElementById("mp-commission-type").value,
-commissionValeur: document.getElementById("mp-commission-valeur").value,
-joursActifs: jours
-};
-appelAdmin("modifier_partenaire", donnees).then(({ ok, d }) => {
-let zone = document.getElementById("resultat-modif");
-if(!ok){
-zone.innerHTML = `<div class="erreur">${d.erreur || ""} ${d.details || ""}</div>`;
-return;
-}
-fermerModif();
-rafraichirTout();
-});
-}
-
-function validerLivraison(id){
-appelAdmin("valider_livraison", { commandeId: id }).then(() => rafraichirTout());
-}
-
-function annulerCommande(id){
-if(!confirm("Annuler cette commande ?")) return;
-appelAdmin("annuler_commande", { commandeId: id }).then(() => rafraichirTout());
-}
-
-function marquerCommissionPayee(id){
-appelAdmin("marquer_commission_payee", { commandeId: id }).then(() => rafraichirTout());
-}
-
-function afficherPartenaires(partenaires){
-let zone = document.getElementById("liste-partenaires");
-let zoneAlerte = document.getElementById("alerte-reclamations");
-
-let enReclamation = partenaires.filter(p => p.reclamationEnCours);
-if(enReclamation.length > 0){
-zoneAlerte.innerHTML = `
-<div class="carte" style="border:2px solid #c62828">
-<h2 style="color:#c62828">🔔 ${enReclamation.length} partenaire(s) réclament leur paiement</h2>
-${enReclamation.map(p => `<div>• <strong>${p.nom}</strong> (${p.code}) — depuis le ${new Date(p.reclamationDate).toLocaleString("fr-FR")}</div>`).join("")}
-</div>
-`;
-} else {
-zoneAlerte.innerHTML = "";
-}
-
-if(!partenaires || partenaires.length === 0){
-zone.innerHTML = "<p>Aucun partenaire pour l'instant.</p>";
-return;
-}
-zone.innerHTML = partenaires.map(p => `
-<div class="ligne-partenaire" ${p.reclamationEnCours ? 'style="border:2px solid #c62828"' : ""}>
-${p.reclamationEnCours ? '<div class="badge badge-annulee" style="margin-bottom:6px">🔔 Réclame son paiement</div><br>' : ""}
-<strong>${p.nom}</strong> — ${p.code}<br>
-📞 ${p.telephone} — ${p.type}<br>
-Réduction : ${p.remiseValeur}${p.remiseType === "pourcentage" ? "%" : " FCFA"} —
-Commission : ${p.commissionValeur}${p.commissionType === "pourcentage" ? "%" : " FCFA"}<br>
-${p.actif ? '<span class="badge badge-livree">Actif</span>' : '<span class="badge badge-annulee">Désactivé</span>'}
-<div>
-<button class="btn-petit ${p.actif ? 'btn-rouge' : 'btn-vert'}" onclick="basculerActif('${p.id}')">${p.actif ? 'Désactiver' : 'Activer'}</button>
-<button class="btn-petit btn-bleu" onclick="ouvrirModif('${p.id}')">Modifier</button>
-<button class="btn-petit btn-secondaire" onclick="reinitialiserMotDePasse('${p.id}','${p.nom}')">Réinitialiser mot de passe</button>
-<button class="btn-petit btn-vert" onclick="payerToutLeSolde('${p.id}','${p.nom}')">Payer tout le solde</button>
-<button class="btn-petit btn-rouge" onclick="supprimerPartenaire('${p.id}','${p.nom}')">Supprimer</button>
-</div>
-</div>
-`).join("");
-}
-
-function afficherCommandes(commandes, partenaires){
-let zone = document.getElementById("liste-commandes");
-if(!commandes || commandes.length === 0){
-zone.innerHTML = "<p>Aucune commande pour l'instant.</p>";
-return;
-}
-zone.innerHTML = commandes.map(c => {
-let badgeLivraison = c.statutLivraison === "livree"
-? '<span class="badge badge-livree">Livrée</span>'
-: c.statutLivraison === "annulee"
-? '<span class="badge badge-annulee">Annulée</span>'
-: '<span class="badge badge-attente">En attente</span>';
-let badgeCommission = c.commission > 0
-? (c.statutCommission === "paye"
-? '<span class="badge badge-paye">Commission payée</span>'
-: '<span class="badge badge-impaye">Commission impayée</span>')
-: "";
-let partenaireLie = partenaires.find(p => p.id === c.partenaireId);
-let ligneOrigine = "";
-if(c.code){
-if(partenaireLie && partenaireLie.auto){
-ligneOrigine = `🤖 Code automatique <strong>${c.code}</strong> (aucune commission — pour vous-même)`;
-} else if(partenaireLie){
-ligneOrigine = `🤝 Partenaire : <strong>${partenaireLie.nom}</strong> (code ${c.code})`;
-} else {
-ligneOrigine = `Code ${c.code} (partenaire supprimé)`;
-}
-}
-return `
-<div class="ligne-commande">
-${new Date(c.date).toLocaleString("fr-FR")}<br>
-${c.nomClient ? "👤 " + c.nomClient + " — " : ""}📞 ${c.telClient || "non renseigné"}<br>
-${c.localisation ? "📍 " + c.localisation + "<br>" : ""}
-${c.modePaiement ? "💳 " + (c.modePaiement === "orange" ? "Orange Money" : c.modePaiement === "wave" ? "Wave" : "Espèces") + "<br>" : ""}
-Total : ${c.montantTotal.toLocaleString("fr-FR")} FCFA
-${c.code ? ` — réduction ${c.remise.toLocaleString("fr-FR")} FCFA` : ""}<br>
-${ligneOrigine ? ligneOrigine + "<br>" : ""}
-${badgeLivraison} ${badgeCommission}
-<div>
-${c.statutLivraison === "en_attente" ? `<button class="btn-petit btn-vert" onclick="validerLivraison('${c.id}')">Valider la livraison</button>
-<button class="btn-petit btn-rouge" onclick="annulerCommande('${c.id}')">Annuler</button>` : ""}
-${c.statutLivraison === "livree" && c.commission > 0 && c.statutCommission === "impaye" ? `<button class="btn-petit btn-secondaire" onclick="marquerCommissionPayee('${c.id}')">Marquer commission payée</button>` : ""}
-<button class="btn-petit btn-rouge" onclick="supprimerCommande('${c.id}')">Supprimer</button>
-</div>
-</div>
-`;
-}).join("");
-}
-
-</script>
-<script>
-let afficherCommandesOriginal = afficherCommandes;
-afficherCommandes = function(commandes, partenaires){
-afficherCommandesOriginal(commandes, partenaires);
-let zone = document.getElementById("liste-commandes");
-let lignes = zone.querySelectorAll(".ligne-commande");
-commandes.forEach(function(c, i){
-if(c.source && c.source !== "direct" && lignes[i]){
-let div = document.createElement("div");
-div.innerHTML = "🔗 Source : " + c.source;
-lignes[i].appendChild(div);
-}
-});
-};
-</script>
-<script>
-(function(){
-
-let rafraichirAffichageCommandesOriginal = rafraichirAffichageCommandes;
-rafraichirAffichageCommandes = function(){
-let tri = document.getElementById("tri-commandes").value;
-let liste = dernieresCommandesListe.filter(c => window.archivesCommandesVisibles ? c.archive : !c.archive);
-liste.sort((a, b) => tri === "recent" ? new Date(b.date) - new Date(a.date) : new Date(a.date) - new Date(b.date));
-afficherCommandes(liste, dernierePartenairesListe);
-let totalArchivees = dernieresCommandesListe.filter(c => c.archive).length;
-let btn = document.getElementById("btn-archives");
-if(btn){
-btn.innerText = window.archivesCommandesVisibles ? "Masquer les archives" : "Voir les commandes archivées (" + totalArchivees + ")";
-btn.onclick = function(){ window.archivesCommandesVisibles = !window.archivesCommandesVisibles; rafraichirAffichageCommandes(); };
-}
-};
-
-window.archivesCommandesVisibles = false;
-
-let afficherCommandesOriginal = afficherCommandes;
-afficherCommandes = function(commandes, partenaires){
-afficherCommandesOriginal(commandes, partenaires);
-let zone = document.getElementById("liste-commandes");
-let lignes = zone.querySelectorAll(".ligne-commande");
-commandes.forEach(function(c, i){
-if(!lignes[i]) return;
-let boutonsDiv = lignes[i].querySelector("div:last-child");
-if(!boutonsDiv) return;
-let btnArchive = document.createElement("button");
-btnArchive.className = "btn-petit " + (c.archive ? "btn-vert" : "btn-secondaire");
-btnArchive.innerText = c.archive ? "Désarchiver" : "Archiver";
-btnArchive.onclick = function(){
-appelAdmin(c.archive ? "desarchiver_commande" : "archiver_commande", { commandeId: c.id }).then(() => rafraichirTout());
-};
-boutonsDiv.appendChild(btnArchive);
-});
-};
-
-window.archivesPartenairesVisibles = false;
-
-let afficherPartenairesOriginal = afficherPartenaires;
-afficherPartenaires = function(partenaires){
-let listeAffichee = partenaires.filter(p => window.archivesPartenairesVisibles ? p.archive : !p.archive);
-afficherPartenairesOriginal(listeAffichee);
-
-let zone = document.getElementById("liste-partenaires");
-let lignes = zone.querySelectorAll(".ligne-partenaire");
-listeAffichee.forEach(function(p, i){
-if(!lignes[i]) return;
-let boutonsDiv = lignes[i].querySelector("div:last-child");
-if(!boutonsDiv) return;
-let btnArchive = document.createElement("button");
-btnArchive.className = "btn-petit " + (p.archive ? "btn-vert" : "btn-secondaire");
-btnArchive.innerText = p.archive ? "Désarchiver" : "Archiver";
-btnArchive.onclick = function(){
-appelAdmin(p.archive ? "desarchiver_partenaire" : "archiver_partenaire", { partenaireId: p.id }).then(() => rafraichirTout());
-};
-boutonsDiv.appendChild(btnArchive);
-});
-
-if(!document.getElementById("btn-archives-partenaires")){
-let btn = document.createElement("button");
-btn.className = "btn btn-secondaire";
-btn.id = "btn-archives-partenaires";
-zone.parentElement.appendChild(btn);
-}
-let btnArchivesPart = document.getElementById("btn-archives-partenaires");
-let totalArchivesPart = partenaires.filter(p => p.archive).length;
-btnArchivesPart.innerText = window.archivesPartenairesVisibles ? "Masquer les archives" : "Voir les partenaires archivés (" + totalArchivesPart + ")";
-btnArchivesPart.onclick = function(){
-window.archivesPartenairesVisibles = !window.archivesPartenairesVisibles;
-afficherPartenaires(dernierePartenairesListe);
-};
-};
-
-})();
-</script>
-<!-- SYSTEME DE MODIFICATION DE MOT DE PASSE PARTENAIRE -->
-<script>
-(function() {
-  // Attendre le chargement complet de la page Admin
-  document.addEventListener("DOMContentLoaded", function() {
-    
-    // Observer les clics sur les cartes des partenaires
-    document.body.addEventListener("click", function(e) {
-      
-      // Si on clique sur un bouton "Réinitialiser mot de passe"
-      if (e.target && e.target.innerText.includes("Réinitialiser mot de passe")) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        // Demander le nouveau mot de passe à l'administrateur
-        let nouveauMdp = prompt("Saisissez le NOUVEAU mot de passe pour ce partenaire :");
-
-        if (nouveauMdp && nouveauMdp.trim() !== "") {
-          let motDePasseNettoye = nouveauMdp.trim();
-
-          // Récupération de la liste des partenaires sauvegardés
-          let partenaires = JSON.parse(localStorage.getItem("partenaires")) || [];
-
-          // Recherche de la carte du partenaire ciblé dans le HTML
-          let cartePartenaire = e.target.closest("[data-id]") || e.target.parentElement;
-          let nomPartenaire = cartePartenaire ? cartePartenaire.innerText : "";
-
-          // Mise à jour dans la base de données (localStorage)
-          let misAJour = false;
-          partenaires = partenaires.map(p => {
-            if (nomPartenaire.includes(p.nom) || nomPartenaire.includes(p.code)) {
-              p.mdp = motDePasseNettoye;
-              misAJour = true;
-            }
-            return p;
-          });
-
-          if (misAJour) {
-            localStorage.setItem("partenaires", JSON.stringify(partenaires));
-            alert("✅ Le mot de passe a été modifié avec succès ! Nouveau mot de passe : " + motDePasseNettoye);
-            location.reload();
-          } else {
-            alert("🔑 Nouveau mot de passe généré : " + motDePasseNettoye + "\n(Pensez à le noter et à le transmettre au partenaire).");
-          }
-        }
-      }
-    });
-
+// ===================== TOUT CHARGER =====================
+function rafraichirTout() {
+  apiAdmin("tout_voir").then(({ok, d}) => {
+    if (!ok) { alert("Erreur: " + (d.erreur || "")); return; }
+    partenairesListe = d.partenaires || [];
+    commandesListe = (d.commandes || []).sort((a,b) => new Date(b.date)-new Date(a.date));
+    afficherPartenaires(partenairesListe);
+    triCommandes();
+    afficherAlertes(partenairesListe);
   });
-})();
-                                 </script>
-  
-<!-- SYSTEME DE VERROUILLAGE DU MOT DE PASSE PARTENAIRE -->
-<script>
-(function() {
-  // Attente du chargement
-  window.addEventListener("load", function() {
-    
-    // Interception des clics en phase de capture pour bloquer le script par défaut
-    document.body.addEventListener("click", function(e) {
-      
-      let cible = e.target;
-      if (cible && cible.innerText && cible.innerText.includes("Réinitialiser mot de passe")) {
-        
-        // Bloquer immédiatement l'action automatique par défaut
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
+}
 
-        // 1. Demander le mot de passe personnalisé
-        let nouveauMdp = prompt("Entrez le NOUVEAU mot de passe personnalisé pour ce partenaire :");
+// ===================== PRODUITS DISPONIBILITÉ =====================
+function chargerProduitsEtat() {
+  fetch("/api/admin", {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({action:"get_produits_etat"})
+  }).then(r => r.json()).then(d => {
+    produitsEtat = d.etat || {};
+    afficherProduitsAdmin();
+  }).catch(() => afficherProduitsAdmin());
+}
 
-        if (nouveauMdp && nouveauMdp.trim() !== "") {
-          let mdpFixe = nouveauMdp.trim();
-
-          // 2. Récupérer le nom du partenaire concerné dans le bloc HTML
-          let blocPartenaire = cible.closest("div") || cible.parentElement;
-          let texteBloc = blocPartenaire ? blocPartenaire.innerText : "";
-
-          // 3. Mettre à jour la base de données locale (localStorage)
-          let partenaires = JSON.parse(localStorage.getItem("partenaires")) || [];
-          let trouve = false;
-
-          partenaires = partenaires.map(p => {
-            // Vérification si le nom ou le code correspond
-            if (texteBloc.includes(p.nom) || (p.code && texteBloc.includes(p.code))) {
-              p.mdp = mdpFixe;
-              p.pass = mdpFixe; // Sécurité si la clé s'appelle 'pass'
-              trouve = true;
-            }
-            return p;
-          });
-
-          // Sauvegarde forcée
-          localStorage.setItem("partenaires", JSON.stringify(partenaires));
-
-          // 4. Mettre à jour l'affichage de l'écran pour éviter le retour au code aléatoire
-          let zoneMdp = document.querySelector(".mdp-temporaire") || document.querySelector("#temp-pass");
-          if (zoneMdp) {
-            zoneMdp.innerText = mdpFixe;
-          }
-
-          alert("✅ Mot de passe enregistré avec succès : " + mdpFixe);
-          location.reload();
-        }
-      }
-    }, true); // Le 'true' permet d'attraper le clic avant le script d'origine
-
-  });
-})();
-        </script>
-  <script>
-(function() {
-  // 1. Désactivation des popups automatiques par défaut qui affichent les codes aléatoires
-  const alertOriginale = window.alert;
-  window.alert = function(message) {
-    if (message && typeof message === 'string') {
-      // Bloque les messages contenant les codes générés automatiquement
-      if (message.includes("Nouveau mot de passe pour") || message.includes("Pensez à le noter") || /:[ A-Z0-9]{8}/.test(message)) {
-        return; 
-      }
-    }
-    alertOriginale(message);
-  };
-
-  // 2. Interception prioritaire lors du clic sur "Réinitialiser mot de passe"
-  document.addEventListener("click", function(e) {
-    let element = e.target;
-    
-    if (element && element.innerText && element.innerText.trim().includes("Réinitialiser mot de passe")) {
-      // Stoppe net le script par défaut de l'admin
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-
-      // Fenêtre pour choisir votre propre mot de passe
-      let nouveauMdp = prompt("Saisissez le mot de passe de votre choix pour ce partenaire :");
-
-      if (nouveauMdp && nouveauMdp.trim() !== "") {
-        let mdpChoisi = nouveauMdp.trim();
-
-        // Trouver le bloc du partenaire dans le DOM
-        let carte = element.closest(".partenaire-card") || element.closest("div") || element.parentElement;
-        let texteCarte = carte ? carte.innerText : "";
-
-        // Mettre à jour les données dans LocalStorage (toutes les clés possibles)
-        ["partenaires", "partners", "liste_partenaires"].forEach(function(cle) {
-          let liste = JSON.parse(localStorage.getItem(cle)) || [];
-          if (Array.isArray(liste) && liste.length > 0) {
-            liste.forEach(function(p) {
-              if (texteCarte.includes(p.nom) || (p.code && texteCarte.includes(p.code))) {
-                p.mdp = mdpChoisi;
-                p.pass = mdpChoisi;
-                p.password = mdpChoisi;
-                p.tempPass = mdpChoisi;
-              }
-            });
-            localStorage.setItem(cle, JSON.stringify(liste));
-          }
-        });
-
-        alertOriginale("✅ Mot de passe modifié avec succès : " + mdpChoisi);
-        location.reload();
-      }
-    }
-  }, true); // Le flag 'true' capture le clic avant le code standard
-})();
-  </script>
-  <style>
-  /* Cacher l'ancien bouton bugué */
-  button[onclick*="reset"], 
-  button[onclick*="Password"],
-  .btn-reset-pass {
-    display: none !important;
-  }
-
-  /* Style du nouveau bouton propre */
-  .btn-modifier-mdp-fixe {
-    background-color: #2e7d32 !important;
-    color: white !important;
-    border: none !important;
-    padding: 8px 12px !important;
-    border-radius: 6px !important;
-    font-weight: bold !important;
-    font-size: 13px !important;
-    cursor: pointer !important;
-    margin: 5px 0 !important;
-    display: inline-block !important;
-  }
-
-  .btn-admin-promo-fixe {
-    width: 100%;
-    max-width: 350px;
-    margin: 15px auto;
-    display: block;
-    background-color: #f2580c;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-</style>
-
-<script>
-(function() {
-  // 1. Forcer la suppression des alertes automatiques générées par l'ancien script
-  const oldAlert = window.alert;
-  window.alert = function(msg) {
-    if (msg && typeof msg === 'string' && (msg.includes("Nouveau mot de passe pour") || msg.includes("Pensez à le noter"))) {
-      return; // Annule le pop-up automatique
-    }
-    oldAlert(msg);
-  };
-
-  // 2. Traitement du changement de mot de passe
-  function corrigerInterface() {
-    let tousLesBoutons = document.querySelectorAll("button");
-    tousLesBoutons.forEach(function(btn) {
-      if (btn.innerText && (btn.innerText.includes("Réinitialiser") || btn.innerText.includes("mot de passe")) && !btn.classList.contains("btn-modifier-mdp-fixe")) {
-        
-        // On masque l'ancien bouton
-        btn.style.display = "none";
-
-        // On injecte le nouveau bouton si pas encore présent
-        if (!btn.parentNode.querySelector(".btn-modifier-mdp-fixe")) {
-          let nBtn = document.createElement("button");
-          nBtn.type = "button";
-          nBtn.className = "btn-modifier-mdp-fixe";
-          nBtn.innerText = "✏️ Changer le mot de passe";
-
-          nBtn.onclick = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            let mdp = prompt("Saisissez le NOUVEAU mot de passe pour ce partenaire :");
-            if (mdp && mdp.trim() !== "") {
-              let nouveauMdp = mdp.trim();
-              let carte = btn.closest("div") || btn.parentElement;
-              let txt = carte ? carte.innerText : "";
-
-              // Mise à jour directe des bases locales
-              ["partenaires", "partners", "users"].forEach(function(k) {
-                let d = JSON.parse(localStorage.getItem(k)) || [];
-                if (Array.isArray(d)) {
-                  d.forEach(function(p) {
-                    if (txt.includes(p.nom) || (p.code && txt.includes(p.code))) {
-                      p.mdp = nouveauMdp;
-                      p.pass = nouveauMdp;
-                      p.password = nouveauMdp;
-                    }
-                  });
-                  localStorage.setItem(k, JSON.stringify(d));
-                }
-              });
-
-              oldAlert("✅ Mot de passe enregistré : " + nouveauMdp);
-              location.reload();
-            }
-          };
-
-          btn.parentNode.insertBefore(nBtn, btn.nextSibling);
-        }
-      }
+function afficherProduitsAdmin() {
+  const cats = [...new Set(PRODUITS_LISTE.map(p => p.cat))];
+  let html = "";
+  cats.forEach(cat => {
+    html += `<div class="cat-titre">${cat}</div>`;
+    PRODUITS_LISTE.filter(p => p.cat === cat).forEach(p => {
+      const actif = p.id in produitsEtat ? produitsEtat[p.id] : true;
+      html += `<div class="ligne-produit">
+        <span class="nom-produit">${p.nom}</span>
+        <label class="toggle-switch">
+          <input type="checkbox" ${actif ? "checked" : ""} onchange="toggleProduit('${p.id}', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>`;
     });
-  }
+  });
+  document.getElementById("liste-produits-admin").innerHTML = html;
+}
 
-  // Lancement automatique
-  document.addEventListener("DOMContentLoaded", corrigerInterface);
-  window.addEventListener("load", corrigerInterface);
-  setInterval(corrigerInterface, 1000);
-})();
+function toggleProduit(produitId, actif) {
+  apiAdmin("set_produit_etat", {produitId, actif}).then(({ok, d}) => {
+    if (!ok) { alert("Erreur: " + (d.erreur||"")); chargerProduitsEtat(); return; }
+    produitsEtat[produitId] = actif;
+    document.getElementById("res-produits").innerHTML = `<div class="succes">✅ ${produitId} : ${actif ? "activé" : "désactivé"}</div>`;
+    setTimeout(() => { document.getElementById("res-produits").innerHTML = ""; }, 2000);
+  });
+}
+
+function resetProduitsEtat() {
+  if (!confirm("Réactiver tous les produits ?")) return;
+  apiAdmin("reset_produits_etat").then(({ok}) => {
+    if (ok) { produitsEtat = {}; afficherProduitsAdmin(); document.getElementById("res-produits").innerHTML = `<div class="succes">✅ Tous les produits réactivés</div>`; }
+  });
+}
+
+// ===================== ALERTES RÉCLAMATIONS =====================
+function afficherAlertes(partenaires) {
+  const recs = partenaires.filter(p => p.reclamationEnCours);
+  const zone = document.getElementById("alerte-reclamations");
+  if (recs.length === 0) { zone.innerHTML = ""; return; }
+  zone.innerHTML = `<div class="carte" style="border:2px solid #e65100">
+    <h2>🔔 Réclamations en attente (${recs.length})</h2>
+    ${recs.map(p => `<p>${p.nom} (${p.code}) — <a href="tel:${p.telephone}">${p.telephone}</a></p>`).join("")}
+  </div>`;
+}
+
+// ===================== PARTENAIRES =====================
+function afficherPartenaires(liste) {
+  if (!liste.length) { document.getElementById("liste-partenaires").innerHTML = "<p style='color:#888;font-size:13px'>Aucun partenaire</p>"; return; }
+  document.getElementById("liste-partenaires").innerHTML = liste.map(p => {
+    const jours = p.joursActifs && p.joursActifs.length ? p.joursActifs.map(j => JOURS[j]).join(", ") : "Tous les jours";
+    const remise = p.remiseType === "pourcentage" ? `${p.remiseValeur}%` : `${(p.remiseValeur||0).toLocaleString("fr-FR")} FCFA`;
+    const com = p.commissionType === "pourcentage" ? `${p.commissionValeur}%` : `${(p.commissionValeur||0).toLocaleString("fr-FR")} FCFA`;
+    return `<div class="ligne-part">
+      <strong>${p.nom}</strong> · Code : <code>${p.code}</code>
+      ${p.actif ? '<span class="badge" style="background:#e8f5e9;color:#2e7d32">✅ Actif</span>' : '<span class="badge" style="background:#ffebee;color:#c62828">⏸ Inactif</span>'}
+      ${p.reclamationEnCours ? '<span class="badge" style="background:#fff3e0;color:#e65100">🔔 Réclame</span>' : ""}
+      <br><span style="color:#888">Tél : ${p.telephone||"—"} · Type : ${p.type||"—"} · Jours : ${jours}</span>
+      <br><span style="color:#888">Remise : ${remise} · Commission : ${com}</span>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">
+        <button class="btn btn-bleu btn-petit" onclick="ouvrirMod('${p.id}')">✏️ Modifier</button>
+        <button class="btn btn-sec btn-petit" onclick="reinitMdp('${p.id}','${p.nom}')">🔑 Changer MDP</button>
+        <button class="btn ${p.actif?"btn-rouge":"btn-vert"} btn-petit" onclick="bascActif('${p.id}')">${p.actif?"⏸ Désactiver":"✅ Activer"}</button>
+        <button class="btn btn-rouge btn-petit" onclick="supprimerPart('${p.id}','${p.nom}')">🗑️ Supprimer</button>
+        ${p.reclamationEnCours ? `<button class="btn btn-vert btn-petit" onclick="solderPart('${p.id}')">💰 Payer solde</button>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function creerCodesAuto() {
+  apiAdmin("creer_codes_automatiques").then(({ok, d}) => {
+    document.getElementById("res-codes-auto").innerHTML = ok
+      ? `<div class="succes">${d.resultats.map(r => r.code + " : " + r.statut).join(" — ")}</div>`
+      : `<div class="erreur">${d.erreur}</div>`;
+    rafraichirTout();
+  });
+}
+
+function creerPartenaire() {
+  const jours = Array.from(document.querySelectorAll(".np-jour:checked")).map(c => Number(c.value));
+  const mdp = document.getElementById("np-mdp").value.trim();
+  if (!mdp) { document.getElementById("res-creation").innerHTML = `<div class="erreur">Veuillez définir un mot de passe pour ce partenaire</div>`; return; }
+  apiAdmin("creer_partenaire", {
+    nom: document.getElementById("np-nom").value,
+    telephone: document.getElementById("np-tel").value,
+    type: document.getElementById("np-type").value,
+    code: document.getElementById("np-code").value.toUpperCase(),
+    motDePasse: mdp,
+    remiseType: document.getElementById("np-remise-type").value,
+    remiseValeur: document.getElementById("np-remise-valeur").value,
+    commissionType: document.getElementById("np-commission-type").value,
+    commissionValeur: document.getElementById("np-commission-valeur").value,
+    joursActifs: jours
+  }).then(({ok, d}) => {
+    const z = document.getElementById("res-creation");
+    if (!ok) { z.innerHTML = `<div class="erreur">${d.erreur}</div>`; return; }
+    z.innerHTML = `<div class="succes">✅ Partenaire créé : ${d.partenaire.nom}</div>
+      <div class="mdp-affiche">🔑 Mot de passe : ${d.motDePasseTemporaire || mdp}</div>`;
+    rafraichirTout();
+  });
+}
+
+function bascActif(id) { apiAdmin("basculer_actif", {partenaireId:id}).then(() => rafraichirTout()); }
+
+function reinitMdp(id, nom) {
+  const mdp = prompt(`Nouveau mot de passe pour ${nom} (facile à retenir) :`);
+  if (!mdp || !mdp.trim()) return;
+  apiAdmin("reinitialiser_mot_de_passe", {partenaireId:id, motDePassePerso: mdp.trim()}).then(({ok, d}) => {
+    if (!ok) { alert("Erreur: " + (d.erreur||"")); return; }
+    alert(`✅ Nouveau mot de passe pour ${nom} : ${d.motDePasseTemporaire || mdp.trim()}`);
+    rafraichirTout();
+  });
+}
+
+function supprimerPart(id, nom) {
+  if (!confirm(`Supprimer ${nom} définitivement ?`)) return;
+  apiAdmin("supprimer_partenaire", {partenaireId:id}).then(() => rafraichirTout());
+}
+
+function solderPart(id) {
+  apiAdmin("payer_tout_le_solde", {partenaireId:id}).then(() => { alert("Solde payé !"); rafraichirTout(); });
+}
+
+// Modifier partenaire
+function ouvrirMod(id) {
+  const p = partenairesListe.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById("mp-id").value = p.id;
+  document.getElementById("mp-nom").value = p.nom||"";
+  document.getElementById("mp-tel").value = p.telephone||"";
+  document.getElementById("mp-type").value = p.type||"particulier";
+  document.getElementById("mp-code").value = p.code||"";
+  document.getElementById("mp-mdp").value = "";
+  document.getElementById("mp-remise-type").value = p.remiseType||"pourcentage";
+  document.getElementById("mp-remise-valeur").value = p.remiseValeur||0;
+  document.getElementById("mp-commission-type").value = p.commissionType||"pourcentage";
+  document.getElementById("mp-commission-valeur").value = p.commissionValeur||0;
+  document.querySelectorAll(".mp-jour").forEach(cb => {
+    cb.checked = p.joursActifs && p.joursActifs.includes(Number(cb.value));
+  });
+  document.getElementById("res-mod").innerHTML = "";
+  document.getElementById("overlay-mod").classList.add("actif");
+}
+
+function fermerMod() { document.getElementById("overlay-mod").classList.remove("actif"); }
+
+function enregistrerMod() {
+  const jours = Array.from(document.querySelectorAll(".mp-jour:checked")).map(c => Number(c.value));
+  const mdp = document.getElementById("mp-mdp").value.trim();
+  const data = {
+    partenaireId: document.getElementById("mp-id").value,
+    nom: document.getElementById("mp-nom").value,
+    telephone: document.getElementById("mp-tel").value,
+    type: document.getElementById("mp-type").value,
+    code: document.getElementById("mp-code").value.toUpperCase(),
+    remiseType: document.getElementById("mp-remise-type").value,
+    remiseValeur: document.getElementById("mp-remise-valeur").value,
+    commissionType: document.getElementById("mp-commission-type").value,
+    commissionValeur: document.getElementById("mp-commission-valeur").value,
+    joursActifs: jours
+  };
+  if (mdp) data.motDePassePerso = mdp;
+  apiAdmin("modifier_partenaire", data).then(({ok, d}) => {
+    if (!ok) { document.getElementById("res-mod").innerHTML = `<div class="erreur">${d.erreur}</div>`; return; }
+    fermerMod();
+    rafraichirTout();
+  });
+}
+
+// ===================== COMMANDES =====================
+function triCommandes() {
+  const tri = document.getElementById("tri-cmd").value;
+  const filtre = document.getElementById("filtre-cmd").value;
+  let liste = commandesListe.slice();
+  if (filtre !== "toutes") liste = liste.filter(c => c.statutLivraison === filtre);
+  if (tri === "ancien") liste.reverse();
+  afficherCommandes(liste.slice(0, nbVisible));
+  document.getElementById("btn-plus").style.display = liste.length > nbVisible ? "block" : "none";
+}
+
+function voirPlus() { nbVisible += 15; triCommandes(); }
+
+function afficherCommandes(liste) {
+  if (!liste.length) { document.getElementById("liste-commandes").innerHTML = `<p style='color:#888;font-size:13px'>Aucune commande</p>`; return; }
+  document.getElementById("liste-commandes").innerHTML = liste.map(c => {
+    const date = new Date(c.date).toLocaleString("fr-FR");
+    const statutLiv = {en_attente:"badge-attente", livree:"badge-livree", annulee:"badge-annulee"}[c.statutLivraison] || "badge-attente";
+    const statutCom = c.statutCommission === "paye" ? "badge-paye" : "badge-impaye";
+    const part = partenairesListe.find(p => p.id === c.partenaireId);
+
+    // Articles résumé
+    const articles = (c.articles || []).map(a => `${a.nom} ×${a.qte}`).join(", ");
+    const livStr = c.modeReception === "retrait" ? "Retrait au local" :
+      (c.fraisLivraison > 0 ? `Livraison ${c.fraisLivraison.toLocaleString("fr-FR")} FCFA` : "Livraison gratuite/incluse");
+
+    return `<div class="ligne-cmd">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <strong>${c.nomClient || "Client Noogo"}</strong>
+          <span class="badge ${statutLiv}">${c.statutLivraison?.replace("_"," ")}</span>
+        </div>
+        <strong style="color:#e8590c">${(c.montantTotal||0).toLocaleString("fr-FR")} FCFA</strong>
+      </div>
+      <div style="color:#888;font-size:12px;margin-top:3px">${date} · 📞 ${c.telClient || "—"}</div>
+      <div style="font-size:12px;margin-top:3px">📍 ${c.localisation||"—"} · 💳 ${c.modePaiement||"—"}</div>
+      ${articles ? `<div style="font-size:12px;margin-top:3px;color:#555">📦 ${articles}</div>` : ""}
+      <div style="font-size:12px;margin-top:2px;color:#555">🚚 ${livStr}</div>
+      ${c.remise > 0 ? `<div style="font-size:12px;color:#2e7d32">🎟️ Code ${c.codePromo||""} · Remise : −${c.remise.toLocaleString("fr-FR")} FCFA</div>` : ""}
+      ${part ? `<div style="font-size:12px">👥 Partenaire : ${part.nom} (${part.code}) · Com : <span class="badge ${statutCom}">${c.statutCommission||"—"}</span></div>` : ""}
+      <div style="margin-top:7px;display:flex;flex-wrap:wrap;gap:4px">
+        ${c.statutLivraison === "en_attente" ? `<button class="btn btn-vert btn-petit" onclick="validerLivraison('${c.id}')">✅ Livraison faite</button>
+        <button class="btn btn-rouge btn-petit" onclick="annulerCmd('${c.id}')">❌ Annuler</button>` : ""}
+        ${c.partenaireId && c.statutCommission !== "paye" && c.statutLivraison === "livree" ? `<button class="btn btn-bleu btn-petit" onclick="marquerCom('${c.id}')">💰 Commission payée</button>` : ""}
+        <button class="btn btn-rouge btn-petit" onclick="supprimerCmd('${c.id}')">🗑️ Supprimer</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function validerLivraison(id) {
+  apiAdmin("valider_livraison", {commandeId:id}).then(() => rafraichirTout());
+}
+function annulerCmd(id) {
+  if (!confirm("Annuler cette commande ?")) return;
+  apiAdmin("annuler_commande", {commandeId:id}).then(() => rafraichirTout());
+}
+function supprimerCmd(id) {
+  if (!confirm("Supprimer définitivement cette commande ?")) return;
+  apiAdmin("supprimer_commande", {commandeId:id}).then(() => rafraichirTout());
+}
+function marquerCom(id) {
+  apiAdmin("marquer_commission_payee", {commandeId:id}).then(() => rafraichirTout());
+}
+
+// Connexion avec touche Entrée
+document.getElementById("mdp-admin")?.addEventListener("keydown", e => { if (e.key === "Enter") connexion(); });
 </script>
-  
-
 </body>
 </html>

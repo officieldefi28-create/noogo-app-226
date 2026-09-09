@@ -92,21 +92,24 @@ header p{
 
 /* BANDEAU INSTALL */
 #bandeau-install{
-  display:none;
-  background:#fff3e0;
-  border-bottom:1px solid #ffcc80;
-  padding:10px 14px;
+  display:flex !important;
+  background:#e8590c;
+  border-bottom:3px solid #bf360c;
+  padding:14px 14px;
   align-items:center;
   justify-content:space-between;
   gap:10px;
+  position:sticky;
+  top:0;
+  z-index:1000;
 }
 
 #bandeau-install.visible{display:flex}
 
 .bandeau-install-txt{
-  font-size:13px;
-  color:#7a3e00;
-  font-weight:600;
+  font-size:15px;
+  color:#fff;
+  font-weight:700;
   flex:1;
 }
 
@@ -1281,6 +1284,10 @@ footer p{
 <!-- FOOTER -->
 <footer>
   <p class="footer-phone">📞 +226 61 68 27 06</p>
+
+  <button onclick="installerApp()" style="display:block;width:calc(100% - 16px);margin:16px 8px;padding:14px 20px;background:#e8590c;color:#fff;border:0;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">
+    ⬇️ Télécharger l'application Noogo
+  </button>
 
   <div class="footer-links">
     <a href="https://wa.me/22661682706" target="_blank" class="footer-btn location" style="background:#25d366;border:1px solid #25d366;margin:8px;color:#fff;">

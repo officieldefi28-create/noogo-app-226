@@ -360,9 +360,12 @@ function afficherProduitsAdmin() {
 }
 
 function toggleProduit(produitId, actif) {
+  produitsEtat[produitId] = actif;
   apiAdmin("set_produit_etat", {produitId, actif}).then(({ok, d}) => {
-    if (!ok) { alert("Erreur: " + (d.erreur||"")); chargerProduitsEtat(); return; }
-    produitsEtat[produitId] = actif;
+    if (!ok) { chargerProduitsEtat(); return; }
+    document.getElementById("res-produits").innerHTML = `<div class="succes">✅ ${produitId} : ${actif ? "activé" : "désactivé"}</div>`;
+    setTimeout(() => { document.getElementById("res-produits").innerHTML = ""; }, 2000);
+  }).catch(() => {
     document.getElementById("res-produits").innerHTML = `<div class="succes">✅ ${produitId} : ${actif ? "activé" : "désactivé"}</div>`;
     setTimeout(() => { document.getElementById("res-produits").innerHTML = ""; }, 2000);
   });

@@ -1,16 +1,21 @@
 const crypto = require("crypto");
 const { hacherMotDePasse } = require("./_auth");
-const { getPartenaires, setPartenaires, getCommandes, setCommandes } = require("./_store");
+const { getPartenaires, setPartenaires, getCommandes, setCommandes, getProduitsEtat, setProduitsEtat } = require("./_store");
 
 module.exports = async (req, res) => {
-  if (req.method !== "POST") {
-    return res.status(405).json({ erreur: "Méthode non autorisée" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ erreur: "Méthode non autorisée" });
 
   try {
     const data = req.body || {};
     const { motDePasseAdmin, action } = data;
 
+    // Action publique : lire état produits (pas besoin de mot de passe)
+    if (action === "get_produits_etat") {
+      const etat = await getProduitsEtat();
+      return res.status(200).json({ etat });
+    }
+
+    // Toutes les autres actions nécessitent le mot de passe admin
     if (motDePasseAdmin !== "delfioficiel") {
       return res.status(401).json({ erreur: "Mot de passe incorrect" });
     }
@@ -19,30 +24,52 @@ module.exports = async (req, res) => {
     let commandes = await getCommandes();
 
     switch (action) {
+
+      // ── PRODUITS VISIBILITÉ ──
+      case "toggle_produit": {
+        const { produitId } = data;
+        if (!produitId) return res.status(400).json({ erreur: "produitId requis" });
+        const etat = await getProduitsEtat();
+        const actuelEtat = produitId in etat ? etat[produitId] : true;
+        etat[produitId] = !actuelEtat;
+        await setProduitsEtat(etat);
+        return res.status(200).json({ succes: true, produitId, actif: etat[produitId] });
+      }
+
+      case "set_produit_etat": {
+        const { produitId, actif } = data;
+        if (!produitId) return res.status(400).json({ erreur: "produitId requis" });
+        const etat = await getProduitsEtat();
+        etat[produitId] = !!actif;
+        await setProduitsEtat(etat);
+        return res.status(200).json({ succes: true, produitId, actif: etat[produitId] });
+      }
+
+      case "reset_produits_etat": {
+        await setProduitsEtat({});
+        return res.status(200).json({ succes: true, message: "Tous les produits réactivés" });
+      }
+
+      // ── VUE GÉNÉRALE ──
       case "tout_voir": {
+        const etat = await getProduitsEtat();
         return res.status(200).json({
           partenaires,
-          commandes: commandes.slice().sort((a, b) => new Date(b.date) - new Date(a.date))
+          commandes: commandes.slice().sort((a, b) => new Date(b.date) - new Date(a.date)),
+          produitsEtat: etat
         });
       }
 
+      // ── PARTENAIRES ──
       case "creer_partenaire": {
         const { nom, telephone, type, code, remiseType, remiseValeur, commissionType, commissionValeur, joursActifs } = data;
-        if (!nom || !telephone || !code) {
-          return res.status(400).json({ erreur: "Nom, téléphone et code sont requis" });
-        }
-        const codeExiste = partenaires.some(
-          (p) => (p.code || "").toUpperCase() === String(code).toUpperCase()
-        );
-        if (codeExiste) {
-          return res.status(400).json({ erreur: "Ce code promo existe déjà" });
-        }
-        const motDePasseTemporaire = crypto.randomBytes(4).toString("hex").toUpperCase();
+        if (!nom || !telephone || !code) return res.status(400).json({ erreur: "Nom, téléphone et code requis" });
+        const codeExiste = partenaires.some(p => (p.code||"").toUpperCase() === String(code).toUpperCase());
+        if (codeExiste) return res.status(400).json({ erreur: "Ce code promo existe déjà" });
+        const mdpTemp = crypto.randomBytes(4).toString("hex").toUpperCase();
         const partenaire = {
           id: "PART-" + Date.now(),
-          nom,
-          telephone,
-          type: type || "particulier",
+          nom, telephone, type: type || "particulier",
           code: String(code).toUpperCase(),
           remiseType: remiseType || "pourcentage",
           remiseValeur: Number(remiseValeur) || 0,
@@ -50,81 +77,78 @@ module.exports = async (req, res) => {
           commissionValeur: Number(commissionValeur) || 0,
           joursActifs: joursActifs || [],
           actif: true,
-          motDePasseHache: hacherMotDePasse(motDePasseTemporaire)
+          motDePasseHache: hacherMotDePasse(mdpTemp)
         };
         partenaires.push(partenaire);
         await setPartenaires(partenaires);
-        return res.status(200).json({ succes: true, partenaire, motDePasseTemporaire });
+        return res.status(200).json({ succes: true, partenaire, motDePasseTemporaire: mdpTemp });
       }
 
       case "modifier_partenaire": {
         const { partenaireId, nom, telephone, type, code, remiseType, remiseValeur, commissionType, commissionValeur, joursActifs } = data;
-        const p = partenaires.find((p) => p.id === partenaireId);
+        const p = partenaires.find(p => p.id === partenaireId);
         if (!p) return res.status(404).json({ erreur: "Partenaire introuvable" });
-
         if (code) {
-          const nouveauCode = String(code).toUpperCase();
-          const codeExisteAilleurs = partenaires.some(
-            (autre) => autre.id !== partenaireId && (autre.code || "").toUpperCase() === nouveauCode
-          );
-          if (codeExisteAilleurs) {
-            return res.status(400).json({ erreur: "Ce code promo est déjà utilisé par un autre partenaire" });
-          }
-          p.code = nouveauCode;
+          const ncode = String(code).toUpperCase();
+          if (partenaires.some(a => a.id !== partenaireId && (a.code||"").toUpperCase() === ncode))
+            return res.status(400).json({ erreur: "Code déjà utilisé" });
+          p.code = ncode;
         }
-
-        if (nom !== undefined && nom !== "") p.nom = nom;
-        if (telephone !== undefined && telephone !== "") p.telephone = telephone;
-        if (type !== undefined && type !== "") p.type = type;
-        if (remiseType !== undefined && remiseType !== "") p.remiseType = remiseType;
-        if (remiseValeur !== undefined && remiseValeur !== "") p.remiseValeur = Number(remiseValeur) || 0;
-        if (commissionType !== undefined && commissionType !== "") p.commissionType = commissionType;
-        if (commissionValeur !== undefined && commissionValeur !== "") p.commissionValeur = Number(commissionValeur) || 0;
+        if (nom) p.nom = nom;
+        if (telephone) p.telephone = telephone;
+        if (type) p.type = type;
+        if (remiseType) p.remiseType = remiseType;
+        if (remiseValeur !== undefined) p.remiseValeur = Number(remiseValeur) || 0;
+        if (commissionType) p.commissionType = commissionType;
+        if (commissionValeur !== undefined) p.commissionValeur = Number(commissionValeur) || 0;
         if (joursActifs !== undefined) p.joursActifs = joursActifs;
-
         await setPartenaires(partenaires);
         return res.status(200).json({ succes: true, partenaire: p });
       }
 
       case "supprimer_partenaire": {
         const avant = partenaires.length;
-        partenaires = partenaires.filter((p) => p.id !== data.partenaireId);
-        if (partenaires.length === avant) {
-          return res.status(404).json({ erreur: "Partenaire introuvable" });
-        }
+        partenaires = partenaires.filter(p => p.id !== data.partenaireId);
+        if (partenaires.length === avant) return res.status(404).json({ erreur: "Introuvable" });
         await setPartenaires(partenaires);
         return res.status(200).json({ succes: true });
+      }
+
+      case "basculer_actif": {
+        const p = partenaires.find(p => p.id === data.partenaireId);
+        if (!p) return res.status(404).json({ erreur: "Introuvable" });
+        p.actif = !p.actif;
+        await setPartenaires(partenaires);
+        return res.status(200).json({ succes: true });
+      }
+
+      case "reinitialiser_mot_de_passe": {
+        const p = partenaires.find(p => p.id === data.partenaireId);
+        if (!p) return res.status(404).json({ erreur: "Introuvable" });
+        const mdpTemp = crypto.randomBytes(4).toString("hex").toUpperCase();
+        p.motDePasseHache = hacherMotDePasse(mdpTemp);
+        await setPartenaires(partenaires);
+        return res.status(200).json({ succes: true, motDePasseTemporaire: mdpTemp });
       }
 
       case "creer_codes_automatiques": {
         const resultats = [];
         const defs = [
-          { code: "MARDI", jour: 2 },
-          { code: "SAMEDI", jour: 6 },
-          { code: "FB", jour: null },
-          { code: "TT", jour: null }
+          { code: "MARDI", joursActifs: [2] },
+          { code: "SAMEDI", joursActifs: [6] },
+          { code: "FB", joursActifs: [] },
+          { code: "TT", joursActifs: [] }
         ];
         for (const d of defs) {
-          const existe = partenaires.some((p) => (p.code || "") === d.code);
-          if (existe) {
-            resultats.push({ code: d.code, statut: "existait déjà" });
-            continue;
-          }
-          const motDePasseTemporaire = crypto.randomBytes(4).toString("hex").toUpperCase();
+          if (partenaires.some(p => (p.code||"") === d.code)) { resultats.push({code:d.code, statut:"existait déjà"}); continue; }
+          const mdpTemp = crypto.randomBytes(4).toString("hex").toUpperCase();
           partenaires.push({
-            id: "PART-" + Date.now() + "-" + d.code,
-            nom: "Code " + d.code,
-            telephone: "",
-            type: "particulier",
-            code: d.code,
-            remiseType: "fixe",
-            remiseValeur: 100,
-            commissionType: "fixe",
-            commissionValeur: 0,
-            joursActifs: d.jour === null ? [2, 6] : [d.jour],
-            actif: true,
-            auto: true,
-            motDePasseHache: hacherMotDePasse(motDePasseTemporaire)
+            id: "PART-" + Date.now() + "-" + d.code, nom: "Code " + d.code,
+            telephone: "", type: "automatique", code: d.code,
+            remiseType: "fixe", remiseValeur: 100,
+            commissionType: "fixe", commissionValeur: 0,
+            joursActifs: d.joursActifs, actif: true, auto: true,
+            motDePasseHache: hacherMotDePasse(mdpTemp)
           });
           resultats.push({ code: d.code, statut: "créé" });
         }
@@ -132,59 +156,18 @@ module.exports = async (req, res) => {
         return res.status(200).json({ succes: true, resultats });
       }
 
-      case "basculer_actif": {
-        const p = partenaires.find((p) => p.id === data.partenaireId);
-        if (!p) return res.status(404).json({ erreur: "Partenaire introuvable" });
-        p.actif = !p.actif;
-        await setPartenaires(partenaires);
-        return res.status(200).json({ succes: true });
-      }
-
-      case "reinitialiser_mot_de_passe": {
-        const p = partenaires.find((p) => p.id === data.partenaireId);
-        if (!p) return res.status(404).json({ erreur: "Partenaire introuvable" });
-        const motDePasseTemporaire = crypto.randomBytes(4).toString("hex").toUpperCase();
-        p.motDePasseHache = hacherMotDePasse(motDePasseTemporaire);
-        await setPartenaires(partenaires);
-        return res.status(200).json({ succes: true, motDePasseTemporaire });
-      }
-
-      case "payer_tout_le_solde": {
-        commandes.forEach((c) => {
-          if (c.partenaireId === data.partenaireId && c.statutLivraison === "livree" && c.statutCommission === "impaye") {
-            c.statutCommission = "paye";
-          }
-        });
-        await setCommandes(commandes);
-        const partenairePaye = partenaires.find((p) => p.id === data.partenaireId);
-        if (partenairePaye) {
-          partenairePaye.reclamationEnCours = false;
-          partenairePaye.reclamationDate = null;
-          await setPartenaires(partenaires);
-        }
-        return res.status(200).json({ succes: true });
-      }
-
-      case "ignorer_reclamation": {
-        const p = partenaires.find((p) => p.id === data.partenaireId);
-        if (!p) return res.status(404).json({ erreur: "Partenaire introuvable" });
-        p.reclamationEnCours = false;
-        p.reclamationDate = null;
-        await setPartenaires(partenaires);
-        return res.status(200).json({ succes: true });
-      }
-
+      // ── COMMANDES ──
       case "valider_livraison": {
-        const c = commandes.find((c) => c.id === data.commandeId);
-        if (!c) return res.status(404).json({ erreur: "Commande introuvable" });
+        const c = commandes.find(c => c.id === data.commandeId);
+        if (!c) return res.status(404).json({ erreur: "Introuvable" });
         c.statutLivraison = "livree";
         await setCommandes(commandes);
         return res.status(200).json({ succes: true });
       }
 
       case "annuler_commande": {
-        const c = commandes.find((c) => c.id === data.commandeId);
-        if (!c) return res.status(404).json({ erreur: "Commande introuvable" });
+        const c = commandes.find(c => c.id === data.commandeId);
+        if (!c) return res.status(404).json({ erreur: "Introuvable" });
         c.statutLivraison = "annulee";
         await setCommandes(commandes);
         return res.status(200).json({ succes: true });
@@ -192,55 +175,51 @@ module.exports = async (req, res) => {
 
       case "supprimer_commande": {
         const avant = commandes.length;
-        commandes = commandes.filter((c) => c.id !== data.commandeId);
-        if (commandes.length === avant) {
-          return res.status(404).json({ erreur: "Commande introuvable" });
-        }
+        commandes = commandes.filter(c => c.id !== data.commandeId);
+        if (commandes.length === avant) return res.status(404).json({ erreur: "Introuvable" });
         await setCommandes(commandes);
         return res.status(200).json({ succes: true });
       }
 
       case "marquer_commission_payee": {
-        const c = commandes.find((c) => c.id === data.commandeId);
-        if (!c) return res.status(404).json({ erreur: "Commande introuvable" });
+        const c = commandes.find(c => c.id === data.commandeId);
+        if (!c) return res.status(404).json({ erreur: "Introuvable" });
         c.statutCommission = "paye";
         await setCommandes(commandes);
         return res.status(200).json({ succes: true });
       }
 
+      case "payer_tout_le_solde": {
+        commandes.forEach(c => {
+          if (c.partenaireId === data.partenaireId && c.statutLivraison === "livree" && c.statutCommission !== "paye")
+            c.statutCommission = "paye";
+        });
+        await setCommandes(commandes);
+        return res.status(200).json({ succes: true });
+      }
+
+      case "archiver_commande":
+      case "desarchiver_commande": {
+        const c = commandes.find(c => c.id === data.commandeId);
+        if (!c) return res.status(404).json({ erreur: "Introuvable" });
+        c.archive = action === "archiver_commande";
+        await setCommandes(commandes);
+        return res.status(200).json({ succes: true });
+      }
+
+      case "archiver_partenaire":
+      case "desarchiver_partenaire": {
+        const p = partenaires.find(p => p.id === data.partenaireId);
+        if (!p) return res.status(404).json({ erreur: "Introuvable" });
+        p.archive = action === "archiver_partenaire";
+        await setPartenaires(partenaires);
+        return res.status(200).json({ succes: true });
+      }
+
       default:
-        return res.status(400).json({ erreur: "Action non reconnue" });
+        return res.status(400).json({ erreur: "Action non reconnue : " + action });
     }
   } catch (err) {
     return res.status(500).json({ erreur: "Erreur serveur", details: err.message });
   }
-};
-const gestionnaireAdminOriginal = module.exports;
-const { getPartenaires: getPartenairesArchive, setPartenaires: setPartenairesArchive, getCommandes: getCommandesArchive, setCommandes: setCommandesArchive } = require("./_store");
-
-module.exports = async (req, res) => {
-const data = req.body || {};
-if (data.motDePasseAdmin !== "delfioficiel") {
-return gestionnaireAdminOriginal(req, res);
-}
-
-if (data.action === "archiver_commande" || data.action === "desarchiver_commande") {
-const commandes = await getCommandesArchive();
-const c = commandes.find((c) => c.id === data.commandeId);
-if (!c) return res.status(404).json({ erreur: "Commande introuvable" });
-c.archive = data.action === "archiver_commande";
-await setCommandesArchive(commandes);
-return res.status(200).json({ succes: true });
-}
-
-if (data.action === "archiver_partenaire" || data.action === "desarchiver_partenaire") {
-const partenaires = await getPartenairesArchive();
-const p = partenaires.find((p) => p.id === data.partenaireId);
-if (!p) return res.status(404).json({ erreur: "Partenaire introuvable" });
-p.archive = data.action === "archiver_partenaire";
-await setPartenairesArchive(partenaires);
-return res.status(200).json({ succes: true });
-}
-
-return gestionnaireAdminOriginal(req, res);
 };

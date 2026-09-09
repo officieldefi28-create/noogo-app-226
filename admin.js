@@ -7,21 +7,24 @@ module.exports = async (req, res) => {
 
   try {
     const data = req.body || {};
-    const { motDePasseAdmin, action } = data;
+    let { motDePasseAdmin, action } = data;
 
-    // Action publique : lire état produits (pas besoin de mot de passe)
+    // Action publique : lire état produits
     if (action === "get_produits_etat") {
       const etat = await getProduitsEtat();
       return res.status(200).json({ etat });
     }
 
-    // Toutes les autres actions nécessitent le mot de passe admin
+    // Vérification du mot de passe admin
     if (motDePasseAdmin !== "delfioficiel") {
       return res.status(401).json({ erreur: "Mot de passe incorrect" });
     }
 
     let partenaires = await getPartenaires();
     let commandes = await getCommandes();
+
+    // Normalisation / Alias pour éviter les erreurs "Action non reconnue" depuis le front-end
+    if (action === "activer_produit" || action === "desactiver_produit") action = "toggle_produit";
 
     switch (action) {
 
@@ -77,6 +80,7 @@ module.exports = async (req, res) => {
           commissionValeur: Number(commissionValeur) || 0,
           joursActifs: joursActifs || [],
           actif: true,
+          archive: false,
           motDePasseHache: hacherMotDePasse(mdpTemp)
         };
         partenaires.push(partenaire);
@@ -147,7 +151,7 @@ module.exports = async (req, res) => {
             telephone: "", type: "automatique", code: d.code,
             remiseType: "fixe", remiseValeur: 100,
             commissionType: "fixe", commissionValeur: 0,
-            joursActifs: d.joursActifs, actif: true, auto: true,
+            joursActifs: d.joursActifs, actif: true, auto: true, archive: false,
             motDePasseHache: hacherMotDePasse(mdpTemp)
           });
           resultats.push({ code: d.code, statut: "créé" });

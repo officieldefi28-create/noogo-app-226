@@ -987,12 +987,7 @@ header p{
 .recap-ligne-nom{
   flex:1;
   margin-right:8px;
-  color:#444;function afficherCatalogue(){
-let html = "";
-catalogueElements.forEach((el, index) => {
-let imgPath = cheminImage(el.fichier);
-let fallbackPath = el.fichier; // Solution de secours directe si le dossier racine change
-
+  color:#444;
 }
 
 .recap-ligne-prix{
@@ -1288,15 +1283,15 @@ footer p{
   <p class="footer-phone">📞 +226 61 68 27 06</p>
 
   <div class="footer-links">
-    <a href="https://wa.me/22661682706" target="_blank" class="footer-btn location">
+    <a href="https://wa.me/22661682706" target="_blank" class="footer-btn location" style="background:#25d366;border:1px solid #25d366;margin:8px;color:#fff;">
       💬 WhatsApp
     </a>
 
-    <a href="https://www.facebook.com/share/1DX4RzmDFC/" target="_blank" class="footer-btn facebook">
+    <a href="https://www.facebook.com/share/1DX4RzmDFC/" target="_blank" class="footer-btn facebook" style="background:#1877f2;border:1px solid #1877f2;margin:8px;color:#fff;">
       👍 Facebook
     </a>
 
-    <a href="https://www.tiktok.com/@dlices.de.papous" target="_blank" class="footer-btn tiktok">
+    <a href="https://www.tiktok.com/@dlices.de.papous" target="_blank" class="footer-btn tiktok" style="background:#000;border:1px solid #000;margin:8px;color:#fff;">
       🎵 TikTok
     </a>
   </div>
@@ -1304,20 +1299,15 @@ footer p{
   <a href="https://maps.google.com/?q=Karpala+Ouagadougou"
      target="_blank"
      class="footer-btn location"
-     style="max-width:280px;margin:6px auto;display:flex">
+     style="max-width:300px;margin:14px auto;display:flex;background:#ea4335;border:1px solid #ea4335;color:#fff;">
     📍 Nous trouver sur Maps
   </a>
 
-  <div class="footer-espaces">
-    <a href="/partenaire.html">🤝 Espace Partenaire</a> ·
-    <a href="/admin .html">🔐 Admin</a>
-function afficherCatalogue(){
-let html = "";
-catalogueElements.forEach((el, index) => {
-let imgPath = cheminImage(el.fichier);
-let fallbackPath = el.fichier; // Solution de secours directe si le dossier racine change
-
- </div>
+  <div class="footer-espaces" style="margin:24px 8px;">
+    <a href="/partenaire.html" style="display:block;text-align:center;padding:12px 20px;background:#2e7d32;color:#fff;text-decoration:none;border-radius:12px;font-weight:bold;font-size:15px;">
+      🤝 Espace Partenaire
+    </a>
+  </div>
 
   <p style="font-size:12px;opacity:.7;margin-top:14px">
     © Noogo — Tous droits réservés
@@ -3432,9 +3422,12 @@ function fermerBandeauInstall(){
 }
 
 </script>
-<a href="/admin .html"
-   style="display:block;text-align:center;margin:20px auto;padding:12px 20px;background:#333;color:#fff;text-decoration:none;border-radius:10px;font-weight:bold;">
+
+<a href="/admin.html"
+   style="display:block;text-align:center;margin:30px auto;padding:14px 24px;background:#333;color:#fff;text-decoration:none;border-radius:12px;font-weight:bold;font-size:16px;">
   🔐 ESPACE ADMIN
 </a>
+
+
 </body>
 </html>

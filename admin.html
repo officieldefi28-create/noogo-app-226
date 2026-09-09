@@ -717,93 +717,91 @@ function supprimerProduit(id) {
   });
 }
 
+// ========== UPLOAD PHOTOS CLOUDINARY ==========
+const CLOUDINARY_CLOUD_NAME = "h03nfuzc";
+
+async function uploadPhotoCloudinary() {
+  const fileInput = document.getElementById("photo-upload");
+  const file = fileInput.files[0];
+  
+  if (!file) {
+    document.getElementById("res-photo-upload").innerHTML = `<div class="erreur">Sélectionnez une photo d'abord</div>`;
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "noogo-produits");
+
+  document.getElementById("res-photo-upload").innerHTML = `<div style="color:#666">Envoi en cours...</div>`;
+
+  try {
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json();
+
+    if (data.secure_url) {
+      document.getElementById("res-photo-upload").innerHTML = `<div class="succes">✅ Photo uploadée avec succès!</div>`;
+      document.getElementById("photo-url-text").textContent = data.secure_url;
+      document.getElementById("photo-url-result").style.display = "block";
+      fileInput.value = "";
+    } else {
+      document.getElementById("res-photo-upload").innerHTML = `<div class="erreur">Erreur lors de l'upload</div>`;
+    }
+  } catch (err) {
+    document.getElementById("res-photo-upload").innerHTML = `<div class="erreur">Erreur: ${err.message}</div>`;
+  }
+}
+
+function copyPhotoUrl() {
+  const url = document.getElementById("photo-url-text").textContent;
+  navigator.clipboard.writeText(url).then(() => {
+    alert("✅ URL copiée!");
+  });
+}
+
+// ========== MODIFIER PHOTOS PRODUITS ==========
+function afficherListeProduitsPhotos() {
+  const html = PRODUITS_LISTE.map(prod => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:8px">
+      <div style="flex:1">
+        <strong>${prod.nom}</strong><br>
+        <small style="color:#999">ID: ${prod.id}</small>
+      </div>
+      <button class="btn btn-sec btn-petit" onclick="editerPhotoProduire('${prod.id}', '${prod.nom}')">📷 Changer</button>
+    </div>
+  `).join("");
+  document.getElementById("liste-produits-photos").innerHTML = html;
+}
+
+function editerPhotoProduire(id, nom) {
+  const newUrl = prompt(`Entrez l'URL de la nouvelle photo pour "${nom}":\n\n(Collez l'URL de Cloudinary ou le chemin relatif)`);
+  
+  if (!newUrl) return;
+  
+  apiAdmin("modifier_photo_produit", {produitId: id, photoUrl: newUrl}).then(({ok, d}) => {
+    if (ok) {
+      alert("✅ Photo modifiée!");
+      afficherListeProduitsPhotos();
+    } else {
+      alert("Erreur: " + (d?.erreur || "Impossible de modifier"));
+    }
+  });
+}
+
 // ========== INITIALISATION ==========
 const origRafraichirTout = window.rafraichirTout || (() => {});
 window.rafraichirTout = function() {
   origRafraichirTout.call(this);
   afficherListePacks();
   afficherListeProduitsComplets();
+  afficherListeProduitsPhotos();
 };
 
 document.getElementById("mdp-admin")?.addEventListener("keydown", e => { if (e.key === "Enter") connexion(); });
-</script>
-<!-- UPLOAD IMAGE CLOUDINARY -->
-<div class="admin-upload">
-  <h3>Ajouter une image produit</h3>
-
-  <input type="file" id="imageProduit" accept="image/*">
-  <button onclick="uploadImageCloudinary()">Uploader la photo</button>
-
-  <p id="uploadStatut"></p>
-
-  <input type="text" id="imageUrl" placeholder="URL de l'image" readonly>
-</div>
-
-<script>
-async function uploadImageCloudinary() {
-  const file = document.getElementById("imageProduit").files[0];
-  if (!file) return alert("Choisissez une image.");
-
-  const data = new FormData();
-  data.append("file", file);
-  data.append("upload_preset", "noogo"); // preset Cloudinary
-  data.append("folder", "noogo/produits");
-
-  document.getElementById("uploadStatut").textContent = "Envoi...";
-
-  const res = await fetch("https://api.cloudinary.com/v1_1/h03nfuzc/image/upload", {
-    method: "POST",
-    body: data
-  });
-
-  const json = await res.json();
-
-  if (json.secure_url) {
-    document.getElementById("uploadStatut").textContent = "Image ajoutée.";
-    document.getElementById("imageUrl").value = json.secure_url;
-  } else {
-    document.getElementById("uploadStatut").textContent = "Erreur d'envoi.";
-  }
-}
-</script>
-<script>
-// Ajoute les produits sans modifier le code existant
-window.addEventListener("load", () => {
-  const nouveauxProduits = [
-    {
-      nom: "TEEDO (Baobab)",
-      categorie: "cremes",
-      prix125: 1000,
-      prix250: 2000,
-      image: ""
-    },
-    {
-      nom: "NÉRÉ",
-      categorie: "cremes",
-      prix125: 1000,
-      prix250: 2000,
-      image: ""
-    }
-  ];
-
-  if (typeof PRODUITS !== "undefined") {
-    nouveauxProduits.forEach(p => {
-      if (!PRODUITS.find(x => x.nom === p.nom)) {
-        PRODUITS.push(p);
-      }
-    });
-  }
-
-  if (typeof catalogue !== "undefined" && catalogue.cremes) {
-    nouveauxProduits.forEach(p => {
-      if (!catalogue.cremes.find(x => x.nom === p.nom)) {
-        catalogue.cremes.push(p);
-      }
-    });
-  }
-
-  if (typeof afficherCatalogue === "function") afficherCatalogue();
-});
 </script>
 </body>
 </html>

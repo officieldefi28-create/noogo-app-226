@@ -987,7 +987,12 @@ header p{
 .recap-ligne-nom{
   flex:1;
   margin-right:8px;
-  color:#444;
+  color:#444;function afficherCatalogue(){
+let html = "";
+catalogueElements.forEach((el, index) => {
+let imgPath = cheminImage(el.fichier);
+let fallbackPath = el.fichier; // Solution de secours directe si le dossier racine change
+
 }
 
 .recap-ligne-prix{
@@ -1305,8 +1310,14 @@ footer p{
 
   <div class="footer-espaces">
     <a href="/partenaire.html">🤝 Espace Partenaire</a> ·
-    <a href="/admin.html">🔐 Admin</a>
-  </div>
+    <a href="/admin .html">🔐 Admin</a>
+function afficherCatalogue(){
+let html = "";
+catalogueElements.forEach((el, index) => {
+let imgPath = cheminImage(el.fichier);
+let fallbackPath = el.fichier; // Solution de secours directe si le dossier racine change
+
+ </div>
 
   <p style="font-size:12px;opacity:.7;margin-top:14px">
     © Noogo — Tous droits réservés

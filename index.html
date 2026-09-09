@@ -997,190 +997,7 @@ header p{
 
 .recap-total{
   display:flex;
-  justify-content:space-between;
-  font-size:19px;
-  font-weight:700;
-  color:#e8590c;
-  margin-top:12px;
-  padding-top:12px;
-  border-top:2px solid #e8590c;
-}
-
-.recap-infos{
-  margin-top:14px;
-  padding-top:12px;
-  border-top:1px solid #eee;
-}
-
-.recap-info-row{
-  font-size:13.5px;
-  margin:5px 0;
-  color:#555;
-  line-height:1.4;
-}
-
-.recap-info-row strong{color:#333}
-
-.btn-confirmer{
-  display:block;
-  width:100%;
-  background:#25D366;
-  color:#fff;
-  border:0;
-  border-radius:12px;
-  padding:16px;
-  font-size:17px;
-  font-weight:700;
-  cursor:pointer;
-  margin-top:16px;
-}
-
-.btn-modifier{
-  display:block;
-  width:100%;
-  background:#f0f0f0;
-  color:#444;
-  border:0;
-  border-radius:12px;
-  padding:13px;
-  font-size:15px;
-  font-weight:700;
-  cursor:pointer;
-  margin-top:10px;
-}
-
-/* ZOOM */
-.zoom-overlay{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.92);
-  z-index:100;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  padding:20px;
-}
-
-.zoom-overlay.actif{display:flex}
-
-.zoom-overlay img{
-  max-width:100%;
-  max-height:75vh;
-  border-radius:14px;
-  object-fit:contain;
-}
-
-.zoom-overlay h3{
-  color:#fff;
-  margin:16px 0 0;
-  font-size:18px;
-  text-align:center;
-}
-
-.zoom-close{
-  position:absolute;
-  top:18px;
-  right:18px;
-  background:#fff;
-  color:#333;
-  border:0;
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  font-size:22px;
-  font-weight:700;
-  cursor:pointer;
-  line-height:1;
-}
-
-/* INSTALL OVERLAY */
-.install-overlay{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.88);
-  z-index:200;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-}
-
-.install-overlay.actif{display:flex}
-
-.install-carte{
-  background:#fff;
-  border-radius:20px;
-  padding:28px 20px;
-  max-width:360px;
-  width:100%;
-  text-align:center;
-}
-
-.install-carte img{
-  width:80px;
-  height:80px;
-  border-radius:18px;
-  object-fit:cover;
-  margin-bottom:14px;
-}
-
-.install-carte h3{
-  margin:0 0 10px;
-  color:#333;
-  font-size:18px;
-}
-
-.install-etapes{
-  text-align:left;
-  background:#fff3e0;
-  border-radius:10px;
-  padding:12px 14px;
-  margin-top:12px;
-  font-size:14px;
-  line-height:1.8;
-  color:#5d3a1a;
-}
-
-.install-btn-ok{
-  background:#e8590c;
-  color:#fff;
-  border:0;
-  border-radius:12px;
-  padding:13px 28px;
-  font-size:16px;
-  font-weight:700;
-  margin-top:16px;
-  cursor:pointer;
-}
-
-/* BOUTON HAUT */
-#bouton-haut{
-  position:fixed;
-  right:14px;
-  bottom:170px;
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  background:#e8590c;
-  color:#fff;
-  border:0;
-  font-size:18px;
-  cursor:pointer;
-  box-shadow:0 2px 8px rgba(0,0,0,.28);
-  z-index:19;
-  display:none;
-  align-items:center;
-  justify-content:center;
-}
-
-#bouton-haut.visible{display:flex}
-
-/* FOOTER */
-footer{
-  background:#333;
-  color:#fff;
-  text-align:center;
+  
   padding:26px 15px;
   margin-top:20px;
 }
@@ -1536,7 +1353,53 @@ const CATALOGUE = [
     ],
     qte:0
   },
+{
+  id:"baobab-p",
+  cat:"cremes",
+  gr:"petit",
+  type:"produit",
+  nom:"Fruits Naturel Baobab (en Mooré Teedo)",
+  info:"Petit pot 125ml",
+  prix:1000,
+  img:"",
+  qte:0
+},
 
+{
+  id:"baobab-g",
+  cat:"cremes",
+  gr:"grand",
+  type:"produit",
+  nom:"Fruits Naturel Baobab (en Mooré Teedo)",
+  info:"Grand pot 250ml",
+  prix:2000,
+  img:"",
+  qte:0
+},
+
+{
+  id:"nere-p",
+  cat:"cremes",
+  gr:"petit",
+  type:"produit",
+  nom:"Fruits Naturel Néré",
+  info:"Petit pot 125ml",
+  prix:1000,
+  img:"",
+  qte:0
+},
+
+{
+  id:"nere-g",
+  cat:"cremes",
+  gr:"grand",
+  type:"produit",
+  nom:"Fruits Naturel Néré",
+  info:"Grand pot 250ml",
+  prix:2000,
+  img:"",
+  qte:0
+},
   {
     id:"vanille-p",
     cat:"cremes",
@@ -2237,7 +2100,10 @@ function afficherCatalogue(){
       const grands = items.filter(
         p => p.gr === "grand"
       );
-
+      
+      const naturels = items.filter(
+  p => p.naturel === true
+);
       if(petits.length){
 
         html += `
@@ -3555,6 +3421,9 @@ function fermerBandeauInstall(){
 }
 
 </script>
-
+<a href="/admin.html"
+   style="display:block;text-align:center;margin:20px auto;padding:12px 20px;background:#333;color:#fff;text-decoration:none;border-radius:10px;font-weight:bold;">
+  🔐 ESPACE ADMIN
+</a>
 </body>
 </html>

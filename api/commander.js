@@ -1,86 +1,57 @@
-const { getPartenaires, getCommandes, setCommandes } = require("./_store");
-
-// Vérifie si le partenaire est actif le jour même
-function jourValide(partenaire) {
-  if (!partenaire.joursActifs || partenaire.joursActifs.length === 0) return true;
-  return partenaire.joursActifs.includes(new Date().getDay());
-}
-
-// Calcule la remise ou la commission (pourcentage ou montant fixe)
-function calculerMontant(type, valeur, montantTotal) {
-  return type === "pourcentage" ? Math.round(montantTotal * (valeur / 100)) : valeur;
-}
+const { getCommandes, setCommandes, getPartenaires } = require("./_store");
 
 module.exports = async (req, res) => {
-  // Autoriser uniquement les requêtes POST
-  if (req.method !== "POST") {
-    return res.status(405).json({ erreur: "Méthode non autorisée" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ erreur: "Méthode non autorisée" });
 
   try {
-    const data = req.body || {};
-    const montantTotal = Number(data.montantTotal) || 0;
-    let remise = 0;
-    let commission = 0;
+    const {
+      nomClient, telClient, localisation, modePaiement, modeReception,
+      articles, montantTotal, montantProduits, montantPacks,
+      fraisLivraison, remise, codePromo, partenaireCode
+    } = req.body || {};
+
+    if (!telClient) return res.status(400).json({ erreur: "Téléphone requis" });
+
+    // Trouver le partenaire si code promo utilisé
     let partenaireId = null;
-    let codeFinal = "";
-
-    // Traitement du code promo / partenaire (sans restriction de seuil pour coller à ton code initial)
-    if (data.code) {
+    let commission = 0;
+    if (codePromo) {
       const partenaires = await getPartenaires();
-      const codeNormalise = String(data.code).trim().toUpperCase();
-      const partenaire = partenaires.find(
-        (p) => (p.code || "").toUpperCase() === codeNormalise && p.actif && jourValide(p)
-      );
-
+      const partenaire = partenaires.find(p => (p.code || "").toUpperCase() === (codePromo || "").toUpperCase() && p.actif);
       if (partenaire) {
-        remise = calculerMontant(partenaire.remiseType, partenaire.remiseValeur, montantTotal);
-        if (remise > montantTotal) remise = montantTotal;
-        commission = calculerMontant(partenaire.commissionType, partenaire.commissionValeur, montantTotal);
         partenaireId = partenaire.id;
-        codeFinal = partenaire.code;
+        commission = partenaire.commission || 0;
       }
     }
 
     const commandes = await getCommandes();
-
-    // Création de l'objet commande enrichi avec tes champs d'origine + les articles
     const nouvelleCommande = {
-      id: "CMD-" + Date.now(),
+      id: Date.now().toString(),
       date: new Date().toISOString(),
-      nomClient: data.nomClient || "Non renseigné",
-      telClient: data.telClient || "Non renseigné",
-      localisation: data.localisation || "Non renseignée",
-      modePaiement: data.modePaiement || "especes",
-      modeReception: data.modeReception || "livraison",
-      articles: data.articles || [],
-      montantTotal,
-      code: codeFinal,
-      remise,
-      montantApresRemise: Math.max(0, montantTotal - remise),
-      commission,
+      nomClient: nomClient || "Client Noogo",
+      telClient,
+      localisation: localisation || "Non précisé",
+      modePaiement: modePaiement || "especes",
+      modeReception: modeReception || "livraison",
+      articles: articles || [],
+      montantTotal: montantTotal || 0,
+      montantProduits: montantProduits || 0,
+      montantPacks: montantPacks || 0,
+      fraisLivraison: fraisLivraison || 0,
+      remise: remise || 0,
+      codePromo: codePromo || null,
       partenaireId,
+      commission,
       statutLivraison: "en_attente",
-      statutCommission: "impaye",
-      source: data.source || "direct"
+      statutCommission: "en_attente"
     };
 
-    // Sauvegarde dans le store
     commandes.push(nouvelleCommande);
     await setCommandes(commandes);
 
-    return res.status(200).json({
-      succes: true,
-      message: "Commande enregistrée avec succès",
-      commandeId: nouvelleCommande.id,
-      remise,
-      totalFinal: nouvelleCommande.montantApresRemise
-    });
-  } catch (err) {
-    return res.status(500).json({ 
-      erreur: "Erreur lors de l'enregistrement de la commande", 
-      details: err.message 
-    });
+    return res.status(200).json({ succes: true, id: nouvelleCommande.id });
+  } catch (erreur) {
+    return res.status(500).json({ erreur: "Erreur serveur", details: erreur.message });
   }
 };
-      
+                                 

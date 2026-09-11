@@ -3,373 +3,3557 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Noogo Premium - Crèmes glacées, popcorn & pains. Livraison rapide à Karpala. Rating, fidélité, géolocalisation. 24h/24">
-<meta name="theme-color" content="#e8590c">
+<title>Noogo</title>
 <link rel="manifest" href="/manifest.json">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23e8590c' width='180' height='180'/><text x='50%' y='55%' text-anchor='middle' font-size='100' fill='white' font-family='Arial'>🍦</text></svg>">
-<title>Noogo Premium - Crèmes & Popcorn | Karpala</title>
+<meta name="theme-color" content="#e65100">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Noogo">
+<meta name="mobile-web-app-capable" content="yes">
+
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#fff8f0 0%,#ffe8d6 100%);color:#333;overflow-x:hidden}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 
-/* HEADER PREMIUM */
-header{background:linear-gradient(135deg,#e8590c 0%,#d9480a 100%);color:#fff;padding:16px 20px;position:sticky;top:0;z-index:100;box-shadow:0 8px 20px rgba(232,89,12,0.4);}
-header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.header-logo{font-size:28px;font-weight:700;letter-spacing:2px}
-.header-icons{display:flex;gap:12px;font-size:20px}
-.badge{background:rgba(255,255,255,0.2);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#fff0f5;
+  padding-bottom:165px;
+  color:#333;
+}
 
-.hero{background:linear-gradient(135deg,#e8590c 0%,#ff8c00 50%,#ffa500 100%);color:#fff;padding:50px 20px;text-align:center;position:relative;overflow:hidden}
-.hero::before{content:'';position:absolute;top:-50%;right:-50%;width:500px;height:500px;background:radial-gradient(circle,rgba(255,255,255,0.1),transparent);border-radius:50%}
-.hero-content{position:relative;z-index:2}
-.hero-logo{font-size:70px;margin-bottom:15px;animation:bounce 2s infinite}
-.hero h1{font-size:36px;font-weight:700;margin-bottom:8px;text-shadow:2px 2px 4px rgba(0,0,0,0.2)}
-.hero p{font-size:15px;opacity:0.95;margin-bottom:20px}
-.hero-badges{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
-.hero-badge{background:rgba(255,255,255,0.25);padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;backdrop-filter:blur(10px)}
+header{
+  background:#e8590c;
+  color:#fff;
+  text-align:center;
+  padding:15px 10px;
+}
 
-@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+header img{
+  width:90px;
+  height:60px;
+  object-fit:contain;
+  background:#fff;
+  border-radius:10px;
+  margin-bottom:5px;
+}
 
-/* USER PROFILE */
-.profile-card{background:#fff;border-radius:12px;padding:16px;margin:20px;box-shadow:0 4px 12px rgba(0,0,0,0.1);display:flex;gap:15px;align-items:center}
-.profile-avatar{width:60px;height:60px;background:linear-gradient(135deg,#e8590c,#ff8c00);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px}
-.profile-info h3{margin:0 0 5px;font-size:16px}
-.profile-info p{margin:0;font-size:13px;color:#999}
-.points-badge{background:#ffd700;color:#333;padding:8px 12px;border-radius:8px;font-weight:700;font-size:14px}
+header h1{
+  margin:6px 0;
+  font-size:32px;
+  font-weight:900;
+  letter-spacing:1px;
+  text-shadow:0 2px 4px rgba(0,0,0,.2);
+}
 
-/* LOYALTY SECTION */
-.loyalty-section{background:linear-gradient(135deg,#2e7d32 0%,#1b5e20 100%);color:#fff;margin:20px;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
-.loyalty-title{font-size:16px;font-weight:700;margin-bottom:12px;display:flex;gap:8px;align-items:center}
-.loyalty-progress{background:rgba(255,255,255,0.2);height:10px;border-radius:10px;overflow:hidden;margin-bottom:10px}
-.loyalty-bar{background:#ffd700;height:100%;width:65%;transition:width 0.3s}
-.loyalty-text{font-size:12px;opacity:0.95}
+header p{
+  margin:6px 0 0;
+  font-size:16px;
+  font-weight:600;
+}
 
-/* PROMO CODES */
-.codes-section{background:#fff9e6;border:2px solid #ffd700;border-radius:12px;padding:16px;margin:20px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
-.codes-title{color:#e8590c;margin-bottom:10px;font-size:15px;font-weight:700}
-.code-list{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.code-chip{background:#e8590c;color:#fff;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.3s}
-.code-chip:active{transform:scale(0.95);box-shadow:0 4px 8px rgba(232,89,12,0.3)}
+.tagline{
+  font-size:14px!important;
+  font-weight:400!important;
+  font-style:italic;
+  opacity:.95;
+  margin-top:8px!important;
+}
 
-/* LOCATION & DELIVERY */
-.delivery-info{background:linear-gradient(135deg,#1976d2 0%,#0d47a1 100%);color:#fff;margin:20px;padding:16px;border-radius:12px;display:flex;gap:12px;align-items:center;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
-.delivery-icon{font-size:30px}
-.delivery-text h4{margin:0;font-size:14px;font-weight:700}
-.delivery-text p{margin:5px 0 0;font-size:12px;opacity:0.9}
+.badge-24h{
+  display:inline-block;
+  background:#2e7d32;
+  color:#fff;
+  font-size:13px;
+  font-weight:700;
+  padding:7px 14px;
+  border-radius:20px;
+  margin-top:10px;
+}
 
-/* PRODUCTS SECTION */
-.products-header{text-align:center;margin:30px 20px 20px;position:relative}
-.products-header h2{font-size:24px;font-weight:700;color:#333;margin-bottom:5px}
-.products-header p{color:#999;font-size:13px}
+#install-btn{
+  display:none;
+  margin:10px auto 0;
+  background:#fff;
+  color:#e65100;
+  border:0;
+  border-radius:20px;
+  padding:9px 18px;
+  font-size:14px;
+  font-weight:700;
+  align-items:center;
+  gap:6px;
+  box-shadow:0 2px 6px rgba(0,0,0,.2);
+}
 
-.filter-buttons{display:flex;gap:10px;overflow-x:auto;margin:0 20px 20px;padding:5px;scroll-behavior:smooth}
-.filter-btn{background:#fff;border:2px solid #ddd;color:#333;padding:10px 16px;border-radius:20px;font-weight:600;cursor:pointer;white-space:nowrap;font-size:13px;transition:all 0.3s;flex-shrink:0}
-.filter-btn.active{background:#e8590c;color:#fff;border-color:#e8590c;box-shadow:0 4px 12px rgba(232,89,12,0.3)}
-.filter-btn:active{transform:scale(0.95)}
+#install-btn.visible{display:inline-flex}
 
-.products-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 10px}
+/* BANDEAU INSTALL */
+#bandeau-install{
+  display:none;
+  background:#fff3e0;
+  border-bottom:1px solid #ffcc80;
+  padding:10px 14px;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
 
-.product-card{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.1);transition:all 0.3s;cursor:pointer;position:relative}
-.product-card:active{transform:scale(0.98);box-shadow:0 6px 16px rgba(232,89,12,0.2)}
-.product-tag{position:absolute;top:8px;right:8px;background:#e8590c;color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;z-index:2}
-.product-img{width:100%;height:140px;background:linear-gradient(135deg,#f5f5f5,#e0e0e0);display:flex;align-items:center;justify-content:center;font-size:50px;overflow:hidden}
-.product-img img{width:100%;height:100%;object-fit:cover}
-.product-info{padding:12px}
-.product-name{font-weight:700;font-size:13px;color:#333;margin-bottom:4px}
-.product-rating{display:flex;gap:4px;align-items:center;margin-bottom:6px;font-size:11px}
-.product-rating .stars{color:#ffc107}
-.product-rating .count{color:#999}
-.product-price{color:#e8590c;font-weight:700;font-size:15px;margin-bottom:8px}
-.product-btn{width:100%;background:#e8590c;color:#fff;border:0;padding:8px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.3s}
-.product-btn:active{opacity:0.85}
+#bandeau-install.visible{display:flex}
 
-/* CART */
-.cart-section{background:#fff;margin:20px;padding:16px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
-.cart-title{font-size:16px;font-weight:700;margin-bottom:12px;color:#333}
-.cart-empty{text-align:center;color:#999;padding:20px;font-size:13px}
-.cart-items{max-height:300px;overflow-y:auto}
-.cart-item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;font-size:13px}
-.cart-item-name{font-weight:600}
-.cart-item-price{color:#e8590c;font-weight:700}
-.cart-total{display:flex;justify-content:space-between;padding:12px 0;border-top:2px solid #e8590c;margin-top:10px;font-size:16px;font-weight:700;color:#333}
-.cart-total-price{color:#e8590c}
+.bandeau-install-txt{
+  font-size:13px;
+  color:#7a3e00;
+  font-weight:600;
+  flex:1;
+}
 
-.btn-commander{width:100%;background:linear-gradient(135deg,#2e7d32,#1b5e20);color:#fff;border:0;padding:14px;font-size:15px;font-weight:700;border-radius:10px;cursor:pointer;margin-top:12px;box-shadow:0 4px 12px rgba(0,0,0,0.2);transition:all 0.3s}
-.btn-commander:active{transform:scale(0.98)}
+.bandeau-install-btn{
+  background:#e8590c;
+  color:#fff;
+  border:0;
+  border-radius:8px;
+  padding:7px 12px;
+  font-size:13px;
+  font-weight:700;
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.bandeau-close{
+  background:none;
+  border:0;
+  color:#999;
+  font-size:18px;
+  cursor:pointer;
+  padding:0 4px;
+}
+
+/* PROMO BANDEAU */
+.promo-bandeau{
+  background:linear-gradient(90deg,#fff3e0,#ffe0b2);
+  border:1px solid #ffcc80;
+  border-radius:12px;
+  margin:10px 8px 4px;
+  padding:10px 12px;
+  text-align:center;
+  font-size:12.5px;
+  color:#7a3e00;
+  line-height:1.6;
+}
+
+/* BANNER LIVRAISON */
+.banner-livraison{
+  display:none;
+  margin:6px 8px;
+  padding:9px 14px;
+  border-radius:10px;
+  text-align:center;
+  font-size:13px;
+  font-weight:700;
+}
+
+.banner-livraison.debloquee{
+  display:block;
+  background:#e8f5e9;
+  color:#1b5e20;
+  border:1px solid #a5d6a7;
+}
+
+.banner-livraison.incitation{
+  display:block;
+  background:#fff8e1;
+  color:#e65100;
+  border:1px solid #ffe082;
+}
+
+/* TABS */
+.section-titre{
+  text-align:center;
+  color:#e8590c;
+  font-size:20px;
+  margin:16px 0 2px;
+  font-weight:700;
+}
+
+.section-sous-titre{
+  text-align:center;
+  color:#888;
+  font-size:12.5px;
+  margin:0 10px 6px;
+}
+
+.tabs-wrap{
+  overflow-x:auto;
+  padding:8px 8px 4px;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+
+.tabs-wrap::-webkit-scrollbar{display:none}
+
+.tabs{
+  display:flex;
+  gap:8px;
+  width:max-content;
+}
+
+.tab-btn{
+  background:#fff;
+  color:#e8590c;
+  border:2px solid #e8590c;
+  border-radius:20px;
+  padding:7px 16px;
+  font-size:13px;
+  font-weight:700;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:all .2s;
+}
+
+.tab-btn.actif{
+  background:#e8590c;
+  color:#fff;
+}
+
+/* SOUS-SECTION */
+.sous-section{
+  margin:10px 8px 4px;
+  padding:7px 14px;
+  background:#fff3e0;
+  border-left:4px solid #e8590c;
+  border-radius:0 10px 10px 0;
+  font-size:13px;
+  font-weight:700;
+  color:#e8590c;
+}
+
+.sous-section.petit{
+  background:#fff8e1;
+  border-left-color:#f9a825;
+  color:#f57f17;
+}
+
+.sous-section.grand{
+  background:#e8f5e9;
+  border-left-color:#388e3c;
+  color:#1b5e20;
+}
+
+/* CARDS PRODUITS NORMAUX */
+.produit{
+  display:flex;
+  align-items:center;
+  background:#fff;
+  margin:10px 8px;
+  padding:14px;
+  border-radius:14px;
+  box-shadow:0 2px 7px rgba(0,0,0,.12);
+}
+
+.produit.indisponible{
+  opacity:.5;
+  pointer-events:none;
+  filter:grayscale(1);
+}
+
+.img-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:96px;
+  margin-right:14px;
+  flex-shrink:0;
+  cursor:pointer;
+}
+
+.produit img{
+  width:90px;
+  height:90px;
+  border-radius:12px;
+  object-fit:cover;
+  background:#f5e6d3;
+}
+
+.zoom-btn{
+  margin-top:6px;
+  background:#fff0e6;
+  color:#e8590c;
+  border:1px solid #e8590c;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:700;
+  padding:3px 9px;
+  display:flex;
+  align-items:center;
+  gap:3px;
+  white-space:nowrap;
+}
+
+.info{flex:1}
+
+.produit h3{
+  margin:0;
+  font-size:15px;
+  line-height:1.3;
+}
+
+.produit-info{
+  font-size:11.5px;
+  color:#888;
+  margin:2px 0 4px;
+}
+
+.prix{
+  margin:5px 0;
+  font-weight:700;
+  color:#e8590c;
+  font-size:17px;
+}
+
+.badge-livraison-incluse{
+  font-size:11px;
+  color:#2e7d32;
+  font-weight:700;
+  background:#e8f5e9;
+  padding:2px 8px;
+  border-radius:10px;
+  display:inline-block;
+  margin-bottom:6px;
+}
+
+.badge-indispo{
+  background:#ffebee;
+  color:#c62828;
+  font-size:11px;
+  font-weight:700;
+  padding:2px 8px;
+  border-radius:10px;
+  display:inline-block;
+  margin-bottom:6px;
+}
+
+.qte{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-top:2px;
+}
+
+.qte button{
+  border:0;
+  background:#e8590c;
+  color:#fff;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  font-size:20px;
+  font-weight:700;
+  cursor:pointer;
+  line-height:1;
+}
+
+.qte button:active{background:#bf360c}
+
+.qte span{
+  font-weight:700;
+  min-width:20px;
+  text-align:center;
+  font-size:16px;
+}
+
+/* ================================
+   NOUVEAUX PACKS PROFESSIONNELS
+   ================================ */
+
+.produit.pack-card{
+  display:block;
+  position:relative;
+  width:calc(100% - 16px);
+  margin:14px 8px;
+  padding:0;
+  overflow:hidden;
+  border:2px solid #2e7d32 !important;
+  border-radius:20px;
+  background:linear-gradient(145deg,#ffffff 0%,#f4faef 100%) !important;
+  box-shadow:0 6px 18px rgba(46,125,50,.20);
+}
+
+.produit.pack-card.indisponible{
+  opacity:.5;
+  filter:grayscale(1);
+}
+
+.pack-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:11px 13px;
+  background:linear-gradient(90deg,#2e7d32,#43a047);
+  color:#fff;
+}
+
+.pack-top-left{
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+
+.pack-badge-large{
+  background:#fff;
+  color:#2e7d32;
+  border-radius:20px;
+  padding:5px 10px;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.5px;
+}
+
+.pack-type{
+  font-size:11px;
+  font-weight:700;
+  opacity:.95;
+}
+
+.pack-count-top{
+  background:#ff9800;
+  color:#fff;
+  border-radius:20px;
+  padding:6px 11px;
+  font-size:12px;
+  font-weight:900;
+  box-shadow:0 2px 5px rgba(0,0,0,.18);
+}
+
+.pack-visual{
+  position:relative;
+  margin:12px;
+  padding:12px 8px 15px;
+  border-radius:16px;
+  background:linear-gradient(135deg,#fff8e1,#ffffff);
+  border:1px solid #ffe0a3;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.05);
+}
+
+.pack-items{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:6px;
+  width:100%;
+  padding-right:42px;
+}
+
+.pack-item{
+  position:relative;
+  flex:1;
+  max-width:65px;
+  min-width:48px;
+  aspect-ratio:1/1;
+  border-radius:12px;
+  background:#fff;
+  padding:3px;
+  border:2px solid #fff;
+  box-shadow:0 3px 8px rgba(0,0,0,.18);
+  cursor:pointer;
+  transition:transform .15s;
+}
+
+.pack-item:active{
+  transform:scale(.94);
+}
+
+.pack-item img{
+  display:block;
+  width:100%;
+  height:100%;
+  border-radius:9px;
+  object-fit:cover;
+  background:#f5e6d3;
+}
+
+.pack-item-num{
+  position:absolute;
+  right:-5px;
+  bottom:-5px;
+  width:21px;
+  height:21px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  background:#2e7d32;
+  color:#fff;
+  font-size:10px;
+  font-weight:900;
+  border:2px solid #fff;
+}
+
+.pack-count-big{
+  position:absolute;
+  right:6px;
+  top:50%;
+  transform:translateY(-50%);
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  background:#ff9800;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  font-weight:900;
+  line-height:1;
+  text-align:center;
+  border:3px solid #fff;
+  box-shadow:0 3px 8px rgba(0,0,0,.22);
+}
+
+.pack-label{
+  text-align:center;
+  margin-top:9px;
+  color:#2e7d32;
+  font-size:11px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+}
+
+.pack-body{
+  padding:0 14px 14px;
+}
+
+.pack-body h3{
+  margin:2px 0 4px;
+  font-size:17px;
+  line-height:1.25;
+  color:#333;
+}
+
+.pack-info{
+  color:#777;
+  font-size:12px;
+  line-height:1.4;
+  margin-bottom:6px;
+}
+
+.pack-livraison{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  background:#e8f5e9;
+  color:#2e7d32;
+  border:1px solid #a5d6a7;
+  padding:4px 9px;
+  border-radius:20px;
+  font-size:11px;
+  font-weight:800;
+  margin-bottom:7px;
+}
+
+.pack-prix-ligne{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:3px;
+}
+
+.pack-prix{
+  color:#e8590c;
+  font-size:20px;
+  font-weight:900;
+}
+
+.pack-qte{
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+
+.pack-qte button{
+  width:34px;
+  height:34px;
+  border:0;
+  border-radius:50%;
+  background:#e8590c;
+  color:#fff;
+  font-size:21px;
+  font-weight:900;
+  cursor:pointer;
+  line-height:1;
+}
+
+.pack-qte button:active{
+  background:#bf360c;
+  transform:scale(.94);
+}
+
+.pack-qte span{
+  min-width:20px;
+  text-align:center;
+  font-size:17px;
+  font-weight:900;
+  color:#333;
+}
+
+.pack-separator{
+  height:1px;
+  background:linear-gradient(90deg,transparent,#c8e6c9,transparent);
+  margin:0 14px 10px;
+}
+
+.pack-mini-note{
+  text-align:center;
+  color:#888;
+  font-size:10px;
+  margin-top:5px;
+}
+
+.pack-card .badge-indispo{
+  margin:0 14px 10px;
+}
+
+@media(max-width:360px){
+  .pack-items{
+    gap:4px;
+    padding-right:39px;
+  }
+
+  .pack-item{
+    min-width:42px;
+    max-width:55px;
+  }
+
+  .pack-count-big{
+    width:38px;
+    height:38px;
+    font-size:12px;
+  }
+
+  .pack-body h3{
+    font-size:15px;
+  }
+}
+
+/* FORMULAIRE */
+.commande-form{
+  background:#fff;
+  margin:16px 8px;
+  padding:16px;
+  border-radius:14px;
+  box-shadow:0 2px 7px rgba(0,0,0,.12);
+}
+
+.commande-titre{
+  margin:0 0 14px;
+  font-size:16px;
+  color:#e8590c;
+  text-align:center;
+  font-weight:700;
+}
+
+.champ-label{
+  display:block;
+  font-size:13px;
+  font-weight:700;
+  color:#444;
+  margin:12px 0 5px;
+}
+
+.facultatif{
+  font-weight:400;
+  color:#999;
+  font-size:11.5px;
+}
+
+.obligatoire{
+  font-weight:400;
+  color:#e8590c;
+  font-size:11.5px;
+}
+
+.champ-input{
+  width:100%;
+  padding:11px 12px;
+  border:1.5px solid #ddd;
+  border-radius:10px;
+  font-size:15px;
+  background:#fafafa;
+  outline:none;
+  transition:border .2s;
+}
+
+.champ-input:focus{
+  border-color:#e8590c;
+  background:#fff;
+}
+
+.champ-avec-bouton{
+  display:flex;
+  gap:8px;
+}
+
+.champ-avec-bouton .champ-input{flex:1}
+
+.btn-localiser{
+  background:#e8590c;
+  color:#fff;
+  border:0;
+  border-radius:10px;
+  width:46px;
+  font-size:18px;
+  cursor:pointer;
+  flex-shrink:0;
+}
+
+.mode-retrait-box{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:6px;
+}
+
+.mode-retrait-carte{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  border:1.5px solid #ddd;
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  background:#fafafa;
+  transition:all .2s;
+}
+
+.mode-retrait-carte input[type=radio]{
+  flex-shrink:0;
+  margin-top:2px;
+  accent-color:#e8590c;
+}
+
+.mode-retrait-carte.selectionnee{
+  border-color:#e8590c;
+  background:#fff3e0;
+}
+
+#message-code{
+  font-size:12.5px;
+  margin-top:6px;
+  font-weight:700;
+  min-height:18px;
+}
+
+#message-code.valide{color:#2e7d32}
+#message-code.invalide{color:#c62828}
+
+.paiement-options{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.paiement-carte{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:1.5px solid #ddd;
+  border-radius:10px;
+  padding:10px 12px;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  background:#fafafa;
+  transition:all .2s;
+}
+
+.paiement-carte input[type=radio]{accent-color:#e8590c}
+
+.paiement-carte.selectionnee{
+  border-color:#e8590c;
+  background:#fff3e0;
+}
+
+.paiement-icone{
+  font-size:18px;
+  flex-shrink:0;
+}
+
+.info-paiement-box{
+  background:#fff3e0;
+  border-radius:10px;
+  padding:12px;
+  margin-top:10px;
+  font-size:14px;
+  text-align:center;
+  line-height:1.6;
+  display:none;
+}
+
+.info-paiement-box.visible{display:block}
+
+.info-paiement-numero{
+  font-size:20px;
+  font-weight:700;
+  color:#e8590c;
+  letter-spacing:1px;
+}
+
+#ligne-remise{
+  text-align:center;
+  color:#2e7d32;
+  font-weight:700;
+  font-size:13px;
+  margin-bottom:4px;
+  display:none;
+}
+
+#ligne-remise.visible{display:block}/* BARRE TOTAL */
+.barre-total{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:#fff;
+  padding:12px 12px 14px;
+  box-shadow:0 -3px 12px rgba(0,0,0,.18);
+  z-index:20;
+}
+
+.barre-total h2{
+  margin:0 0 10px;
+  text-align:center;
+  font-size:19px;
+  font-weight:700;
+}
+
+.btn-whatsapp{
+  display:block;
+  width:100%;
+  border:0;
+  border-radius:12px;
+  background:#25D366;
+  color:#fff;
+  padding:15px;
+  font-size:17px;
+  font-weight:700;
+  cursor:pointer;
+  letter-spacing:.3px;
+}
+
+.btn-whatsapp:active{background:#1ea855}
+
+/* POPUP LIVRAISON */
+.overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.72);
+  z-index:50;
+  align-items:flex-end;
+  justify-content:center;
+}
+
+.overlay.actif{display:flex}
+
+.popup-carte{
+  background:#fff;
+  border-radius:22px 22px 0 0;
+  padding:26px 18px 36px;
+  width:100%;
+  max-width:500px;
+  text-align:center;
+}
+
+.popup-titre{
+  font-size:20px;
+  font-weight:700;
+  margin:0 0 8px;
+  color:#333;
+}
+
+.popup-sous-titre{
+  font-size:14px;
+  color:#666;
+  margin:0 0 6px;
+}
+
+.popup-montant{
+  font-size:30px;
+  font-weight:700;
+  color:#e8590c;
+  margin:6px 0 4px;
+}
+
+.popup-msg{
+  font-size:14px;
+  color:#555;
+  margin:0 0 18px;
+  line-height:1.5;
+  background:#fff3e0;
+  padding:10px;
+  border-radius:10px;
+}
+
+.btn-popup{
+  display:block;
+  width:100%;
+  border:0;
+  border-radius:12px;
+  padding:14px;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  margin-bottom:10px;
+  transition:opacity .15s;
+}
+
+.btn-popup:active{opacity:.85}
+
+.btn-popup.vert{
+  background:#2e7d32;
+  color:#fff;
+}
+
+.btn-popup.orange{
+  background:#e8590c;
+  color:#fff;
+}
+
+.btn-popup.gris{
+  background:#f0f0f0;
+  color:#333;
+}
+
+/* RECAP OVERLAY */
+.recap-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.82);
+  z-index:60;
+  overflow-y:auto;
+  padding:14px 8px 30px;
+}
+
+.recap-overlay.actif{display:block}
+
+.recap-carte{
+  background:#fff;
+  border-radius:18px;
+  padding:20px;
+  max-width:480px;
+  margin:0 auto;
+}
+
+.recap-titre{
+  text-align:center;
+  font-size:18px;
+  font-weight:700;
+  color:#e8590c;
+  margin:0 0 16px;
+  padding-bottom:12px;
+  border-bottom:2px solid #fff3e0;
+}
+
+.recap-section{margin:10px 0}
+
+.recap-section-label{
+  font-size:11px;
+  color:#999;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  margin:0 0 5px;
+}
+
+.recap-ligne{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:6px 0;
+  border-bottom:1px solid #f5f5f5;
+  font-size:14px;
+}
+
+.recap-ligne:last-child{border-bottom:none}
+
+.recap-ligne-nom{
+  flex:1;
+  margin-right:8px;
+  color:#444;
+}
+
+.recap-ligne-prix{
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.recap-total{
+  display:flex;
+  justify-content:space-between;
+  font-size:19px;
+  font-weight:700;
+  color:#e8590c;
+  margin-top:12px;
+  padding-top:12px;
+  border-top:2px solid #e8590c;
+}
+
+.recap-infos{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid #eee;
+}
+
+.recap-info-row{
+  font-size:13.5px;
+  margin:5px 0;
+  color:#555;
+  line-height:1.4;
+}
+
+.recap-info-row strong{color:#333}
+
+.btn-confirmer{
+  display:block;
+  width:100%;
+  background:#25D366;
+  color:#fff;
+  border:0;
+  border-radius:12px;
+  padding:16px;
+  font-size:17px;
+  font-weight:700;
+  cursor:pointer;
+  margin-top:16px;
+}
+
+.btn-modifier{
+  display:block;
+  width:100%;
+  background:#f0f0f0;
+  color:#444;
+  border:0;
+  border-radius:12px;
+  padding:13px;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  margin-top:10px;
+}
+
+/* ZOOM */
+.zoom-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.92);
+  z-index:100;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  padding:20px;
+}
+
+.zoom-overlay.actif{display:flex}
+
+.zoom-overlay img{
+  max-width:100%;
+  max-height:75vh;
+  border-radius:14px;
+  object-fit:contain;
+}
+
+.zoom-overlay h3{
+  color:#fff;
+  margin:16px 0 0;
+  font-size:18px;
+  text-align:center;
+}
+
+.zoom-close{
+  position:absolute;
+  top:18px;
+  right:18px;
+  background:#fff;
+  color:#333;
+  border:0;
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  font-size:22px;
+  font-weight:700;
+  cursor:pointer;
+  line-height:1;
+}
+
+/* INSTALL OVERLAY */
+.install-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.88);
+  z-index:200;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.install-overlay.actif{display:flex}
+
+.install-carte{
+  background:#fff;
+  border-radius:20px;
+  padding:28px 20px;
+  max-width:360px;
+  width:100%;
+  text-align:center;
+}
+
+.install-carte img{
+  width:80px;
+  height:80px;
+  border-radius:18px;
+  object-fit:cover;
+  margin-bottom:14px;
+}
+
+.install-carte h3{
+  margin:0 0 10px;
+  color:#333;
+  font-size:18px;
+}
+
+.install-etapes{
+  text-align:left;
+  background:#fff3e0;
+  border-radius:10px;
+  padding:12px 14px;
+  margin-top:12px;
+  font-size:14px;
+  line-height:1.8;
+  color:#5d3a1a;
+}
+
+.install-btn-ok{
+  background:#e8590c;
+  color:#fff;
+  border:0;
+  border-radius:12px;
+  padding:13px 28px;
+  font-size:16px;
+  font-weight:700;
+  margin-top:16px;
+  cursor:pointer;
+}
+
+/* BOUTON HAUT */
+#bouton-haut{
+  position:fixed;
+  right:14px;
+  bottom:170px;
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  background:#e8590c;
+  color:#fff;
+  border:0;
+  font-size:18px;
+  cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.28);
+  z-index:19;
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+
+#bouton-haut.visible{display:flex}
 
 /* FOOTER */
-footer{background:#333;color:#fff;padding:20px;text-align:center;margin-top:30px}
-.footer-links{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0}
-footer a{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;background:rgba(255,255,255,0.1);border-radius:8px;color:#fff;text-decoration:none;font-weight:600;font-size:12px;cursor:pointer;transition:all 0.3s}
-footer a:active{opacity:0.8}
-.admin-btn{background:#e8590c;margin:15px 0;padding:12px;border-radius:8px;font-weight:700;cursor:pointer}
+footer{
+  background:#333;
+  color:#fff;
+  text-align:center;
+  padding:26px 15px;
+  margin-top:20px;
+}
 
-.invisible{display:none}
+footer p{
+  margin:7px 0;
+  font-size:14px;
+}
 
-@media(max-width:600px){
-  .hero h1{font-size:32px}
-  .products-grid{grid-template-columns:1fr 1fr}
+.footer-links{
+  display:flex;
+  gap:8px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin:12px 0;
+}
+
+.footer-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  color:#fff;
+  text-decoration:none;
+  padding:13px 16px;
+  border-radius:10px;
+  font-size:15px;
+  font-weight:700;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.25);
+  flex:1;
+  min-width:130px;
+  max-width:180px;
+}
+
+.footer-btn.location{
+  background:#e8590c;
+  border-color:#e8590c;
+}
+
+.footer-btn.facebook{
+  background:#1877F2;
+  border-color:#1877F2;
+}
+
+.footer-btn.tiktok{
+  background:#000;
+  border-color:#555;
+}
+
+.footer-phone{
+  font-size:16px;
+  font-weight:700;
+  margin:12px 0;
+}
+
+.footer-espaces{
+  font-size:12px;
+  opacity:.7;
+  margin-top:14px;
+}
+
+.footer-espaces a{
+  color:#ffa;
+  text-decoration:none;
+  margin:0 6px;
 }
 </style>
 </head>
+
 <body>
 
+<!-- HEADER -->
 <header>
-  <div style="display:flex;justify-content:space-between;align-items:center">
-    <div class="header-logo">🍦 NOOGO</div>
-    <div class="header-icons" id="header-icons">
-      <span title="Points fidélité">⭐</span>
-      <span title="Notifications">🔔</span>
-    </div>
-  </div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <span class="badge">⏰ Ouvert 24h/24</span>
-    <span class="badge">🚚 Livraison rapide</span>
-    <span class="badge">⭐ Top avis</span>
-  </div>
+  <img src="/logo.png" alt="Noogo" onerror="this.src='/icon-192.png'">
+  <h1>NOOGO</h1>
+  <p class="tagline">Des saveurs authentiques, pour tous les plaisirs 🍦</p>
+  <p>Livraison à Karpala et alentours</p>
+  <div class="badge-24h">🕒 Ouvert 24h/24 — commandez à toute heure !</div>
+  <br>
+  <button id="install-btn" onclick="installerApp()">⬇️ Installer l'application</button>
 </header>
 
-<div class="hero">
-  <div class="hero-content">
-    <div class="hero-logo">🎉</div>
-    <h1>Bienvenue sur Noogo Premium</h1>
-    <p>Les meilleures saveurs de Karpala</p>
-    <div class="hero-badges">
-      <div class="hero-badge">✨ 100% Naturel</div>
-      <div class="hero-badge">🏆 Top Avis</div>
-      <div class="hero-badge">🎁 Points</div>
+<!-- BANDEAU INSTALL -->
+<div id="bandeau-install">
+  <span class="bandeau-install-txt">📱 Installez Noogo sur votre téléphone !</span>
+  <button class="bandeau-install-btn" onclick="installerApp()">Installer</button>
+  <button class="bandeau-close" onclick="fermerBandeauInstall()">✕</button>
+</div>
+
+<!-- PROMO BANDEAU -->
+<div class="promo-bandeau">
+  🎁 Codes promo : <strong>FB</strong> (Facebook) · <strong>TT</strong> (TikTok) · <strong>MARDI</strong> · <strong>SAMEDI</strong><br>
+  Utilisez votre code dans le formulaire ci-dessous pour profiter d'une remise !
+</div>
+
+<!-- BANNER LIVRAISON -->
+<div class="banner-livraison" id="banner-livraison"></div>
+
+<!-- TITRE + TABS -->
+<h2 class="section-titre">🍦 Nos produits &amp; Packs</h2>
+<p class="section-sous-titre">Touchez une photo pour l'agrandir</p>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab-btn actif" data-cat="tout" onclick="filtrer('tout')">🌟 Tout</button>
+    <button class="tab-btn" data-cat="cremes" onclick="filtrer('cremes')">🍦 Crèmes</button>
+    <button class="tab-btn" data-cat="popcorn" onclick="filtrer('popcorn')">🍿 Popcorn</button>
+    <button class="tab-btn" data-cat="pain" onclick="filtrer('pain')">🥖 Pain</button>
+    <button class="tab-btn" data-cat="esquimau" onclick="filtrer('esquimau')">🍨 Esquimau</button>
+    <button class="tab-btn" data-cat="gros" onclick="filtrer('gros')">📦 Gros Format</button>
+  </div>
+</div>
+
+<!-- CATALOGUE -->
+<div id="produits"></div>
+
+<!-- FORMULAIRE -->
+<div class="commande-form">
+  <h3 class="commande-titre">📋 Vos informations de commande</h3>
+
+  <label class="champ-label">
+    Nom &amp; Prénom
+    <span class="facultatif">(facultatif)</span>
+  </label>
+  <input type="text" id="champ-nom" class="champ-input" placeholder="Votre nom">
+
+  <label class="champ-label">
+    Numéro de téléphone
+    <span class="obligatoire">✱ obligatoire</span>
+  </label>
+  <input type="tel" id="champ-tel" class="champ-input" placeholder="Ex : 70 12 34 56">
+
+  <label class="champ-label">
+    Mode de réception
+    <span class="obligatoire">✱ obligatoire</span>
+  </label>
+
+  <div class="mode-retrait-box">
+    <label class="mode-retrait-carte selectionnee">
+      <input type="radio" name="modeReception" value="livraison" checked onchange="changerModeReception()">
+      <span>🚚 Livraison à domicile <small style="font-weight:400;color:#888">(Gratuite dès 3 000 FCFA)</small></span>
+    </label>
+
+    <label class="mode-retrait-carte">
+      <input type="radio" name="modeReception" value="retrait" onchange="changerModeReception()">
+      <span>🏃 Retrait au local — Gratuit</span>
+    </label>
+  </div>
+
+  <div id="bloc-adresse">
+    <label class="champ-label">
+      Lieu de livraison
+      <span class="facultatif">(Quartier, repère)</span>
+    </label>
+
+    <div class="champ-avec-bouton">
+      <input type="text" id="champ-localisation" class="champ-input" placeholder="Ex : Karpala, Zone 1...">
+      <button type="button" class="btn-localiser" onclick="obtenirLocalisation()" title="GPS">📍</button>
     </div>
   </div>
-</div>
 
-<!-- USER PROFILE & LOYALTY -->
-<div class="profile-card">
-  <div class="profile-avatar">👤</div>
-  <div class="profile-info" style="flex:1">
-    <h3 id="user-name">Bienvenue!</h3>
-    <p>Client fidèle Noogo</p>
+  <label class="champ-label">
+    Code promo
+    <span class="facultatif">(si vous en avez un)</span>
+  </label>
+
+  <div class="champ-avec-bouton">
+    <input type="text" id="champ-code" class="champ-input" placeholder="Ex : MARDI, FB, TT..." oninput="verifierCode()">
   </div>
-  <div class="points-badge" id="points-display">0 pts</div>
+
+  <div id="message-code"></div>
+
+  <label class="champ-label" style="margin-top:16px">
+    Mode de paiement
+    <span class="obligatoire">✱ obligatoire</span>
+  </label>
+
+  <div class="paiement-options">
+    <label class="paiement-carte selectionnee">
+      <input type="radio" name="paiement" value="especes" checked onchange="afficherInfoPaiement()">
+      <span class="paiement-icone">💵</span>
+      Espèces à la livraison
+    </label>
+
+    <label class="paiement-carte">
+      <input type="radio" name="paiement" value="orange" onchange="afficherInfoPaiement()">
+      <span class="paiement-icone">🟠</span>
+      Orange Money
+    </label>
+
+    <label class="paiement-carte">
+      <input type="radio" name="paiement" value="wave" onchange="afficherInfoPaiement()">
+      <span class="paiement-icone">🔵</span>
+      Wave
+    </label>
+  </div>
+
+  <div class="info-paiement-box" id="info-paiement"></div>
 </div>
 
-<div class="loyalty-section">
-  <div class="loyalty-title">🎁 Programme Fidélité</div>
-  <div class="loyalty-progress"><div class="loyalty-bar" id="loyalty-bar" style="width:65%"></div></div>
-  <div class="loyalty-text">650 / 1000 points → Récompense débloquée!</div>
-  <div style="margin-top:10px;font-size:12px">✅ Gagnez 1 point par FCFA dépensé</div>
+<!-- BARRE TOTAL -->
+<div class="barre-total">
+  <div id="ligne-remise"></div>
+  <h2>Total : <span id="total">0</span> FCFA</h2>
+  <button class="btn-whatsapp" onclick="validerCommande()">💬 Commander sur WhatsApp</button>
 </div>
 
-<!-- DELIVERY INFO -->
-<div class="delivery-info">
-  <div class="delivery-icon">📍</div>
-  <div class="delivery-text">
-    <h4>Livraison à Karpala</h4>
-    <p id="delivery-time">Estimée: 30-45 min</p>
+<!-- POPUP LIVRAISON < 3000F -->
+<div class="overlay" id="popup-livraison">
+  <div class="popup-carte">
+    <div class="popup-titre">🚚 Livraison à domicile</div>
+    <div class="popup-sous-titre">Votre commande actuelle</div>
+    <div class="popup-montant" id="popup-total-montant">0 FCFA</div>
+
+    <div class="popup-msg">
+      Il vous manque encore
+      <strong id="popup-manque">0 FCFA</strong>
+      pour débloquer la livraison
+      <strong>GRATUITE</strong>
+      (à partir de 3 000 FCFA) 🎉
+    </div>
+
+    <button class="btn-popup vert" onclick="ajouterArticles()">
+      ➕ Ajouter des articles pour livraison gratuite
+    </button>
+
+    <button class="btn-popup orange" onclick="choisirLivraison1500()">
+      🚚 Me faire livrer quand même
+    </button>
+
+    <button class="btn-popup gris" onclick="choisirRetrait()">
+      🏪 Je viens récupérer au local (Gratuit)
+    </button>
   </div>
 </div>
 
-<!-- PROMO CODES -->
-<div class="codes-section">
-  <div class="codes-title">🎁 Codes Promo Actifs</div>
-  <div class="code-list">
-    <div class="code-chip" onclick="appliquerCode('FB')">FB</div>
-    <div class="code-chip" onclick="appliquerCode('TT')">TT</div>
-    <div class="code-chip" onclick="appliquerCode('MARDI')">MARDI</div>
-    <div class="code-chip" onclick="appliquerCode('SAMEDI')">SAMEDI</div>
+<!-- RECAP AVANT WHATSAPP -->
+<div class="recap-overlay" id="recap-overlay">
+  <div class="recap-carte">
+    <div class="recap-titre">📋 Récapitulatif de votre commande</div>
+    <div id="recap-contenu"></div>
+
+    <button class="btn-confirmer" onclick="envoyerWhatsapp()">
+      ✅ Confirmer et envoyer sur WhatsApp
+    </button>
+
+    <button class="btn-modifier" onclick="fermerRecap()">
+      ❌ Modifier ma commande
+    </button>
+  </div>
+</div><!-- ZOOM IMAGE -->
+<div class="zoom-overlay" id="zoom-overlay" onclick="fermerZoom()">
+  <button class="zoom-close" onclick="fermerZoom()">✕</button>
+  <img id="zoom-img" src="" alt="">
+  <h3 id="zoom-titre"></h3>
+</div>
+
+<!-- INSTALL OVERLAY -->
+<div class="install-overlay" id="install-overlay">
+  <div class="install-carte">
+    <img src="/logo.png" alt="Noogo" onerror="this.src='/icon-192.png'">
+
+    <h3>Installer Noogo</h3>
+
+    <p style="font-size:14px;color:#666;margin:0">
+      Accédez à Noogo rapidement depuis votre écran d'accueil
+    </p>
+
+    <div class="install-etapes" id="install-etapes"></div>
+
+    <button class="install-btn-ok" onclick="fermerGuideInstall()">
+      Compris !
+    </button>
   </div>
 </div>
 
-<!-- PRODUCTS -->
-<div class="products-header">
-  <h2>🍨 Nos Produits Premium</h2>
-  <p>Sélection du jour • Avis clients ⭐⭐⭐⭐⭐</p>
-</div>
-
-<div class="filter-buttons">
-  <button class="filter-btn active" onclick="filtrer('tout')">⭐ Tout</button>
-  <button class="filter-btn" onclick="filtrer('cremes')">🍦 Crèmes</button>
-  <button class="filter-btn" onclick="filtrer('popcorn')">🍿 Popcorn</button>
-  <button class="filter-btn" onclick="filtrer('pains')">🥖 Pains</button>
-  <button class="filter-btn" onclick="filtrer('packs')">🎁 Packs</button>
-</div>
-
-<div class="products-grid" id="produits-grid">
-  <div style="grid-column:1/-1;text-align:center;padding:20px;color:#999">Chargement...</div>
-</div>
-
-<!-- CART -->
-<div class="cart-section">
-  <div class="cart-title">🛒 Votre Panier</div>
-  <div id="cart-list" class="cart-empty">Panier vide</div>
-  <div class="cart-total">
-    <span>Total:</span>
-    <span class="cart-total-price" id="total-prix">0 FCFA</span>
-  </div>
-  <button class="btn-commander" onclick="commanderWhatsApp()">💬 Commander sur WhatsApp</button>
-</div>
+<!-- BOUTON HAUT -->
+<button id="bouton-haut" onclick="remonterEnHaut()">▲</button>
 
 <!-- FOOTER -->
 <footer>
+  <p class="footer-phone">📞 +226 61 68 27 06</p>
+
   <div class="footer-links">
-    <a href="https://wa.me/22661682706">💬 WhatsApp</a>
-    <a href="https://www.facebook.com/share/1DX4RzmDFC/">👍 Facebook</a>
-    <a href="https://www.tiktok.com/@dlices.de.papous">🎵 TikTok</a>
-    <a href="https://maps.google.com/?q=Karpala+Ouagadougou">📍 Maps</a>
+    <a href="https://wa.me/22661682706" target="_blank" class="footer-btn location">
+      💬 WhatsApp
+    </a>
+
+    <a href="https://www.facebook.com/share/1DX4RzmDFC/" target="_blank" class="footer-btn facebook">
+      👍 Facebook
+    </a>
+
+    <a href="https://www.tiktok.com/@dlices.de.papous" target="_blank" class="footer-btn tiktok">
+      🎵 TikTok
+    </a>
   </div>
-  <div class="footer-links">
-    <a href="/partenaire.html">🤝 Partenaires</a>
-    <a class="admin-btn" onclick="location.href='/admin.html'">🔐 Admin</a>
+
+  <a href="https://maps.google.com/?q=Karpala+Ouagadougou"
+     target="_blank"
+     class="footer-btn location"
+     style="max-width:280px;margin:6px auto;display:flex">
+    📍 Nous trouver sur Maps
+  </a>
+
+  <div class="footer-espaces">
+    <a href="/partenaire.html">🤝 Espace Partenaire</a> ·
+    <a href="/admin.html">🔐 Admin</a>
   </div>
-  <div style="margin-top:15px;padding-top:15px;border-top:1px solid #555;font-size:11px">
-    © Noogo Premium 2026 | Tous droits réservés
-  </div>
+
+  <p style="font-size:12px;opacity:.7;margin-top:14px">
+    © Noogo — Tous droits réservés
+  </p>
 </footer>
 
 <script>
-const API = window.location.origin;
-const WHATSAPP = "22661682706";
 
-let panier = {};
-let points = parseInt(localStorage.getItem("noogo-points")) || 650;
-let filtreActuel = "tout";
+// ===================== DONNÉES CATALOGUE =====================
 
-const PRODUITS = [
-  {id:"banane",cat:"cremes",nom:"Crème Banane 🍌",prix:1000,rating:4.8,avis:234,img:"🍦"},
-  {id:"baobab",cat:"cremes",nom:"Crème Baobab 🌳",prix:1000,rating:4.9,avis:412,img:"🍦"},
-  {id:"vanille",cat:"cremes",nom:"Crème Vanille 🤍",prix:700,rating:4.7,avis:189,img:"🍦"},
-  {id:"choco",cat:"cremes",nom:"Crème Chocolat 🍫",prix:600,rating:4.9,avis:567,img:"🍦"},
-  {id:"fraise",cat:"cremes",nom:"Crème Fraise 🍓",prix:700,rating:4.8,avis:298,img:"🍦"},
-  {id:"pop-sachet",cat:"popcorn",nom:"Popcorn Sachet 🍿",prix:300,rating:4.6,avis:145,img:"🍿"},
-  {id:"pop-carton",cat:"popcorn",nom:"Popcorn Carton 🍿",prix:500,rating:4.7,avis:203,img:"🍿"},
-  {id:"pack-mix",cat:"packs",nom:"Pack Mix Premium 🎁",prix:6000,rating:4.9,avis:876,img:"🎁"},
-  {id:"pack-fete",cat:"packs",nom:"Pack Fête (10pots) 🎉",prix:12000,rating:5.0,avis:543,img:"🎁"},
+const CATALOGUE = [
+
+  // ── CRÈMES PETITS POTS 125ml ──
+
+  {
+    id:"banane-p",
+    cat:"cremes",
+    gr:"petit",
+    type:"produit",
+    nom:"Crème Glacée Banane",
+    info:"Petit pot 125ml",
+    prix:1000,
+    img:"Creme_Glacee_Banane_1000F.jpg",
+    qte:0
+  },
+
+  {
+    id:"pk-ban-p",
+    cat:"cremes",
+    gr:"petit",
+    type:"pack",
+    nom:"🎁 Pack Banane — Petit Format",
+    info:"5 pots 125ml · Livraison incluse ✓",
+    prix:7000,
+    img:"Creme_Glacee_Banane_1000F.jpg",
+    packCount:5,
+    packLabel:"5 POTS • 125 ML",
+    packImages:[
+      "Creme_Glacee_Banane_1000F.jpg",
+      "Creme_Glacee_Banane_1000F.jpg",
+      "Creme_Glacee_Banane_1000F.jpg",
+      "Creme_Glacee_Banane_1000F.jpg",
+      "Creme_Glacee_Banane_1000F.jpg"
+    ],
+    qte:0
+  },
+
+  {
+    id:"vanille-p",
+    cat:"cremes",
+    gr:"petit",
+    type:"produit",
+    nom:"Crème Glacée Vanille",
+    info:"Petit pot 125ml",
+    prix:700,
+    img:"Creme_Glacee_Vanille_Lactee_700F.jpg",
+    qte:0
+  },
+
+  {
+    id:"pk-van-p",
+    cat:"cremes",
+    gr:"petit",
+    type:"pack",
+    nom:"🎁 Pack Vanille — Petit Format",
+    info:"5 pots 125ml · Livraison incluse ✓",
+    prix:5500,
+    img:"Creme_Glacee_Vanille_Lactee_700F.jpg",
+    packCount:5,
+    packLabel:"5 POTS • 125 ML",
+    packImages:[
+      "Creme_Glacee_Vanille_Lactee_700F.jpg",
+      "Creme_Glacee_Vanille_Lactee_700F.jpg",
+      "Creme_Glacee_Vanille_Lactee_700F.jpg",
+      "Creme_Glacee_Vanille_Lactee_700F.jpg",
+      "Creme_Glacee_Vanille_Lactee_700F.jpg"
+    ],
+    qte:0
+  },
+
+  {
+    id:"choco-p",
+    cat:"cremes",
+    gr:"petit",
+    type:"produit",
+    nom:"Crème Glacée Chocolat",
+    info:"Petit pot 125ml",
+    prix:600,
+    img:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
+    qte:0
+  },
+
+  {
+    id:"pk-cho-p",
+    cat:"cremes",
+    gr:"petit",
+    type:"pack",
+    nom:"🎁 Pack Chocolat — Petit Format",
+    info:"5 pots 125ml · Livraison incluse ✓",
+    prix:5000,
+    img:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
+    packCount:5,
+    packLabel:"5 POTS • 125 ML",
+    packImages:[
+      "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
+      "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
+      "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
+      "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
+      "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg"
+    ],
+    qte:0
+  },
+
+  {
+    id:"fraise-p",
+    cat:"cremes",
+    gr:"petit",
+    type:"produit",
+    nom:"Crème Glacée Fraise 🍓",
+    info:"Petit pot 125ml",
+    prix:700,
+    img:"",
+    qte:0
+  },
+
+  {
+    id:"pk-fra-p",
+    cat:"cremes",
+    gr:"petit",
+    type:"pack",
+    nom:"🎁 Pack Fraise — Petit Format",
+    info:"5 pots 125ml · Livraison incluse ✓",
+    prix:5500,
+    img:"",
+    packCount:5,
+    packLabel:"5 POTS • 125 ML",
+    packImages:[
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    qte:0
+  },
+
+  {
+    id:"pk-mix-p",
+    cat:"cremes",
+    gr:"petit",
+    type:"pack",
+    nom:"🎁 Pack Découverte Mix Petit",
+    info:"5 pots saveurs variées 125ml · Livraison incluse ✓",
+    prix:6000,
+    img:"Creme_Glacee_Banane_1000F.jpg",
+    packCount:5,
+    packLabel:"5 POTS • SAVEURS VARIÉES",
+    packImages:[
+      "Creme_Glacee_Banane_1000F.jpg",
+      "Creme_Glacee_Vanille_Lactee_700F.jpg",
+      "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
+      "Creme_Glacee_Vanille_Lactee_700F.jpg",
+      "Creme_Glacee_Banane_1000F.jpg"
+    ],
+    qte:0
+  },
+
+  // ── CRÈMES GRANDS POTS 250ml ──
+
+  {
+    id:"banane-g",
+    cat:"cremes",
+    gr:"grand",
+    type:"produit",
+    nom:"Fruits Naturel Banane",
+    info:"Grand pot 250ml",
+    prix:2000,
+    img:"Fruits_Naturel_Banane_2000F.jpg",
+    qte:0
+  },
+
+  {
+    id:"pk-ban-g",
+    cat:"cremes",
+    gr:"grand",
+    type:"pack",
+    nom:"🎁 Pack Banane — Grand Format",
+    info:"4 pots 250ml · Livraison incluse ✓",
+    prix:10000,
+    img:"Fruits_Naturel_Banane_2000F.jpg",
+    packCount:4,
+    packLabel:"4 POTS • 250 ML",
+    packImages:[
+      "Fruits_Naturel_Banane_2000F.jpg",
+      "Fruits_Naturel_Banane_2000F.jpg",
+      "Fruits_Naturel_Banane_2000F.jpg",
+      "Fruits_Naturel_Banane_2000F.jpg"
+    ],
+    qte:0
+  },
+
+  {
+    id:"vanille-g",
+    cat:"cremes",
+    gr:"grand",
+    type:"produit",
+    nom:"Vanille Lactée Grand Format",
+    info:"Grand pot 250ml",
+    prix:1400,
+    img:"Vanille_Lacte_1400F.jpg",
+    qte:0
+  },
+
+  {
+    id:"pk-van-g",
+    cat:"cremes",
+    gr:"grand",
+    type:"pack",
+    nom:"🎁 Pack Vanille — Grand Format",
+    info:"4 pots 250ml · Livraison incluse ✓",
+    prix:7600,
+    img:"Vanille_Lacte_1400F.jpg",
+    packCount:4,
+    packLabel:"4 POTS • 250 ML",
+    packImages:[
+      "Vanille_Lacte_1400F.jpg",
+      "Vanille_Lacte_1400F.jpg",
+      "Vanille_Lacte_1400F.jpg",
+      "Vanille_Lacte_1400F.jpg"
+    ],
+    qte:0
+  },
+
+  {
+    id:"choco-g",
+    cat:"cremes",
+    gr:"grand",
+    type:"produit",
+    nom:"Chocolat Cacao au Lait Grand",
+    info:"Grand pot 250ml",
+    prix:1200,
+    img:"Chocolat_Cacao_au_Lait_1200F.jpg",
+    qte:0
+  },
+
+  {
+    id:"pk-cho-g",
+    cat:"cremes",
+    gr:"grand",
+    type:"pack",
+    nom:"🎁 Pack Chocolat — Grand Format",
+    info:"4 pots 250ml · Livraison incluse ✓",
+    prix:6800,
+    img:"Chocolat_Cacao_au_Lait_1200F.jpg",
+    packCount:4,
+    packLabel:"4 POTS • 250 ML",
+    packImages:[
+      "Chocolat_Cacao_au_Lait_1200F.jpg",
+      "Chocolat_Cacao_au_Lait_1200F.jpg",
+      "Chocolat_Cacao_au_Lait_1200F.jpg",
+      "Chocolat_Cacao_au_Lait_1200F.jpg"
+    ],
+    qte:0
+  },
+
+  {
+    id:"fraise-g",
+    cat:"cremes",
+    gr:"grand",
+    type:"produit",
+    nom:"Crème Fraise Grand 🍓",
+    info:"Grand pot 250ml",
+    prix:1400,
+    img:"",
+    qte:0
+  },
+
+  {
+    id:"pk-fra-g",
+    cat:"cremes",
+    gr:"grand",
+    type:"pack",
+    nom:"🎁 Pack Fraise — Grand Format",
+    info:"4 pots 250ml · Livraison incluse ✓",
+    prix:7600,
+    img:"",
+    packCount:4,
+    packLabel:"4 POTS • 250 ML",
+    packImages:[
+      "",
+      "",
+      "",
+      ""
+    ],
+    qte:0
+  },
+
+  {
+    id:"pk-mix-g",
+    cat:"cremes",
+    gr:"grand",
+    type:"pack",
+    nom:"🎁 Pack Mix Grand Format",
+    info:"4 gros pots saveurs variées · Livraison incluse ✓",
+    prix:10000,
+    img:"Fruits_Naturel_Banane_2000F.jpg",
+    packCount:4,
+    packLabel:"4 POTS • SAVEURS VARIÉES",
+    packImages:[
+      "Fruits_Naturel_Banane_2000F.jpg",
+      "Vanille_Lacte_1400F.jpg",
+      "Chocolat_Cacao_au_Lait_1200F.jpg",
+      "Fruits_Naturel_Banane_2000F.jpg"
+    ],
+    qte:0
+  },
+
+  // ── POPCORN ──
+
+  {
+    id:"pop-sachet",
+    cat:"popcorn",
+    gr:"",
+    type:"produit",
+    nom:"Popcorn Sachet",
+    info:"",
+    prix:300,
+    img:"POPcorn_Sachet_300F.jpg",
+    qte:0
+  },
+
+  {
+    id:"pop-carton",
+    cat:"popcorn",
+    gr:"",
+    type:"produit",
+    nom:"Popcorn Carton",
+    info:"",
+    prix:500,
+    img:"POPcorn_Carton_500F.jpg",
+    qte:0
+  },
+
+  // ── PAIN ANGLAIS ──
+
+  {
+    id:"pain-700",
+    cat:"pain",
+    gr:"",
+    type:"produit",
+    nom:"Pain Anglais",
+    info:"",
+    prix:700,
+    img:"Pain_Anglais_700F.jpg",
+    qte:0
+  },
+
+  {
+    id:"pain-1000",
+    cat:"pain",
+    gr:"",
+    type:"produit",
+    nom:"Pain Anglais",
+    info:"",
+    prix:1000,
+    img:"Pain_Anglais_1000F.jpg",
+    qte:0
+  },  // ── ESQUIMAU ──
+
+  {
+    id:"esq-500",
+    cat:"esquimau",
+    gr:"",
+    type:"produit",
+    nom:"Esquimau Sandra",
+    info:"",
+    prix:500,
+    img:"Esquimau_Sandra_500F.jpg",
+    qte:0
+  },
+
+  {
+    id:"esq-800",
+    cat:"esquimau",
+    gr:"",
+    type:"produit",
+    nom:"Esquimau Sandra Chocolat Coco",
+    info:"",
+    prix:800,
+    img:"Esquimau_Sandra_Chocolat_Coco_800F.jpg",
+    qte:0
+  },
+
+  // ── GROS FORMAT ──
+
+  {
+    id:"creme-6250",
+    cat:"gros",
+    gr:"",
+    type:"produit",
+    nom:"Crème Glacée 6250ml",
+    info:"Grand seau familial",
+    prix:35000,
+    img:"Creme_6250ml_35000F.jpg",
+    qte:0
+  },
+
+  {
+    id:"pk-ceremonie",
+    cat:"gros",
+    gr:"",
+    type:"pack",
+    nom:"🎁 Pack Fête / Cérémonie",
+    info:"2 seaux 6250ml · Livraison incluse ✓",
+    prix:72000,
+    img:"Creme_6250ml_35000F.jpg",
+    packCount:2,
+    packLabel:"2 SEAUX • 6250 ML",
+    packImages:[
+      "Creme_6250ml_35000F.jpg",
+      "Creme_6250ml_35000F.jpg"
+    ],
+    qte:0
+  }
 ];
 
-document.addEventListener("DOMContentLoaded", () => {
-  afficherProduits();
-  afficherPanier();
-  afficherPoints();
-  enregistrerSW();
+// ===================== ÉTAT =====================
+
+let catActive = "tout";
+let promoApplique = null;
+let fraisLivraison = 0;
+let modeReception = "livraison";
+let disponibilite = {};
+let deferredPrompt = null;
+
+// ===================== INIT =====================
+
+window.addEventListener("DOMContentLoaded", () => {
+  chargerDisponibilite();
+  afficherCatalogue();
+  afficherInfoPaiement();
+  setupScrollBtn();
+  setupPWA();
 });
 
-function enregistrerSW(){
-  if("serviceWorker" in navigator){
-    navigator.serviceWorker.register("/sw.js").catch(()=>{});
-  }
+// ===================== DISPONIBILITÉ =====================
+
+async function chargerDisponibilite() {
+  try {
+    const r = await fetch("/api/admin", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        action:"get_produits_etat"
+      })
+    });
+
+    if(r.ok){
+      const d = await r.json();
+      disponibilite = d.etat || {};
+      afficherCatalogue();
+    }
+  } catch(_){}
 }
 
-function afficherPoints(){
-  document.getElementById("points-display").textContent = points + " pts";
-  const pct = Math.min((points/1000)*100, 100);
-  document.getElementById("loyalty-bar").style.width = pct + "%";
+function estDispo(id){
+  return id in disponibilite ? disponibilite[id] : true;
+}
+
+// ===================== IMAGES =====================
+
+function imgSrc(img){
+  if(!img){
+    return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><rect width='90' height='90' fill='%23fce4ec' rx='12'/><text x='45' y='38' font-size='11' text-anchor='middle' fill='%23c62828' font-family='Arial' font-weight='bold'>📷 Photo</text><text x='45' y='56' font-size='11' text-anchor='middle' fill='%23c62828' font-family='Arial'>à venir</text></svg>`;
+  }
+
+  return "/produits/" + img;
+}
+
+function echapperHTML(texte){
+  return String(texte || "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function echapperJS(texte){
+  return String(texte || "")
+    .replace(/\\/g,"\\\\")
+    .replace(/'/g,"\\'")
+    .replace(/\n/g,"\\n")
+    .replace(/\r/g,"\\r");
+}
+
+// ===================== PRODUIT NORMAL =====================
+
+function renderProduitNormal(p, idx){
+
+  const dispo = estDispo(p.id);
+  const src = imgSrc(p.img);
+
+  const classes =
+    "produit" +
+    (!dispo ? " indisponible" : "");
+
+  const badgeEtat = !dispo
+    ? `<div class="badge-indispo">⏸ Temporairement indisponible</div>`
+    : "";
+
+  return `
+  <div class="${classes}">
+
+    <div class="img-wrap"
+         onclick="agrandir('${echapperJS(src)}','${echapperJS(p.nom)}')">
+
+      <img
+        src="${src}"
+        alt="${echapperHTML(p.nom)}"
+        loading="lazy"
+        onerror="this.onerror=null;this.src='${imgSrc("")}'">
+
+      <span class="zoom-btn">
+        🔍 Agrandir
+      </span>
+
+    </div>
+
+    <div class="info">
+
+      <h3>${echapperHTML(p.nom)}</h3>
+
+      ${p.info
+        ? `<div class="produit-info">${echapperHTML(p.info)}</div>`
+        : ""}
+
+      ${badgeEtat}
+
+      <div class="prix">
+        ${p.prix.toLocaleString("fr-FR")} FCFA
+      </div>
+
+      <div class="qte">
+        <button onclick="changerQte(${idx},-1)">−</button>
+        <span id="qte-${idx}">${p.qte}</span>
+        <button onclick="changerQte(${idx},1)">+</button>
+      </div>
+
+    </div>
+  </div>`;
+}
+
+// ===================== PACK PROFESSIONNEL =====================
+
+function renderPack(p, idx){
+
+  const dispo = estDispo(p.id);
+
+  let images = Array.isArray(p.packImages) && p.packImages.length
+    ? [...p.packImages]
+    : [p.img];
+
+  const count = Number(p.packCount || images.length || 1);
+
+  while(images.length < count){
+    images.push(images[images.length - 1] || p.img || "");
+  }
+
+  images = images.slice(0,count);
+
+  const classes =
+    "produit pack-card" +
+    (!dispo ? " indisponible" : "");
+
+  const countText = `×${count}`;
+
+  const packImagesHTML = images.map((img, i) => {
+
+    const src = imgSrc(img);
+
+    return `
+      <div
+        class="pack-item"
+        onclick="agrandir('${echapperJS(src)}','${echapperJS(p.nom)} — ${i + 1}/${count}')">
+
+        <img
+          src="${src}"
+          alt="${echapperHTML(p.nom)} ${i + 1}"
+          loading="lazy"
+          onerror="this.onerror=null;this.src='${imgSrc("")}'">
+
+        <span class="pack-item-num">
+          ${i + 1}
+        </span>
+
+      </div>
+    `;
+
+  }).join("");
+
+  const badgeEtat = !dispo
+    ? `<div class="badge-indispo">⏸ Temporairement indisponible</div>`
+    : "";
+
+  return `
+  <div class="${classes}">
+
+    <div class="pack-top">
+
+      <div class="pack-top-left">
+        <span class="pack-badge-large">
+          🎁 PACK
+        </span>
+
+        <span class="pack-type">
+          OFFRE SPÉCIALE
+        </span>
+      </div>
+
+      <span class="pack-count-top">
+        ${count} UNITÉS
+      </span>
+
+    </div>
+
+    <div class="pack-visual">
+
+      <div class="pack-items">
+        ${packImagesHTML}
+      </div>
+
+      <div class="pack-count-big">
+        ${countText}
+      </div>
+
+      <div class="pack-label">
+        ${echapperHTML(p.packLabel || `${count} ARTICLES`)}
+      </div>
+
+    </div>
+
+    ${badgeEtat}
+
+    <div class="pack-body">
+
+      <h3>
+        ${echapperHTML(p.nom)}
+      </h3>
+
+      <div class="pack-info">
+        ${echapperHTML(p.info || "")}
+      </div>
+
+      <div class="pack-livraison">
+        🚚 Livraison incluse
+      </div>
+
+      <div class="pack-separator"></div>
+
+      <div class="pack-prix-ligne">
+
+        <div class="pack-prix">
+          ${p.prix.toLocaleString("fr-FR")} FCFA
+        </div>
+
+        <div class="pack-qte">
+
+          <button onclick="changerQte(${idx},-1)">
+            −
+          </button>
+
+          <span id="qte-${idx}">
+            ${p.qte}
+          </span>
+
+          <button onclick="changerQte(${idx},1)">
+            +
+          </button>
+
+        </div>
+
+      </div>
+
+      <div class="pack-mini-note">
+        ${count} article${count > 1 ? "s" : ""} inclus dans ce pack
+      </div>
+
+    </div>
+
+  </div>`;
+}
+
+// ===================== RENDU PRODUIT =====================
+
+function renderProduit(p, idx){
+
+  if(p.type === "pack"){
+    return renderPack(p, idx);
+  }
+
+  return renderProduitNormal(p, idx);
+}
+
+// ===================== AFFICHAGE CATALOGUE =====================
+
+function afficherCatalogue(){
+
+  const sections = [
+    {key:"cremes",label:"🍦 Crèmes Glacées"},
+    {key:"popcorn",label:"🍿 Popcorn"},
+    {key:"pain",label:"🥖 Pain Anglais"},
+    {key:"esquimau",label:"🍨 Esquimau"},
+    {key:"gros",label:"📦 Gros Format"}
+  ];
+
+  let html = "";
+
+  sections.forEach(sec => {
+
+    if(catActive !== "tout" && catActive !== sec.key){
+      return;
+    }
+
+    const items = CATALOGUE.filter(
+      p => p.cat === sec.key
+    );
+
+    if(!items.length){
+      return;
+    }
+
+    html += `
+      <div class="sous-section">
+        ${sec.label}
+      </div>
+    `;
+
+    if(sec.key === "cremes"){
+
+      const petits = items.filter(
+        p => p.gr === "petit"
+      );
+
+      const grands = items.filter(
+        p => p.gr === "grand"
+      );
+
+      if(petits.length){
+
+        html += `
+          <div class="sous-section petit">
+            🍧 Petits pots 125ml
+          </div>
+        `;
+
+        petits.forEach(p => {
+          html += renderProduit(
+            p,
+            CATALOGUE.indexOf(p)
+          );
+        });
+      }
+
+      if(grands.length){
+
+        html += `
+          <div class="sous-section grand">
+            🍨 Grands pots 250ml
+          </div>
+        `;
+
+        grands.forEach(p => {
+          html += renderProduit(
+            p,
+            CATALOGUE.indexOf(p)
+          );
+        });
+      }
+
+    }else{
+
+      items.forEach(p => {
+
+        html += renderProduit(
+          p,
+          CATALOGUE.indexOf(p)
+        );
+
+      });
+
+    }
+
+  });
+
+  document.getElementById("produits").innerHTML =
+    html ||
+    `<p style="text-align:center;color:#888;padding:20px">
+      Aucun produit disponible pour le moment
+    </p>`;
+
+  mettreAJourTotal();
 }
 
 function filtrer(cat){
-  filtreActuel = cat;
-  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
-  event.target.classList.add("active");
-  afficherProduits();
-}
 
-function afficherProduits(){
-  const prods = filtreActuel === "tout" ? PRODUITS : PRODUITS.filter(p => p.cat === filtreActuel);
-  
-  const html = prods.map(p => `
-    <div class="product-card" onclick="ajouterPanier('${p.id}','${p.nom}',${p.prix})">
-      <div class="product-tag">⭐ ${p.rating}</div>
-      <div class="product-img">${p.img}</div>
-      <div class="product-info">
-        <div class="product-name">${p.nom}</div>
-        <div class="product-rating">
-          <span class="stars">★★★★★</span>
-          <span class="count">(${p.avis})</span>
-        </div>
-        <div class="product-price">${p.prix.toLocaleString("fr-FR")} FCFA</div>
-        <button class="product-btn">+ Ajouter</button>
-      </div>
-    </div>
-  `).join("");
-  
-  document.getElementById("produits-grid").innerHTML = html;
-}
+  catActive = cat;
 
-function ajouterPanier(id, nom, prix){
-  if(!panier[id]){
-    panier[id] = {nom, prix, qty: 0};
+  document.querySelectorAll(".tab-btn").forEach(b => {
+
+    b.classList.toggle(
+      "actif",
+      b.dataset.cat === cat
+    );
+
+  });
+
+  afficherCatalogue();
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+}// ===================== QUANTITÉS =====================
+
+function changerQte(idx,n){
+
+  CATALOGUE[idx].qte =
+    Math.max(
+      0,
+      CATALOGUE[idx].qte + n
+    );
+
+  const el =
+    document.getElementById("qte-" + idx);
+
+  if(el){
+    el.innerText =
+      CATALOGUE[idx].qte;
   }
-  panier[id].qty++;
-  points += 10;
-  localStorage.setItem("noogo-points", points);
-  afficherPanier();
-  afficherPoints();
+
+  mettreAJourTotal();
 }
 
-function afficherPanier(){
-  const items = Object.entries(panier).map(([id, item]) => `
-    <div class="cart-item">
-      <div>
-        <div class="cart-item-name">${item.nom}</div>
-        <div style="color:#999;font-size:12px">${item.qty}x ${item.prix} FCFA</div>
-      </div>
-      <div style="text-align:right">
-        <div class="cart-item-price">${(item.prix * item.qty).toLocaleString("fr-FR")} FCFA</div>
-        <button onclick="enleverPanier('${id}')" style="background:#ff6b6b;color:#fff;border:0;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;margin-top:4px">-</button>
-      </div>
-    </div>
-  `).join("");
-  
-  if(Object.keys(panier).length === 0){
-    document.getElementById("cart-list").innerHTML = '<div class="cart-empty">Panier vide - Ajoutez des produits!</div>';
-  } else {
-    document.getElementById("cart-list").innerHTML = items;
+// ===================== CALCULS =====================
+
+const stProduits = () =>
+  CATALOGUE
+    .filter(p => p.type === "produit")
+    .reduce(
+      (s,p) => s + p.prix * p.qte,
+      0
+    );
+
+const stPacks = () =>
+  CATALOGUE
+    .filter(p => p.type === "pack")
+    .reduce(
+      (s,p) => s + p.prix * p.qte,
+      0
+    );
+
+const stGeneral = () =>
+  CATALOGUE.reduce(
+    (s,p) => s + p.prix * p.qte,
+    0
+  );
+
+const hasPack = () =>
+  CATALOGUE.some(
+    p => p.type === "pack" && p.qte > 0
+  );
+
+const hasProduct = () =>
+  CATALOGUE.some(
+    p => p.type === "produit" && p.qte > 0
+  );
+
+function fraisActuels(){
+
+  if(modeReception === "retrait"){
+    return 0;
   }
-  
-  const total = Object.values(panier).reduce((sum, item) => sum + (item.prix * item.qty), 0);
-  document.getElementById("total-prix").textContent = total.toLocaleString("fr-FR") + " FCFA";
-}
 
-function enleverPanier(id){
-  if(panier[id].qty > 1){
-    panier[id].qty--;
-  } else {
-    delete panier[id];
+  if(hasPack()){
+    return 0;
   }
-  afficherPanier();
+
+  if(stProduits() >= 3000){
+    return 0;
+  }
+
+  return fraisLivraison;
 }
 
-function appliquerCode(code){
-  alert("✅ Code " + code + " appliqué! -100 FCFA");
+function totalFinal(){
+
+  const remise =
+    promoApplique
+      ? promoApplique.remise
+      : 0;
+
+  return Math.max(
+    0,
+    stGeneral() - remise
+  ) + fraisActuels();
 }
 
-function commanderWhatsApp(){
-  if(Object.keys(panier).length === 0){
-    alert("Ajoutez des produits d'abord!");
+// ===================== TOTAL =====================
+
+function mettreAJourTotal(){
+
+  document.getElementById("total").innerText =
+    totalFinal().toLocaleString("fr-FR");
+
+  const lr =
+    document.getElementById("ligne-remise");
+
+  if(
+    promoApplique &&
+    promoApplique.remise > 0
+  ){
+
+    lr.innerText =
+      `🎟️ Code ${promoApplique.code} : −${promoApplique.remise.toLocaleString("fr-FR")} FCFA`;
+
+    lr.classList.add("visible");
+
+  }else{
+
+    lr.classList.remove("visible");
+
+  }
+
+  mettreAJourBanner();
+}
+
+function mettreAJourBanner(){
+
+  const b =
+    document.getElementById("banner-livraison");
+
+  if(!b){
     return;
   }
-  
-  let msg = "🛒 *Commande Noogo Premium*\n\n";
-  let total = 0;
-  
-  Object.entries(panier).forEach(([id, item]) => {
-    const st = item.prix * item.qty;
-    msg += `• ${item.nom}\n  ${item.qty}x ${item.prix.toLocaleString("fr-FR")} = ${st.toLocaleString("fr-FR")} FCFA\n`;
-    total += st;
-  });
-  
-  msg += `\n*TOTAL: ${total.toLocaleString("fr-FR")} FCFA*\n\n⭐ Points fidélité: +${Math.floor(total/10)}pts\n🎁 Merci de commander!`;
-  
-  window.location.href = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`;
+
+  const st = stProduits();
+
+  if(
+    modeReception === "retrait" ||
+    hasPack() ||
+    st === 0
+  ){
+
+    b.className =
+      "banner-livraison";
+
+    return;
+  }
+
+  if(st >= 3000){
+
+    b.className =
+      "banner-livraison debloquee";
+
+    b.innerText =
+      "🎉 Livraison GRATUITE débloquée ! (commande ≥ 3 000 FCFA)";
+
+  }else{
+
+    b.className =
+      "banner-livraison incitation";
+
+    b.innerText =
+      `💡 Encore ${(3000 - st).toLocaleString("fr-FR")} FCFA pour la livraison GRATUITE !`;
+  }
 }
 
-// Simuler géolocalisation
-if(navigator.geolocation){
-  navigator.geolocation.getCurrentPosition(pos => {
-    console.log("Position:", pos.coords);
-    document.getElementById("delivery-time").textContent = "Estimée: 25-35 min (calculé via GPS)";
-  }, () => {
-    console.log("Géolocalisation refusée - Mode offline");
+// ===================== MODE RÉCEPTION =====================
+
+function changerModeReception(){
+
+  const r =
+    document.querySelector(
+      'input[name="modeReception"]:checked'
+    );
+
+  modeReception =
+    r ? r.value : "livraison";
+
+  document
+    .querySelectorAll(".mode-retrait-carte")
+    .forEach(c =>
+      c.classList.remove("selectionnee")
+    );
+
+  if(r){
+    r.closest(
+      ".mode-retrait-carte"
+    ).classList.add("selectionnee");
+  }
+
+  const bloc =
+    document.getElementById("bloc-adresse");
+
+  if(bloc){
+    bloc.style.display =
+      modeReception === "retrait"
+        ? "none"
+        : "block";
+  }
+
+  if(modeReception === "retrait"){
+    fraisLivraison = 0;
+  }
+
+  mettreAJourTotal();
+}
+
+// ===================== CODE PROMO =====================
+
+let timerCode = null;
+
+function verifierCode(){
+
+  clearTimeout(timerCode);
+
+  timerCode =
+    setTimeout(
+      _verifierCode,
+      600
+    );
+}
+
+function _verifierCode(){
+
+  const code =
+    (
+      document.getElementById("champ-code")?.value ||
+      ""
+    ).trim();
+
+  const zone =
+    document.getElementById("message-code");
+
+  if(!zone){
+    return;
+  }
+
+  if(!code){
+
+    promoApplique = null;
+
+    zone.innerText = "";
+    zone.className = "";
+
+    mettreAJourTotal();
+
+    return;
+  }
+
+  zone.className = "";
+  zone.innerText =
+    "⏳ Vérification...";
+
+  fetch("/api/verifier-code",{
+
+    method:"POST",
+
+    headers:{
+      "Content-Type":"application/json"
+    },
+
+    body:JSON.stringify({
+      code,
+      montantTotal:stGeneral()
+    })
+
+  })
+
+  .then(r => r.json())
+
+  .then(d => {
+
+    if(d.valide){
+
+      promoApplique = {
+        code:code.toUpperCase(),
+        remise:Number(
+          d.remise || 0
+        )
+      };
+
+      zone.className =
+        "valide";
+
+      zone.innerText =
+        `✅ Code valide ! −${promoApplique.remise.toLocaleString("fr-FR")} FCFA`;
+
+    }else{
+
+      promoApplique = null;
+
+      zone.className =
+        "invalide";
+
+      zone.innerText =
+        "❌ " +
+        (
+          d.message ||
+          "Code invalide ou expiré"
+        );
+    }
+
+    mettreAJourTotal();
+
+  })
+
+  .catch(() => {
+
+    promoApplique = null;
+
+    zone.className =
+      "invalide";
+
+    zone.innerText =
+      "❌ Vérification impossible. Réessayez.";
+
+    mettreAJourTotal();
+
   });
 }
+
+// ===================== PAIEMENT =====================
+
+function afficherInfoPaiement(){
+
+  const r =
+    document.querySelector(
+      'input[name="paiement"]:checked'
+    );
+
+  const v =
+    r ? r.value : "especes";
+
+  document
+    .querySelectorAll(".paiement-carte")
+    .forEach(c =>
+      c.classList.remove("selectionnee")
+    );
+
+  if(r){
+
+    r.closest(
+      ".paiement-carte"
+    ).classList.add("selectionnee");
+
+  }
+
+  const zone =
+    document.getElementById("info-paiement");
+
+  if(v === "orange"){
+
+    zone.innerHTML =
+      `🟠 Orange Money :
+      <span class="info-paiement-numero">
+        65 12 09 02
+      </span>
+      <br>
+      <small>
+        Envoyez la capture de paiement avec votre commande
+      </small>`;
+
+    zone.classList.add("visible");
+
+  }else if(v === "wave"){
+
+    zone.innerHTML =
+      `🔵 Wave :
+      <span class="info-paiement-numero">
+        65 12 09 02
+      </span>
+      <br>
+      <small>
+        Envoyez la capture de paiement avec votre commande
+      </small>`;
+
+    zone.classList.add("visible");
+
+  }else{
+
+    zone.innerHTML = "";
+    zone.classList.remove("visible");
+
+  }
+}
+
+// ===================== COMMANDER =====================
+
+function validerCommande(){
+
+  const items =
+    CATALOGUE.filter(
+      p => p.qte > 0
+    );
+
+  if(!items.length){
+
+    alert(
+      "Veuillez sélectionner au moins un produit ou un pack."
+    );
+
+    return;
+  }
+
+  const tel =
+    (
+      document.getElementById("champ-tel")?.value ||
+      ""
+    ).trim();
+
+  if(!tel){
+
+    alert(
+      "Veuillez renseigner votre numéro de téléphone."
+    );
+
+    document
+      .getElementById("champ-tel")
+      ?.focus();
+
+    return;
+  }
+
+  if(modeReception === "retrait"){
+
+    fraisLivraison = 0;
+
+    afficherRecap();
+
+    return;
+  }
+
+  if(hasPack()){
+
+    fraisLivraison = 0;
+
+    afficherRecap();
+
+    return;
+  }
+
+  const st =
+    stProduits();
+
+  if(st >= 3000){
+
+    fraisLivraison = 0;
+
+    afficherRecap();
+
+    return;
+  }
+
+  const manque =
+    3000 - st;
+
+  document.getElementById(
+    "popup-total-montant"
+  ).innerText =
+    st.toLocaleString("fr-FR") +
+    " FCFA";
+
+  document.getElementById(
+    "popup-manque"
+  ).innerText =
+    manque.toLocaleString("fr-FR") +
+    " FCFA";
+
+  document
+    .getElementById("popup-livraison")
+    .classList.add("actif");
+}
+
+function ajouterArticles(){
+
+  document
+    .getElementById("popup-livraison")
+    .classList.remove("actif");
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+}
+
+function choisirLivraison1500(){
+
+  fraisLivraison = 1500;
+
+  document
+    .getElementById("popup-livraison")
+    .classList.remove("actif");
+
+  mettreAJourTotal();
+
+  afficherRecap();
+}
+
+function choisirRetrait(){
+
+  modeReception = "retrait";
+  fraisLivraison = 0;
+
+  const radioRetrait =
+    document.querySelector(
+      'input[name="modeReception"][value="retrait"]'
+    );
+
+  if(radioRetrait){
+
+    radioRetrait.checked = true;
+
+    changerModeReception();
+  }
+
+  document
+    .getElementById("popup-livraison")
+    .classList.remove("actif");
+
+  afficherRecap();
+}
+
+// ===================== RECAP =====================
+
+function afficherRecap(){
+
+  const nom =
+    (
+      document.getElementById("champ-nom")?.value ||
+      ""
+    ).trim() ||
+    "Client Noogo";
+
+  const tel =
+    (
+      document.getElementById("champ-tel")?.value ||
+      ""
+    ).trim();
+
+  const loc =
+    (
+      document.getElementById("champ-localisation")?.value ||
+      ""
+    ).trim();
+
+  const codeSaisi =
+    (
+      document.getElementById("champ-code")?.value ||
+      ""
+    ).trim();
+
+  const paiement =
+    document.querySelector(
+      'input[name="paiement"]:checked'
+    )?.value ||
+    "especes";
+
+  const items =
+    CATALOGUE.filter(
+      p => p.qte > 0
+    );
+
+  const remise =
+    promoApplique
+      ? promoApplique.remise
+      : 0;
+
+  const frais =
+    fraisActuels();
+
+  const total =
+    totalFinal();
+
+  let lignesArticles =
+    items.map(p => `
+
+      <div class="recap-ligne">
+
+        <span class="recap-ligne-nom">
+          ${echapperHTML(p.nom)} ×${p.qte}
+        </span>
+
+        <span class="recap-ligne-prix">
+          ${(p.prix * p.qte).toLocaleString("fr-FR")} FCFA
+        </span>
+
+      </div>
+
+    `).join("");
+
+  let ligneLivraison = "";
+
+  if(modeReception === "retrait"){
+
+    ligneLivraison = `
+      <div class="recap-ligne">
+        <span class="recap-ligne-nom">
+          🏪 Retrait au local
+        </span>
+
+        <span class="recap-ligne-prix"
+              style="color:#2e7d32">
+          Gratuit
+        </span>
+      </div>
+    `;
+
+  }else if(hasPack()){
+
+    ligneLivraison = `
+      <div class="recap-ligne">
+        <span class="recap-ligne-nom">
+          🚚 Livraison
+        </span>
+
+        <span class="recap-ligne-prix"
+              style="color:#2e7d32">
+          Incluse dans le pack ✓
+        </span>
+      </div>
+    `;
+
+  }else if(stProduits() >= 3000){
+
+    ligneLivraison = `
+      <div class="recap-ligne">
+        <span class="recap-ligne-nom">
+          🚚 Livraison
+        </span>
+
+        <span class="recap-ligne-prix"
+              style="color:#2e7d32">
+          Gratuite ✓ (≥ 3 000 FCFA)
+        </span>
+      </div>
+    `;
+
+  }else{
+
+    ligneLivraison = `
+      <div class="recap-ligne">
+        <span class="recap-ligne-nom">
+          🚚 Livraison à domicile
+        </span>
+
+        <span class="recap-ligne-prix">
+          ${frais.toLocaleString("fr-FR")} FCFA
+        </span>
+      </div>
+    `;
+  }
+
+  const payLabels = {
+    especes:"💵 Espèces à la livraison",
+    orange:"🟠 Orange Money (65 12 09 02)",
+    wave:"🔵 Wave (65 12 09 02)"
+  };
+
+  document.getElementById(
+    "recap-contenu"
+  ).innerHTML = `
+
+    <div class="recap-section">
+
+      <div class="recap-section-label">
+        📦 Articles
+      </div>
+
+      ${lignesArticles}
+
+    </div>
+
+    ${
+      remise > 0
+      ? `
+        <div class="recap-section">
+
+          <div class="recap-ligne">
+
+            <span class="recap-ligne-nom">
+              🎟️ Code promo (${echapperHTML(promoApplique.code)})
+            </span>
+
+            <span class="recap-ligne-prix"
+                  style="color:#2e7d32">
+              −${remise.toLocaleString("fr-FR")} FCFA
+            </span>
+
+          </div>
+
+        </div>
+      `
+      : ""
+    }
+
+    <div class="recap-section">
+      ${ligneLivraison}
+    </div>
+
+    <div class="recap-total">
+
+      <span>
+        TOTAL À PAYER
+      </span>
+
+      <span>
+        ${total.toLocaleString("fr-FR")} FCFA
+      </span>
+
+    </div>
+
+    <div class="recap-infos">
+
+      <div class="recap-section-label"
+           style="margin-bottom:8px">
+
+        👤 Vos informations
+
+      </div>
+
+      <div class="recap-info-row">
+        <strong>Nom :</strong>
+        ${echapperHTML(nom)}
+      </div>
+
+      <div class="recap-info-row">
+        <strong>Téléphone :</strong>
+        ${echapperHTML(tel)}
+      </div>
+
+      <div class="recap-info-row">
+        <strong>Livraison :</strong>
+        ${
+          modeReception === "retrait"
+          ? "Retrait au local (Karpala)"
+          : echapperHTML(loc || "Non précisé")
+        }
+      </div>
+
+      <div class="recap-info-row">
+        <strong>Paiement :</strong>
+        ${payLabels[paiement] || paiement}
+      </div>
+
+    </div>
+  `;
+
+  window._cmd = {
+    nom,
+    tel,
+    loc,
+    codeSaisi,
+    paiement,
+    items,
+    remise,
+    frais,
+    total
+  };
+
+  document
+    .getElementById("recap-overlay")
+    .classList.add("actif");
+}
+
+function fermerRecap(){
+
+  document
+    .getElementById("recap-overlay")
+    .classList.remove("actif");
+}// ===================== ENVOI WHATSAPP =====================
+
+function envoyerWhatsapp(){
+
+  const d = window._cmd;
+
+  if(!d){
+    return;
+  }
+
+  const produits =
+    d.items.filter(
+      p => p.type === "produit"
+    );
+
+  const packs =
+    d.items.filter(
+      p => p.type === "pack"
+    );
+
+  const payLabels = {
+    especes:"ESPÈCES À LA LIVRAISON",
+    orange:"ORANGE MONEY (65 12 09 02)",
+    wave:"WAVE (65 12 09 02)"
+  };
+
+  let msg = [];
+
+  msg.push(
+    "🍦 *NOUVELLE COMMANDE NOOGO* 🍦"
+  );
+
+  msg.push("");
+
+  msg.push(
+    `👤 *Nom :* ${d.nom}`
+  );
+
+  msg.push(
+    `📞 *Téléphone :* ${d.tel}`
+  );
+
+  msg.push(
+    `🚚 *Mode :* ${
+      modeReception === "retrait"
+      ? "Retrait au local"
+      : "Livraison à domicile"
+    }`
+  );
+
+  if(modeReception === "livraison"){
+
+    msg.push(
+      `📍 *Lieu :* ${
+        d.loc || "Non précisé"
+      }`
+    );
+  }
+
+  if(d.codeSaisi){
+
+    msg.push(
+      `🎟️ *Code promo :* ${d.codeSaisi.toUpperCase()}`
+    );
+  }
+
+  msg.push(
+    `💳 *Paiement :* ${
+      payLabels[d.paiement] ||
+      d.paiement.toUpperCase()
+    }`
+  );
+
+  msg.push("");
+
+  if(produits.length){
+
+    msg.push("📦 *PRODUITS :*");
+
+    produits.forEach(p => {
+
+      msg.push(
+        `  • ${p.nom} ×${p.qte} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`
+      );
+
+    });
+
+    msg.push(
+      `  ➜ Sous-total produits : ${
+        produits
+          .reduce(
+            (s,p) => s + p.prix*p.qte,
+            0
+          )
+          .toLocaleString("fr-FR")
+      } FCFA`
+    );
+
+    msg.push("");
+  }
+
+  if(packs.length){
+
+    msg.push("🎁 *PACKS :*");
+
+    packs.forEach(p => {
+
+      const nb =
+        Number(
+          p.packCount ||
+          1
+        );
+
+      msg.push(
+        `  • ${p.nom} ×${p.qte} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`
+      );
+
+      msg.push(
+        `    ➜ Contenu : ${nb} unités`
+      );
+
+    });
+
+    msg.push(
+      `  ➜ Livraison : Incluse dans le pack`
+    );
+
+    msg.push(
+      `  ➜ Sous-total packs : ${
+        packs
+          .reduce(
+            (s,p) => s + p.prix*p.qte,
+            0
+          )
+          .toLocaleString("fr-FR")
+      } FCFA`
+    );
+
+    msg.push("");
+  }
+
+  if(d.remise > 0){
+
+    msg.push(
+      `🎟️ *Remise code promo :* −${d.remise.toLocaleString("fr-FR")} FCFA`
+    );
+  }
+
+  if(modeReception === "retrait"){
+
+    msg.push(
+      `🚚 *Livraison :* Aucune — Retrait au local`
+    );
+
+  }else if(hasPack()){
+
+    msg.push(
+      `🚚 *Livraison :* Incluse dans le(s) pack(s)`
+    );
+
+  }else if(stProduits() >= 3000){
+
+    msg.push(
+      `🚚 *Livraison :* GRATUITE (commande ≥ 3 000 FCFA)`
+    );
+
+  }else{
+
+    msg.push(
+      `🚚 *Livraison :* ${d.frais.toLocaleString("fr-FR")} FCFA (commande < 3 000 FCFA)`
+    );
+  }
+
+  msg.push("");
+
+  msg.push(
+    `💰 *TOTAL CLIENT : ${d.total.toLocaleString("fr-FR")} FCFA*`
+  );
+
+  _enregistrerCommande(d);
+
+  window.open(
+    "https://wa.me/22661682706?text=" +
+    encodeURIComponent(
+      msg.join("\n")
+    ),
+    "_blank"
+  );
+
+  fermerRecap();
+}
+
+// ===================== ENREGISTREMENT =====================
+
+function _enregistrerCommande(d){
+
+  try{
+
+    fetch("/api/commander",{
+
+      method:"POST",
+
+      headers:{
+        "Content-Type":"application/json"
+      },
+
+      body:JSON.stringify({
+
+        nomClient:d.nom,
+
+        telClient:d.tel,
+
+        localisation:
+          modeReception === "retrait"
+          ? "Retrait au local"
+          : (
+              d.loc ||
+              "Non précisé"
+            ),
+
+        modePaiement:
+          d.paiement,
+
+        modeReception:
+          modeReception,
+
+        articles:
+          d.items.map(p => ({
+
+            id:p.id,
+            nom:p.nom,
+            type:p.type,
+            qte:p.qte,
+            prix:p.prix,
+            total:p.prix*p.qte
+
+          })),
+
+        montantTotal:
+          d.total,
+
+        montantProduits:
+          stProduits(),
+
+        montantPacks:
+          stPacks(),
+
+        fraisLivraison:
+          fraisActuels(),
+
+        remise:
+          d.remise,
+
+        codePromo:
+          d.codeSaisi || null,
+
+        partenaireCode:
+          promoApplique?.code || null
+
+      })
+
+    }).catch(()=>{});
+
+  }catch(_){}
+}
+
+// ===================== ZOOM =====================
+
+function agrandir(src,titre){
+
+  document.getElementById(
+    "zoom-img"
+  ).src = src;
+
+  document.getElementById(
+    "zoom-titre"
+  ).innerText = titre;
+
+  document
+    .getElementById("zoom-overlay")
+    .classList.add("actif");
+
+  document.body.style.overflow =
+    "hidden";
+}
+
+function fermerZoom(){
+
+  document
+    .getElementById("zoom-overlay")
+    .classList.remove("actif");
+
+  document.body.style.overflow =
+    "";
+}
+
+// ===================== LOCALISATION =====================
+
+function obtenirLocalisation(){
+
+  if(!navigator.geolocation){
+
+    alert(
+      "Géolocalisation non supportée."
+    );
+
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+
+    pos => {
+
+      document.getElementById(
+        "champ-localisation"
+      ).value =
+        `GPS: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
+
+    },
+
+    () => {
+
+      alert(
+        "Impossible de récupérer votre position."
+      );
+
+    }
+
+  );
+}
+
+// ===================== SCROLL =====================
+
+function remonterEnHaut(){
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+}
+
+function setupScrollBtn(){
+
+  const btn =
+    document.getElementById(
+      "bouton-haut"
+    );
+
+  window.addEventListener(
+    "scroll",
+    () => {
+
+      if(btn){
+
+        btn.classList.toggle(
+          "visible",
+          window.scrollY > 400
+        );
+
+      }
+
+    }
+  );
+}
+
+// ===================== PWA =====================
+
+function setupPWA(){
+
+  if("serviceWorker" in navigator){
+
+    navigator.serviceWorker
+      .register("/sw.js")
+      .catch(()=>{});
+
+  }
+
+  window.addEventListener(
+    "beforeinstallprompt",
+    e => {
+
+      e.preventDefault();
+
+      deferredPrompt = e;
+
+      document
+        .getElementById("install-btn")
+        ?.classList.add("visible");
+
+      document
+        .getElementById("bandeau-install")
+        ?.classList.add("visible");
+
+    }
+  );
+}
+
+function installerApp(){
+
+  if(deferredPrompt){
+
+    deferredPrompt.prompt();
+
+    deferredPrompt.userChoice.then(
+      () => {
+
+        deferredPrompt = null;
+
+        document
+          .getElementById("install-btn")
+          ?.classList.remove("visible");
+
+        document
+          .getElementById("bandeau-install")
+          ?.classList.remove("visible");
+
+      }
+    );
+
+  }else{
+
+    const isIOS =
+      /iPhone|iPad|iPod/i.test(
+        navigator.userAgent
+      );
+
+    document.getElementById(
+      "install-etapes"
+    ).innerHTML = isIOS
+
+      ? `
+        <p>
+          1. Appuyez sur
+          <strong>🔗 Partager</strong>
+          en bas de Safari
+        </p>
+
+        <p>
+          2. Choisissez
+          <strong>Sur l'écran d'accueil</strong>
+        </p>
+
+        <p>
+          3. Appuyez sur
+          <strong>Ajouter</strong>
+        </p>
+      `
+
+      : `
+        <p>
+          1. Appuyez sur le menu
+          <strong>⋮</strong>
+          (3 points) de votre navigateur
+        </p>
+
+        <p>
+          2. Choisissez
+          <strong>Installer l'application</strong>
+          ou
+          <strong>Ajouter à l'écran d'accueil</strong>
+        </p>
+      `;
+
+    document
+      .getElementById("install-overlay")
+      .classList.add("actif");
+  }
+}
+
+function fermerGuideInstall(){
+
+  document
+    .getElementById("install-overlay")
+    .classList.remove("actif");
+}
+
+function fermerBandeauInstall(){
+
+  document
+    .getElementById("bandeau-install")
+    .classList.remove("visible");
+}
+
 </script>
 
 </body>

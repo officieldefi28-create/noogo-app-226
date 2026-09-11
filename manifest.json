@@ -1,26 +1,31 @@
 {
   "name": "Noogo - Glaces & Popcorn à Karpala",
   "short_name": "Noogo",
-  "description": "Des saveurs authentiques, pour tous les plaisirs. Livraison à Karpala et alentours",
+  "description": "Des saveurs authentiques, pour tous les plaisirs. Livraison 24h/24 à Karpala et alentours",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#e8590c",
   "scope": "/",
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23e8590c' width='192' height='192'/><text x='50%' y='50%' text-anchor='middle' dy='.3em' font-size='120' fill='white' font-family='Arial' font-weight='bold'>🍦</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23e8590c' width='192' height='192'/><text x='50%' y='55%' text-anchor='middle' dy='.3em' font-size='110' fill='white' font-family='Arial' font-weight='bold' font-family='system-ui'>🍦</text></svg>",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "type": "image/svg+xml"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23e8590c' width='512' height='512'/><text x='50%' y='50%' text-anchor='middle' dy='.3em' font-size='300' fill='white' font-family='Arial' font-weight='bold'>🍦</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23e8590c' width='512' height='512'/><text x='50%' y='55%' text-anchor='middle' dy='.3em' font-size='300' fill='white' font-family='Arial' font-weight='bold'>🍦</text></svg>",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/svg+xml"
     }
   ],
-  "orientation": "portrait-primary",
-  "categories": ["food", "shopping"]
+  "categories": ["food", "shopping"],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23fff8f0' width='540' height='720'/><rect fill='%23e8590c' width='540' height='80'/><text x='270' y='50' text-anchor='middle' font-size='40' fill='white' font-family='Arial' font-weight='bold'>Noogo</text><text x='270' y='200' text-anchor='middle' font-size='60'>🍦</text><text x='270' y='300' text-anchor='middle' font-size='30' fill='%23e8590c' font-family='Arial'>Commander en ligne</text></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml"
+    }
+  ]
 }

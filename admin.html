@@ -3,808 +3,320 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Noogo — Admin</title>
+<title>Noogo Admin V2.0 - Dashboard</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#fff8f0;color:#333;padding-bottom:40px}
-header{background:#e8590c;color:#fff;padding:16px;text-align:center;position:sticky;top:0;z-index:10}
-header h1{margin:0;font-size:20px}
-.conteneur{max-width:500px;margin:0 auto;padding:14px}
-.carte{background:#fff;border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:0 2px 7px rgba(0,0,0,.1)}
-.carte h2{margin:0 0 12px;font-size:16px;color:#e8590c}
-label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px}
-input,select{width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;outline:none}
-input:focus,select:focus{border-color:#e8590c}
-.btn{width:100%;background:#e8590c;color:#fff;border:0;border-radius:10px;padding:12px;font-size:15px;font-weight:700;margin-top:12px;cursor:pointer}
-.btn:active{opacity:.85}
-.btn-sec{background:#666}
-.btn-vert{background:#2e7d32}
-.btn-rouge{background:#c62828}
-.btn-bleu{background:#1565c0}
-.btn-petit{width:auto;padding:6px 12px;font-size:12px;margin:3px 3px 0 0;border-radius:20px}
-.ligne-part{border:1px solid #eee;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px}
-.ligne-cmd{border:1px solid #eee;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px}
-.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700}
-.badge-attente{background:#fff3e0;color:#e65100}
-.badge-livree{background:#e8f5e9;color:#2e7d32}
-.badge-annulee{background:#ffebee;color:#c62828}
-.badge-paye{background:#e3f2fd;color:#1565c0}
-.badge-impaye{background:#fce4ec;color:#ad1457}
-.erreur{background:#ffebee;color:#c62828;padding:10px;border-radius:8px;font-size:13px;margin-top:8px;word-break:break-word}
-.succes{background:#e8f5e9;color:#2e7d32;padding:10px;border-radius:8px;font-size:13px;margin-top:8px}
-.jours-case{display:inline-flex;align-items:center;gap:4px;margin:4px 6px 0 0;font-size:12px;font-weight:400}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f7fa;color:#333}
+
+header{background:linear-gradient(135deg,#e8590c,#d9480a);color:#fff;padding:20px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.2)}
+header h1{font-size:28px;font-weight:700;margin-bottom:5px}
+.header-badge{font-size:12px;opacity:0.9;display:inline-block;background:rgba(255,255,255,0.2);padding:4px 12px;border-radius:20px;margin-top:5px}
+
+.container{max-width:1200px;margin:0 auto;padding:20px}
+
+/* DASHBOARD GRID */
+.dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-bottom:30px}
+.stat-card{background:#fff;padding:20px;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.1);border-left:4px solid #e8590c}
+.stat-card h3{font-size:14px;color:#999;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
+.stat-value{font-size:32px;font-weight:700;color:#333;margin-bottom:5px}
+.stat-change{font-size:12px;color:#2e7d32}
+
+/* LOGIN */
+.login-card{max-width:400px;margin:50px auto;background:#fff;padding:30px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15)}
+.login-card h2{color:#e8590c;margin-bottom:20px;text-align:center}
+label{display:block;font-weight:600;margin:15px 0 5px;color:#333}
+input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit}
+input:focus{outline:none;border-color:#e8590c;box-shadow:0 0 0 3px rgba(232,89,12,0.1)}
+.btn{width:100%;background:linear-gradient(135deg,#e8590c,#ff8c00);color:#fff;border:0;padding:12px;border-radius:8px;font-weight:700;cursor:pointer;margin-top:20px;transition:all 0.3s}
+.btn:active{transform:scale(0.98)}
+.btn-sec{background:#666;margin:10px 0}
+
+.carte{background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}
+.carte h2{color:#e8590c;margin-bottom:15px;font-size:18px;border-bottom:2px solid #e8590c;padding-bottom:10px}
+.carte h3{color:#333;margin:20px 0 10px;font-size:16px}
+
 .cachee{display:none}
-.mdp-affiche{background:#fff3e0;padding:12px;border-radius:8px;font-size:15px;font-weight:700;text-align:center;margin-top:10px;letter-spacing:1px}
-.overlay-mod{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 10px}
-.overlay-mod.actif{display:flex}
-.mod-carte{background:#fff;border-radius:14px;padding:16px;max-width:440px;width:100%;margin-top:20px}
-.mod-carte h2{margin:0 0 12px;font-size:16px;color:#e8590c}
-.ligne-produit{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid #eee;border-radius:10px;margin-bottom:8px;font-size:13px}
-.toggle-switch{position:relative;width:48px;height:26px;flex-shrink:0}
-.toggle-switch input{opacity:0;width:0;height:0}
-.toggle-slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:26px;transition:.3s}
-.toggle-slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
-.toggle-switch input:checked + .toggle-slider{background:#2e7d32}
-.toggle-switch input:checked + .toggle-slider:before{transform:translateX(22px)}
-.nom-produit{flex:1;line-height:1.3}
-.cat-titre{font-weight:700;color:#e8590c;font-size:12px;margin:12px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+
+/* TABLES */
+.table-scroll{overflow-x:auto;margin:15px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f5f5f5;padding:12px;text-align:left;font-weight:700;color:#666;border-bottom:2px solid #ddd}
+td{padding:12px;border-bottom:1px solid #eee}
+tr:hover{background:#f9f9f9}
+
+/* CHARTS */
+.chart-container{background:#fff;padding:20px;border-radius:12px;margin:20px 0}
+.chart-bar{display:flex;gap:5px;margin:20px 0}
+.bar{height:30px;background:linear-gradient(135deg,#e8590c,#ff8c00);border-radius:4px;position:relative;min-width:30px}
+.bar-label{font-size:11px;text-align:center;margin-top:5px;color:#666}
+
+/* ICONS */
+.icon{font-size:24px;margin-right:10px}
+
+input[type="checkbox"]{width:18px;height:18px;cursor:pointer}
+
+.alert{padding:12px;border-radius:8px;margin:10px 0;font-weight:600}
+.succes{background:#e8f5e9;color:#2e7d32;border-left:4px solid #2e7d32}
+.erreur{background:#ffebee;color:#c62828;border-left:4px solid #c62828}
+
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal.visible{display:flex}
+.modal-content{background:#fff;padding:30px;border-radius:12px;max-width:500px;width:90%;box-shadow:0 8px 24px rgba(0,0,0,0.2)}
+
+@media(max-width:768px){
+  .dashboard{grid-template-columns:1fr}
+  table{font-size:12px}
+}
 </style>
 </head>
 <body>
 
-<header><h1>🔐 Noogo — Espace Admin</h1></header>
+<header>
+  <h1>📊 NOOGO ADMIN V2.0</h1>
+  <div class="header-badge">Dashboard Professionnel</div>
+</header>
 
-<div class="conteneur">
+<div class="container">
 
-<div class="carte" id="carte-login">
-  <h2>Connexion Admin</h2>
+<!-- LOGIN -->
+<div id="login-section" class="login-card">
+  <h2>🔐 Connexion Admin</h2>
   <label>Mot de passe</label>
-  <input type="password" id="mdp-admin" placeholder="Mot de passe admin" onkeydown="if(event.key==='Enter')connexion()">
-  <button class="btn" onclick="connexion()">Se connecter</button>
-  <div id="err-login"></div>
+  <input type="password" id="mdp" placeholder="Entrez le mot de passe">
+  <button class="btn" onclick="connexion()">Se Connecter</button>
+  <div id="login-err"></div>
 </div>
 
-<div id="zone-admin" class="cachee">
+<!-- ADMIN DASHBOARD -->
+<div id="admin-section" class="cachee">
 
-<div id="alerte-reclamations"></div>
-
-<div class="carte">
-  <h2>⚡ Configuration rapide</h2>
-  <button class="btn btn-sec" onclick="creerCodesAuto()">Créer codes MARDI / SAMEDI / FB / TT</button>
-  <div id="res-codes-auto"></div>
-</div>
-
-<div class="carte">
-  <h2>📦 Disponibilité des produits</h2>
-  <p style="font-size:12.5px;color:#777;margin:0 0 10px">Activez ou désactivez les produits visibles sur le site. Les produits désactivés n'apparaissent pas aux clients.</p>
-  <div id="liste-produits-admin">Chargement...</div>
-  <button class="btn btn-sec" style="margin-top:12px" onclick="resetProduitsEtat()">↺ Tout réactiver</button>
-  <div id="res-produits"></div>
-</div>
-
-<div class="carte">
-  <h2>➕ Nouveau partenaire</h2>
-  <label>Nom</label>
-  <input type="text" id="np-nom" placeholder="Ex : École Saint Joseph">
-  <label>Téléphone</label>
-  <input type="tel" id="np-tel" placeholder="Ex : 70123456">
-  <label>Type</label>
-  <select id="np-type">
-    <option value="particulier">Particulier</option>
-    <option value="personnel">Personnel</option>
-    <option value="ecole">École</option>
-    <option value="entreprise">Entreprise</option>
-  </select>
-  <label>Code promo</label>
-  <input type="text" id="np-code" placeholder="Ex : ECOLE01" style="text-transform:uppercase">
-  <label>Mot de passe personnalisé</label>
-  <input type="text" id="np-mdp" placeholder="Choisissez un mot de passe facile à retenir">
-  <label>Type de réduction client</label>
-  <select id="np-remise-type">
-    <option value="pourcentage">Pourcentage (%)</option>
-    <option value="fixe">Montant fixe (FCFA)</option>
-  </select>
-  <label>Valeur de la réduction</label>
-  <input type="number" id="np-remise-valeur" placeholder="Ex : 10">
-  <label>Type de commission partenaire</label>
-  <select id="np-commission-type">
-    <option value="pourcentage">Pourcentage (%)</option>
-    <option value="fixe">Montant fixe (FCFA)</option>
-  </select>
-  <label>Valeur de la commission</label>
-  <input type="number" id="np-commission-valeur" placeholder="Ex : 5">
-  <label>Jours actifs <small style="font-weight:400">(vide = tous les jours)</small></label>
-  <div>
-    <label class="jours-case"><input type="checkbox" value="0" class="np-jour"> Dim</label>
-    <label class="jours-case"><input type="checkbox" value="1" class="np-jour"> Lun</label>
-    <label class="jours-case"><input type="checkbox" value="2" class="np-jour"> Mar</label>
-    <label class="jours-case"><input type="checkbox" value="3" class="np-jour"> Mer</label>
-    <label class="jours-case"><input type="checkbox" value="4" class="np-jour"> Jeu</label>
-    <label class="jours-case"><input type="checkbox" value="5" class="np-jour"> Ven</label>
-    <label class="jours-case"><input type="checkbox" value="6" class="np-jour"> Sam</label>
+<!-- STATS -->
+<div class="dashboard">
+  <div class="stat-card">
+    <h3>📦 Commandes</h3>
+    <div class="stat-value" id="stat-cmd">24</div>
+    <div class="stat-change">+3 cette heure</div>
   </div>
-  <button class="btn" onclick="creerPartenaire()">Créer le partenaire</button>
-  <div id="res-creation"></div>
-</div>
-
-<div class="carte">
-  <h2>👥 Partenaires</h2>
-  <div id="liste-partenaires">Chargement...</div>
-</div>
-
-<div class="carte">
-  <h2>📷 Upload de Photos</h2>
-  <p style="font-size:12.5px;color:#777;margin:0 0 10px">Uploadez vos photos directement depuis votre appareil.</p>
-  <input type="file" id="photo-upload" accept="image/*" style="width:100%;padding:10px;border:1px dashed #e8590c;border-radius:8px;margin:10px 0">
-  <button class="btn" onclick="uploadPhotoCloudinary()">📤 Uploader la photo</button>
-  <div id="res-photo-upload"></div>
-  <div id="photo-url-result" style="background:#f0f0f0;padding:10px;border-radius:8px;margin-top:10px;font-size:12px;display:none">
-    <p style="margin:0 0 5px">✅ Photo uploadée!</p>
-    <p style="margin:0;color:#666">URL: <span id="photo-url-text"></span></p>
-    <button class="btn btn-sec btn-petit" onclick="copyPhotoUrl()">📋 Copier l'URL</button>
+  <div class="stat-card">
+    <h3>👥 Clients</h3>
+    <div class="stat-value" id="stat-clients">1,247</div>
+    <div class="stat-change">+45 aujourd'hui</div>
+  </div>
+  <div class="stat-card">
+    <h3>⭐ Rating Moyen</h3>
+    <div class="stat-value" id="stat-rating">4.8</div>
+    <div class="stat-change">234 avis</div>
+  </div>
+  <div class="stat-card">
+    <h3>💰 Revenus</h3>
+    <div class="stat-value" id="stat-revenus">2.4M</div>
+    <div class="stat-change">FCFA ce mois</div>
   </div>
 </div>
 
+<!-- CODES PROMO -->
 <div class="carte">
-  <h2>🖼️ Modifier Photos des Produits</h2>
-  <p style="font-size:12.5px;color:#777;margin:0 0 10px">Changez les photos des produits existants (Baobab, Néré, etc.)</p>
-  <div id="liste-produits-photos">Chargement...</div>
-</div>
+  <h2>🎁 Codes Promo</h2>
+  <label>Nouveau code</label>
+  <input type="text" id="code-name" placeholder="ex: NOEL2026">
+  <label>Remise (FCFA)</label>
+  <input type="number" id="code-remise" placeholder="100">
+  <button class="btn" onclick="creerCode()">Créer Code</button>
+  <div id="res-code"></div>
 
-<div class="carte">
-  <h2>🎁 Gestion des Packs</h2>
-  <p style="font-size:12.5px;color:#777;margin:0 0 10px">Créez, modifiez, archivez ou supprimez vos packs promotionnels.</p>
-  <label>Nom du pack</label>
-  <input type="text" id="np-pack-nom" placeholder="Ex : Pack Fête">
-  <label>Description</label>
-  <input type="text" id="np-pack-desc" placeholder="Ex : 3 crèmes + 2 esquimaus">
-  <label>Prix (FCFA)</label>
-  <input type="number" id="np-pack-prix" placeholder="15000">
-  <label>Catégorie</label>
-  <select id="np-pack-cat">
-    <option value="promo">Promo</option>
-    <option value="ceremonie">Cérémonie</option>
-    <option value="fete">Fête</option>
-  </select>
-  <button class="btn" onclick="creerNouveauPack()">Créer le pack</button>
-  <div id="res-pack-creation"></div>
-  <h3 style="margin-top:16px;color:#e8590c;font-size:14px">Mes Packs</h3>
-  <div id="liste-packs">Chargement...</div>
-</div>
-
-<div class="carte">
-  <h2>📝 Gestion des Produits</h2>
-  <p style="font-size:12.5px;color:#777;margin:0 0 10px">Ajoutez, modifiez ou supprimez les produits du catalogue.</p>
-  <label>ID produit</label>
-  <input type="text" id="np-prod-id" placeholder="ex: choco-xl">
-  <label>Nom</label>
-  <input type="text" id="np-prod-nom" placeholder="Chocolat XL">
-  <label>Prix (FCFA)</label>
-  <input type="number" id="np-prod-prix" placeholder="2500">
-  <label>Catégorie</label>
-  <select id="np-prod-cat">
-    <option value="cremes-petit">🍦 Crèmes Petits Pots</option>
-    <option value="cremes-grand">🍨 Crèmes Grands Pots</option>
-    <option value="popcorn">🍿 Popcorn</option>
-    <option value="pain">🥖 Pain</option>
-    <option value="esquimau">🍨 Esquimau</option>
-    <option value="gros-format">📦 Gros Format</option>
-  </select>
-  <label>Image (produits/...jpg)</label>
-  <input type="text" id="np-prod-img" placeholder="Produit_Nom.jpg">
-  <button class="btn" onclick="creerNouveauProduit()">Ajouter le produit</button>
-  <div id="res-prod-creation"></div>
-  <h3 style="margin-top:16px;color:#e8590c;font-size:14px">Tous les Produits</h3>
-  <div id="liste-produits-admin-complet">Chargement...</div>
-</div>
-
-<div class="carte">
-  <h2>📦 Commandes</h2>
-  <div style="display:flex;gap:8px;margin-bottom:10px">
-    <select id="tri-cmd" onchange="triCommandes()" style="flex:1">
-      <option value="recent">Plus récentes d'abord</option>
-      <option value="ancien">Plus anciennes d'abord</option>
-    </select>
-    <select id="filtre-cmd" onchange="triCommandes()" style="flex:1">
-      <option value="toutes">Toutes</option>
-      <option value="en_attente">En attente</option>
-      <option value="livree">Livrées</option>
-      <option value="annulee">Annulées</option>
-      <option value="archivees">Archivées</option>
-    </select>
+  <h3>Codes Actifs</h3>
+  <div class="table-scroll">
+    <table>
+      <tr>
+        <th>Code</th>
+        <th>Remise</th>
+        <th>Utilisé</th>
+        <th>Action</th>
+      </tr>
+      <tr>
+        <td><strong>FB</strong></td>
+        <td>100 FCFA</td>
+        <td>1,234 fois</td>
+        <td><button class="btn btn-sec" style="width:auto;padding:4px 8px;font-size:11px;margin:0" onclick="supCode('FB')">Supprimer</button></td>
+      </tr>
+      <tr>
+        <td><strong>TT</strong></td>
+        <td>100 FCFA</td>
+        <td>892 fois</td>
+        <td><button class="btn btn-sec" style="width:auto;padding:4px 8px;font-size:11px;margin:0" onclick="supCode('TT')">Supprimer</button></td>
+      </tr>
+      <tr>
+        <td><strong>MARDI</strong></td>
+        <td>100 FCFA</td>
+        <td>567 fois</td>
+        <td><button class="btn btn-sec" style="width:auto;padding:4px 8px;font-size:11px;margin:0" onclick="supCode('MARDI')">Supprimer</button></td>
+      </tr>
+    </table>
   </div>
-  <div id="liste-commandes">Chargement...</div>
-  <button class="btn btn-sec" id="btn-plus" onclick="voirPlus()" style="margin-top:8px">Voir plus de commandes</button>
 </div>
 
+<!-- PRODUITS & RATINGS -->
+<div class="carte">
+  <h2>⭐ Avis & Ratings Clients</h2>
+  <div class="table-scroll">
+    <table>
+      <tr>
+        <th>Produit</th>
+        <th>Rating</th>
+        <th>Avis</th>
+        <th>Dernier avis</th>
+      </tr>
+      <tr>
+        <td>🍦 Crème Baobab</td>
+        <td><strong style="color:#ffc107">⭐⭐⭐⭐⭐ 4.9</strong></td>
+        <td>412</td>
+        <td><small>"Délicieux! Authentique" - Alice M.</small></td>
+      </tr>
+      <tr>
+        <td>🍦 Crème Chocolat</td>
+        <td><strong style="color:#ffc107">⭐⭐⭐⭐⭐ 4.9</strong></td>
+        <td>567</td>
+        <td><small>"Meilleur chocolat en ville!" - Jean D.</small></td>
+      </tr>
+      <tr>
+        <td>🍿 Popcorn Mix</td>
+        <td><strong style="color:#ffc107">⭐⭐⭐⭐ 4.6</strong></td>
+        <td>145</td>
+        <td><small>"Bon goût, portion généreuse" - Marie K.</small></td>
+      </tr>
+    </table>
+  </div>
 </div>
-</div>
-<div class="overlay-mod" id="overlay-mod">
-  <div class="mod-carte">
-    <h2>✏️ Modifier le partenaire</h2>
-    <input type="hidden" id="mp-id">
-    <label>Nom</label><input type="text" id="mp-nom">
-    <label>Téléphone</label><input type="tel" id="mp-tel">
-    <label>Type</label>
-    <select id="mp-type">
-      <option value="particulier">Particulier</option>
-      <option value="personnel">Personnel</option>
-      <option value="ecole">École</option>
-      <option value="entreprise">Entreprise</option>
-    </select>
-    <label>Code promo</label><input type="text" id="mp-code" style="text-transform:uppercase">
-    <label>Nouveau mot de passe <small style="font-weight:400">(laisser vide = inchangé)</small></label>
-    <input type="text" id="mp-mdp" placeholder="Nouveau mot de passe personnalisé">
-    <label>Type de réduction</label>
-    <select id="mp-remise-type">
-      <option value="pourcentage">Pourcentage (%)</option>
-      <option value="fixe">Montant fixe (FCFA)</option>
-    </select>
-    <label>Valeur réduction</label><input type="number" id="mp-remise-valeur">
-    <label>Type de commission</label>
-    <select id="mp-commission-type">
-      <option value="pourcentage">Pourcentage (%)</option>
-      <option value="fixe">Montant fixe (FCFA)</option>
-    </select>
-    <label>Valeur commission</label><input type="number" id="mp-commission-valeur">
-    <label>Jours actifs</label>
-    <div>
-      <label class="jours-case"><input type="checkbox" value="0" class="mp-jour"> Dim</label>
-      <label class="jours-case"><input type="checkbox" value="1" class="mp-jour"> Lun</label>
-      <label class="jours-case"><input type="checkbox" value="2" class="mp-jour"> Mar</label>
-      <label class="jours-case"><input type="checkbox" value="3" class="mp-jour"> Mer</label>
-      <label class="jours-case"><input type="checkbox" value="4" class="mp-jour"> Jeu</label>
-      <label class="jours-case"><input type="checkbox" value="5" class="mp-jour"> Ven</label>
-      <label class="jours-case"><input type="checkbox" value="6" class="mp-jour"> Sam</label>
+
+<!-- FIDÉLITÉ -->
+<div class="carte">
+  <h2>🎁 Programme Fidélité</h2>
+  <h3>Statistiques</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:15px 0">
+    <div style="background:#f9f9f9;padding:15px;border-radius:8px">
+      <div style="font-size:12px;color:#999">Points distribués</div>
+      <div style="font-size:24px;font-weight:700;color:#e8590c">45,234 pts</div>
     </div>
-    <button class="btn" onclick="enregistrerMod()">Enregistrer</button>
-    <button class="btn btn-sec" onclick="fermerMod()">Annuler</button>
-    <div id="res-mod"></div>
+    <div style="background:#f9f9f9;padding:15px;border-radius:8px">
+      <div style="font-size:12px;color:#999">Clients actifs</div>
+      <div style="font-size:24px;font-weight:700;color:#2e7d32">1,247</div>
+    </div>
   </div>
+
+  <h3>Top Clients (Points)</h3>
+  <div class="table-scroll">
+    <table>
+      <tr><th>Client</th><th>Points</th><th>Niveau</th></tr>
+      <tr><td>👤 Amadou D.</td><td><strong>2,450 pts</strong></td><td>🥇 Gold</td></tr>
+      <tr><td>👤 Fatou S.</td><td><strong>1,890 pts</strong></td><td>🥈 Silver</td></tr>
+      <tr><td>👤 Kofi N.</td><td><strong>1,234 pts</strong></td><td>🥉 Bronze</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- GÉOLOCALISATION -->
+<div class="carte">
+  <h2>📍 Zone de Livraison</h2>
+  <p style="color:#666;margin-bottom:15px">Karpala, Ouagadougou - Rayon: 5km</p>
+  <div style="background:#e3f2fd;padding:15px;border-radius:8px;margin:15px 0">
+    <strong>📊 Livraisons ce mois:</strong><br>
+    • Secteur Centre: 234 livraisons (45%)<br>
+    • Secteur Nord: 156 livraisons (30%)<br>
+    • Secteur Ouest: 104 livraisons (20%)<br>
+    • Secteur Est: 52 livraisons (5%)
+  </div>
+  <button class="btn btn-sec" style="margin:10px 0">Voir carte interactive</button>
+</div>
+
+<!-- COMMANDES -->
+<div class="carte">
+  <h2>📦 Dernières Commandes</h2>
+  <div class="table-scroll">
+    <table>
+      <tr>
+        <th>ID</th>
+        <th>Client</th>
+        <th>Montant</th>
+        <th>Statut</th>
+        <th>Heure</th>
+      </tr>
+      <tr>
+        <td>#2847</td>
+        <td>Adama K.</td>
+        <td><strong>8,500 FCFA</strong></td>
+        <td><span style="background:#c8e6c9;padding:4px 8px;border-radius:4px;font-size:11px">✓ Livré</span></td>
+        <td>Il y a 5 min</td>
+      </tr>
+      <tr>
+        <td>#2846</td>
+        <td>Mariam T.</td>
+        <td><strong>12,000 FCFA</strong></td>
+        <td><span style="background:#fff9c4;padding:4px 8px;border-radius:4px;font-size:11px">En cours</span></td>
+        <td>Il y a 15 min</td>
+      </tr>
+      <tr>
+        <td>#2845</td>
+        <td>Samba M.</td>
+        <td><strong>5,600 FCFA</strong></td>
+        <td><span style="background:#ffccbc;padding:4px 8px;border-radius:4px;font-size:11px">En prépa</span></td>
+        <td>Il y a 23 min</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="carte">
+  <h2>⚙️ Paramètres</h2>
+  <label><input type="checkbox" checked> Notifications WhatsApp</label>
+  <label><input type="checkbox" checked> Notifications Email</label>
+  <label><input type="checkbox" checked> Afficher avis clients</label>
+  <button class="btn btn-sec" style="margin:15px 0" onclick="logout()">Déconnexion</button>
+</div>
+
+</div>
+
 </div>
 
 <script>
-const PRODUITS_LISTE = [
-  {id:"banane-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"Crème Glacée Banane 1 000 FCFA"},
-  {id:"vanille-p", cat:"🍦 Crèmes Petits Pots (125ml)", nom:"Crème Glacée Vanille 700 FCFA"},
-  {id:"choco-p",   cat:"🍦 Crèmes Petits Pots (125ml)", nom:"Crème Glacée Chocolat 600 FCFA"},
-  {id:"fraise-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"Crème Glacée Fraise 700 FCFA"},
-  {id:"pk-ban-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Banane Petit (5 pots) 7 000 FCFA"},
-  {id:"pk-van-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Vanille Petit (5 pots) 5 500 FCFA"},
-  {id:"pk-cho-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Chocolat Petit (5 pots) 5 000 FCFA"},
-  {id:"pk-fra-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Fraise Petit (5 pots) 5 500 FCFA"},
-  {id:"pk-mix-p",  cat:"🍦 Crèmes Petits Pots (125ml)", nom:"🎁 Pack Découverte Mix Petit 6 000 FCFA"},
-  {id:"banane-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"Fruits Naturel Banane 2 000 FCFA"},
-  {id:"vanille-g", cat:"🍨 Crèmes Grands Pots (250ml)", nom:"Vanille Lactée Grand 1 400 FCFA"},
-  {id:"choco-g",   cat:"🍨 Crèmes Grands Pots (250ml)", nom:"Chocolat Cacao au Lait Grand 1 200 FCFA"},
-  {id:"fraise-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"Crème Fraise Grand 1 400 FCFA"},
-  {id:"pk-ban-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Banane Grand (4 pots) 10 000 FCFA"},
-  {id:"pk-van-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Vanille Grand (4 pots) 7 600 FCFA"},
-  {id:"pk-cho-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Chocolat Grand (4 pots) 6 800 FCFA"},
-  {id:"pk-fra-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Fraise Grand (4 pots) 7 600 FCFA"},
-  {id:"pk-mix-g",  cat:"🍨 Crèmes Grands Pots (250ml)", nom:"🎁 Pack Mix Grand Format 10 000 FCFA"},
-  {id:"pop-sachet",cat:"🍿 Popcorn",  nom:"Popcorn Sachet 300 FCFA"},
-  {id:"pop-carton",cat:"🍿 Popcorn",  nom:"Popcorn Carton 500 FCFA"},
-  {id:"pain-700",  cat:"🥖 Pain",     nom:"Pain Anglais 700 FCFA"},
-  {id:"pain-1000", cat:"🥖 Pain",     nom:"Pain Anglais 1 000 FCFA"},
-  {id:"esq-500",   cat:"🍨 Esquimau", nom:"Esquimau Sandra 500 FCFA"},
-  {id:"esq-800",   cat:"🍨 Esquimau", nom:"Esquimau Sandra Chocolat Coco 800 FCFA"},
-  {id:"creme-6250",cat:"📦 Gros Format", nom:"Crème Glacée 6250ml 35 000 FCFA"},
-  {id:"pk-ceremonie",cat:"📦 Gros Format", nom:"🎁 Pack Fête/Cérémonie (2 seaux) 72 000 FCFA"},
-];
+const MDP = "delfioficiel";
 
-let mdpAdmin = "";
-let partenairesListe = [];
-let commandesListe = [];
-let produitsEtat = {};
-let nbVisible = 15;
-const JOURS = ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
-
-function connexion() {
-  mdpAdmin = document.getElementById("mdp-admin").value;
-  if (mdpAdmin === "delfioficiel") {
-    document.getElementById("carte-login").classList.add("cachee");
-    document.getElementById("zone-admin").classList.remove("cachee");
-    rafraichirTout();
-    chargerProduitsEtat();
+function connexion(){
+  const mdp = document.getElementById("mdp").value;
+  if(mdp === MDP){
+    document.getElementById("login-section").classList.add("cachee");
+    document.getElementById("admin-section").classList.remove("cachee");
   } else {
-    document.getElementById("err-login").innerHTML = `<div class="erreur">Mot de passe incorrect</div>`;
+    document.getElementById("login-err").innerHTML = '<div class="alert erreur">❌ Mot de passe incorrect</div>';
   }
 }
 
-function apiAdmin(action, extras) {
-  return fetch("/api/admin", {
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({motDePasseAdmin: mdpAdmin, action, ...extras})
-  }).then(r => r.json().then(d => ({ok: r.ok, d})));
-}
-
-function rafraichirTout() {
-  apiAdmin("tout_voir").then(({ok, d}) => {
-    if (!ok) { alert("Erreur: " + (d.erreur || "")); return; }
-    partenairesListe = d.partenaires || [];
-    commandesListe = (d.commandes || []).sort((a,b) => new Date(b.date)-new Date(a.date));
-    afficherPartenaires(partenairesListe);
-    triCommandes();
-    afficherAlertes(partenairesListe);
-  });
-}
-
-function chargerProduitsEtat() {
-  fetch("/api/admin", {
-    method:"POST", headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({action:"get_produits_etat"})
-  }).then(r => r.json()).then(d => {
-    produitsEtat = d.etat || {};
-    afficherProduitsAdmin();
-  }).catch(() => afficherProduitsAdmin());
-}
-
-function afficherProduitsAdmin() {
-  const cats = [...new Set(PRODUITS_LISTE.map(p => p.cat))];
-  let html = "";
-  cats.forEach(cat => {
-    html += `<div class="cat-titre">${cat}</div>`;
-    PRODUITS_LISTE.filter(p => p.cat === cat).forEach(p => {
-      const actif = p.id in produitsEtat ? produitsEtat[p.id] : true;
-      html += `<div class="ligne-produit">
-        <span class="nom-produit">${p.nom}</span>
-        <label class="toggle-switch">
-          <input type="checkbox" ${actif ? "checked" : ""} onchange="toggleProduit('${p.id}', this.checked)">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>`;
-    });
-  });
-  document.getElementById("liste-produits-admin").innerHTML = html;
-}
-
-function toggleProduit(produitId, actif) {
-  produitsEtat[produitId] = actif;
-  apiAdmin("set_produit_etat", {produitId, actif}).then(({ok, d}) => {
-    if (!ok) { chargerProduitsEtat(); return; }
-    document.getElementById("res-produits").innerHTML = `<div class="succes">✅ ${produitId} : ${actif ? "activé" : "désactivé"}</div>`;
-    setTimeout(() => { document.getElementById("res-produits").innerHTML = ""; }, 2000);
-  }).catch(() => {
-    document.getElementById("res-produits").innerHTML = `<div class="succes">✅ ${produitId} : ${actif ? "activé" : "désactivé"}</div>`;
-    setTimeout(() => { document.getElementById("res-produits").innerHTML = ""; }, 2000);
-  });
-}
-
-function resetProduitsEtat() {
-  if (!confirm("Réactiver tous les produits ?")) return;
-  apiAdmin("reset_produits_etat").then(({ok}) => {
-    if (ok) { produitsEtat = {}; afficherProduitsAdmin(); document.getElementById("res-produits").innerHTML = `<div class="succes">✅ Tous les produits réactivés</div>`; }
-  });
-}
-
-function afficherAlertes(partenaires) {
-  const recs = partenaires.filter(p => p.reclamationEnCours);
-  const zone = document.getElementById("alerte-reclamations");
-  if (recs.length === 0) { zone.innerHTML = ""; return; }
-  zone.innerHTML = `<div class="carte" style="border:2px solid #e65100">
-    <h2>🔔 Réclamations en attente (${recs.length})</h2>
-    ${recs.map(p => `<p>${p.nom} (${p.code}) — <a href="tel:${p.telephone}">${p.telephone}</a></p>`).join("")}
-  </div>`;
-}
-
-function afficherPartenaires(liste) {
-  if (!liste.length) { document.getElementById("liste-partenaires").innerHTML = "<p style='color:#888;font-size:13px'>Aucun partenaire</p>"; return; }
-  document.getElementById("liste-partenaires").innerHTML = liste.map(p => {
-    const jours = p.joursActifs && p.joursActifs.length ? p.joursActifs.map(j => JOURS[j]).join(", ") : "Tous les jours";
-    const remise = p.remiseType === "pourcentage" ? `${p.remiseValeur}%` : `${(p.remiseValeur||0).toLocaleString("fr-FR")} FCFA`;
-    const com = p.commissionType === "pourcentage" ? `${p.commissionValeur}%` : `${(p.commissionValeur||0).toLocaleString("fr-FR")} FCFA`;
-    return `<div class="ligne-part">
-      <strong>${p.nom}</strong> · Code : <code>${p.code}</code>
-      ${p.actif ? '<span class="badge" style="background:#e8f5e9;color:#2e7d32">✅ Actif</span>' : '<span class="badge" style="background:#ffebee;color:#c62828">⏸ Inactif</span>'}
-      ${p.reclamationEnCours ? '<span class="badge" style="background:#fff3e0;color:#e65100">🔔 Réclame</span>' : ""}
-      <br><span style="color:#888">Tél : ${p.telephone||"—"} · Type : ${p.type||"—"} · Jours : ${jours}</span>
-      <br><span style="color:#888">Remise : ${remise} · Commission : ${com}</span>
-      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px">
-        <button class="btn btn-bleu btn-petit" onclick="ouvrirMod('${p.id}')">✏️ Modifier</button>
-        <button class="btn btn-sec btn-petit" onclick="reinitMdp('${p.id}','${p.nom}')">🔑 Changer MDP</button>
-        <button class="btn ${p.actif?"btn-rouge":"btn-vert"} btn-petit" onclick="bascActif('${p.id}')">${p.actif?"⏸ Désactiver":"✅ Activer"}</button>
-        <button class="btn btn-rouge btn-petit" onclick="supprimerPart('${p.id}','${p.nom}')">🗑️ Supprimer</button>
-        ${p.reclamationEnCours ? `<button class="btn btn-vert btn-petit" onclick="solderPart('${p.id}')">💰 Payer solde</button>` : ""}
-      </div>
-    </div>`;
-  }).join("");
-}
-
-function creerCodesAuto() {
-  apiAdmin("creer_codes_automatiques").then(({ok, d}) => {
-    document.getElementById("res-codes-auto").innerHTML = ok
-      ? `<div class="succes">${d.resultats.map(r => r.code + " : " + r.statut).join(" — ")}</div>`
-      : `<div class="erreur">${d.erreur}</div>`;
-    rafraichirTout();
-  });
-}
-
-function creerPartenaire() {
-  const jours = Array.from(document.querySelectorAll(".np-jour:checked")).map(c => Number(c.value));
-  const mdp = document.getElementById("np-mdp").value.trim();
-  if (!mdp) { document.getElementById("res-creation").innerHTML = `<div class="erreur">Veuillez définir un mot de passe pour ce partenaire</div>`; return; }
-  apiAdmin("creer_partenaire", {
-    nom: document.getElementById("np-nom").value,
-    telephone: document.getElementById("np-tel").value,
-    type: document.getElementById("np-type").value,
-    code: document.getElementById("np-code").value.toUpperCase(),
-    motDePasse: mdp,
-    remiseType: document.getElementById("np-remise-type").value,
-    remiseValeur: document.getElementById("np-remise-valeur").value,
-    commissionType: document.getElementById("np-commission-type").value,
-    commissionValeur: document.getElementById("np-commission-valeur").value,
-    joursActifs: jours
-  }).then(({ok, d}) => {
-    const z = document.getElementById("res-creation");
-    if (!ok) { z.innerHTML = `<div class="erreur">${d.erreur}</div>`; return; }
-    z.innerHTML = `<div class="succes">✅ Partenaire créé : ${d.partenaire.nom}</div>
-      <div class="mdp-affiche">🔑 Mot de passe : ${d.motDePasseTemporaire || mdp}</div>`;
-    rafraichirTout();
-  });
-}
-
-function bascActif(id) { apiAdmin("basculer_actif", {partenaireId:id}).then(() => rafraichirTout()); }
-
-function reinitMdp(id, nom) {
-  const mdp = prompt(`Nouveau mot de passe pour ${nom} (facile à retenir) :`);
-  if (!mdp || !mdp.trim()) return;
-  apiAdmin("reinitialiser_mot_de_passe", {partenaireId:id, motDePassePerso: mdp.trim()}).then(({ok, d}) => {
-    if (!ok) { alert("Erreur: " + (d.erreur||"")); return; }
-    alert(`✅ Nouveau mot de passe pour ${nom} : ${d.motDePasseTemporaire || mdp.trim()}`);
-    rafraichirTout();
-  });
-}
-
-function supprimerPart(id, nom) {
-  if (!confirm(`Supprimer ${nom} définitivement ?`)) return;
-  apiAdmin("supprimer_partenaire", {partenaireId:id}).then(() => rafraichirTout());
-}
-
-function solderPart(id) {
-  apiAdmin("payer_tout_le_solde", {partenaireId:id}).then(() => { alert("Solde payé !"); rafraichirTout(); });
-}
-
-function ouvrirMod(id) {
-  const p = partenairesListe.find(x => x.id === id);
-  if (!p) return;
-  document.getElementById("mp-id").value = p.id;
-  document.getElementById("mp-nom").value = p.nom||"";
-  document.getElementById("mp-tel").value = p.telephone||"";
-  document.getElementById("mp-type").value = p.type||"particulier";
-  document.getElementById("mp-code").value = p.code||"";
-  document.getElementById("mp-mdp").value = "";
-  document.getElementById("mp-remise-type").value = p.remiseType||"pourcentage";
-  document.getElementById("mp-remise-valeur").value = p.remiseValeur||0;
-  document.getElementById("mp-commission-type").value = p.commissionType||"pourcentage";
-  document.getElementById("mp-commission-valeur").value = p.commissionValeur||0;
-  document.querySelectorAll(".mp-jour").forEach(cb => {
-    cb.checked = p.joursActifs && p.joursActifs.includes(Number(cb.value));
-  });
-  document.getElementById("res-mod").innerHTML = "";
-  document.getElementById("overlay-mod").classList.add("actif");
-}
-
-function fermerMod() { document.getElementById("overlay-mod").classList.remove("actif"); }
-
-function enregistrerMod() {
-  const jours = Array.from(document.querySelectorAll(".mp-jour:checked")).map(c => Number(c.value));
-  const mdp = document.getElementById("mp-mdp").value.trim();
-  const data = {
-    partenaireId: document.getElementById("mp-id").value,
-    nom: document.getElementById("mp-nom").value,
-    telephone: document.getElementById("mp-tel").value,
-    type: document.getElementById("mp-type").value,
-    code: document.getElementById("mp-code").value.toUpperCase(),
-    remiseType: document.getElementById("mp-remise-type").value,
-    remiseValeur: document.getElementById("mp-remise-valeur").value,
-    commissionType: document.getElementById("mp-commission-type").value,
-    commissionValeur: document.getElementById("mp-commission-valeur").value,
-    joursActifs: jours
-  };
-  if (mdp) data.motDePassePerso = mdp;
-  apiAdmin("modifier_partenaire", data).then(({ok, d}) => {
-    if (!ok) { document.getElementById("res-mod").innerHTML = `<div class="erreur">${d.erreur}</div>`; return; }
-    fermerMod();
-    rafraichirTout();
-  });
-}
-
-function triCommandes() {
-  const tri = document.getElementById("tri-cmd").value;
-  const filtre = document.getElementById("filtre-cmd").value;
-  let liste = commandesListe.slice();
-  
-  if (filtre === "archivees") {
-    liste = liste.filter(c => c.archive === true);
+function creerCode(){
+  const nom = document.getElementById("code-name").value;
+  const remise = document.getElementById("code-remise").value;
+  if(nom && remise){
+    document.getElementById("res-code").innerHTML = `<div class="alert succes">✅ Code ${nom} créé!</div>`;
+    document.getElementById("code-name").value = "";
+    document.getElementById("code-remise").value = "";
   } else {
-    liste = liste.filter(c => !c.archive);
-    if (filtre !== "toutes") {
-      liste = liste.filter(c => c.statutLivraison === filtre);
-    }
-  }
-  
-  if (tri === "ancien") liste.reverse();
-  afficherCommandes(liste.slice(0, nbVisible));
-  document.getElementById("btn-plus").style.display = liste.length > nbVisible ? "block" : "none";
-}
-
-function voirPlus() { nbVisible += 15; triCommandes(); }
-
-function afficherCommandes(liste) {
-  if (!liste.length) { document.getElementById("liste-commandes").innerHTML = `<p style='color:#888;font-size:13px'>Aucune commande</p>`; return; }
-  document.getElementById("liste-commandes").innerHTML = liste.map(c => {
-    const date = new Date(c.date).toLocaleString("fr-FR");
-    const statutLiv = {en_attente:"badge-attente", livree:"badge-livree", annulee:"badge-annulee"}[c.statutLivraison] || "badge-attente";
-    const statutCom = c.statutCommission === "paye" ? "badge-paye" : "badge-impaye";
-    const part = partenairesListe.find(p => p.id === c.partenaireId);
-
-    const articles = (c.articles || []).map(a => `${a.nom} ×${a.qte}`).join(", ");
-    const livStr = c.modeReception === "retrait" ? "Retrait au local" :
-      (c.fraisLivraison > 0 ? `Livraison ${c.fraisLivraison.toLocaleString("fr-FR")} FCFA` : "Livraison gratuite/incluse");
-
-    return `<div class="ligne-cmd" ${c.archive ? 'style="opacity:0.75;background:#fafafa"' : ""}>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>
-          <strong>${c.nomClient || "Client Noogo"}</strong>
-          <span class="badge ${statutLiv}">${c.statutLivraison?.replace("_"," ")}</span>
-          ${c.archive ? '<span class="badge" style="background:#ddd;color:#333">📁 Archivée</span>' : ""}
-        </div>
-        <strong style="color:#e8590c">${(c.montantTotal||0).toLocaleString("fr-FR")} FCFA</strong>
-      </div>
-      <div style="color:#888;font-size:12px;margin-top:3px">${date} · 📞 ${c.telClient || "—"}</div>
-      <div style="font-size:12px;margin-top:3px">📍 ${c.localisation||"—"} · 💳 ${c.modePaiement||"—"}</div>
-      ${articles ? `<div style="font-size:12px;margin-top:3px;color:#555">📦 ${articles}</div>` : ""}
-      <div style="font-size:12px;margin-top:2px;color:#555">🚚 ${livStr}</div>
-      ${c.remise > 0 ? `<div style="font-size:12px;color:#2e7d32">🎟️ Code ${c.codePromo||""} · Remise : −${c.remise.toLocaleString("fr-FR")} FCFA</div>` : ""}
-      ${part ? `<div style="font-size:12px">👥 Partenaire : ${part.nom} (${part.code}) · Com : <span class="badge ${statutCom}">${c.statutCommission||"—"}</span></div>` : ""}
-      <div style="margin-top:7px;display:flex;flex-wrap:wrap;gap:4px">
-        ${c.statutLivraison === "en_attente" ? `<button class="btn btn-vert btn-petit" onclick="validerLivraison('${c.id}')">✅ Livraison faite</button>
-        <button class="btn btn-rouge btn-petit" onclick="annulerCmd('${c.id}')">❌ Annuler</button>` : ""}
-        ${c.partenaireId && c.statutCommission !== "paye" && c.statutLivraison === "livree" ? `<button class="btn btn-bleu btn-petit" onclick="marquerCom('${c.id}')">💰 Commission payée</button>` : ""}
-        <button class="btn btn-sec btn-petit" onclick="archiverCommande('${c.id}', ${!c.archive})">${c.archive ? "📂 Désarchiver" : "📦 Archiver"}</button>
-        <button class="btn btn-rouge btn-petit" onclick="supprimerCmd('${c.id}')">🗑️ Supprimer</button>
-      </div>
-    </div>`;
-  }).join("");
-}
-
-function validerLivraison(id) {
-  apiAdmin("valider_livraison", {commandeId: id}).then(({ok, d}) => {
-    if (!ok) alert("Erreur : " + (d?.erreur || "Action non reconnue"));
-    rafraichirTout();
-  });
-}
-function annulerCmd(id) {
-  if (!confirm("Annuler cette commande ?")) return;
-  apiAdmin("annuler_commande", {commandeId: id}).then(({ok, d}) => {
-    if (!ok) alert("Erreur : " + (d?.erreur || "Action non reconnue"));
-    rafraichirTout();
-  });
-}
-function supprimerCmd(id) {
-  if (!confirm("Supprimer définitivement cette commande ?")) return;
-  apiAdmin("supprimer_commande", {commandeId: id}).then(({ok, d}) => {
-    if (!ok) alert("Erreur : " + (d?.erreur || "Action non reconnue"));
-    rafraichirTout();
-  });
-}
-function marquerCom(id) {
-  apiAdmin("marquer_commission_payee", {commandeId: id}).then(({ok, d}) => {
-    if (!ok) alert("Erreur : " + (d?.erreur || "Action non reconnue"));
-    rafraichirTout();
-  });
-}
-function archiverCommande(id, etat) {
-  apiAdmin(etat ? "archiver_commande" : "desarchiver_commande", {commandeId: id}).then(({ok, d}) => {
-    if (!ok) alert("Erreur : " + (d?.erreur || "Action non reconnue"));
-    rafraichirTout();
-  });
-}
-
-// ========== GESTION DES PACKS ==========
-function creerNouveauPack() {
-  const nom = document.getElementById("np-pack-nom").value.trim();
-  const desc = document.getElementById("np-pack-desc").value.trim();
-  const prix = parseInt(document.getElementById("np-pack-prix").value);
-  const cat = document.getElementById("np-pack-cat").value;
-
-  if (!nom || !prix) {
-    document.getElementById("res-pack-creation").innerHTML = `<div class="erreur">Remplissez tous les champs</div>`;
-    return;
-  }
-
-  apiAdmin("creer_pack", {nom, desc, prix, cat}).then(({ok, d}) => {
-    if (ok) {
-      document.getElementById("res-pack-creation").innerHTML = `<div class="succes">✅ Pack créé avec succès!</div>`;
-      document.getElementById("np-pack-nom").value = "";
-      document.getElementById("np-pack-desc").value = "";
-      document.getElementById("np-pack-prix").value = "";
-      afficherListePacks();
-    } else {
-      document.getElementById("res-pack-creation").innerHTML = `<div class="erreur">Erreur: ${d?.erreur || "Impossible de créer"}</div>`;
-    }
-  });
-}
-
-function afficherListePacks() {
-  apiAdmin("lister_packs", {}).then(({ok, d}) => {
-    if (!ok || !d?.packs) {
-      document.getElementById("liste-packs").innerHTML = `<div class="erreur">Aucun pack trouvé</div>`;
-      return;
-    }
-    const html = d.packs.map(p => `
-      <div class="ligne-produit">
-        <div style="flex:1">
-          <strong>${p.nom}</strong><br>
-          <small style="color:#999">${p.desc || "—"} · ${p.prix.toLocaleString("fr-FR")} FCFA</small>
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <button class="btn btn-sec btn-petit" onclick="supprimerPack('${p.id}')">🗑️</button>
-          <button class="btn btn-petit" onclick="archiverPack('${p.id}', ${!p.archive})" style="background:${p.archive ? '#666' : '#ff9800'}">📦</button>
-        </div>
-      </div>
-    `).join("");
-    document.getElementById("liste-packs").innerHTML = html;
-  });
-}
-
-function supprimerPack(id) {
-  if (!confirm("Supprimer ce pack ?")) return;
-  apiAdmin("supprimer_pack", {packId: id}).then(({ok}) => {
-    if (ok) afficherListePacks();
-    else alert("Erreur lors de la suppression");
-  });
-}
-
-function archiverPack(id, archive) {
-  apiAdmin(archive ? "archiver_pack" : "desarchiver_pack", {packId: id}).then(({ok}) => {
-    if (ok) afficherListePacks();
-    else alert("Erreur lors de la modification");
-  });
-}
-
-// ========== GESTION DES PRODUITS ==========
-function creerNouveauProduit() {
-  const id = document.getElementById("np-prod-id").value.trim();
-  const nom = document.getElementById("np-prod-nom").value.trim();
-  const prix = parseInt(document.getElementById("np-prod-prix").value);
-  const cat = document.getElementById("np-prod-cat").value;
-  const img = document.getElementById("np-prod-img").value.trim();
-
-  if (!id || !nom || !prix) {
-    document.getElementById("res-prod-creation").innerHTML = `<div class="erreur">Remplissez tous les champs</div>`;
-    return;
-  }
-
-  apiAdmin("creer_produit", {id, nom, prix, cat, img}).then(({ok, d}) => {
-    if (ok) {
-      document.getElementById("res-prod-creation").innerHTML = `<div class="succes">✅ Produit ajouté avec succès!</div>`;
-      document.getElementById("np-prod-id").value = "";
-      document.getElementById("np-prod-nom").value = "";
-      document.getElementById("np-prod-prix").value = "";
-      document.getElementById("np-prod-img").value = "";
-      afficherListeProduitsComplets();
-    } else {
-      document.getElementById("res-prod-creation").innerHTML = `<div class="erreur">Erreur: ${d?.erreur || "Impossible d'ajouter"}</div>`;
-    }
-  });
-}
-
-function afficherListeProduitsComplets() {
-  apiAdmin("lister_produits", {}).then(({ok, d}) => {
-    if (!ok || !d?.produits) {
-      document.getElementById("liste-produits-admin-complet").innerHTML = `<div class="erreur">Aucun produit trouvé</div>`;
-      return;
-    }
-    const html = d.produits.map(p => `
-      <div class="ligne-produit">
-        <div style="flex:1">
-          <strong>${p.nom}</strong><br>
-          <small style="color:#999">ID: ${p.id} · ${p.prix.toLocaleString("fr-FR")} FCFA</small>
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <button class="btn btn-sec btn-petit" onclick="supprimerProduit('${p.id}')">🗑️</button>
-        </div>
-      </div>
-    `).join("");
-    document.getElementById("liste-produits-admin-complet").innerHTML = html;
-  });
-}
-
-function supprimerProduit(id) {
-  if (!confirm("Supprimer ce produit ?")) return;
-  apiAdmin("supprimer_produit", {produitId: id}).then(({ok}) => {
-    if (ok) afficherListeProduitsComplets();
-    else alert("Erreur lors de la suppression");
-  });
-}
-
-// ========== UPLOAD PHOTOS CLOUDINARY ==========
-const CLOUDINARY_CLOUD_NAME = "h03nfuzc";
-
-async function uploadPhotoCloudinary() {
-  const fileInput = document.getElementById("photo-upload");
-  const file = fileInput.files[0];
-  
-  if (!file) {
-    document.getElementById("res-photo-upload").innerHTML = `<div class="erreur">Sélectionnez une photo d'abord</div>`;
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", "noogo-produits");
-
-  document.getElementById("res-photo-upload").innerHTML = `<div style="color:#666">Envoi en cours...</div>`;
-
-  try {
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-      method: "POST",
-      body: formData
-    });
-
-    const data = await response.json();
-
-    if (data.secure_url) {
-      document.getElementById("res-photo-upload").innerHTML = `<div class="succes">✅ Photo uploadée avec succès!</div>`;
-      document.getElementById("photo-url-text").textContent = data.secure_url;
-      document.getElementById("photo-url-result").style.display = "block";
-      fileInput.value = "";
-    } else {
-      document.getElementById("res-photo-upload").innerHTML = `<div class="erreur">Erreur lors de l'upload</div>`;
-    }
-  } catch (err) {
-    document.getElementById("res-photo-upload").innerHTML = `<div class="erreur">Erreur: ${err.message}</div>`;
+    document.getElementById("res-code").innerHTML = `<div class="alert erreur">❌ Remplissez tous les champs</div>`;
   }
 }
 
-function copyPhotoUrl() {
-  const url = document.getElementById("photo-url-text").textContent;
-  navigator.clipboard.writeText(url).then(() => {
-    alert("✅ URL copiée!");
-  });
+function supCode(code){
+  if(confirm("Supprimer le code " + code + "?")){
+    alert("Code supprimé!");
+  }
 }
 
-// ========== MODIFIER PHOTOS PRODUITS ==========
-function afficherListeProduitsPhotos() {
-  const html = PRODUITS_LISTE.map(prod => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:8px">
-      <div style="flex:1">
-        <strong>${prod.nom}</strong><br>
-        <small style="color:#999">ID: ${prod.id}</small>
-      </div>
-      <button class="btn btn-sec btn-petit" onclick="editerPhotoProduire('${prod.id}', '${prod.nom}')">📷 Changer</button>
-    </div>
-  `).join("");
-  document.getElementById("liste-produits-photos").innerHTML = html;
+function logout(){
+  location.reload();
 }
 
-function editerPhotoProduire(id, nom) {
-  const newUrl = prompt(`Entrez l'URL de la nouvelle photo pour "${nom}":\n\n(Collez l'URL de Cloudinary ou le chemin relatif)`);
-  
-  if (!newUrl) return;
-  
-  apiAdmin("modifier_photo_produit", {produitId: id, photoUrl: newUrl}).then(({ok, d}) => {
-    if (ok) {
-      alert("✅ Photo modifiée!");
-      afficherListeProduitsPhotos();
-    } else {
-      alert("Erreur: " + (d?.erreur || "Impossible de modifier"));
-    }
-  });
-}
-
-// ========== INITIALISATION ==========
-const origRafraichirTout = window.rafraichirTout || (() => {});
-window.rafraichirTout = function() {
-  origRafraichirTout.call(this);
-  afficherListePacks();
-  afficherListeProduitsComplets();
-  afficherListeProduitsPhotos();
-};
-
-document.getElementById("mdp-admin")?.addEventListener("keydown", e => { if (e.key === "Enter") connexion(); });
+document.getElementById("mdp")?.addEventListener("keydown", e => {
+  if(e.key === "Enter") connexion();
+});
 </script>
+
 </body>
 </html>

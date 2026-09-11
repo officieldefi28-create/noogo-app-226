@@ -1,0 +1,125 @@
+{
+  "produits": [
+    {
+      "id": "banane",
+      "nom": "Crème Glacée Banane 🍌",
+      "prix": 1000,
+      "categorie": "cremes",
+      "img": "Creme_Glacee_Banane.jpg",
+      "rating": 4.8,
+      "avis": 234,
+      "actif": true,
+      "description": "Crème glacée banane authentique 100% naturelle"
+    },
+    {
+      "id": "baobab",
+      "nom": "Crème Glacée Baobab 🌳",
+      "prix": 1000,
+      "categorie": "cremes",
+      "img": "Baobab.jpg",
+      "rating": 4.9,
+      "avis": 412,
+      "actif": true,
+      "description": "Saveur unique du baobab, 100% locale et naturelle"
+    },
+    {
+      "id": "vanille",
+      "nom": "Crème Glacée Vanille 🤍",
+      "prix": 700,
+      "categorie": "cremes",
+      "img": "Creme_Glacee_Vanille.jpg",
+      "rating": 4.7,
+      "avis": 189,
+      "actif": true,
+      "description": "Vanille pure, goût classique et délicat"
+    },
+    {
+      "id": "choco",
+      "nom": "Crème Glacée Chocolat 🍫",
+      "prix": 600,
+      "categorie": "cremes",
+      "img": "Creme_Glacee_Chocolat.jpg",
+      "rating": 4.9,
+      "avis": 567,
+      "actif": true,
+      "description": "Chocolat riche et intense"
+    },
+    {
+      "id": "fraise",
+      "nom": "Crème Glacée Fraise 🍓",
+      "prix": 700,
+      "categorie": "cremes",
+      "img": "Fraise.jpg",
+      "rating": 4.8,
+      "avis": 298,
+      "actif": true,
+      "description": "Fraise naturelle, goût sucré et frais"
+    },
+    {
+      "id": "esq-500",
+      "nom": "Esquimau Sandra 500F 🍨",
+      "prix": 500,
+      "categorie": "esquimau",
+      "img": "Esquimau_Sandra_500F.jpg",
+      "rating": 4.6,
+      "avis": 145,
+      "actif": true,
+      "description": "Esquimau Sandra classique"
+    },
+    {
+      "id": "esq-choco",
+      "nom": "Esquimau Chocolat 🍫",
+      "prix": 600,
+      "categorie": "esquimau",
+      "img": "Esquimau_Sandra_Choco.jpg",
+      "rating": 4.7,
+      "avis": 203,
+      "actif": true,
+      "description": "Esquimau chocolat savoureux"
+    },
+    {
+      "id": "pop-sachet",
+      "nom": "Popcorn Sachet 300F 🍿",
+      "prix": 300,
+      "categorie": "popcorn",
+      "img": "POPcorn_Sachet_300F.jpg",
+      "rating": 4.6,
+      "avis": 145,
+      "actif": true,
+      "description": "Popcorn au lait sachet"
+    },
+    {
+      "id": "pop-carton",
+      "nom": "Popcorn Carton 500F 🍿",
+      "prix": 500,
+      "categorie": "popcorn",
+      "img": "POPcorn_Carton_500F.jpg",
+      "rating": 4.7,
+      "avis": 203,
+      "actif": true,
+      "description": "Popcorn au lait carton"
+    }
+  ],
+  "packs": [
+    {
+      "id": "pack-mix",
+      "nom": "Pack Mix Petit (5 pots) 🎁",
+      "prix": 6000,
+      "img": "🎁",
+      "rating": 4.9,
+      "avis": 876,
+      "actif": true,
+      "produits": ["banane", "baobab", "vanille", "choco", "fraise"]
+    },
+    {
+      "id": "pack-fete",
+      "nom": "Pack Fête (10 pots) 🎉",
+      "prix": 12000,
+      "img": "🎁",
+      "rating": 5.0,
+      "avis": 543,
+      "actif": true,
+      "produits": ["banane", "baobab", "vanille", "choco", "fraise"]
+    }
+  ]
+}

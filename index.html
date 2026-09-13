@@ -30,8 +30,7 @@
   transition: opacity 0.5s ease;
 }
 .loader-overlay.hidden {
-  opacity: 0;
-  pointer-events: none;
+  display: none !important;
 }
 .loader-container {
   text-align: center;
@@ -2008,7 +2007,7 @@ function setCacheDisponibilite(data) {
   } catch(e) {}
 }
 
-// ===================== INIT - NON-BLOQUANT =====================
+// ===================== INIT - NON-BLOQUANT MAIS ATTENDRE API =====================
 
 window.addEventListener("DOMContentLoaded", () => {
   afficherLoader();
@@ -2019,18 +2018,21 @@ window.addEventListener("DOMContentLoaded", () => {
     disponibilite = cacheData.data || {};
   }
   
-  // ✅ AFFICHER CATALOGUE IMMÉDIATEMENT (pas d'attente!)
+  // ✅ AFFICHER CATALOGUE IMMÉDIATEMENT (avec cache ou vide)
   afficherCatalogue();
   afficherInfoPaiement();
   setupScrollBtn();
   setupPWA();
   forceInstallerApp();
   
-  // ✅ CHARGER API EN ARRIÈRE-PLAN (non-bloquant)
-  chargerDisponibilite();
-  
-  // ✅ FORCE cacher loader après 3 secondes MAX
-  setTimeout(cacherLoader, 3000);
+  // ✅ CHARGER API EN ARRIÈRE-PLAN - PUIS cacher loader
+  chargerDisponibilite().then(() => {
+    // API terminée = cacher loader
+    cacherLoader();
+  }).catch(() => {
+    // API fail = cacher loader quand même
+    cacherLoader();
+  });
 });
 
 // ===================== DISPONIBILITÉ =====================

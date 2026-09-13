@@ -3551,8 +3551,9 @@ function setupPWA(){
 
   if("serviceWorker" in navigator){
 
+    // ✅ Ajouter version query pour forcer refresh du cache
     navigator.serviceWorker
-      .register("/sw.js")
+      .register("/sw.js?v=2.0.0")
       .catch(()=>{});
 
   }

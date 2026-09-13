@@ -14,6 +14,47 @@
 <meta name="mobile-web-app-capable" content="yes">
 
 <style>
+/* ===== LOADER PROFESSIONNEL ===== */
+.loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(15,20,25,0.95) 0%, rgba(26,26,26,0.95) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+.loader-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.loader-container {
+  text-align: center;
+}
+.loader-spinner {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 20px;
+  border: 4px solid rgba(212,175,55,0.2);
+  border-top: 4px solid #d4af37;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.loader-text {
+  color: #d4af37;
+  font-weight: 700;
+  font-size: 14px;
+  margin: 0;
+}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 
 body{
@@ -254,7 +295,9 @@ header p{
 }
 
 .produit.indisponible{
-  display:none !important;
+  opacity:.5;
+  pointer-events:none;
+  filter:grayscale(1);
 }
 
 .img-wrap{
@@ -380,7 +423,8 @@ header p{
 }
 
 .produit.pack-card.indisponible{
-  display:none !important;
+  opacity:.5;
+  filter:grayscale(1);
 }
 
 .pack-top{
@@ -1250,9 +1294,17 @@ footer p{
 
 <body>
 
+<!-- LOADER PROFESSIONNEL -->
+<div id="loader-overlay" class="loader-overlay">
+  <div class="loader-container">
+    <div class="loader-spinner"></div>
+    <p class="loader-text">⏳ Chargement de Noogo...</p>
+  </div>
+</div>
+
 <!-- HEADER -->
 <header>
-  <img src="/logo.png" alt="Noogo" onerror="this.src='/icon-192.png'">
+  <img loading="lazy" src="/logo.png" alt="Noogo" onerror="this.src='/icon-192.png'">
   <h1>NOOGO</h1>
   <p class="tagline">Des saveurs authentiques, pour tous les plaisirs 🍦</p>
   <p>Livraison à Karpala et alentours</p>
@@ -1432,14 +1484,14 @@ footer p{
 </div><!-- ZOOM IMAGE -->
 <div class="zoom-overlay" id="zoom-overlay" onclick="fermerZoom()">
   <button class="zoom-close" onclick="fermerZoom()">✕</button>
-  <img id="zoom-img" src="" alt="">
+  <img loading="lazy" id="zoom-img" src="" alt="">
   <h3 id="zoom-titre"></h3>
 </div>
 
 <!-- INSTALL OVERLAY -->
 <div class="install-overlay" id="install-overlay">
   <div class="install-carte">
-    <img src="/logo.png" alt="Noogo" onerror="this.src='/icon-192.png'">
+    <img loading="lazy" src="/logo.png" alt="Noogo" onerror="this.src='/icon-192.png'">
 
     <h3>Installer Noogo</h3>
 
@@ -1922,15 +1974,61 @@ let modeReception = "livraison";
 let disponibilite = {};
 let deferredPrompt = null;
 
+// ===================== CACHE & OPTIMIZATION =====================
+
+function afficherLoader() {
+  const loader = document.getElementById("loader-overlay");
+  if(loader) loader.classList.remove("hidden");
+}
+
+function cacherLoader() {
+  const loader = document.getElementById("loader-overlay");
+  if(loader) {
+    setTimeout(() => {
+      loader.classList.add("hidden");
+    }, 300);
+  }
+}
+
+function getCacheDisponibilite() {
+  try {
+    const cache = localStorage.getItem("noogo_dispo_cache");
+    return cache ? JSON.parse(cache) : null;
+  } catch(e) {
+    return null;
+  }
+}
+
+function setCacheDisponibilite(data) {
+  try {
+    localStorage.setItem("noogo_dispo_cache", JSON.stringify({
+      data: data,
+      time: Date.now()
+    }));
+  } catch(e) {}
+}
+
 // ===================== INIT =====================
 
 window.addEventListener("DOMContentLoaded", async () => {
-  await chargerDisponibilite();  // ✅ ATTENDRE les données!
-  afficherCatalogue();           // ✅ APRÈS afficher avec les bonnes données
+  afficherLoader();
+  
+  // Charger cache d'abord
+  const cacheData = getCacheDisponibilite();
+  if(cacheData) {
+    disponibilite = cacheData.data || {};
+  }
+  
+  // Charger en parallèle (non-bloquant)
+  chargerDisponibilite();
+  afficherCatalogue();
   afficherInfoPaiement();
   setupScrollBtn();
   setupPWA();
-  forceInstallerApp();           // ✅ Forcer popup installation
+  forceInstallerApp();
+  
+  // Cacher loader après 500ms min
+  setTimeout(cacherLoader, 500);
 });
 
 // ===================== DISPONIBILITÉ =====================
@@ -1948,6 +2046,11 @@ async function chargerDisponibilite() {
     if(r.ok){
       const d = await r.json();
       disponibilite = d.etat || {};
+      
+      // SAUVEGARDER le cache après chargement
+      setCacheDisponibilite(disponibilite);
+      
+      // Rafraîchir affichage avec les nouvelles données
       afficherCatalogue();
     }
   } catch(_){}
@@ -3550,28 +3653,6 @@ function fermerBandeauInstall(){
   document
     .getElementById("bandeau-install")
     .classList.remove("visible");
-}
-
-// ===================== FORCER INSTALLATION PWA =====================
-function forceInstallerApp(){
-  
-  // Afficher le bandeau installation IMMÉDIATEMENT
-  const bandeau = document.getElementById("bandeau-install");
-  const btn = document.getElementById("install-btn");
-  
-  if(bandeau) bandeau.classList.add("visible");
-  if(btn) btn.classList.add("visible");
-  
-  // Si deferredPrompt n'est pas disponible après 2 secondes, afficher guide fallback
-  setTimeout(() => {
-    if(!deferredPrompt){
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if(isIOS || !navigator.serviceWorker){
-        // FALLBACK: afficher guide pour iOS ou navigateurs sans PWA native
-        afficherGuideInstall();
-      }
-    }
-  }, 2000);
 }
 
 </script>

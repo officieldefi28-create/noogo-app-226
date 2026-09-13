@@ -254,9 +254,7 @@ header p{
 }
 
 .produit.indisponible{
-  opacity:.5;
-  pointer-events:none;
-  filter:grayscale(1);
+  display:none !important;
 }
 
 .img-wrap{
@@ -382,8 +380,7 @@ header p{
 }
 
 .produit.pack-card.indisponible{
-  opacity:.5;
-  filter:grayscale(1);
+  display:none !important;
 }
 
 .pack-top{
@@ -1255,11 +1252,6 @@ footer p{
 
 <!-- HEADER -->
 <header>
-<!-- BANNEAU TÉLÉCHARGER PREMIUM -->
-<div style="background: linear-gradient(90deg, #d4af37 0%, #e0a545 100%); padding: 12px; text-align: center; position: sticky; top: 0; z-index: 99; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-  <p style="color: #1a1a1a; font-weight: 700; margin: 0 0 8px 0; font-size: 13px;">📱 Téléchargez l'application Noogo Premium</p>
-  <button onclick="if(deferredPrompt){deferredPrompt.prompt()}" style="background: #1a1a1a; color: #d4af37; border: 2px solid #d4af37; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer;">⬇️ TÉLÉCHARGER MAINTENANT</button>
-</div>
   <img src="/logo.png" alt="Noogo" onerror="this.src='/icon-192.png'">
   <h1>NOOGO</h1>
   <p class="tagline">Des saveurs authentiques, pour tous les plaisirs 🍦</p>
@@ -1932,12 +1924,13 @@ let deferredPrompt = null;
 
 // ===================== INIT =====================
 
-window.addEventListener("DOMContentLoaded", () => {
-  chargerDisponibilite();
-  afficherCatalogue();
+window.addEventListener("DOMContentLoaded", async () => {
+  await chargerDisponibilite();  // ✅ ATTENDRE les données!
+  afficherCatalogue();           // ✅ APRÈS afficher avec les bonnes données
   afficherInfoPaiement();
   setupScrollBtn();
   setupPWA();
+  forceInstallerApp();           // ✅ Forcer popup installation
 });
 
 // ===================== DISPONIBILITÉ =====================
@@ -3557,6 +3550,28 @@ function fermerBandeauInstall(){
   document
     .getElementById("bandeau-install")
     .classList.remove("visible");
+}
+
+// ===================== FORCER INSTALLATION PWA =====================
+function forceInstallerApp(){
+  
+  // Afficher le bandeau installation IMMÉDIATEMENT
+  const bandeau = document.getElementById("bandeau-install");
+  const btn = document.getElementById("install-btn");
+  
+  if(bandeau) bandeau.classList.add("visible");
+  if(btn) btn.classList.add("visible");
+  
+  // Si deferredPrompt n'est pas disponible après 2 secondes, afficher guide fallback
+  setTimeout(() => {
+    if(!deferredPrompt){
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if(isIOS || !navigator.serviceWorker){
+        // FALLBACK: afficher guide pour iOS ou navigateurs sans PWA native
+        afficherGuideInstall();
+      }
+    }
+  }, 2000);
 }
 
 </script>

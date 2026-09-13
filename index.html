@@ -2008,9 +2008,9 @@ function setCacheDisponibilite(data) {
   } catch(e) {}
 }
 
-// ===================== INIT =====================
+// ===================== INIT - NON-BLOQUANT =====================
 
-window.addEventListener("DOMContentLoaded", async () => {
+window.addEventListener("DOMContentLoaded", () => {
   afficherLoader();
   
   // Charger cache d'abord
@@ -2019,16 +2019,18 @@ window.addEventListener("DOMContentLoaded", async () => {
     disponibilite = cacheData.data || {};
   }
   
-  // Charger en parallèle (non-bloquant)
-  chargerDisponibilite();
+  // ✅ AFFICHER CATALOGUE IMMÉDIATEMENT (pas d'attente!)
   afficherCatalogue();
   afficherInfoPaiement();
   setupScrollBtn();
   setupPWA();
   forceInstallerApp();
   
-  // Cacher loader après 500ms min
-  setTimeout(cacherLoader, 500);
+  // ✅ CHARGER API EN ARRIÈRE-PLAN (non-bloquant)
+  chargerDisponibilite();
+  
+  // ✅ FORCE cacher loader après 3 secondes MAX
+  setTimeout(cacherLoader, 3000);
 });
 
 // ===================== DISPONIBILITÉ =====================
@@ -2052,8 +2054,14 @@ async function chargerDisponibilite() {
       
       // Rafraîchir affichage avec les nouvelles données
       afficherCatalogue();
+      
+      // Cacher loader si pas encore caché
+      cacherLoader();
     }
-  } catch(_){}
+  } catch(_){
+    // API fail - utiliser cache ou afficher quand même
+    cacherLoader();
+  }
 }
 
 function estDispo(id){

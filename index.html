@@ -2016,15 +2016,52 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
   
   // Charger en parallèle (non-bloquant)
-  chargerDisponibilite();
-  afficherCatalogue();
-  afficherInfoPaiement();
-  setupScrollBtn();
-  setupPWA();
-  forceInstallerApp();
+  try {
+    chargerDisponibilite();
+  } catch(e) {
+    console.warn("Erreur chargement disponibilité:", e);
+  }
+  
+  try {
+    afficherCatalogue();
+  } catch(e) {
+    console.warn("Erreur affichage catalogue:", e);
+  }
+  
+  try {
+    afficherInfoPaiement();
+  } catch(e) {
+    console.warn("Erreur affichage info paiement:", e);
+  }
+  
+  try {
+    setupScrollBtn();
+  } catch(e) {
+    console.warn("Erreur setup scroll:", e);
+  }
+  
+  try {
+    setupPWA();
+  } catch(e) {
+    console.warn("Erreur setup PWA:", e);
+  }
+  
+  try {
+    forceInstallerApp();
+  } catch(e) {
+    console.warn("Erreur force installer app:", e);
+  }
   
   // Cacher loader après 500ms min
   setTimeout(cacherLoader, 500);
+  
+  // FALLBACK: Force fermeture du loader après 3 secondes même s'il y a erreur
+  setTimeout(() => {
+    const loader = document.getElementById("loader-overlay");
+    if(loader && !loader.classList.contains("hidden")) {
+      loader.classList.add("hidden");
+    }
+  }, 3000);
 });
 
 // ===================== DISPONIBILITÉ =====================
@@ -3563,6 +3600,15 @@ function setupPWA(){
 
     }
   );
+}
+
+// ===================== FORCE INSTALLER APP =====================
+
+function forceInstallerApp(){
+  // Tentative d'installation si deferredPrompt existe
+  if(deferredPrompt){
+    installerApp();
+  }
 }
 
 function installerApp(){

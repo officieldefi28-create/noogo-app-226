@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noogo</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#e65100">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Noogo">
+<meta name="mobile-web-app-capable" content="yes">
+
+<style>
+/* ===== LOADER PROFESSIONNEL ===== */
+.loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(15,20,25,0.95) 0%, rgba(26,26,26,0.95) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+
+.loader-overlay.hidden {
+  display: none !important;
+  opacity: 0;
+}
+
+.loader-container {
+  text-align: center;
+}
+
+.loader-spinner {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 20px;
+  border: 4px solid rgba(212,175,55,0.2);
+  border-top: 4px solid #d4af37;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loader-text {
+  color: #d4af37;
+  font-weight: 700;
+  font-size: 14px;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f5f5;
+  padding-bottom: 165px;
+  color: #333;
+}
+
+header {
+  background: #d4af37;
+  color: #fff;
+  text-align: center;
+  padding: 15px 10px;
+}
+
+header img {
+  width: 90px;
+  height: 60px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 10px;
+  margin-bottom: 5px;
+}
+
+header h1 {
+  margin: 6px 0;
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0,0,0,.2);
+}
+
+header p {
+  margin: 6px 0 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Styles de base pour que l'app soit visible */
+main {
+  display: block;
+  width: 100%;
+}
+
+.section-titre {
+  text-align: center;
+  color: #d4af37;
+  font-size: 20px;
+  margin: 16px 0 2px;
+  font-weight: 700;
+}
+
+.section-sous-titre {
+  text-align: center;
+  color: #888;
+  font-size: 12.5px;
+  margin: 0 10px 6px;
+}
+
+.error-message {
+  background: #ffebee;
+  color: #c62828;
+  padding: 15px;
+  margin: 10px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.success-message {
+  background: #e8f5e9;
+  color: #2e7d32;
+  padding: 15px;
+  margin: 10px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+footer {
+  text-align: center;
+  padding: 20px 10px;
+  color: #888;
+  font-size: 12px;
+  background: #fff;
+  border-top: 1px solid #eee;
+}
+</style>
+</head>
+<body>
+
+<!-- LOADER OVERLAY -->
+<div class="loader-overlay" id="loader-overlay">
+  <div class="loader-container">
+    <div class="loader-spinner"></div>
+    <p class="loader-text">Chargement de Noogo...</p>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <h1>🍦 NOOGO</h1>
+  <p>Délicieux popcorn et glaces</p>
+</header>
+
+<!-- MAIN CONTENT -->
+<main id="app-content">
+  <div style="text-align: center; padding: 30px 20px;">
+    <div class="success-message">
+      ✅ L'application se charge...
+    </div>
+    <p>Si cette page reste blanche, vérifiez :</p>
+    <ul style="text-align: left; display: inline-block; color: #666;">
+      <li>La console du navigateur (F12) pour les erreurs</li>
+      <li>Que le fichier index.html est complet</li>
+      <li>Que tous les fichiers statiques existent (/icon-192.png, /manifest.json, /sw.js)</li>
+    </ul>
+  </div>
+</main>
+
+<footer>
+  <p>&copy; 2024 Noogo. Tous droits réservés.</p>
+</footer>
+
+<script>
+// ============================================
+// VARIABLES GLOBALES - INITIALISATION
+// ============================================
+
+let modeReception = 'livraison';
+let promoApplique = null;
+let deferredPrompt = null;
+
+// Initialiser window._cmd s'il n'existe pas
+if (!window._cmd) {
+  window._cmd = {
+    nom: '',
+    tel: '',
+    loc: '',
+    paiement: 'especes',
+    codeSaisi: '',
+    remise: 0,
+    frais: 500,
+    total: 0,
+    items: []
+  };
+}
+
+// ============================================
+// FONCTIONS CRITIQUES MANQUANTES
+// ============================================
+
+function hasPack() {
+  return (window._cmd?.items?.some(p => p.type === 'pack')) || false;
+}
+
+function stProduits() {
+  return (window._cmd?.items
+    ?.filter(p => p.type === 'produit')
+    .reduce((s, p) => s + (p.prix * p.qte), 0)) || 0;
+}
+
+function stPacks() {
+  return (window._cmd?.items
+    ?.filter(p => p.type === 'pack')
+    .reduce((s, p) => s + (p.prix * p.qte), 0)) || 0;
+}
+
+function fraisActuels() {
+  return window._cmd?.frais || 0;
+}
+
+// ============================================
+// MASQUER LE LOADER
+// ============================================
+
+function masquerLoader() {
+  const loader = document.getElementById('loader-overlay');
+  if (loader) {
+    loader.classList.add('hidden');
+  }
+  console.log('✅ Loader masqué');
+}
+
+// ============================================
+// INITIALISATION APPLICATION
+// ============================================
+
+function initApp() {
+  console.log('🚀 Application initialisée');
+  
+  // Charger les données si nécessaire
+  chargerDonnees();
+  
+  // Initialiser PWA
+  setupPWA();
+  
+  // Initialiser scroll
+  setupScrollBtn();
+}
+
+function chargerDonnees() {
+  // Récupérer les données depuis l'API ou le localStorage
+  try {
+    const data = localStorage.getItem('noogo_data');
+    if (data) {
+      window._cmd = JSON.parse(data);
+      console.log('✅ Données chargées depuis localStorage');
+    } else {
+      console.log('ℹ️ Aucunes données sauvegardées');
+    }
+  } catch (err) {
+    console.error('❌ Erreur lors du chargement des données:', err);
+  }
+}
+
+function sauvegarderDonnees() {
+  try {
+    localStorage.setItem('noogo_data', JSON.stringify(window._cmd));
+  } catch (err) {
+    console.error('❌ Erreur lors de la sauvegarde:', err);
+  }
+}
+
+// ============================================
+// PWA SETUP
+// ============================================
+
+function setupPWA() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .catch(() => {
+        console.log('ℹ️ Service Worker non disponible');
+      });
+  }
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    const btn = document.getElementById('install-btn');
+    const bandeau = document.getElementById('bandeau-install');
+    
+    if (btn) btn.classList.add('visible');
+    if (bandeau) bandeau.classList.add('visible');
+  });
+}
+
+function installerApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+      
+      const btn = document.getElementById('install-btn');
+      const bandeau = document.getElementById('bandeau-install');
+      
+      if (btn) btn.classList.remove('visible');
+      if (bandeau) bandeau.classList.remove('visible');
+    });
+  }
+}
+
+// ============================================
+// SCROLL
+// ============================================
+
+function setupScrollBtn() {
+  const btn = document.getElementById('bouton-haut');
+  if (btn) {
+    window.addEventListener('scroll', () => {
+      btn.classList.toggle('visible', window.scrollY > 400);
+    });
+  }
+}
+
+function remonterEnHaut() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ============================================
+// DÉMARRAGE APPLICATION
+// ============================================
+
+// Masquer le loader après 1 seconde minimum
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    masquerLoader();
+    initApp();
+  }, 500);
+});
+
+// Fallback : masquer le loader après 3 secondes même si tout n'est pas chargé
+setTimeout(() => {
+  const loader = document.getElementById('loader-overlay');
+  if (loader && !loader.classList.contains('hidden')) {
+    console.warn('⚠️ Forçage de la fermeture du loader');
+    masquerLoader();
+    initApp();
+  }
+}, 3000);
+
+// Log pour debug
+console.log('🔧 Noogo app initialized - version 1.0');
+console.log('Commande:', window._cmd);
+
+</script>
+
+</body>
+</html>

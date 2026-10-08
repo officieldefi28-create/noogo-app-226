@@ -1,0 +1,55 @@
+/* Noogo — thème commun (accueil, admin, partenaires) : noir · or · vert baobab (identité du logo) */
+:root{
+  --brun:#0c0a07; --brun-2:#1b160e; --brun-3:#5b4a2c;
+  --or:#d4a21e; --or-clair:#f0d078; --or-fonce:#a67a12;
+  --orange:#a67a12; --orange-fonce:#86600c;
+  --foret:#1f5a2e; --foret-2:#17451f;
+  --creme:#fbf6e8; --creme-2:#f4ead0; --blanc:#fff;
+  --texte:#17120a; --gris:#7a6e58; --bord:#e6d8b2;
+  --vert:#2e7d32; --vert-clair:#e6f4e7; --rouge:#c62828; --rouge-clair:#fdeaea; --bleu:#1565c0; --bleu-clair:#e6effb;
+  --rayon:16px; --ombre:0 8px 28px rgba(12,10,7,.12); --ombre-fine:0 1px 4px rgba(12,10,7,.14);
+  --degrade-or:linear-gradient(135deg,#b8860b 0%,#e2b23a 52%,#f6da86 100%);
+  --police-titre:"Fraunces","Playfair Display",Georgia,"Times New Roman",serif;
+  --police:"Poppins",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:var(--police);color:var(--texte);background:var(--creme);line-height:1.5;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+h1,h2,h3{font-family:var(--police-titre);line-height:1.15;margin:0 0 .4em;font-weight:700;letter-spacing:-.01em}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+.cachee{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Boutons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;cursor:pointer;border-radius:999px;padding:12px 22px;font-weight:700;font-size:15px;text-decoration:none;transition:transform .15s,box-shadow .15s,filter .15s;background:var(--degrade-or);color:#1b1204;box-shadow:0 4px 16px rgba(184,134,11,.35)}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.07)}
+.btn:active{transform:translateY(0)}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:none}
+.btn-or{background:var(--degrade-or);color:#1b1204}
+.btn-brun{background:var(--brun);color:var(--or-clair);box-shadow:none}.btn-brun:hover{background:var(--brun-2);filter:none}
+.btn-foret{background:var(--foret);color:#fff;box-shadow:0 4px 14px rgba(31,90,46,.3)}.btn-foret:hover{background:var(--foret-2);filter:none}
+.btn-vert{background:#1fa855;color:#fff;box-shadow:0 4px 14px rgba(31,168,85,.3)}.btn-vert:hover{background:#188a45;filter:none}
+.btn-contour{background:transparent;color:var(--brun);border:2px solid var(--brun);box-shadow:none}.btn-contour:hover{background:var(--brun);color:var(--or-clair);filter:none}
+.btn-clair{background:#fff;color:var(--brun);border:1px solid var(--bord);box-shadow:var(--ombre-fine)}.btn-clair:hover{background:var(--creme-2);filter:none}
+.btn-rouge{background:var(--rouge);color:#fff;box-shadow:none}.btn-rouge:hover{background:#a51f1f;filter:none}
+.btn-petit{padding:7px 14px;font-size:13px}
+.btn-bloc{width:100%}
+
+/* Cartes, champs */
+.carte{background:var(--blanc);border:1px solid var(--bord);border-radius:var(--rayon);padding:20px;box-shadow:var(--ombre-fine)}
+label{display:block;font-size:13px;font-weight:600;margin:14px 0 6px;color:var(--brun-3)}
+input[type=text],input[type=tel],input[type=password],input[type=number],input[type=url],select,textarea{width:100%;padding:12px 14px;border:1.5px solid var(--bord);border-radius:12px;background:#fff;font-size:15px;outline:none;transition:border .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--or);box-shadow:0 0 0 4px rgba(212,162,30,.22)}
+.aide{font-size:12px;color:var(--gris);margin-top:5px}
+
+/* Badges & messages */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.badge-or{background:var(--or-clair);color:#6b4a00}.badge-vert{background:var(--vert-clair);color:var(--vert)}
+.badge-rouge{background:var(--rouge-clair);color:var(--rouge)}.badge-bleu{background:var(--bleu-clair);color:var(--bleu)}
+.badge-gris{background:#efe6d6;color:var(--brun-3)}.badge-orange{background:#f7ecc8;color:#7a5a0a}
+.msg{padding:11px 14px;border-radius:12px;font-size:14px;margin-top:12px}
+.msg-ok{background:var(--vert-clair);color:var(--vert)}.msg-err{background:var(--rouge-clair);color:var(--rouge)}.msg-info{background:var(--bleu-clair);color:var(--bleu)}
+
+input[type=radio],input[type=checkbox]{width:auto;box-shadow:none!important;border:0}

@@ -1,1 +1,10 @@
-{ "name": "noogo-app-226", "version": "2.0.0", "description": "Noogo - Commande en ligne", "main": "server.js" }
+{
+  "name": "noogo",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Noogo — commande en ligne de crèmes glacées naturelles à Karpala",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@upstash/redis": "^1.34.3"
+  }
+}

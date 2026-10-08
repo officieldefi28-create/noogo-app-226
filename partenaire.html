@@ -1,5 +1,266 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head><meta charset="UTF-8"><title>Partenaires - Noogo</title></head>
-<body><h1>Espace Partenaires</h1><p>Gérez votre participation à Noogo</p></body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Espace partenaire — Noogo</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="/favicon.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/noogo.css">
+<style>
+  body{min-height:100vh}
+  .entete{background:linear-gradient(160deg,var(--brun) 0%,var(--brun-2) 100%);color:#fff;padding:22px 16px 26px;text-align:center;border-bottom:4px solid var(--or)}
+  .entete img{height:46px;width:auto;margin:0 auto 8px}
+  .entete h1{color:#fff;font-size:22px;margin:0}
+  .entete p{margin:4px 0 0;color:var(--or-clair);font-size:13px}
+  .colonne{max-width:520px;margin:0 auto;padding:16px 16px 40px}
+  .colonne > * + *{margin-top:14px}
+  .btn{min-height:46px}
+  .centre{text-align:center}
+  .bonjour{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .bonjour strong{font-family:var(--police-titre);font-size:19px}
+  .bonjour small{display:block;color:var(--gris);font-size:12px}
+  .code-carte{background:var(--degrade-or);color:#fff;border:0;text-align:center;box-shadow:var(--ombre)}
+  .code-carte .etiquette{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;opacity:.92}
+  .code-carte .code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:34px;font-weight:700;letter-spacing:.08em;margin:6px 0 12px;word-break:break-all;text-shadow:0 2px 8px rgba(42,24,16,.25)}
+  .code-carte .rang{display:flex;gap:10px;flex-wrap:wrap}
+  .code-carte .rang .btn{flex:1 1 150px}
+  .grille{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .stat{background:#fff;border:1px solid var(--bord);border-radius:14px;padding:14px 12px;text-align:center;box-shadow:var(--ombre-fine)}
+  .stat b{display:block;font-size:22px;font-family:var(--police-titre);color:var(--brun)}
+  .stat span{font-size:12px;color:var(--gris)}
+  .stat.vert b{color:var(--vert)} .stat.or b{color:var(--orange)}
+  .solde{background:var(--brun);color:#fff;border-radius:var(--rayon);padding:18px;text-align:center;box-shadow:var(--ombre)}
+  .solde span{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--or-clair)}
+  .solde b{display:block;font-family:var(--police-titre);font-size:30px;color:var(--or);margin:4px 0 12px}
+  h2{font-size:18px}
+  .cmd{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid var(--bord)}
+  .cmd:first-child{border-top:0}
+  .cmd .date{font-size:13px;color:var(--gris)}
+  .cmd .mt{font-weight:600}
+  .cmd .com{font-size:13px;color:var(--vert);font-weight:600}
+  .cmd .badges{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+  .conditions li{margin:6px 0}
+  .conditions ul{padding-left:18px;margin:0}
+  .vide{color:var(--gris);text-align:center;padding:14px 0;font-size:14px}
+  .chargement{text-align:center;padding:50px 0;color:var(--gris)}
+  .roue{width:34px;height:34px;border:4px solid var(--bord);border-top-color:var(--orange);border-radius:50%;margin:0 auto 10px;animation:tour .8s linear infinite}
+  @keyframes tour{to{transform:rotate(360deg)}}
+  .lien{background:none;border:0;color:var(--gris);text-decoration:underline;cursor:pointer;font-size:13px;min-height:44px;padding:0 6px}
+  #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--brun);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;box-shadow:var(--ombre);max-width:90vw;z-index:50}
+</style>
+</head>
+<body>
+<header class="entete">
+  <img src="/assets/embleme.jpg" alt="Noogo">
+  <h1>Espace partenaire</h1>
+  <p>Suivez vos commissions en toute simplicité</p>
+</header>
+
+<main class="colonne">
+  <!-- Connexion -->
+  <section id="ecran-connexion" class="carte cachee">
+    <h2>Connexion</h2>
+    <form id="form-connexion" autocomplete="on">
+      <label for="champ-code">Votre code promo</label>
+      <input id="champ-code" type="text" autocapitalize="characters" autocomplete="username" placeholder="Ex : MONCODE" required>
+      <label for="champ-mdp">Mot de passe</label>
+      <input id="champ-mdp" type="password" autocomplete="current-password" placeholder="Votre mot de passe" required>
+      <button class="btn btn-or btn-bloc" id="btn-connexion" type="submit" style="margin-top:18px">Se connecter</button>
+      <div id="msg-connexion"></div>
+    </form>
+    <p class="aide centre" style="margin-top:14px">Mot de passe oublié ? Contactez Noogo sur WhatsApp, nous vous en donnerons un nouveau.</p>
+  </section>
+
+  <!-- Chargement -->
+  <section id="ecran-chargement" class="chargement">
+    <div class="roue"></div>Chargement…
+  </section>
+
+  <!-- Tableau de bord -->
+  <div id="ecran-tableau" class="cachee">
+    <div class="carte bonjour">
+      <div><small>Bonjour</small><strong id="nom-partenaire"></strong></div>
+      <button class="btn btn-clair btn-petit" id="btn-deconnexion" type="button" style="min-height:44px">Déconnexion</button>
+    </div>
+
+    <div class="carte code-carte" style="margin-top:14px">
+      <div class="etiquette">Mon code promo</div>
+      <div class="code" id="mon-code"></div>
+      <div class="rang">
+        <button class="btn btn-brun" id="btn-copier" type="button">Copier le code</button>
+        <button class="btn btn-vert" id="btn-whatsapp" type="button">Partager sur WhatsApp</button>
+      </div>
+    </div>
+
+    <div class="grille" style="margin-top:14px">
+      <div class="stat"><b id="s-total">0</b><span>Commandes totales</span></div>
+      <div class="stat vert"><b id="s-livrees">0</b><span>Livrées</span></div>
+      <div class="stat or"><b id="s-attente">0</b><span>En attente</span></div>
+      <div class="stat"><b id="s-gagne">0</b><span>FCFA gagnés</span></div>
+      <div class="stat"><b id="s-paye">0</b><span>FCFA payés</span></div>
+      <div class="stat"><b id="s-solde-mini">0</b><span>FCFA restants</span></div>
+    </div>
+
+    <div class="solde" style="margin-top:14px">
+      <span>Solde restant à payer</span>
+      <b id="s-solde">0 FCFA</b>
+      <button class="btn btn-or btn-bloc cachee" id="btn-reclamer" type="button">Réclamer mon paiement</button>
+      <div id="msg-reclamer"></div>
+    </div>
+
+    <div class="carte" style="margin-top:14px">
+      <h2>Mes dernières commandes</h2>
+      <div id="liste-commandes"></div>
+    </div>
+
+    <div class="carte conditions" style="margin-top:14px">
+      <h2>Mes conditions</h2>
+      <ul id="conditions"></ul>
+    </div>
+  </div>
+</main>
+<div id="toast" class="cachee" role="status"></div>
+
+<script>
+(function(){
+  "use strict";
+  var CLE = "noogo_jeton_partenaire";
+  var JOURS = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+  var $ = function(id){ return document.getElementById(id); };
+  var stats = null;
+
+  function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function fcfa(n){ return (Number(n) || 0).toLocaleString("fr-FR") + " FCFA"; }
+  function nb(n){ return (Number(n) || 0).toLocaleString("fr-FR"); }
+  function getJeton(){ try { return sessionStorage.getItem(CLE); } catch(e){ return null; } }
+  function setJeton(j){ try { if (j) sessionStorage.setItem(CLE, j); else sessionStorage.removeItem(CLE); } catch(e){} }
+  function montrer(ecran){
+    ["ecran-connexion","ecran-chargement","ecran-tableau"].forEach(function(id){ $(id).classList.toggle("cachee", id !== ecran); });
+  }
+  function message(id, texte, type){ $(id).innerHTML = texte ? '<div class="msg msg-' + type + '">' + esc(texte) + '</div>' : ""; }
+  var tToast;
+  function toast(t){ var el = $("toast"); el.textContent = t; el.classList.remove("cachee"); clearTimeout(tToast); tToast = setTimeout(function(){ el.classList.add("cachee"); }, 3000); }
+
+  function appel(url, corps){
+    return fetch(url, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(corps) })
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(d){ return { ok:r.ok, status:r.status, data:d }; }); })
+      .catch(function(){ return { ok:false, status:0, data:{ erreur:"Pas de connexion internet. Vérifiez votre réseau et réessayez." } }; });
+  }
+
+  function deconnecter(texte){
+    setJeton(null); stats = null;
+    montrer("ecran-connexion");
+    message("msg-connexion", texte || "", "info");
+    $("champ-mdp").value = "";
+  }
+
+  function remiseTexte(s){ return s.remiseType === "pourcentage" ? nb(s.remiseValeur) + " %" : fcfa(s.remiseValeur); }
+  function commissionTexte(s){ return s.commissionType === "pourcentage" ? nb(s.commissionValeur) + " % du montant de la commande" : fcfa(s.commissionValeur) + " par commande"; }
+
+  function afficher(s){
+    stats = s;
+    $("nom-partenaire").textContent = s.nom;
+    $("mon-code").textContent = s.code;
+    $("s-total").textContent = nb(s.nombreCommandesTotal);
+    $("s-livrees").textContent = nb(s.nombreCommandesLivrees);
+    $("s-attente").textContent = nb(s.nombreCommandesEnAttente);
+    $("s-gagne").textContent = nb(s.totalGagne);
+    $("s-paye").textContent = nb(s.totalPaye);
+    $("s-solde-mini").textContent = nb(s.soldeRestant);
+    $("s-solde").textContent = fcfa(s.soldeRestant);
+
+    var b = $("btn-reclamer");
+    b.classList.toggle("cachee", !(s.soldeRestant > 0));
+    b.disabled = !!s.reclamationEnCours;
+    b.textContent = s.reclamationEnCours ? "Réclamation envoyée" : "Réclamer mon paiement";
+    message("msg-reclamer", s.reclamationEnCours && s.soldeRestant > 0 ? "Noogo a bien reçu votre demande et vous contactera pour le paiement." : "", "info");
+
+    var cmds = s.commandes || [];
+    $("liste-commandes").innerHTML = cmds.length ? cmds.map(function(c){
+      var st = c.statutLivraison === "livree" ? '<span class="badge badge-vert">Livrée</span>'
+             : c.statutLivraison === "annulee" ? '<span class="badge badge-rouge">Annulée</span>'
+             : '<span class="badge badge-orange">En attente</span>';
+      var pay = c.statutLivraison === "annulee" || !(c.commission > 0) ? ""
+              : c.statutCommission === "paye" ? '<span class="badge badge-bleu">Payée</span>' : '<span class="badge badge-gris">À payer</span>';
+      var d = c.date ? new Date(c.date).toLocaleString("fr-FR", { dateStyle:"short", timeStyle:"short" }) : "";
+      return '<div class="cmd"><div><div class="date">' + esc(d) + '</div><div class="mt">' + esc(fcfa(c.montantTotal)) +
+        '</div><div class="com">Commission : ' + esc(fcfa(c.commission)) + '</div></div><div class="badges">' + st + pay + '</div></div>';
+    }).join("") : '<div class="vide">Aucune commande pour le moment.<br>Partagez votre code pour commencer !</div>';
+
+    var jours = (s.joursActifs && s.joursActifs.length && s.joursActifs.length < 7)
+      ? "Valable le " + s.joursActifs.slice().sort().map(function(j){ return JOURS[j]; }).join(", le ") : "Valable tous les jours";
+    $("conditions").innerHTML =
+      "<li>Remise pour vos clients : <strong>" + esc(remiseTexte(s)) + "</strong></li>" +
+      "<li>Votre commission : <strong>" + esc(commissionTexte(s)) + "</strong>, versée après la livraison</li>" +
+      "<li><strong>" + esc(jours) + "</strong></li>";
+    montrer("ecran-tableau");
+  }
+
+  function charger(silencieux){
+    var j = getJeton();
+    if (!j) { montrer("ecran-connexion"); return Promise.resolve(); }
+    if (!silencieux) montrer("ecran-chargement");
+    return appel("/api/partenaire-stats", { jeton:j }).then(function(r){
+      if (r.ok) return afficher(r.data);
+      if (r.status === 401 || r.status === 404) return deconnecter(r.data.erreur || "Session expirée, merci de vous reconnecter.");
+      if (stats) { toast(r.data.erreur || "Erreur, réessayez."); montrer("ecran-tableau"); return; }
+      montrer("ecran-connexion");
+      message("msg-connexion", r.data.erreur || "Service indisponible, réessayez dans un instant.", "err");
+    });
+  }
+
+  $("form-connexion").addEventListener("submit", function(e){
+    e.preventDefault();
+    var btn = $("btn-connexion");
+    btn.disabled = true; btn.textContent = "Connexion…"; message("msg-connexion", "");
+    appel("/api/partenaire-login", { code: $("champ-code").value.trim(), motDePasse: $("champ-mdp").value }).then(function(r){
+      btn.disabled = false; btn.textContent = "Se connecter";
+      if (!r.ok) return message("msg-connexion", r.data.erreur || "Connexion impossible.", "err");
+      setJeton(r.data.jeton); $("champ-mdp").value = "";
+      charger(false);
+    });
+  });
+
+  $("btn-deconnexion").addEventListener("click", function(){ deconnecter(""); });
+
+  function copier(texte){
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(texte);
+    return new Promise(function(ok, ko){
+      var t = document.createElement("textarea"); t.value = texte; t.style.position = "fixed"; t.style.opacity = "0";
+      document.body.appendChild(t); t.select();
+      try { document.execCommand("copy") ? ok() : ko(); } catch(e){ ko(e); } document.body.removeChild(t);
+    });
+  }
+  $("btn-copier").addEventListener("click", function(){
+    if (!stats) return;
+    copier(stats.code).then(function(){ toast("Code copié : " + stats.code); }, function(){ toast("Copie impossible, notez le code à la main."); });
+  });
+  $("btn-whatsapp").addEventListener("click", function(){
+    if (!stats) return;
+    var texte = "Bonjour ! Découvre les crèmes glacées naturelles de Noogo. Utilise mon code promo " + stats.code +
+      " pour avoir une réduction sur ta commande : " + location.origin;
+    window.open("https://wa.me/?text=" + encodeURIComponent(texte), "_blank", "noopener");
+  });
+  $("btn-reclamer").addEventListener("click", function(){
+    var b = this;
+    if (b.disabled) return;
+    b.disabled = true; b.textContent = "Envoi…";
+    appel("/api/partenaire-reclamer", { jeton:getJeton() }).then(function(r){
+      if (r.ok) { toast("Réclamation envoyée"); return charger(true); }
+      if (r.status === 401) return deconnecter(r.data.erreur);
+      b.disabled = false; b.textContent = "Réclamer mon paiement";
+      message("msg-reclamer", r.data.erreur || "Envoi impossible, réessayez.", "err");
+    });
+  });
+
+  charger(false);
+})();
+</script>
+</body>
 </html>

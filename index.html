@@ -1,3703 +1,757 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Noogo</title>
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#e65100">
-<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-<link rel="apple-touch-icon" href="/icon-192.png">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Noogó — Crèmes glacées naturelles à Karpala | Commande en ligne</title>
+<meta name="description" content="Crèmes glacées 100 % naturelles et locales à Karpala (Ouagadougou) : vanille, baobab, banane et packs. Commandez en ligne, livraison ou retrait.">
+<meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Noogo">
 <meta name="mobile-web-app-capable" content="yes">
-
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Noogó">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Noogó — Glaces naturelles, l'excellence africaine">
+<meta property="og:description" content="Vanille, baobab, banane… 100 % naturel, 100 % local. Commandez sur WhatsApp.">
+<meta property="og:image" content="https://noogo-app-226.vercel.app/assets/logo-noogo.jpg">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/noogo.css">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"IceCreamShop","name":"Noogó","description":"Crèmes glacées naturelles et locales","telephone":"+22661682706","image":"https://noogo-app-226.vercel.app/assets/logo-noogo.jpg","address":{"@type":"PostalAddress","streetAddress":"Karpala, derrière la mairie","addressLocality":"Ouagadougou","addressCountry":"BF"},"geo":{"@type":"GeoCoordinates","latitude":12.336911,"longitude":-1.474793},"servesCuisine":"Crème glacée"}
+</script>
 <style>
-/* ===== LOADER PROFESSIONNEL ===== */
-.loader-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(15,20,25,0.95) 0%, rgba(26,26,26,0.95) 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  opacity: 1;
-  transition: opacity 0.5s ease;
-}
-.loader-overlay.hidden {
-  display: none !important;
-}
-.loader-container {
-  text-align: center;
-}
-.loader-spinner {
-  width: 50px;
-  height: 50px;
-  margin: 0 auto 20px;
-  border: 4px solid rgba(212,175,55,0.2);
-  border-top: 4px solid #d4af37;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-.loader-text {
-  color: #d4af37;
-  font-weight: 700;
-  font-size: 14px;
-  margin: 0;
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#f5f5f5;
-  padding-bottom:165px;
-  color:#333;
-}
-
-header{
-  background:#d4af37;
-  color:#fff;
-  text-align:center;
-  padding:15px 10px;
-}
-
-header img{
-  width:90px;
-  height:60px;
-  object-fit:contain;
-  background:#fff;
-  border-radius:10px;
-  margin-bottom:5px;
-}
-
-header h1{
-  margin:6px 0;
-  font-size:32px;
-  font-weight:900;
-  letter-spacing:1px;
-  text-shadow:0 2px 4px rgba(0,0,0,.2);
-}
-
-header p{
-  margin:6px 0 0;
-  font-size:16px;
-  font-weight:600;
-}
-
-.tagline{
-  font-size:14px!important;
-  font-weight:400!important;
-  font-style:italic;
-  opacity:.95;
-  margin-top:8px!important;
-}
-
-.badge-24h{
-  display:inline-block;
-  background:#1976d2;
-  color:#fff;
-  font-size:13px;
-  font-weight:700;
-  padding:7px 14px;
-  border-radius:20px;
-  margin-top:10px;
-}
-
-#install-btn{
-  display:none;
-  margin:10px auto 0;
-  background:#fff;
-  color:#e65100;
-  border:0;
-  border-radius:20px;
-  padding:9px 18px;
-  font-size:14px;
-  font-weight:700;
-  align-items:center;
-  gap:6px;
-  box-shadow:0 2px 6px rgba(0,0,0,.2);
-}
-
-#install-btn.visible{display:inline-flex}
-
-/* BANDEAU INSTALL */
-#bandeau-install{
-  display:none;
-  background:#fff3e0;
-  border-bottom:1px solid #ffcc80;
-  padding:10px 14px;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-}
-
-#bandeau-install.visible{display:flex}
-
-.bandeau-install-txt{
-  font-size:13px;
-  color:#7a3e00;
-  font-weight:600;
-  flex:1;
-}
-
-.bandeau-install-btn{
-  background:#d4af37;
-  color:#fff;
-  border:0;
-  border-radius:8px;
-  padding:7px 12px;
-  font-size:13px;
-  font-weight:700;
-  cursor:pointer;
-  white-space:nowrap;
-}
-
-.bandeau-close{
-  background:none;
-  border:0;
-  color:#999;
-  font-size:18px;
-  cursor:pointer;
-  padding:0 4px;
-}
-
-/* PROMO BANDEAU */
-.promo-bandeau{
-  background:linear-gradient(90deg,#fff3e0,#ffe0b2);
-  border:1px solid #ffcc80;
-  border-radius:12px;
-  margin:10px 8px 4px;
-  padding:10px 12px;
-  text-align:center;
-  font-size:12.5px;
-  color:#7a3e00;
-  line-height:1.6;
-}
-
-/* BANNER LIVRAISON */
-.banner-livraison{
-  display:none;
-  margin:6px 8px;
-  padding:9px 14px;
-  border-radius:10px;
-  text-align:center;
-  font-size:13px;
-  font-weight:700;
-}
-
-.banner-livraison.debloquee{
-  display:block;
-  background:#e8f5e9;
-  color:#0d47a1;
-  border:1px solid #a5d6a7;
-}
-
-.banner-livraison.incitation{
-  display:block;
-  background:#fff8e1;
-  color:#e65100;
-  border:1px solid #ffe082;
-}
-
-/* TABS */
-.section-titre{
-  text-align:center;
-  color:#d4af37;
-  font-size:20px;
-  margin:16px 0 2px;
-  font-weight:700;
-}
-
-.section-sous-titre{
-  text-align:center;
-  color:#888;
-  font-size:12.5px;
-  margin:0 10px 6px;
-}
-
-.tabs-wrap{
-  overflow-x:auto;
-  padding:8px 8px 4px;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
-}
-
-.tabs-wrap::-webkit-scrollbar{display:none}
-
-.tabs{
-  display:flex;
-  gap:8px;
-  width:max-content;
-}
-
-.tab-btn{
-  background:#fff;
-  color:#d4af37;
-  border:2px solid #d4af37;
-  border-radius:20px;
-  padding:7px 16px;
-  font-size:13px;
-  font-weight:700;
-  white-space:nowrap;
-  cursor:pointer;
-  transition:all .2s;
-}
-
-.tab-btn.actif{
-  background:#d4af37;
-  color:#fff;
-}
-
-/* SOUS-SECTION */
-.sous-section{
-  margin:10px 8px 4px;
-  padding:7px 14px;
-  background:#fff3e0;
-  border-left:4px solid #d4af37;
-  border-radius:0 10px 10px 0;
-  font-size:13px;
-  font-weight:700;
-  color:#d4af37;
-}
-
-.sous-section.petit{
-  background:#fff8e1;
-  border-left-color:#f9a825;
-  color:#f57f17;
-}
-
-.sous-section.grand{
-  background:#e8f5e9;
-  border-left-color:#388e3c;
-  color:#0d47a1;
-}
-
-/* CARDS PRODUITS NORMAUX */
-.produit{
-  display:flex;
-  align-items:center;
-  background:#fff;
-  margin:10px 8px;
-  padding:14px;
-  border-radius:14px;
-  box-shadow:0 2px 7px rgba(0,0,0,.12);
-}
-
-.produit.indisponible{
-  display:none !important;
-}
-
-.img-wrap{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  width:96px;
-  margin-right:14px;
-  flex-shrink:0;
-  cursor:pointer;
-}
-
-.produit img{
-  width:90px;
-  height:90px;
-  border-radius:12px;
-  object-fit:cover;
-  background:#f5e6d3;
-}
-
-.zoom-btn{
-  margin-top:6px;
-  background:#fff0e6;
-  color:#d4af37;
-  border:1px solid #d4af37;
-  border-radius:20px;
-  font-size:11px;
-  font-weight:700;
-  padding:3px 9px;
-  display:flex;
-  align-items:center;
-  gap:3px;
-  white-space:nowrap;
-}
-
-.info{flex:1}
-
-.produit h3{
-  margin:0;
-  font-size:15px;
-  line-height:1.3;
-}
-
-.produit-info{
-  font-size:11.5px;
-  color:#888;
-  margin:2px 0 4px;
-}
-
-.prix{
-  margin:5px 0;
-  font-weight:700;
-  color:#d4af37;
-  font-size:17px;
-}
-
-.badge-livraison-incluse{
-  font-size:11px;
-  color:#1976d2;
-  font-weight:700;
-  background:#e8f5e9;
-  padding:2px 8px;
-  border-radius:10px;
-  display:inline-block;
-  margin-bottom:6px;
-}
-
-.badge-indispo{
-  background:#ffebee;
-  color:#c62828;
-  font-size:11px;
-  font-weight:700;
-  padding:2px 8px;
-  border-radius:10px;
-  display:inline-block;
-  margin-bottom:6px;
-}
-
-.qte{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  margin-top:2px;
-}
-
-.qte button{
-  border:0;
-  background:#d4af37;
-  color:#fff;
-  width:32px;
-  height:32px;
-  border-radius:50%;
-  font-size:20px;
-  font-weight:700;
-  cursor:pointer;
-  line-height:1;
-}
-
-.qte button:active{background:#bf360c}
-
-.qte span{
-  font-weight:700;
-  min-width:20px;
-  text-align:center;
-  font-size:16px;
-}
-
-/* ================================
-   NOUVEAUX PACKS PROFESSIONNELS
-   ================================ */
-
-.produit.pack-card{
-  display:block;
-  position:relative;
-  width:calc(100% - 16px);
-  margin:14px 8px;
-  padding:0;
-  overflow:hidden;
-  border:2px solid #1976d2 !important;
-  border-radius:20px;
-  background:linear-gradient(145deg,#ffffff 0%,#f4faef 100%) !important;
-  box-shadow:0 6px 18px rgba(46,125,50,.20);
-}
-
-.produit.pack-card.indisponible{
-  display:none !important;
-}
-
-.pack-top{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  padding:11px 13px;
-  background:linear-gradient(90deg,#1976d2,#43a047);
-  color:#fff;
-}
-
-.pack-top-left{
-  display:flex;
-  align-items:center;
-  gap:7px;
-}
-
-.pack-badge-large{
-  background:#fff;
-  color:#1976d2;
-  border-radius:20px;
-  padding:5px 10px;
-  font-size:11px;
-  font-weight:900;
-  letter-spacing:.5px;
-}
-
-.pack-type{
-  font-size:11px;
-  font-weight:700;
-  opacity:.95;
-}
-
-.pack-count-top{
-  background:#ff9800;
-  color:#fff;
-  border-radius:20px;
-  padding:6px 11px;
-  font-size:12px;
-  font-weight:900;
-  box-shadow:0 2px 5px rgba(0,0,0,.18);
-}
-
-.pack-visual{
-  position:relative;
-  margin:12px;
-  padding:12px 8px 15px;
-  border-radius:16px;
-  background:linear-gradient(135deg,#fff8e1,#ffffff);
-  border:1px solid #ffe0a3;
-  box-shadow:inset 0 1px 3px rgba(0,0,0,.05);
-}
-
-.pack-items{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  gap:6px;
-  width:100%;
-  padding-right:42px;
-}
-
-.pack-item{
-  position:relative;
-  flex:1;
-  max-width:65px;
-  min-width:48px;
-  aspect-ratio:1/1;
-  border-radius:12px;
-  background:#fff;
-  padding:3px;
-  border:2px solid #fff;
-  box-shadow:0 3px 8px rgba(0,0,0,.18);
-  cursor:pointer;
-  transition:transform .15s;
-}
-
-.pack-item:active{
-  transform:scale(.94);
-}
-
-.pack-item img{
-  display:block;
-  width:100%;
-  height:100%;
-  border-radius:9px;
-  object-fit:cover;
-  background:#f5e6d3;
-}
-
-.pack-item-num{
-  position:absolute;
-  right:-5px;
-  bottom:-5px;
-  width:21px;
-  height:21px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:50%;
-  background:#1976d2;
-  color:#fff;
-  font-size:10px;
-  font-weight:900;
-  border:2px solid #fff;
-}
-
-.pack-count-big{
-  position:absolute;
-  right:6px;
-  top:50%;
-  transform:translateY(-50%);
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  background:#ff9800;
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:14px;
-  font-weight:900;
-  line-height:1;
-  text-align:center;
-  border:3px solid #fff;
-  box-shadow:0 3px 8px rgba(0,0,0,.22);
-}
-
-.pack-label{
-  text-align:center;
-  margin-top:9px;
-  color:#1976d2;
-  font-size:11px;
-  font-weight:900;
-  text-transform:uppercase;
-  letter-spacing:.4px;
-}
-
-.pack-body{
-  padding:0 14px 14px;
-}
-
-.pack-body h3{
-  margin:2px 0 4px;
-  font-size:17px;
-  line-height:1.25;
-  color:#333;
-}
-
-.pack-info{
-  color:#777;
-  font-size:12px;
-  line-height:1.4;
-  margin-bottom:6px;
-}
-
-.pack-livraison{
-  display:inline-flex;
-  align-items:center;
-  gap:4px;
-  background:#e8f5e9;
-  color:#1976d2;
-  border:1px solid #a5d6a7;
-  padding:4px 9px;
-  border-radius:20px;
-  font-size:11px;
-  font-weight:800;
-  margin-bottom:7px;
-}
-
-.pack-prix-ligne{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  margin-top:3px;
-}
-
-.pack-prix{
-  color:#d4af37;
-  font-size:20px;
-  font-weight:900;
-}
-
-.pack-qte{
-  display:flex;
-  align-items:center;
-  gap:9px;
-}
-
-.pack-qte button{
-  width:34px;
-  height:34px;
-  border:0;
-  border-radius:50%;
-  background:#d4af37;
-  color:#fff;
-  font-size:21px;
-  font-weight:900;
-  cursor:pointer;
-  line-height:1;
-}
-
-.pack-qte button:active{
-  background:#bf360c;
-  transform:scale(.94);
-}
-
-.pack-qte span{
-  min-width:20px;
-  text-align:center;
-  font-size:17px;
-  font-weight:900;
-  color:#333;
-}
-
-.pack-separator{
-  height:1px;
-  background:linear-gradient(90deg,transparent,#c8e6c9,transparent);
-  margin:0 14px 10px;
-}
-
-.pack-mini-note{
-  text-align:center;
-  color:#888;
-  font-size:10px;
-  margin-top:5px;
-}
-
-.pack-card .badge-indispo{
-  margin:0 14px 10px;
-}
-
-@media(max-width:360px){
-  .pack-items{
-    gap:4px;
-    padding-right:39px;
-  }
-
-  .pack-item{
-    min-width:42px;
-    max-width:55px;
-  }
-
-  .pack-count-big{
-    width:38px;
-    height:38px;
-    font-size:12px;
-  }
-
-  .pack-body h3{
-    font-size:15px;
-  }
-}
-
-/* FORMULAIRE */
-.commande-form{
-  background:#fff;
-  margin:16px 8px;
-  padding:16px;
-  border-radius:14px;
-  box-shadow:0 2px 7px rgba(0,0,0,.12);
-}
-
-.commande-titre{
-  margin:0 0 14px;
-  font-size:16px;
-  color:#d4af37;
-  text-align:center;
-  font-weight:700;
-}
-
-.champ-label{
-  display:block;
-  font-size:13px;
-  font-weight:700;
-  color:#444;
-  margin:12px 0 5px;
-}
-
-.facultatif{
-  font-weight:400;
-  color:#999;
-  font-size:11.5px;
-}
-
-.obligatoire{
-  font-weight:400;
-  color:#d4af37;
-  font-size:11.5px;
-}
-
-.champ-input{
-  width:100%;
-  padding:11px 12px;
-  border:1.5px solid #ddd;
-  border-radius:10px;
-  font-size:15px;
-  background:#fafafa;
-  outline:none;
-  transition:border .2s;
-}
-
-.champ-input:focus{
-  border-color:#d4af37;
-  background:#fff;
-}
-
-.champ-avec-bouton{
-  display:flex;
-  gap:8px;
-}
-
-.champ-avec-bouton .champ-input{flex:1}
-
-.btn-localiser{
-  background:#d4af37;
-  color:#fff;
-  border:0;
-  border-radius:10px;
-  width:46px;
-  font-size:18px;
-  cursor:pointer;
-  flex-shrink:0;
-}
-
-.mode-retrait-box{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  margin-top:6px;
-}
-
-.mode-retrait-carte{
-  display:flex;
-  align-items:flex-start;
-  gap:10px;
-  border:1.5px solid #ddd;
-  border-radius:10px;
-  padding:10px 12px;
-  font-size:14px;
-  font-weight:600;
-  cursor:pointer;
-  background:#fafafa;
-  transition:all .2s;
-}
-
-.mode-retrait-carte input[type=radio]{
-  flex-shrink:0;
-  margin-top:2px;
-  accent-color:#d4af37;
-}
-
-.mode-retrait-carte.selectionnee{
-  border-color:#d4af37;
-  background:#fff3e0;
-}
-
-#message-code{
-  font-size:12.5px;
-  margin-top:6px;
-  font-weight:700;
-  min-height:18px;
-}
-
-#message-code.valide{color:#1976d2}
-#message-code.invalide{color:#c62828}
-
-.paiement-options{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-
-.paiement-carte{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  border:1.5px solid #ddd;
-  border-radius:10px;
-  padding:10px 12px;
-  font-size:14px;
-  font-weight:600;
-  cursor:pointer;
-  background:#fafafa;
-  transition:all .2s;
-}
-
-.paiement-carte input[type=radio]{accent-color:#d4af37}
-
-.paiement-carte.selectionnee{
-  border-color:#d4af37;
-  background:#fff3e0;
-}
-
-.paiement-icone{
-  font-size:18px;
-  flex-shrink:0;
-}
-
-.info-paiement-box{
-  background:#fff3e0;
-  border-radius:10px;
-  padding:12px;
-  margin-top:10px;
-  font-size:14px;
-  text-align:center;
-  line-height:1.6;
-  display:none;
-}
-
-.info-paiement-box.visible{display:block}
-
-.info-paiement-numero{
-  font-size:20px;
-  font-weight:700;
-  color:#d4af37;
-  letter-spacing:1px;
-}
-
-#ligne-remise{
-  text-align:center;
-  color:#1976d2;
-  font-weight:700;
-  font-size:13px;
-  margin-bottom:4px;
-  display:none;
-}
-
-#ligne-remise.visible{display:block}/* BARRE TOTAL */
-.barre-total{
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  background:#fff;
-  padding:12px 12px 14px;
-  box-shadow:0 -3px 12px rgba(0,0,0,.18);
-  z-index:20;
-}
-
-.barre-total h2{
-  margin:0 0 10px;
-  text-align:center;
-  font-size:19px;
-  font-weight:700;
-}
-
-.btn-whatsapp{
-  display:block;
-  width:100%;
-  border:0;
-  border-radius:12px;
-  background:#25D366;
-  color:#fff;
-  padding:15px;
-  font-size:17px;
-  font-weight:700;
-  cursor:pointer;
-  letter-spacing:.3px;
-}
-
-.btn-whatsapp:active{background:#1ea855}
-
-/* POPUP LIVRAISON */
-.overlay{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.72);
-  z-index:50;
-  align-items:flex-end;
-  justify-content:center;
-}
-
-.overlay.actif{display:flex}
-
-.popup-carte{
-  background:#fff;
-  border-radius:22px 22px 0 0;
-  padding:26px 18px 36px;
-  width:100%;
-  max-width:500px;
-  text-align:center;
-}
-
-.popup-titre{
-  font-size:20px;
-  font-weight:700;
-  margin:0 0 8px;
-  color:#333;
-}
-
-.popup-sous-titre{
-  font-size:14px;
-  color:#666;
-  margin:0 0 6px;
-}
-
-.popup-montant{
-  font-size:30px;
-  font-weight:700;
-  color:#d4af37;
-  margin:6px 0 4px;
-}
-
-.popup-msg{
-  font-size:14px;
-  color:#555;
-  margin:0 0 18px;
-  line-height:1.5;
-  background:#fff3e0;
-  padding:10px;
-  border-radius:10px;
-}
-
-.btn-popup{
-  display:block;
-  width:100%;
-  border:0;
-  border-radius:12px;
-  padding:14px;
-  font-size:15px;
-  font-weight:700;
-  cursor:pointer;
-  margin-bottom:10px;
-  transition:opacity .15s;
-}
-
-.btn-popup:active{opacity:.85}
-
-.btn-popup.vert{
-  background:#1976d2;
-  color:#fff;
-}
-
-.btn-popup.orange{
-  background:#d4af37;
-  color:#fff;
-}
-
-.btn-popup.gris{
-  background:#f0f0f0;
-  color:#333;
-}
-
-/* RECAP OVERLAY */
-.recap-overlay{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.82);
-  z-index:60;
-  overflow-y:auto;
-  padding:14px 8px 30px;
-}
-
-.recap-overlay.actif{display:block}
-
-.recap-carte{
-  background:#fff;
-  border-radius:18px;
-  padding:20px;
-  max-width:480px;
-  margin:0 auto;
-}
-
-.recap-titre{
-  text-align:center;
-  font-size:18px;
-  font-weight:700;
-  color:#d4af37;
-  margin:0 0 16px;
-  padding-bottom:12px;
-  border-bottom:2px solid #fff3e0;
-}
-
-.recap-section{margin:10px 0}
-
-.recap-section-label{
-  font-size:11px;
-  color:#999;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:.6px;
-  margin:0 0 5px;
-}
-
-.recap-ligne{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:6px 0;
-  border-bottom:1px solid #f5f5f5;
-  font-size:14px;
-}
-
-.recap-ligne:last-child{border-bottom:none}
-
-.recap-ligne-nom{
-  flex:1;
-  margin-right:8px;
-  color:#444;
-}
-
-.recap-ligne-prix{
-  font-weight:700;
-  white-space:nowrap;
-}
-
-.recap-total{
-  display:flex;
-  justify-content:space-between;
-  font-size:19px;
-  font-weight:700;
-  color:#d4af37;
-  margin-top:12px;
-  padding-top:12px;
-  border-top:2px solid #d4af37;
-}
-
-.recap-infos{
-  margin-top:14px;
-  padding-top:12px;
-  border-top:1px solid #eee;
-}
-
-.recap-info-row{
-  font-size:13.5px;
-  margin:5px 0;
-  color:#555;
-  line-height:1.4;
-}
-
-.recap-info-row strong{color:#333}
-
-.btn-confirmer{
-  display:block;
-  width:100%;
-  background:#25D366;
-  color:#fff;
-  border:0;
-  border-radius:12px;
-  padding:16px;
-  font-size:17px;
-  font-weight:700;
-  cursor:pointer;
-  margin-top:16px;
-}
-
-.btn-modifier{
-  display:block;
-  width:100%;
-  background:#f0f0f0;
-  color:#444;
-  border:0;
-  border-radius:12px;
-  padding:13px;
-  font-size:15px;
-  font-weight:700;
-  cursor:pointer;
-  margin-top:10px;
-}
-
-/* ZOOM */
-.zoom-overlay{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.92);
-  z-index:100;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  padding:20px;
-}
-
-.zoom-overlay.actif{display:flex}
-
-.zoom-overlay img{
-  max-width:100%;
-  max-height:75vh;
-  border-radius:14px;
-  object-fit:contain;
-}
-
-.zoom-overlay h3{
-  color:#fff;
-  margin:16px 0 0;
-  font-size:18px;
-  text-align:center;
-}
-
-.zoom-close{
-  position:absolute;
-  top:18px;
-  right:18px;
-  background:#fff;
-  color:#333;
-  border:0;
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  font-size:22px;
-  font-weight:700;
-  cursor:pointer;
-  line-height:1;
-}
-
-/* INSTALL OVERLAY */
-.install-overlay{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.88);
-  z-index:200;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-}
-
-.install-overlay.actif{display:flex}
-
-.install-carte{
-  background:#fff;
-  border-radius:20px;
-  padding:28px 20px;
-  max-width:360px;
-  width:100%;
-  text-align:center;
-}
-
-.install-carte img{
-  width:80px;
-  height:80px;
-  border-radius:18px;
-  object-fit:cover;
-  margin-bottom:14px;
-}
-
-.install-carte h3{
-  margin:0 0 10px;
-  color:#333;
-  font-size:18px;
-}
-
-.install-etapes{
-  text-align:left;
-  background:#fff3e0;
-  border-radius:10px;
-  padding:12px 14px;
-  margin-top:12px;
-  font-size:14px;
-  line-height:1.8;
-  color:#5d3a1a;
-}
-
-.install-btn-ok{
-  background:#d4af37;
-  color:#fff;
-  border:0;
-  border-radius:12px;
-  padding:13px 28px;
-  font-size:16px;
-  font-weight:700;
-  margin-top:16px;
-  cursor:pointer;
-}
-
-/* BOUTON HAUT */
-#bouton-haut{
-  position:fixed;
-  right:14px;
-  bottom:170px;
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  background:#d4af37;
-  color:#fff;
-  border:0;
-  font-size:18px;
-  cursor:pointer;
-  box-shadow:0 2px 8px rgba(0,0,0,.28);
-  z-index:19;
-  display:none;
-  align-items:center;
-  justify-content:center;
-}
-
-#bouton-haut.visible{display:flex}
-
-/* FOOTER */
-footer{
-  background:#333;
-  color:#fff;
-  text-align:center;
-  padding:26px 15px;
-  margin-top:20px;
-}
-
-footer p{
-  margin:7px 0;
-  font-size:14px;
-}
-
-.footer-links{
-  display:flex;
-  gap:8px;
-  justify-content:center;
-  flex-wrap:wrap;
-  margin:12px 0;
-}
-
-.footer-btn{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  color:#fff;
-  text-decoration:none;
-  padding:13px 16px;
-  border-radius:10px;
-  font-size:15px;
-  font-weight:700;
-  background:rgba(255,255,255,.12);
-  border:1px solid rgba(255,255,255,.25);
-  flex:1;
-  min-width:130px;
-  max-width:180px;
-}
-
-.footer-btn.location{
-  background:#d4af37;
-  border-color:#d4af37;
-}
-
-.footer-btn.facebook{
-  background:#1877F2;
-  border-color:#1877F2;
-}
-
-.footer-btn.tiktok{
-  background:#000;
-  border-color:#555;
-}
-
-.footer-phone{
-  font-size:16px;
-  font-weight:700;
-  margin:12px 0;
-}
-
-.footer-espaces{
-  font-size:12px;
-  opacity:.7;
-  margin-top:14px;
-}
-
-.footer-espaces a{
-  color:#ffa;
-  text-decoration:none;
-  margin:0 6px;
-}
+:root{--entete:64px}
+body{padding-bottom:env(safe-area-inset-bottom)}
+body.verrou{overflow:hidden}
+.conteneur{width:min(1160px,100% - 32px);margin-inline:auto}
+section{scroll-margin-top:var(--entete)}
+
+/* Bandeau d'annonce */
+.annonce{background:var(--degrade-or);color:#1b1204;font-size:12.5px;font-weight:600;text-align:center;padding:7px 12px;letter-spacing:.01em}
+.annonce a{text-decoration:underline}
+
+/* En-tête */
+.entete{position:sticky;top:0;z-index:50;background:#000;color:#fff;border-bottom:1px solid rgba(212,162,30,.35)}
+.entete .conteneur{display:flex;align-items:center;gap:14px;height:var(--entete)}
+.marque{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--or-clair)}
+.marque img{width:44px;height:44px;border-radius:50%;object-fit:cover}
+.marque b{font-family:var(--police-titre);font-size:25px;letter-spacing:.01em;color:var(--or-clair)}
+.nav{display:none;margin-left:auto;gap:4px}
+.nav a{color:#e8dcc0;text-decoration:none;font-size:14px;font-weight:500;padding:8px 12px;border-radius:999px}
+.nav a:hover{background:rgba(212,162,30,.16);color:var(--or-clair)}
+.actions-entete{margin-left:auto;display:flex;align-items:center;gap:8px}
+.btn-panier{position:relative;background:transparent;color:var(--or-clair);border:1.5px solid var(--or);box-shadow:none;padding:9px 16px}
+.btn-panier:hover{background:rgba(212,162,30,.14)}
+.pastille{position:absolute;top:-7px;right:-5px;min-width:22px;height:22px;border-radius:11px;background:var(--or);color:#1b1204;font-size:12px;font-weight:800;display:grid;place-items:center;padding:0 5px}
+.pastille:empty,.pastille[data-n="0"]{display:none}
+@media(min-width:900px){.nav{display:flex}.actions-entete{margin-left:8px}}
+
+/* Installation de l'application */
+.installer{background:#14110c;color:#f3e8c8;border-bottom:1px solid rgba(212,162,30,.25)}
+.installer .conteneur{display:flex;align-items:center;gap:12px;padding:10px 0;flex-wrap:wrap}
+.installer p{margin:0;font-size:13.5px;flex:1 1 220px}
+.installer strong{color:var(--or-clair)}
+.installer .btn{padding:9px 18px;font-size:14px}
+.installer .fermer{background:none;border:0;color:#bfae86;font-size:22px;line-height:1;cursor:pointer;padding:6px 10px}
+
+/* Hero */
+.hero{position:relative;background:#000;color:#fff;overflow:hidden;isolation:isolate}
+.hero::before{content:"";position:absolute;inset:-20% -10% auto auto;width:70vw;height:70vw;max-width:820px;max-height:820px;background:radial-gradient(closest-side,rgba(212,162,30,.28),rgba(212,162,30,0) 70%);z-index:-1}
+.hero .conteneur{display:grid;gap:8px;padding:28px 0 44px;align-items:center}
+.hero-visuel{justify-self:center;width:min(300px,72vw);aspect-ratio:1;-webkit-mask-image:radial-gradient(closest-side,#000 82%,transparent 100%);mask-image:radial-gradient(closest-side,#000 82%,transparent 100%)}
+.hero-visuel img{width:100%;height:100%;object-fit:cover}
+.surtitre{display:inline-flex;align-items:center;gap:8px;color:var(--or-clair);font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.surtitre::before{content:"";width:28px;height:2px;background:var(--or)}
+.hero h1{font-size:clamp(32px,6.4vw,58px);color:#fff;margin:10px 0 14px}
+.hero h1 em{font-style:normal;background:var(--degrade-or);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{font-size:clamp(15px,2.2vw,18px);color:#d8cdb2;max-width:560px;margin:0 0 22px}
+.hero-actions{display:flex;flex-wrap:wrap;gap:12px}
+.hero .btn-contour{color:var(--or-clair);border-color:var(--or)}
+.hero .btn-contour:hover{background:var(--or);color:#1b1204}
+.garanties{display:flex;flex-wrap:wrap;gap:8px 18px;margin:26px 0 0;padding:0;list-style:none;color:#cbbf9f;font-size:13px}
+.garanties li{display:flex;align-items:center;gap:7px}
+.garanties li::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--or)}
+@media(min-width:900px){.hero .conteneur{grid-template-columns:1.1fr .9fr;gap:40px;padding:56px 0 72px}.hero-visuel{width:min(480px,100%);order:2}}
+
+/* Promo */
+.promo{background:var(--foret);color:#fff}
+.promo .conteneur{display:flex;align-items:center;justify-content:center;gap:12px;padding:12px 0;flex-wrap:wrap;text-align:center}
+.promo b{color:var(--or-clair)}
+.promo .btn{padding:7px 16px;font-size:13px}
+
+/* Sections */
+.section{padding:56px 0}
+.section.alt{background:#fff}
+.section-tete{text-align:center;max-width:640px;margin:0 auto 30px}
+.section-tete .surtitre{color:var(--or-fonce)}.section-tete .surtitre::before{background:var(--or-fonce)}
+.section-tete h2{font-size:clamp(26px,4.2vw,38px);margin-top:8px}
+.section-tete p{color:var(--gris);margin:0}
+
+/* Filtres */
+.filtres{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 14px;margin:0 -2px 6px;scrollbar-width:none;position:sticky;top:var(--entete);z-index:20;background:linear-gradient(var(--creme) 80%,transparent)}
+.filtres::-webkit-scrollbar{display:none}
+.filtres button{flex:0 0 auto;border:1.5px solid var(--bord);background:#fff;color:var(--brun);border-radius:999px;padding:9px 18px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
+.filtres button[aria-pressed="true"]{background:var(--brun);color:var(--or-clair);border-color:var(--brun)}
+.groupe{margin-top:26px}
+.groupe h3{font-size:22px;display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.groupe h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--bord),transparent)}
+.groupe h3 small{font-family:var(--police);font-size:12.5px;font-weight:600;color:var(--gris)}
+.grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media(min-width:720px){.grille{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}}
+@media(min-width:1100px){.grille{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* Carte produit */
+.produit{background:#fff;border:1px solid var(--bord);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--ombre-fine);transition:transform .2s,box-shadow .2s,border-color .2s}
+.produit:hover{transform:translateY(-3px);box-shadow:var(--ombre);border-color:var(--or)}
+.produit .photo{position:relative;display:block;width:100%;aspect-ratio:1;border:0;padding:0;background:#f1e8cf;cursor:zoom-in}
+.produit .photo img{width:100%;height:100%;object-fit:cover}
+.produit .vide{width:100%;height:100%;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#2a2210,#000)}
+.produit .vide img{width:62%;height:auto;opacity:.9;border-radius:50%}
+.badges{position:absolute;left:8px;top:8px;display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+.badges .badge{box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.badge-pack{background:var(--foret);color:#fff}
+.badge-cmd{background:#fff;color:var(--brun);border:1px solid var(--bord)}
+.produit .corps{padding:12px 12px 14px;display:flex;flex-direction:column;gap:3px;flex:1}
+.produit h4{font-family:var(--police);font-size:14.5px;font-weight:600;line-height:1.3;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.produit .info{margin:0;font-size:12.5px;color:var(--gris)}
+.produit .desc{margin:2px 0 0;font-size:12.5px;color:var(--gris);display:none}
+@media(min-width:720px){.produit .desc{display:block}.produit h4{font-size:15.5px}}
+.prix{margin-top:auto;padding-top:8px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.prix b{font-family:var(--police-titre);font-size:21px;color:var(--brun)}
+.prix s{font-size:13px;color:var(--gris)}
+.produit .action{margin-top:8px}
+.produit .btn{width:100%;padding:10px 12px;font-size:14px}
+.pas{display:flex;align-items:center;justify-content:space-between;background:var(--brun);border-radius:999px;padding:4px}
+.pas button{width:38px;height:38px;border-radius:50%;border:0;background:var(--degrade-or);color:#1b1204;font-size:20px;font-weight:700;cursor:pointer;line-height:1}
+.pas span{color:var(--or-clair);font-weight:700;min-width:28px;text-align:center}
+.squelette{height:290px;border-radius:18px;background:linear-gradient(100deg,#f1e8cf 30%,#faf3e0 50%,#f1e8cf 70%);background-size:200% 100%;animation:brille 1.2s infinite linear}
+@keyframes brille{to{background-position:-200% 0}}
+.vide-msg{text-align:center;padding:40px 16px;color:var(--gris)}
+
+/* Étapes / atouts */
+.etapes{display:grid;gap:16px;counter-reset:e}
+@media(min-width:760px){.etapes{grid-template-columns:repeat(3,1fr)}}
+.etape{background:var(--creme);border:1px solid var(--bord);border-radius:18px;padding:24px 22px;position:relative}
+.etape::before{counter-increment:e;content:counter(e);width:42px;height:42px;border-radius:50%;background:var(--degrade-or);color:#1b1204;display:grid;place-items:center;font-family:var(--police-titre);font-weight:700;font-size:20px;margin-bottom:14px}
+.etape h3{font-size:19px}.etape p{margin:0;color:var(--gris);font-size:14.5px}
+.atouts{display:grid;gap:14px;grid-template-columns:repeat(2,1fr)}
+@media(min-width:900px){.atouts{grid-template-columns:repeat(4,1fr)}}
+.atout{background:#fff;border:1px solid var(--bord);border-radius:18px;padding:20px 16px;text-align:center}
+.atout .ico{width:54px;height:54px;margin:0 auto 12px;border-radius:50%;background:var(--brun);color:var(--or);display:grid;place-items:center}
+.atout .ico svg{width:26px;height:26px}
+.atout h3{font-family:var(--police);font-size:15px;font-weight:700;margin-bottom:4px}
+.atout p{margin:0;font-size:13px;color:var(--gris)}
+.atelier{display:grid;gap:26px;align-items:center;margin-top:34px}
+@media(min-width:860px){.atelier{grid-template-columns:.8fr 1.2fr;gap:48px}}
+.atelier img{border-radius:22px;width:100%;max-height:520px;object-fit:cover;box-shadow:var(--ombre)}
+.atelier h3{font-size:28px}
+.atelier ul{padding:0;margin:14px 0 0;list-style:none;display:grid;gap:10px}
+.atelier li{display:flex;gap:10px;font-size:15px}
+.atelier li::before{content:"✓";color:var(--foret);font-weight:800}
+
+/* Infos pratiques */
+.infos{display:grid;gap:16px}
+@media(min-width:760px){.infos{grid-template-columns:repeat(3,1fr)}}
+.infos .carte h3{font-size:19px;display:flex;align-items:center;gap:10px}
+.infos .carte p,.infos .carte li{font-size:14.5px;color:#4b4132}
+.infos ul{margin:8px 0 0;padding-left:18px}
+.infos .carte{border-top:4px solid var(--or)}
+
+/* FAQ */
+.faq{max-width:760px;margin:0 auto;display:grid;gap:10px}
+.faq details{background:#fff;border:1px solid var(--bord);border-radius:14px;padding:0 18px}
+.faq summary{cursor:pointer;font-weight:600;padding:16px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";color:var(--or-fonce);font-size:22px;line-height:1}
+.faq details[open] summary::after{content:"–"}
+.faq details p{margin:0 0 16px;color:#4b4132;font-size:14.5px}
+
+/* Pied de page */
+.pied{background:#000;color:#cfc3a4;padding:46px 0 calc(28px + 76px)}
+.pied-grille{display:grid;gap:30px}
+@media(min-width:860px){.pied-grille{grid-template-columns:1.3fr 1fr 1fr}}
+.pied .marque{margin-bottom:12px}
+.pied h4{font-family:var(--police);color:var(--or-clair);font-size:13px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 12px}
+.pied p,.pied li{font-size:14px;margin:0 0 8px}
+.pied ul{list-style:none;padding:0;margin:0}
+.pied a{text-decoration:none}.pied a:hover{color:var(--or-clair)}
+.pied .btn{margin-top:6px}
+.pied small{display:block;margin-top:30px;padding-top:18px;border-top:1px solid #2a2418;color:#8c8068;font-size:12px}
+
+/* Barre panier mobile */
+.barre{position:fixed;left:0;right:0;bottom:0;z-index:60;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.25))}
+.barre-in{max-width:620px;margin:0 auto;background:#000;border:1.5px solid var(--or);border-radius:999px;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 20px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.barre-in span{color:#e8dcc0;font-size:13.5px;flex:1}
+.barre-in b{color:var(--or-clair);font-size:16px}
+.barre[hidden]{display:none}
+
+/* Feuille de commande */
+.voile{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;animation:fond .2s}
+.voile[hidden]{display:none}
+@keyframes fond{from{opacity:0}}
+.feuille{background:var(--creme);width:min(560px,100%);max-height:94dvh;border-radius:24px 24px 0 0;display:flex;flex-direction:column;animation:monte .28s cubic-bezier(.2,.8,.2,1)}
+@keyframes monte{from{transform:translateY(40px);opacity:.4}}
+@media(min-width:640px){.voile{align-items:center;padding:20px}.feuille{border-radius:24px;max-height:90dvh}}
+.feuille-tete{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:#000;color:var(--or-clair);border-radius:24px 24px 0 0}
+.feuille-tete h2{margin:0;font-size:22px;color:var(--or-clair)}
+.feuille-tete button{background:none;border:0;color:#e8dcc0;font-size:28px;line-height:1;cursor:pointer;padding:4px 8px}
+.feuille-corps{overflow-y:auto;padding:6px 20px 20px;-webkit-overflow-scrolling:touch}
+.feuille-pied{padding:14px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--bord);background:#fff}
+.ligne{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--bord)}
+.ligne img{width:54px;height:54px;border-radius:12px;object-fit:cover;background:#f1e8cf}
+.ligne .nom{flex:1;min-width:0}
+.ligne .nom b{display:block;font-size:14px;line-height:1.3}
+.ligne .nom small{color:var(--gris);font-size:12.5px}
+.ligne .pas{background:#fff;border:1px solid var(--bord);padding:2px}
+.ligne .pas button{width:30px;height:30px;font-size:17px}
+.ligne .pas span{color:var(--brun);min-width:22px;font-size:14px}
+.ligne .tot{font-weight:700;font-size:14px;min-width:70px;text-align:right}
+.choix{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choix.trois{grid-template-columns:1fr}
+.choix label{margin:0;display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--bord);border-radius:14px;background:#fff;cursor:pointer;font-weight:600;font-size:14px;color:var(--texte)}
+.choix input{accent-color:var(--foret);width:18px;height:18px;margin:0}
+.choix label:has(input:checked){border-color:var(--or);background:#fff8e1;box-shadow:0 0 0 3px rgba(212,162,30,.2)}
+.choix small{display:block;font-weight:500;color:var(--gris);font-size:12px}
+.champ-ligne{display:flex;gap:8px}
+.champ-ligne input{flex:1}
+.resume{background:#fff;border:1px solid var(--bord);border-radius:16px;padding:14px 16px;margin-top:18px;font-size:14px}
+.resume div{display:flex;justify-content:space-between;gap:12px;padding:3px 0}
+.resume .total{border-top:1px dashed var(--bord);margin-top:8px;padding-top:10px;font-size:17px;font-weight:800}
+.resume .total b{font-family:var(--police-titre);font-size:22px}
+.resume .note{display:block;color:var(--gris);font-size:12.5px;padding-top:6px}
+.lien{background:none;border:0;color:var(--foret);font-weight:700;text-decoration:underline;cursor:pointer;padding:0;font-size:13.5px}
+.vide-panier{text-align:center;padding:36px 8px;color:var(--gris)}
+
+/* Zoom + toast + guide */
+.zoom{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.92);display:grid;place-items:center;padding:16px;cursor:zoom-out}
+.zoom[hidden]{display:none}
+.zoom figure{margin:0;max-width:min(94vw,720px);text-align:center}
+.zoom img{max-height:78vh;width:auto;margin:0 auto;border-radius:14px}
+.zoom figcaption{color:#e8dcc0;margin-top:10px;font-size:14px}
+.toast{position:fixed;left:50%;bottom:92px;transform:translate(-50%,20px);z-index:120;background:#000;color:var(--or-clair);border:1px solid var(--or);padding:11px 20px;border-radius:999px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;max-width:92vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.guide ol{padding-left:20px;margin:10px 0 18px;display:grid;gap:10px;font-size:15px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+:focus-visible{outline:3px solid var(--or);outline-offset:2px}
 </style>
 </head>
-
 <body>
+<noscript><p style="padding:20px;text-align:center">Activez JavaScript pour commander, ou écrivez-nous sur <a href="https://wa.me/22661682706">WhatsApp</a>.</p></noscript>
 
-<!-- LOADER PROFESSIONNEL -->
-<div id="loader-overlay" class="loader-overlay">
-  <div class="loader-container">
-    <div class="loader-spinner"></div>
-    <p class="loader-text">⏳ Chargement de Noogo...</p>
+<div class="annonce">Commandez 24h/24 · Livraison à Karpala et alentours · <a href="https://wa.me/22661682706" rel="noopener">WhatsApp +226 61 68 27 06</a></div>
+
+<header class="entete">
+  <div class="conteneur">
+    <a class="marque" href="#haut" aria-label="Noogó — accueil">
+      <img src="/assets/embleme.jpg" width="44" height="44" alt="">
+      <b>Noogó</b>
+    </a>
+    <nav class="nav" aria-label="Navigation principale">
+      <a href="#carte">Notre carte</a>
+      <a href="#comment">Comment commander</a>
+      <a href="#pourquoi">Notre savoir-faire</a>
+      <a href="#infos">Livraison</a>
+      <a href="#faq">Questions</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <div class="actions-entete">
+      <button class="btn btn-panier" id="btn-panier" aria-label="Ouvrir mon panier">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6 5 3H2"/><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/></svg>
+        <span class="sr-only">Panier</span><span class="pastille" id="pastille" data-n="0"></span>
+      </button>
+    </div>
   </div>
-</div>
-
-<!-- HEADER -->
-<header>
-  <img loading="lazy" src="/logo.png" alt="Noogo" onerror="this.src='/icon-192.png'">
-  <h1>NOOGO</h1>
-  <p class="tagline">Des saveurs authentiques, pour tous les plaisirs 🍦</p>
-  <p>Livraison à Karpala et alentours</p>
-  <div class="badge-24h">🕒 Ouvert 24h/24 — commandez à toute heure !</div>
-  <br>
-  <button id="install-btn" onclick="installerApp()">⬇️ Installer l'application</button>
 </header>
 
-<!-- BANDEAU INSTALL -->
-<div id="bandeau-install">
-  <span class="bandeau-install-txt">📱 Installez Noogo sur votre téléphone !</span>
-  <button class="bandeau-install-btn" onclick="installerApp()">Installer</button>
-  <button class="bandeau-close" onclick="fermerBandeauInstall()">✕</button>
-</div>
-
-<!-- PROMO BANDEAU -->
-<div class="promo-bandeau">
-  🎁 Codes promo : <strong>FB</strong> (Facebook) · <strong>TT</strong> (TikTok) · <strong>MARDI</strong> · <strong>SAMEDI</strong><br>
-  Utilisez votre code dans le formulaire ci-dessous pour profiter d'une remise !
-</div>
-
-<!-- BANNER LIVRAISON -->
-<div class="banner-livraison" id="banner-livraison"></div>
-
-<!-- TITRE + TABS -->
-<h2 class="section-titre">🍦 Nos produits &amp; Packs</h2>
-<p class="section-sous-titre">Touchez une photo pour l'agrandir</p>
-
-<div class="tabs-wrap">
-  <div class="tabs">
-    <button class="tab-btn actif" data-cat="tout" onclick="filtrer('tout')">🌟 Tout</button>
-    <button class="tab-btn" data-cat="cremes" onclick="filtrer('cremes')">🍦 Crèmes</button>
-    <button class="tab-btn" data-cat="popcorn" onclick="filtrer('popcorn')">🍿 Popcorn</button>
-    <button class="tab-btn" data-cat="pain" onclick="filtrer('pain')">🥖 Pain</button>
-    <button class="tab-btn" data-cat="esquimau" onclick="filtrer('esquimau')">🍨 Esquimau</button>
-    <button class="tab-btn" data-cat="gros" onclick="filtrer('gros')">📦 Gros Format</button>
+<div class="installer cachee" id="installer" role="region" aria-label="Installer l'application">
+  <div class="conteneur">
+    <p id="installer-texte"><strong>Installez l'application Noogó</strong> sur votre téléphone : accès direct depuis l'écran d'accueil, comme une vraie application.</p>
+    <button class="btn" id="btn-installer">Installer</button>
+    <button class="fermer" id="fermer-installer" aria-label="Fermer">×</button>
   </div>
 </div>
 
-<!-- CATALOGUE -->
-<div id="produits"></div>
-
-<!-- FORMULAIRE -->
-<div class="commande-form">
-  <h3 class="commande-titre">📋 Vos informations de commande</h3>
-
-  <label class="champ-label">
-    Nom &amp; Prénom
-    <span class="facultatif">(facultatif)</span>
-  </label>
-  <input type="text" id="champ-nom" class="champ-input" placeholder="Votre nom">
-
-  <label class="champ-label">
-    Numéro de téléphone
-    <span class="obligatoire">✱ obligatoire</span>
-  </label>
-  <input type="tel" id="champ-tel" class="champ-input" placeholder="Ex : 70 12 34 56">
-
-  <label class="champ-label">
-    Mode de réception
-    <span class="obligatoire">✱ obligatoire</span>
-  </label>
-
-  <div class="mode-retrait-box">
-    <label class="mode-retrait-carte selectionnee">
-      <input type="radio" name="modeReception" value="livraison" checked onchange="changerModeReception()">
-      <span>🚚 Livraison à domicile <small style="font-weight:400;color:#888">(Gratuite dès 3 000 FCFA)</small></span>
-    </label>
-
-    <label class="mode-retrait-carte">
-      <input type="radio" name="modeReception" value="retrait" onchange="changerModeReception()">
-      <span>🏃 Retrait au local — Gratuit</span>
-    </label>
-  </div>
-
-  <div id="bloc-adresse">
-    <label class="champ-label">
-      Lieu de livraison
-      <span class="facultatif">(Quartier, repère)</span>
-    </label>
-
-    <div class="champ-avec-bouton">
-      <input type="text" id="champ-localisation" class="champ-input" placeholder="Ex : Karpala, Zone 1...">
-      <button type="button" class="btn-localiser" onclick="obtenirLocalisation()" title="GPS">📍</button>
+<main id="haut">
+  <section class="hero">
+    <div class="conteneur">
+      <div class="hero-visuel"><img src="/assets/logo-noogo.jpg" width="1000" height="1000" alt="Noogó — Glaces naturelles, l'excellence africaine" fetchpriority="high"></div>
+      <div>
+        <span class="surtitre">Glaces naturelles · Karpala</span>
+        <h1>La douceur naturelle, <em>le goût d'ici</em></h1>
+        <p class="lead">Crèmes glacées 100 % naturelles, faites localement : vanille, baobab, banane… Sans colorant ni conservateur. Commandez en deux minutes, nous vous livrons ou vous passez les récupérer.</p>
+        <div class="hero-actions">
+          <a class="btn btn-or" href="#carte">Commander maintenant</a>
+          <a class="btn btn-contour" href="#carte" data-filtre="packs">Voir les packs</a>
+        </div>
+        <ul class="garanties">
+          <li>100 % naturel</li><li>100 % local</li><li>Sans colorant ni conservateur</li><li>Commande 24h/24</li>
+        </ul>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <label class="champ-label">
-    Code promo
-    <span class="facultatif">(si vous en avez un)</span>
-  </label>
+  <div class="promo cachee" id="promo"><div class="conteneur"><span id="promo-texte"></span><a class="btn btn-or" href="#carte" data-filtre="cremes">J'en profite</a></div></div>
 
-  <div class="champ-avec-bouton">
-    <input type="text" id="champ-code" class="champ-input" placeholder="Ex : MARDI, FB, TT..." oninput="verifierCode()">
-  </div>
-
-  <div id="message-code"></div>
-
-  <label class="champ-label" style="margin-top:16px">
-    Mode de paiement
-    <span class="obligatoire">✱ obligatoire</span>
-  </label>
-
-  <div class="paiement-options">
-    <label class="paiement-carte selectionnee">
-      <input type="radio" name="paiement" value="especes" checked onchange="afficherInfoPaiement()">
-      <span class="paiement-icone">💵</span>
-      Espèces à la livraison
-    </label>
-
-    <label class="paiement-carte">
-      <input type="radio" name="paiement" value="orange" onchange="afficherInfoPaiement()">
-      <span class="paiement-icone">🟠</span>
-      Orange Money
-    </label>
-
-    <label class="paiement-carte">
-      <input type="radio" name="paiement" value="wave" onchange="afficherInfoPaiement()">
-      <span class="paiement-icone">🔵</span>
-      Wave
-    </label>
-  </div>
-
-  <div class="info-paiement-box" id="info-paiement"></div>
-</div>
-
-<!-- BARRE TOTAL -->
-<div class="barre-total">
-  <div id="ligne-remise"></div>
-  <h2>Total : <span id="total">0</span> FCFA</h2>
-  <button class="btn-whatsapp" onclick="validerCommande()">💬 Commander sur WhatsApp</button>
-</div>
-
-<!-- POPUP LIVRAISON < 3000F -->
-<div class="overlay" id="popup-livraison">
-  <div class="popup-carte">
-    <div class="popup-titre">🚚 Livraison à domicile</div>
-    <div class="popup-sous-titre">Votre commande actuelle</div>
-    <div class="popup-montant" id="popup-total-montant">0 FCFA</div>
-
-    <div class="popup-msg">
-      Il vous manque encore
-      <strong id="popup-manque">0 FCFA</strong>
-      pour débloquer la livraison
-      <strong>GRATUITE</strong>
-      (à partir de 3 000 FCFA) 🎉
+  <section class="section" id="carte">
+    <div class="conteneur">
+      <div class="section-tete">
+        <span class="surtitre">Notre carte</span>
+        <h2>Choisissez vos saveurs</h2>
+        <p>Vanille et baobab disponibles. Banane et autres saveurs : sur commande, nous confirmons sur WhatsApp. Touchez une photo pour l'agrandir.</p>
+      </div>
+      <div class="filtres" id="filtres" role="group" aria-label="Filtrer la carte"></div>
+      <div id="catalogue" aria-live="polite"><div class="grille"><div class="squelette"></div><div class="squelette"></div><div class="squelette"></div><div class="squelette"></div></div></div>
     </div>
+  </section>
 
-    <button class="btn-popup vert" onclick="ajouterArticles()">
-      ➕ Ajouter des articles pour livraison gratuite
-    </button>
+  <section class="section alt" id="comment">
+    <div class="conteneur">
+      <div class="section-tete"><span class="surtitre">Simple et rapide</span><h2>Comment commander</h2></div>
+      <div class="etapes">
+        <div class="etape"><h3>Choisissez</h3><p>Ajoutez vos crèmes glacées, packs ou gourmandises au panier. Vous voyez le total en direct.</p></div>
+        <div class="etape"><h3>Envoyez sur WhatsApp</h3><p>Vos informations et votre commande partent dans un message prêt à envoyer : nous confirmons avec vous.</p></div>
+        <div class="etape"><h3>Recevez ou récupérez</h3><p>Livraison à Karpala et alentours, ou retrait gratuit au local, derrière la mairie.</p></div>
+      </div>
+    </div>
+  </section>
 
-    <button class="btn-popup orange" onclick="choisirLivraison1500()">
-      🚚 Me faire livrer quand même
-    </button>
+  <section class="section" id="pourquoi">
+    <div class="conteneur">
+      <div class="section-tete"><span class="surtitre">Notre savoir-faire</span><h2>L'excellence africaine, pot après pot</h2><p>Des glaces sans artifice, pensées avec les saveurs d'ici.</p></div>
+      <div class="atouts">
+        <div class="atout"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 4 13c0-5 4-9 16-9 0 12-4 16-9 16z"/><path d="M4 21c3-6 6-9 11-11"/></svg></div><h3>100 % naturel</h3><p>Lait, crème, sucre et extraits naturels.</p></div>
+        <div class="atout"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg></div><h3>Produit localement</h3><p>Fabriqué à Karpala, avec des saveurs du pays.</p></div>
+        <div class="atout"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5.5L20 9l-4 4 1 6-5-3-5 3 1-6-4-4 5.5-.5z"/></svg></div><h3>Sans colorant</h3><p>Ni colorant, ni conservateur ajoutés.</p></div>
+        <div class="atout"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="7" width="14" height="10" rx="1"/><path d="M15 10h4l3 3v4h-7z"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></div><h3>Livraison ou retrait</h3><p>Chez vous à Karpala, ou au local.</p></div>
+      </div>
+      <div class="atelier">
+        <img src="/assets/atelier-noogo.jpg" width="1100" height="1467" loading="lazy" alt="Pots de crème glacée Noogó vanille et baobab dans le congélateur">
+        <div>
+          <span class="surtitre" style="color:var(--or-fonce)">En coulisses</span>
+          <h3>Des crèmes glacées prêtes à être servies</h3>
+          <ul>
+            <li>Chaque pot porte sa date limite de consommation et la liste de ses ingrédients.</li>
+            <li>À conserver à −18 °C : pensez à une glacière si vous êtes en route.</li>
+            <li>Vanille, baobab (pain de singe) et banane : trois saveurs naturelles qui font le goût de chez nous.</li>
+            <li>Un projet pour une fête ou une cérémonie ? Packs et seaux familiaux sur commande.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <button class="btn-popup gris" onclick="choisirRetrait()">
-      🏪 Je viens récupérer au local (Gratuit)
-    </button>
+  <section class="section alt" id="infos">
+    <div class="conteneur">
+      <div class="section-tete"><span class="surtitre">Pratique</span><h2>Livraison, retrait et paiement</h2></div>
+      <div class="infos">
+        <div class="carte"><h3>Livraison</h3><ul><li><b>Packs :</b> livraison incluse.</li><li><b>Articles à l'unité :</b> livraison à la charge du client, tarif confirmé sur WhatsApp selon votre quartier.</li></ul></div>
+        <div class="carte"><h3>Retrait au local</h3><p>Gratuit : <b>Karpala, derrière la mairie</b>.</p><p><a href="https://maps.google.com/?q=12.336911,-1.474793" target="_blank" rel="noopener" class="lien">Ouvrir l'itinéraire →</a></p></div>
+        <div class="carte"><h3>Paiement</h3><ul><li>Espèces à la livraison</li><li>Orange Money : <b>65 12 09 02</b></li><li>Wave : <b>65 12 09 02</b></li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq">
+    <div class="conteneur">
+      <div class="section-tete"><span class="surtitre">Questions fréquentes</span><h2>Vous vous demandez…</h2></div>
+      <div class="faq">
+        <details><summary>Comment passer commande ?</summary><p>Ajoutez vos articles au panier, renseignez votre numéro et envoyez la commande sur WhatsApp. Nous vous répondons pour confirmer.</p></details>
+        <details><summary>Que veut dire « sur commande » ?</summary><p>L'article n'est pas toujours en stock. Il peut être disponible : nous le confirmons avec vous sur WhatsApp, avec le délai éventuel.</p></details>
+        <details><summary>Combien coûte la livraison ?</summary><p>Elle est incluse pour les packs. Pour les articles à l'unité, elle est à la charge du client ; le tarif dépend de votre quartier et vous est annoncé sur WhatsApp.</p></details>
+        <details><summary>Comment conserver mes glaces ?</summary><p>À −18 °C. Une fois décongelée, une crème glacée ne doit pas être recongelée. La date limite est indiquée sur chaque pot.</p></details>
+        <details><summary>Faites-vous des commandes pour les fêtes et cérémonies ?</summary><p>Oui : packs, seaux familiaux de 6 250 ml et pack Fête / Cérémonie. Écrivez-nous sur WhatsApp pour organiser votre commande.</p></details>
+        <details><summary>Je suis partenaire : où suivre mes commissions ?</summary><p>Sur l'<a href="/partenaire.html" class="lien">espace partenaire</a>, avec votre code et votre mot de passe.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="pied" id="contact">
+  <div class="conteneur">
+    <div class="pied-grille">
+      <div>
+        <a class="marque" href="#haut"><img src="/assets/embleme.jpg" width="44" height="44" alt=""><b>Noogó</b></a>
+        <p>Glaces naturelles — l'excellence africaine.<br>Le goût d'ici, pour le monde.</p>
+        <a class="btn btn-vert" href="https://wa.me/22661682706" target="_blank" rel="noopener">Écrire sur WhatsApp</a>
+      </div>
+      <div>
+        <h4>Nous trouver</h4>
+        <p>Karpala, derrière la mairie<br>Ouagadougou, Burkina Faso</p>
+        <p>+226 61 68 27 06</p>
+        <p><a href="https://maps.google.com/?q=12.336911,-1.474793" target="_blank" rel="noopener">Voir sur Google Maps →</a></p>
+      </div>
+      <div>
+        <h4>Suivez-nous</h4>
+        <ul>
+          <li><a href="https://www.facebook.com/share/1DX4RzmDFC/" target="_blank" rel="noopener">Facebook</a></li>
+          <li><a href="https://www.tiktok.com/@dlices.de.papous" target="_blank" rel="noopener">TikTok</a></li>
+          <li><a href="/partenaire.html">Espace partenaire</a></li>
+        </ul>
+      </div>
+    </div>
+    <small>© Noogó — Tous droits réservés · <a href="/admin.html" style="opacity:.6">Administration</a></small>
   </div>
-</div>
-
-<!-- RECAP AVANT WHATSAPP -->
-<div class="recap-overlay" id="recap-overlay">
-  <div class="recap-carte">
-    <div class="recap-titre">📋 Récapitulatif de votre commande</div>
-    <div id="recap-contenu"></div>
-
-    <button class="btn-confirmer" onclick="envoyerWhatsapp()">
-      ✅ Confirmer et envoyer sur WhatsApp
-    </button>
-
-    <button class="btn-modifier" onclick="fermerRecap()">
-      ❌ Modifier ma commande
-    </button>
-  </div>
-</div><!-- ZOOM IMAGE -->
-<div class="zoom-overlay" id="zoom-overlay" onclick="fermerZoom()">
-  <button class="zoom-close" onclick="fermerZoom()">✕</button>
-  <img loading="lazy" id="zoom-img" src="" alt="">
-  <h3 id="zoom-titre"></h3>
-</div>
-
-<!-- INSTALL OVERLAY -->
-<div class="install-overlay" id="install-overlay">
-  <div class="install-carte">
-    <img loading="lazy" src="/logo.png" alt="Noogo" onerror="this.src='/icon-192.png'">
-
-    <h3>Installer Noogo</h3>
-
-    <p style="font-size:14px;color:#666;margin:0">
-      Accédez à Noogo rapidement depuis votre écran d'accueil
-    </p>
-
-    <div class="install-etapes" id="install-etapes"></div>
-
-    <button class="install-btn-ok" onclick="fermerGuideInstall()">
-      Compris !
-    </button>
-  </div>
-</div>
-
-<!-- BOUTON HAUT -->
-<button id="bouton-haut" onclick="remonterEnHaut()">▲</button>
-
-<!-- FOOTER -->
-<footer>
-  <p class="footer-phone">📞 +226 61 68 27 06</p>
-
-  <div class="footer-links">
-    <a href="https://wa.me/22661682706" target="_blank" class="footer-btn location">
-      💬 WhatsApp
-    </a>
-
-    <a href="https://www.facebook.com/share/1DX4RzmDFC/" target="_blank" class="footer-btn facebook">
-      👍 Facebook
-    </a>
-
-    <a href="https://www.tiktok.com/@dlices.de.papous" target="_blank" class="footer-btn tiktok">
-      🎵 TikTok
-    </a>
-  </div>
-
-  <a href="https://maps.google.com/?q=Karpala+Ouagadougou"
-     target="_blank"
-     class="footer-btn location"
-     style="max-width:280px;margin:6px auto;display:flex">
-    📍 Nous trouver sur Maps
-  </a>
-
-  <div class="footer-espaces">
-    <a href="/partenaire.html">🤝 Espace Partenaire</a> ·
-    <a href="/admin.html">🔐 Admin</a>
-  </div>
-
-  <p style="font-size:12px;opacity:.7;margin-top:14px">
-    © Noogo — Tous droits réservés
-  </p>
 </footer>
 
+<div class="barre" id="barre" hidden>
+  <div class="barre-in"><span><b id="barre-n">0</b> <span id="barre-lib" style="flex:none">article</span> · <b id="barre-total">0 FCFA</b></span><button class="btn btn-or" id="btn-voir-panier">Voir mon panier</button></div>
+</div>
+
+<!-- Feuille de commande -->
+<div class="voile" id="voile" hidden>
+  <div class="feuille" role="dialog" aria-modal="true" aria-labelledby="titre-panier">
+    <div class="feuille-tete"><h2 id="titre-panier">Mon panier</h2><button id="fermer-panier" aria-label="Fermer">×</button></div>
+    <div class="feuille-corps" id="panier-corps"></div>
+    <div class="feuille-pied" id="panier-pied"></div>
+  </div>
+</div>
+
+<div class="zoom" id="zoom" hidden><figure><img id="zoom-img" alt=""><figcaption id="zoom-legende"></figcaption></figure></div>
+<div class="voile" id="voile-guide" hidden>
+  <div class="feuille guide" role="dialog" aria-modal="true" aria-labelledby="guide-titre">
+    <div class="feuille-tete"><h2 id="guide-titre">Installer Noogó</h2><button id="fermer-guide" aria-label="Fermer">×</button></div>
+    <div class="feuille-corps" id="guide-corps"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 <script>
+"use strict";
+/* ───────── Réglages à modifier ici si besoin ───────── */
+const CONFIG = {
+  whatsapp: "22661682706",
+  orangeMoney: "65 12 09 02",
+  wave: "65 12 09 02"
+};
+const VERSION_CATALOGUE = 4;
 
-// ===================== DONNÉES CATALOGUE =====================
+/* ───────── Outils ───────── */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (n) => Math.round(n).toLocaleString("fr-FR").replace(/[\u202f\u00a0 ]/g, "\u00a0") + "\u00a0FCFA";
+const lire = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
+const ecrire = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const imgUrl = (i) => !i ? "" : (/^https?:/.test(i) ? i : "/produits/" + i);
+let toastT;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2600); }
 
-const CATALOGUE = [
+/* ───────── État ───────── */
+let CATALOGUE = [];
+let panier = lire("noogo_panier") || {};   // { id: quantité }
+let filtre = "tout";
+let promo = null;                          // { code, remise }
+let position = "";                         // lien Google Maps si localisation partagée
+let msgCode = { t: "", c: "" };            // message affiché sous le champ code promo
+let reception = "livraison", paiement = "especes";
 
-  // ── CRÈMES PETITS POTS 125ml ──
+const produit = (id) => CATALOGUE.find((p) => p.id === id);
 
-  {
-    id:"banane-p",
-    cat:"cremes",
-    gr:"petit",
-    type:"produit",
-    nom:"Crème Glacée Banane",
-    info:"Petit pot 125ml",
-    prix:1000,
-    img:"Creme_Glacee_Banane_1000F.jpg",
-    qte:0
-  },
-
-  {
-    id:"pk-ban-p",
-    cat:"cremes",
-    gr:"petit",
-    type:"pack",
-    nom:"🎁 Pack Banane — Petit Format",
-    info:"5 pots 125ml · Livraison incluse ✓",
-    prix:7000,
-    img:"Creme_Glacee_Banane_1000F.jpg",
-    packCount:5,
-    packLabel:"5 POTS • 125 ML",
-    packImages:[
-      "Creme_Glacee_Banane_1000F.jpg",
-      "Creme_Glacee_Banane_1000F.jpg",
-      "Creme_Glacee_Banane_1000F.jpg",
-      "Creme_Glacee_Banane_1000F.jpg",
-      "Creme_Glacee_Banane_1000F.jpg"
-    ],
-    qte:0
-  },
-
-  {
-    id:"vanille-p",
-    cat:"cremes",
-    gr:"petit",
-    type:"produit",
-    nom:"Crème Glacée Vanille",
-    info:"Petit pot 125ml",
-    prix:700,
-    img:"Creme_Glacee_Vanille_Lactee_700F.jpg",
-    qte:0
-  },
-
-  {
-    id:"pk-van-p",
-    cat:"cremes",
-    gr:"petit",
-    type:"pack",
-    nom:"🎁 Pack Vanille — Petit Format",
-    info:"5 pots 125ml · Livraison incluse ✓",
-    prix:5500,
-    img:"Creme_Glacee_Vanille_Lactee_700F.jpg",
-    packCount:5,
-    packLabel:"5 POTS • 125 ML",
-    packImages:[
-      "Creme_Glacee_Vanille_Lactee_700F.jpg",
-      "Creme_Glacee_Vanille_Lactee_700F.jpg",
-      "Creme_Glacee_Vanille_Lactee_700F.jpg",
-      "Creme_Glacee_Vanille_Lactee_700F.jpg",
-      "Creme_Glacee_Vanille_Lactee_700F.jpg"
-    ],
-    qte:0
-  },
-
-  {
-    id:"choco-p",
-    cat:"cremes",
-    gr:"petit",
-    type:"produit",
-    nom:"Crème Glacée Chocolat",
-    info:"Petit pot 125ml",
-    prix:600,
-    img:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
-    qte:0
-  },
-
-  {
-    id:"pk-cho-p",
-    cat:"cremes",
-    gr:"petit",
-    type:"pack",
-    nom:"🎁 Pack Chocolat — Petit Format",
-    info:"5 pots 125ml · Livraison incluse ✓",
-    prix:5000,
-    img:"Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
-    packCount:5,
-    packLabel:"5 POTS • 125 ML",
-    packImages:[
-      "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
-      "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
-      "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
-      "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
-      "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg"
-    ],
-    qte:0
-  },
-
-  {
-    id:"fraise-p",
-    cat:"cremes",
-    gr:"petit",
-    type:"produit",
-    nom:"Crème Glacée Fraise 🍓",
-    info:"Petit pot 125ml",
-    prix:700,
-    img:"",
-    qte:0
-  },
-
-  {
-    id:"pk-fra-p",
-    cat:"cremes",
-    gr:"petit",
-    type:"pack",
-    nom:"🎁 Pack Fraise — Petit Format",
-    info:"5 pots 125ml · Livraison incluse ✓",
-    prix:5500,
-    img:"",
-    packCount:5,
-    packLabel:"5 POTS • 125 ML",
-    packImages:[
-      "",
-      "",
-      "",
-      "",
-      ""
-    ],
-    qte:0
-  },
-
-  {
-    id:"pk-mix-p",
-    cat:"cremes",
-    gr:"petit",
-    type:"pack",
-    nom:"🎁 Pack Découverte Mix Petit",
-    info:"5 pots saveurs variées 125ml · Livraison incluse ✓",
-    prix:6000,
-    img:"Creme_Glacee_Banane_1000F.jpg",
-    packCount:5,
-    packLabel:"5 POTS • SAVEURS VARIÉES",
-    packImages:[
-      "Creme_Glacee_Banane_1000F.jpg",
-      "Creme_Glacee_Vanille_Lactee_700F.jpg",
-      "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
-      "Creme_Glacee_Vanille_Lactee_700F.jpg",
-      "Creme_Glacee_Banane_1000F.jpg"
-    ],
-    qte:0
-  },
-
-  // ── CRÈMES GRANDS POTS 250ml ──
-
-  {
-    id:"banane-g",
-    cat:"cremes",
-    gr:"grand",
-    type:"produit",
-    nom:"Fruits Naturel Banane",
-    info:"Grand pot 250ml",
-    prix:2000,
-    img:"Fruits_Naturel_Banane_2000F.jpg",
-    qte:0
-  },
-
-  {
-    id:"pk-ban-g",
-    cat:"cremes",
-    gr:"grand",
-    type:"pack",
-    nom:"🎁 Pack Banane — Grand Format",
-    info:"4 pots 250ml · Livraison incluse ✓",
-    prix:10000,
-    img:"Fruits_Naturel_Banane_2000F.jpg",
-    packCount:4,
-    packLabel:"4 POTS • 250 ML",
-    packImages:[
-      "Fruits_Naturel_Banane_2000F.jpg",
-      "Fruits_Naturel_Banane_2000F.jpg",
-      "Fruits_Naturel_Banane_2000F.jpg",
-      "Fruits_Naturel_Banane_2000F.jpg"
-    ],
-    qte:0
-  },
-
-  {
-    id:"vanille-g",
-    cat:"cremes",
-    gr:"grand",
-    type:"produit",
-    nom:"Vanille Lactée Grand Format",
-    info:"Grand pot 250ml",
-    prix:1400,
-    img:"Vanille_Lacte_1400F.jpg",
-    qte:0
-  },
-
-  {
-    id:"pk-van-g",
-    cat:"cremes",
-    gr:"grand",
-    type:"pack",
-    nom:"🎁 Pack Vanille — Grand Format",
-    info:"4 pots 250ml · Livraison incluse ✓",
-    prix:7600,
-    img:"Vanille_Lacte_1400F.jpg",
-    packCount:4,
-    packLabel:"4 POTS • 250 ML",
-    packImages:[
-      "Vanille_Lacte_1400F.jpg",
-      "Vanille_Lacte_1400F.jpg",
-      "Vanille_Lacte_1400F.jpg",
-      "Vanille_Lacte_1400F.jpg"
-    ],
-    qte:0
-  },
-
-  {
-    id:"choco-g",
-    cat:"cremes",
-    gr:"grand",
-    type:"produit",
-    nom:"Chocolat Cacao au Lait Grand",
-    info:"Grand pot 250ml",
-    prix:1200,
-    img:"Chocolat_Cacao_au_Lait_1200F.jpg",
-    qte:0
-  },
-
-  {
-    id:"pk-cho-g",
-    cat:"cremes",
-    gr:"grand",
-    type:"pack",
-    nom:"🎁 Pack Chocolat — Grand Format",
-    info:"4 pots 250ml · Livraison incluse ✓",
-    prix:6800,
-    img:"Chocolat_Cacao_au_Lait_1200F.jpg",
-    packCount:4,
-    packLabel:"4 POTS • 250 ML",
-    packImages:[
-      "Chocolat_Cacao_au_Lait_1200F.jpg",
-      "Chocolat_Cacao_au_Lait_1200F.jpg",
-      "Chocolat_Cacao_au_Lait_1200F.jpg",
-      "Chocolat_Cacao_au_Lait_1200F.jpg"
-    ],
-    qte:0
-  },
-
-  {
-    id:"fraise-g",
-    cat:"cremes",
-    gr:"grand",
-    type:"produit",
-    nom:"Crème Fraise Grand 🍓",
-    info:"Grand pot 250ml",
-    prix:1400,
-    img:"",
-    qte:0
-  },
-
-  {
-    id:"pk-fra-g",
-    cat:"cremes",
-    gr:"grand",
-    type:"pack",
-    nom:"🎁 Pack Fraise — Grand Format",
-    info:"4 pots 250ml · Livraison incluse ✓",
-    prix:7600,
-    img:"",
-    packCount:4,
-    packLabel:"4 POTS • 250 ML",
-    packImages:[
-      "",
-      "",
-      "",
-      ""
-    ],
-    qte:0
-  },
-
-  {
-    id:"pk-mix-g",
-    cat:"cremes",
-    gr:"grand",
-    type:"pack",
-    nom:"🎁 Pack Mix Grand Format",
-    info:"4 gros pots saveurs variées · Livraison incluse ✓",
-    prix:10000,
-    img:"Fruits_Naturel_Banane_2000F.jpg",
-    packCount:4,
-    packLabel:"4 POTS • SAVEURS VARIÉES",
-    packImages:[
-      "Fruits_Naturel_Banane_2000F.jpg",
-      "Vanille_Lacte_1400F.jpg",
-      "Chocolat_Cacao_au_Lait_1200F.jpg",
-      "Fruits_Naturel_Banane_2000F.jpg"
-    ],
-    qte:0
-  },
-
-  // ── POPCORN ──
-
-  {
-    id:"pop-sachet",
-    cat:"popcorn",
-    gr:"",
-    type:"produit",
-    nom:"Popcorn Sachet",
-    info:"",
-    prix:300,
-    img:"POPcorn_Sachet_300F.jpg",
-    qte:0
-  },
-
-  {
-    id:"pop-carton",
-    cat:"popcorn",
-    gr:"",
-    type:"produit",
-    nom:"Popcorn Carton",
-    info:"",
-    prix:500,
-    img:"POPcorn_Carton_500F.jpg",
-    qte:0
-  },
-
-  // ── PAIN ANGLAIS ──
-
-  {
-    id:"pain-700",
-    cat:"pain",
-    gr:"",
-    type:"produit",
-    nom:"Pain Anglais",
-    info:"",
-    prix:700,
-    img:"Pain_Anglais_700F.jpg",
-    qte:0
-  },
-
-  {
-    id:"pain-1000",
-    cat:"pain",
-    gr:"",
-    type:"produit",
-    nom:"Pain Anglais",
-    info:"",
-    prix:1000,
-    img:"Pain_Anglais_1000F.jpg",
-    qte:0
-  },  // ── ESQUIMAU ──
-
-  {
-    id:"esq-500",
-    cat:"esquimau",
-    gr:"",
-    type:"produit",
-    nom:"Esquimau Sandra",
-    info:"",
-    prix:500,
-    img:"Esquimau_Sandra_500F.jpg",
-    qte:0
-  },
-
-  {
-    id:"esq-800",
-    cat:"esquimau",
-    gr:"",
-    type:"produit",
-    nom:"Esquimau Sandra Chocolat Coco",
-    info:"",
-    prix:800,
-    img:"Esquimau_Sandra_Chocolat_Coco_800F.jpg",
-    qte:0
-  },
-
-  // ── GROS FORMAT ──
-
-  {
-    id:"creme-6250",
-    cat:"gros",
-    gr:"",
-    type:"produit",
-    nom:"Crème Glacée 6250ml",
-    info:"Grand seau familial",
-    prix:35000,
-    img:"Creme_6250ml_35000F.jpg",
-    qte:0
-  },
-
-  {
-    id:"pk-ceremonie",
-    cat:"gros",
-    gr:"",
-    type:"pack",
-    nom:"🎁 Pack Fête / Cérémonie",
-    info:"2 seaux 6250ml · Livraison incluse ✓",
-    prix:72000,
-    img:"Creme_6250ml_35000F.jpg",
-    packCount:2,
-    packLabel:"2 SEAUX • 6250 ML",
-    packImages:[
-      "Creme_6250ml_35000F.jpg",
-      "Creme_6250ml_35000F.jpg"
-    ],
-    qte:0
+/* ───────── Catalogue ───────── */
+async function chargerCatalogue() {
+  const cache = lire("noogo_cat");
+  if (cache && cache.v === VERSION_CATALOGUE && Array.isArray(cache.p) && cache.p.length) { CATALOGUE = cache.p; demarrer(); }
+  try {
+    const r = await fetch("/api/catalogue", { cache: "no-cache" });
+    if (r.ok) { const j = await r.json(); if (j.produits && j.produits.length) { CATALOGUE = j.produits; ecrire("noogo_cat", { v: VERSION_CATALOGUE, p: CATALOGUE }); demarrer(); return; } }
+  } catch (e) {}
+  if (!CATALOGUE.length) {
+    try { const r = await fetch("/catalogue.json"); const j = await r.json(); CATALOGUE = j.produits; demarrer(); }
+    catch (e) { $("#catalogue").innerHTML = `<div class="vide-msg">La carte ne se charge pas. <a class="lien" href="https://wa.me/${CONFIG.whatsapp}">Commandez directement sur WhatsApp</a>.</div>`; }
   }
+}
+function demarrer() {
+  CATALOGUE = CATALOGUE.filter((p) => p.actif !== false);
+  // purge du panier : articles retirés de la carte
+  for (const id of Object.keys(panier)) if (!produit(id)) delete panier[id];
+  rendreFiltres(); rendreCatalogue(); majPanier(); rendrePromo();
+}
+
+const CATS = [["tout", "Tout"], ["cremes", "Crèmes glacées"], ["packs", "Packs"], ["popcorn", "Popcorn"], ["pain", "Pain anglais"], ["esquimau", "Esquimaux"], ["gros", "Gros format"]];
+const GROUPES = [
+  { cle: "g1", titre: "Crèmes glacées", sous: "pot 125 ml", ok: (p) => p.cat === "cremes" && p.type === "produit" && p.gr !== "grand", chips: ["tout", "cremes"] },
+  { cle: "g2", titre: "Crèmes glacées", sous: "grand pot 250 ml", ok: (p) => p.cat === "cremes" && p.type === "produit" && p.gr === "grand", chips: ["tout", "cremes"] },
+  { cle: "g3", titre: "Packs", sous: "livraison incluse", ok: (p) => p.cat === "cremes" && p.type === "pack", chips: ["tout", "packs"] },
+  { cle: "g4", titre: "Popcorn au lait", sous: "", ok: (p) => p.cat === "popcorn", chips: ["tout", "popcorn"] },
+  { cle: "g5", titre: "Pain anglais", sous: "", ok: (p) => p.cat === "pain", chips: ["tout", "pain"] },
+  { cle: "g6", titre: "Esquimaux", sous: "", ok: (p) => p.cat === "esquimau", chips: ["tout", "esquimau"] },
+  { cle: "g7", titre: "Gros format & cérémonies", sous: "sur commande", ok: (p) => p.cat === "gros", chips: ["tout", "gros", "packs"] }
 ];
-
-// ===================== ÉTAT =====================
-
-let catActive = "tout";
-let promoApplique = null;
-let fraisLivraison = 0;
-let modeReception = "livraison";
-let disponibilite = {};
-let deferredPrompt = null;
-
-// ===================== CACHE & OPTIMIZATION =====================
-
-function afficherLoader() {
-  const loader = document.getElementById("loader-overlay");
-  if(loader) loader.classList.remove("hidden");
+function rendreFiltres() {
+  $("#filtres").innerHTML = CATS.filter(([k]) => k === "tout" || GROUPES.some((g) => g.chips.includes(k) && CATALOGUE.some(g.ok))).map(([k, l]) => `<button type="button" data-f="${k}" aria-pressed="${k === filtre}">${l}</button>`).join("");
+}
+function carteHTML(p) {
+  const q = panier[p.id] || 0;
+  const photo = p.img ? `<img src="${esc(imgUrl(p.img))}" width="640" height="640" loading="lazy" decoding="async" alt="${esc(p.nom)}">` : `<div class="vide"><img src="/assets/embleme.jpg" alt=""></div>`;
+  const badges = [p.badge ? `<span class="badge badge-or">${esc(p.badge)}</span>` : "", p.type === "pack" ? `<span class="badge badge-pack">PACK</span>` : "", p.surCommande ? `<span class="badge badge-cmd">Sur commande</span>` : ""].join("");
+  return `<article class="produit" data-id="${esc(p.id)}">
+    <button type="button" class="photo" data-zoom="${esc(p.id)}" aria-label="Agrandir la photo : ${esc(p.nom)}">${photo}<span class="badges">${badges}</span></button>
+    <div class="corps">
+      <h4>${esc(p.nom)}</h4>
+      <p class="info">${esc(p.type === "pack" && p.packLabel ? p.packLabel : p.info || "")}</p>
+      ${p.desc ? `<p class="desc">${esc(p.desc)}</p>` : ""}
+      <div class="prix"><b>${fmt(p.prix)}</b>${p.prixBarre ? `<s>${fmt(p.prixBarre)}</s>` : ""}</div>
+      <div class="action">${actionHTML(p, q)}</div>
+    </div></article>`;
+}
+function actionHTML(p, q) {
+  return q > 0
+    ? `<div class="pas"><button type="button" data-moins="${esc(p.id)}" aria-label="Retirer un">−</button><span aria-live="polite">${q}</span><button type="button" data-plus="${esc(p.id)}" aria-label="Ajouter un">+</button></div>`
+    : `<button type="button" class="btn btn-brun" data-plus="${esc(p.id)}">${p.surCommande ? "Demander" : "Ajouter"}</button>`;
+}
+function rendreCatalogue() {
+  const groupes = filtre === "packs"
+    ? [{ titre: "Packs", sous: "livraison incluse", items: CATALOGUE.filter((p) => p.type === "pack") }]
+    : GROUPES.filter((g) => g.chips.includes(filtre)).map((g) => ({ titre: g.titre, sous: g.sous, items: CATALOGUE.filter(g.ok) }));
+  const html = groupes.filter((g) => g.items.length).map((g) => `<div class="groupe"><h3>${esc(g.titre)}${g.sous ? ` <small>${esc(g.sous)}</small>` : ""}</h3><div class="grille">${g.items.map(carteHTML).join("")}</div></div>`).join("");
+  $("#catalogue").innerHTML = html || `<div class="vide-msg">Aucun article dans cette catégorie pour le moment.</div>`;
+}
+function rendrePromo() {
+  const p = CATALOGUE.filter((x) => x.prixBarre && x.badge === "PROMO" && x.type === "produit");
+  const bloc = $("#promo");
+  if (!p.length) { bloc.classList.add("cachee"); return; }
+  $("#promo-texte").innerHTML = p.map((x) => `<b>Promo</b> · ${esc(x.nom.replace(/ — Grand pot/, ""))} ${esc(x.info.replace("Pot ", ""))} : <b>${fmt(x.prix)}</b> <s style="opacity:.7">${fmt(x.prixBarre)}</s>`).join(" &nbsp;|&nbsp; ") + " — jusqu'à nouvel ordre";
+  bloc.classList.remove("cachee");
 }
 
-function cacherLoader() {
-  const loader = document.getElementById("loader-overlay");
-  if(loader) {
-    setTimeout(() => {
-      loader.classList.add("hidden");
-    }, 300);
-  }
+/* ───────── Panier ───────── */
+function lignes() { return Object.entries(panier).map(([id, qte]) => ({ p: produit(id), qte })).filter((l) => l.p && l.qte > 0); }
+function totaux() {
+  let produits = 0, packs = 0, n = 0;
+  for (const l of lignes()) { const t = l.p.prix * l.qte; n += l.qte; if (l.p.type === "pack") packs += t; else produits += t; }
+  const sous = produits + packs;
+  const remise = promo ? Math.min(promo.remise, sous) : 0;
+  return { produits, packs, sous, remise, apres: sous - remise, n, aPack: packs > 0, aProduit: produits > 0 };
+}
+function changer(id, delta) {
+  const q = Math.max(0, Math.min(50, (panier[id] || 0) + delta));
+  if (q) panier[id] = q; else delete panier[id];
+  ecrire("noogo_panier", panier);
+  document.querySelectorAll(`.produit[data-id="${CSS.escape(id)}"] .action`).forEach((a) => (a.innerHTML = actionHTML(produit(id), q)));
+  if (delta > 0 && q === 1) toast("Ajouté au panier");
+  majPanier();
+  if (!$("#voile").hidden) rendrePanier();
+  if (promo) revalider();
+}
+function majPanier() {
+  const t = totaux();
+  const pa = $("#pastille"); pa.textContent = t.n || ""; pa.dataset.n = t.n;
+  $("#barre").hidden = !t.n;
+  $("#barre-n").textContent = t.n;
+  $("#barre-lib").textContent = t.n > 1 ? "articles" : "article";
+  $("#barre-total").textContent = fmt(t.sous);
 }
 
-function getCacheDisponibilite() {
-  try {
-    const cache = localStorage.getItem("noogo_dispo_cache");
-    return cache ? JSON.parse(cache) : null;
-  } catch(e) {
-    return null;
-  }
+function texteLivraison(t) {
+  if (reception === "retrait") return { v: "Retrait au local — gratuit", note: "Karpala, derrière la mairie." };
+  if (t.aPack && !t.aProduit) return { v: "Incluse dans le pack", note: "" };
+  if (t.aPack) return { v: "Incluse pour les packs", note: "Pour les articles à l'unité, la livraison est à la charge du client (tarif confirmé sur WhatsApp)." };
+  return { v: "À la charge du client", note: "Le tarif dépend de votre quartier : nous vous l'annonçons sur WhatsApp." };
+}
+function ouvrirPanier() { rendrePanier(); $("#voile").hidden = false; document.body.classList.add("verrou"); setTimeout(() => $("#fermer-panier").focus(), 50); }
+function fermerPanier() { $("#voile").hidden = true; document.body.classList.remove("verrou"); }
+function rendrePanier() {
+  const L = lignes(), corps = $("#panier-corps"), pied = $("#panier-pied");
+  if (!L.length) { corps.innerHTML = `<div class="vide-panier"><p><b>Votre panier est vide</b></p><p>Ajoutez une crème glacée pour commencer.</p></div>`; pied.innerHTML = `<button class="btn btn-or btn-bloc" id="continuer">Voir la carte</button>`; return; }
+  const sauv = { nom: ($("#f-nom") || {}).value, tel: ($("#f-tel") || {}).value, lieu: ($("#f-lieu") || {}).value, code: ($("#f-code") || {}).value };
+  const mem = lire("noogo_client") || {};
+  const t = totaux(), liv = texteLivraison(t);
+  const cmd = L.filter((l) => l.p.surCommande).map((l) => l.p.nom);
+  corps.innerHTML = `
+    <div>${L.map((l) => `<div class="ligne">
+      ${l.p.img ? `<img src="${esc(imgUrl(l.p.img))}" alt="" loading="lazy">` : `<img src="/assets/embleme.jpg" alt="">`}
+      <div class="nom"><b>${esc(l.p.nom)}</b><small>${esc(l.p.type === "pack" && l.p.packLabel ? l.p.packLabel : l.p.info || "")}${l.p.surCommande ? " · sur commande" : ""}</small></div>
+      <div class="pas"><button type="button" data-moins="${esc(l.p.id)}" aria-label="Retirer un">−</button><span>${l.qte}</span><button type="button" data-plus="${esc(l.p.id)}" aria-label="Ajouter un">+</button></div>
+      <div class="tot">${fmt(l.p.prix * l.qte)}</div></div>`).join("")}</div>
+
+    <label>Comment souhaitez-vous recevoir votre commande ?</label>
+    <div class="choix">
+      <label><input type="radio" name="reception" value="livraison" ${reception === "livraison" ? "checked" : ""}><span>Livraison<small>à domicile</small></span></label>
+      <label><input type="radio" name="reception" value="retrait" ${reception === "retrait" ? "checked" : ""}><span>Retrait<small>au local, gratuit</small></span></label>
+    </div>
+
+    <label for="f-nom">Nom et prénom <span style="font-weight:400;color:var(--gris)">(facultatif)</span></label>
+    <input type="text" id="f-nom" autocomplete="name" placeholder="Votre nom" value="${esc(sauv.nom != null ? sauv.nom : mem.nom || "")}">
+    <label for="f-tel">Numéro de téléphone <span style="color:var(--rouge)">*</span></label>
+    <input type="tel" id="f-tel" inputmode="tel" autocomplete="tel" placeholder="Ex : 70 12 34 56" value="${esc(sauv.tel != null ? sauv.tel : mem.tel || "")}">
+    <div id="bloc-lieu" ${reception === "retrait" ? "class='cachee'" : ""}>
+      <label for="f-lieu">Lieu de livraison (quartier, repère)</label>
+      <div class="champ-ligne"><input type="text" id="f-lieu" autocomplete="street-address" placeholder="Ex : Karpala, près de la mairie" value="${esc(sauv.lieu != null ? sauv.lieu : mem.lieu || "")}"><button type="button" class="btn btn-clair btn-petit" id="btn-position" title="Partager ma position">Ma position</button></div>
+      ${position ? `<p class="aide">Position partagée ✓</p>` : ""}
+    </div>
+
+    <label>Mode de paiement</label>
+    <div class="choix trois">
+      <label><input type="radio" name="paiement" value="especes" ${paiement === "especes" ? "checked" : ""}><span>Espèces<small>à la livraison / au retrait</small></span></label>
+      <label><input type="radio" name="paiement" value="orange" ${paiement === "orange" ? "checked" : ""}><span>Orange Money<small>${esc(CONFIG.orangeMoney)}</small></span></label>
+      <label><input type="radio" name="paiement" value="wave" ${paiement === "wave" ? "checked" : ""}><span>Wave<small>${esc(CONFIG.wave)}</small></span></label>
+    </div>
+
+    <p style="margin:16px 0 0">${promo ? "" : `<button type="button" class="lien" id="btn-code">J'ai un code promo</button>`}</p>
+    <div id="bloc-code" class="${promo || sauv.code ? "" : "cachee"}">
+      <label for="f-code">Code promo</label>
+      <div class="champ-ligne"><input type="text" id="f-code" autocapitalize="characters" autocomplete="off" placeholder="Votre code" value="${esc(promo ? promo.code : sauv.code || "")}"><button type="button" class="btn btn-brun btn-petit" id="btn-appliquer">Appliquer</button></div>
+      <div id="msg-code" class="aide" style="color:${msgCode.c}">${esc(msgCode.t)}</div>
+    </div>
+
+    <div class="resume">
+      <div><span>Articles</span><span>${fmt(t.sous)}</span></div>
+      ${t.remise ? `<div style="color:var(--foret)"><span>Remise (${esc(promo.code)})</span><span>−${fmt(t.remise)}</span></div>` : ""}
+      <div><span>Livraison</span><span>${esc(liv.v)}</span></div>
+      <div class="total"><span>Total des articles</span><b>${fmt(t.apres)}</b></div>
+      ${liv.note ? `<span class="note">${esc(liv.note)}</span>` : ""}
+      ${cmd.length ? `<span class="note">À confirmer sur WhatsApp (sur commande) : ${esc(cmd.join(", "))}.</span>` : ""}
+    </div>
+    <div id="erreur-cmd" class="msg msg-err cachee" role="alert"></div>`;
+  pied.innerHTML = `<button class="btn btn-vert btn-bloc" id="btn-envoyer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.7-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>Envoyer ma commande sur WhatsApp</button>`;
 }
 
-function setCacheDisponibilite(data) {
+/* ───────── Code promo ───────── */
+async function verifierCode(silencieux) {
+  const champ = $("#f-code"); const code = (champ ? champ.value : promo ? promo.code : "").trim();
+  if (!code) { promo = null; msgCode = { t: "", c: "" }; if (!$("#voile").hidden) rendrePanier(); return; }
+  if (!silencieux) { msgCode = { t: "Vérification…", c: "var(--gris)" }; const m = $("#msg-code"); if (m) { m.textContent = msgCode.t; m.style.color = msgCode.c; } }
   try {
-    localStorage.setItem("noogo_dispo_cache", JSON.stringify({
-      data: data,
-      time: Date.now()
-    }));
-  } catch(e) {}
+    const r = await fetch("/api/verifier-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, articles: lignes().map((l) => ({ id: l.p.id, qte: l.qte })) }) });
+    const d = await r.json();
+    if (d.valide) { promo = { code: code.toUpperCase(), remise: Number(d.remise) || 0 }; if (!silencieux) msgCode = { t: "Code valide : −" + fmt(promo.remise), c: "var(--foret)" }; }
+    else { promo = null; msgCode = { t: d.message || "Code invalide", c: "var(--rouge)" }; }
+  } catch (e) { promo = null; msgCode = { t: "Vérification impossible, réessayez.", c: "var(--rouge)" }; }
+  if (!$("#voile").hidden) { const keep = $("#f-code") ? $("#f-code").value : code; rendrePanier(); const c = $("#f-code"); if (c && !promo) c.value = keep; }
+}
+let revalT; function revalider() { clearTimeout(revalT); revalT = setTimeout(() => verifierCode(true), 400); }
+
+/* ───────── Envoi WhatsApp + enregistrement ───────── */
+const PAY = { especes: "Espèces", orange: "Orange Money (" + CONFIG.orangeMoney + ")", wave: "Wave (" + CONFIG.wave + ")" };
+function envoyer() {
+  const tel = ($("#f-tel").value || "").trim(), nom = ($("#f-nom").value || "").trim(), lieu = ($("#f-lieu") ? $("#f-lieu").value : "").trim();
+  const err = $("#erreur-cmd");
+  if (tel.replace(/\D/g, "").length < 8) { err.textContent = "Indiquez un numéro de téléphone valide pour que nous puissions vous joindre."; err.classList.remove("cachee"); $("#f-tel").focus(); return; }
+  err.classList.add("cachee");
+  const L = lignes(), t = totaux(), liv = texteLivraison(t);
+  ecrire("noogo_client", { nom, tel, lieu });
+  const prods = L.filter((l) => l.p.type !== "pack"), packs = L.filter((l) => l.p.type === "pack");
+  const m = [];
+  m.push("🍦 *NOUVELLE COMMANDE NOOGÓ*", "");
+  m.push(`👤 *Nom :* ${nom || "Non précisé"}`, `📞 *Téléphone :* ${tel}`);
+  m.push(`🚚 *Réception :* ${reception === "retrait" ? "Retrait au local" : "Livraison à domicile"}`);
+  if (reception === "livraison") { m.push(`📍 *Lieu :* ${lieu || "Non précisé"}`); if (position) m.push(`🗺️ ${position}`); }
+  if (promo) m.push(`🎟️ *Code promo :* ${promo.code}`);
+  m.push(`💳 *Paiement :* ${PAY[paiement]}`, "");
+  if (prods.length) { m.push("📦 *ARTICLES*"); prods.forEach((l) => m.push(`• ${l.p.nom} (${l.p.info || ""}) ×${l.qte} = ${fmt(l.p.prix * l.qte)}${l.p.surCommande ? " — sur commande" : ""}`)); m.push(""); }
+  if (packs.length) { m.push("🎁 *PACKS*"); packs.forEach((l) => m.push(`• ${l.p.nom} ×${l.qte} = ${fmt(l.p.prix * l.qte)}${l.p.surCommande ? " — sur commande" : ""}`)); m.push(""); }
+  if (t.remise) m.push(`🎟️ Remise : −${fmt(t.remise)}`);
+  m.push(`🚚 *Livraison :* ${liv.v}`);
+  m.push(`💰 *TOTAL DES ARTICLES : ${fmt(t.apres)}*`);
+  m.push("", "Merci de me confirmer la disponibilité et, pour une livraison d'articles seuls, le tarif. 🙏");
+  const payload = { nomClient: nom, telClient: tel, localisation: lieu + (position ? " — " + position : ""), modePaiement: paiement, modeReception: reception, articles: L.map((l) => ({ id: l.p.id, qte: l.qte })), codePromo: promo ? promo.code : "", source: "site" };
+  try { fetch("/api/commander", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), keepalive: true }).catch(() => {}); } catch (e) {}
+  const url = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(m.join("\n"));
+  const w = window.open(url, "_blank", "noopener");
+  if (!w) location.href = url;
+  panier = {}; ecrire("noogo_panier", panier); promo = null;
+  fermerPanier(); rendreCatalogue(); majPanier();
+  toast("Commande prête : envoyez le message sur WhatsApp");
 }
 
-// ===================== INIT =====================
+/* ───────── Interactions ───────── */
+document.addEventListener("click", (e) => {
+  const c = e.target.closest("button,a,[data-zoom]"); if (!c) return;
+  if (c.dataset.plus) return changer(c.dataset.plus, 1);
+  if (c.dataset.moins) return changer(c.dataset.moins, -1);
+  if (c.dataset.f) { filtre = c.dataset.f; rendreFiltres(); rendreCatalogue(); return; }
+  if (c.dataset.filtre) { filtre = c.dataset.filtre; rendreFiltres(); rendreCatalogue(); return; }
+  if (c.dataset.zoom) { const p = produit(c.dataset.zoom); if (p && p.img) { $("#zoom-img").src = imgUrl(p.img); $("#zoom-img").alt = p.nom; $("#zoom-legende").textContent = p.nom + " — " + fmt(p.prix); $("#zoom").hidden = false; } return; }
+  switch (c.id) {
+    case "btn-panier": case "btn-voir-panier": return ouvrirPanier();
+    case "fermer-panier": case "continuer": return fermerPanier();
+    case "btn-envoyer": return envoyer();
+    case "btn-code": $("#bloc-code").classList.remove("cachee"); c.parentElement.remove(); $("#f-code").focus(); return;
+    case "btn-appliquer": return verifierCode(false);
+    case "btn-position": return partagerPosition(c);
+    case "btn-installer": return installer();
+    case "fermer-installer": $("#installer").classList.add("cachee"); ecrire("noogo_banniere_fermee", Date.now()); return;
+    case "fermer-guide": case "ok-guide": $("#voile-guide").hidden = true; return;
+  }
+});
+document.addEventListener("change", (e) => {
+  if (e.target.name === "reception") { reception = e.target.value; const b = $("#bloc-lieu"); if (b) b.classList.toggle("cachee", reception === "retrait"); rendrePanier(); }
+  if (e.target.name === "paiement") paiement = e.target.value;
+});
+$("#zoom").addEventListener("click", () => ($("#zoom").hidden = true));
+$("#voile").addEventListener("click", (e) => { if (e.target.id === "voile") fermerPanier(); });
+$("#voile-guide").addEventListener("click", (e) => { if (e.target.id === "voile-guide") $("#voile-guide").hidden = true; });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { $("#zoom").hidden = true; $("#voile-guide").hidden = true; if (!$("#voile").hidden) fermerPanier(); } });
+document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.id === "f-code") { e.preventDefault(); verifierCode(false); } });
 
-window.addEventListener("DOMContentLoaded", async () => {
-  afficherLoader();
-  
-  // Charger cache d'abord
-  const cacheData = getCacheDisponibilite();
-  if(cacheData) {
-    disponibilite = cacheData.data || {};
-  }
-  
-  // Charger en parallèle (non-bloquant)
-  try {
-    chargerDisponibilite();
-  } catch(e) {
-    console.warn("Erreur chargement disponibilité:", e);
-  }
-  
-  try {
-    afficherCatalogue();
-  } catch(e) {
-    console.warn("Erreur affichage catalogue:", e);
-  }
-  
-  try {
-    afficherInfoPaiement();
-  } catch(e) {
-    console.warn("Erreur affichage info paiement:", e);
-  }
-  
-  try {
-    setupScrollBtn();
-  } catch(e) {
-    console.warn("Erreur setup scroll:", e);
-  }
-  
-  try {
-    setupPWA();
-  } catch(e) {
-    console.warn("Erreur setup PWA:", e);
-  }
-  
-  try {
-    forceInstallerApp();
-  } catch(e) {
-    console.warn("Erreur force installer app:", e);
-  }
-  
-  // Cacher loader après 500ms min
-  setTimeout(cacherLoader, 500);
-  
-  // FALLBACK: Force fermeture du loader après 3 secondes même s'il y a erreur
-  setTimeout(() => {
-    const loader = document.getElementById("loader-overlay");
-    if(loader && !loader.classList.contains("hidden")) {
-      loader.classList.add("hidden");
-    }
-  }, 3000);
+function partagerPosition(btn) {
+  if (!navigator.geolocation) return toast("Localisation non disponible sur cet appareil");
+  btn.disabled = true; btn.textContent = "Recherche…";
+  navigator.geolocation.getCurrentPosition(
+    (p) => { position = `https://maps.google.com/?q=${p.coords.latitude.toFixed(6)},${p.coords.longitude.toFixed(6)}`; const keep = { n: $("#f-nom").value, t: $("#f-tel").value, l: $("#f-lieu").value }; rendrePanier(); $("#f-nom").value = keep.n; $("#f-tel").value = keep.t; $("#f-lieu").value = keep.l || "Position partagée"; toast("Position ajoutée à la commande"); },
+    () => { btn.disabled = false; btn.textContent = "Ma position"; toast("Impossible de vous localiser — écrivez votre quartier"); },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+  );
+}
+
+/* ───────── Installation de l'application (PWA) ───────── */
+let invite = null, dejaPropose = false;
+const ua = navigator.userAgent || "";
+const estIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const estInstallee = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+const navIntegre = /FBAN|FBAV|Instagram|TikTok|musical_ly|BytedanceWebview|Line\/|; wv\)|WhatsApp|Snapchat/i.test(ua);
+const refusRecent = () => { const t = lire("noogo_install_refus"); return t && Date.now() - t < 3 * 24 * 3600 * 1000; };
+
+function afficherBanniere(texte, bouton) {
+  if (estInstallee) return;
+  const f = lire("noogo_banniere_fermee"); if (f && Date.now() - f < 24 * 3600 * 1000) return;
+  if (texte) $("#installer-texte").innerHTML = texte;
+  if (bouton) $("#btn-installer").textContent = bouton;
+  $("#installer").classList.remove("cachee");
+}
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); invite = e; afficherBanniere(); });
+window.addEventListener("appinstalled", () => { invite = null; $("#installer").classList.add("cachee"); toast("Noogó est installée sur votre téléphone ✓"); });
+
+async function installer() {
+  if (invite) { lancerInvite(); return; }
+  if (estIOS) return guideIOS();
+  if (navIntegre) return guideNavigateur();
+  guideGenerique();
+}
+async function lancerInvite() {
+  if (!invite || dejaPropose) return;
+  dejaPropose = true;
+  try { invite.prompt(); const c = await invite.userChoice; if (c.outcome !== "accepted") ecrire("noogo_install_refus", Date.now()); } catch (e) {}
+  invite = null; $("#installer").classList.add("cachee");
+}
+// Dès le premier toucher (hors commande en cours), on déclenche la fenêtre d'installation du téléphone :
+// le navigateur impose une confirmation « Installer », mais le client n'a rien à chercher.
+["click", "touchend"].forEach((ev) => document.addEventListener(ev, () => { if (invite && !dejaPropose && !refusRecent() && $("#voile").hidden) lancerInvite(); }, { passive: true }));
+
+function guide(titre, html) { $("#guide-titre").textContent = titre; $("#guide-corps").innerHTML = html + `<button class="btn btn-or btn-bloc" id="ok-guide">J'ai compris</button>`; $("#voile-guide").hidden = false; }
+function guideIOS() { guide("Installer sur iPhone", `<p>Deux touches suffisent :</p><ol><li>Touchez le bouton <b>Partager</b> <span aria-hidden="true">⬆️</span> en bas de Safari.</li><li>Choisissez <b>« Sur l'écran d'accueil »</b>, puis <b>Ajouter</b>.</li></ol><p class="aide">L'icône Noogó apparaît alors avec vos autres applications. (Ouvrez ce site dans Safari si vous le consultez depuis Facebook ou TikTok.)</p>`); }
+function guideNavigateur() {
+  const android = /android/i.test(ua);
+  const intent = "intent://" + location.host + location.pathname + "#Intent;scheme=https;package=com.android.chrome;end";
+  guide("Ouvrir dans votre navigateur", `<p>Ce lien s'ouvre dans une application (Facebook, TikTok, WhatsApp…) qui ne permet pas l'installation.</p>${android ? `<p><a class="btn btn-or btn-bloc" href="${intent}">Ouvrir dans Chrome</a></p><p class="aide">Ou touchez ⋮ en haut à droite, puis « Ouvrir dans le navigateur ».</p>` : `<ol><li>Touchez les trois points ou l'icône de partage.</li><li>Choisissez « Ouvrir dans Safari ».</li></ol>`}<p class="aide">Une fois dans le navigateur, Noogó vous proposera de s'installer.</p>`);
+}
+function guideGenerique() { guide("Installer Noogó", `<ol><li>Ouvrez le menu de votre navigateur (⋮ ou ⋯).</li><li>Touchez <b>« Installer l'application »</b> ou <b>« Ajouter à l'écran d'accueil »</b>.</li></ol>`); }
+
+window.addEventListener("load", () => {
+  if (estInstallee) return;
+  if (estIOS) setTimeout(() => { afficherBanniere("<strong>Installez Noogó sur votre iPhone</strong> : accès direct depuis l'écran d'accueil.", "Comment faire"); if (!lire("noogo_guide_ios")) { ecrire("noogo_guide_ios", 1); guideIOS(); } }, 1800);
+  else if (navIntegre) setTimeout(() => afficherBanniere("<strong>Pour installer Noogó</strong>, ouvrez ce site dans votre navigateur.", "Ouvrir"), 1200);
+  else setTimeout(() => { if (!invite) { /* Firefox, navigateurs sans invite : le bouton explique la marche à suivre */ } }, 3000);
 });
 
-// ===================== DISPONIBILITÉ =====================
+if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
 
-async function chargerDisponibilite() {
-  try {
-    const r = await fetch("/api/admin", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        action:"get_produits_etat"
-      })
-    });
-
-    if(r.ok){
-      const d = await r.json();
-      disponibilite = d.etat || {};
-      
-      // SAUVEGARDER le cache après chargement
-      setCacheDisponibilite(disponibilite);
-      
-      // Rafraîchir affichage avec les nouvelles données
-      afficherCatalogue();
-    }
-  } catch(_){}
-}
-
-function estDispo(id){
-  return id in disponibilite ? disponibilite[id] : true;
-}
-
-// ===================== IMAGES =====================
-
-function imgSrc(img){
-  if(!img){
-    return `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><rect width='90' height='90' fill='%23fce4ec' rx='12'/><text x='45' y='38' font-size='11' text-anchor='middle' fill='%23c62828' font-family='Arial' font-weight='bold'>📷 Photo</text><text x='45' y='56' font-size='11' text-anchor='middle' fill='%23c62828' font-family='Arial'>à venir</text></svg>`;
-  }
-
-  return "/produits/" + img;
-}
-
-function echapperHTML(texte){
-  return String(texte || "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-}
-
-function echapperJS(texte){
-  return String(texte || "")
-    .replace(/\\/g,"\\\\")
-    .replace(/'/g,"\\'")
-    .replace(/\n/g,"\\n")
-    .replace(/\r/g,"\\r");
-}
-
-// ===================== PRODUIT NORMAL =====================
-
-function renderProduitNormal(p, idx){
-
-  const dispo = estDispo(p.id);
-  const src = imgSrc(p.img);
-
-  const classes =
-    "produit" +
-    (!dispo ? " indisponible" : "");
-
-  const badgeEtat = !dispo
-    ? `<div class="badge-indispo">⏸ Temporairement indisponible</div>`
-    : "";
-
-  return `
-  <div class="${classes}">
-
-    <div class="img-wrap"
-         onclick="agrandir('${echapperJS(src)}','${echapperJS(p.nom)}')">
-
-      <img
-        src="${src}"
-        alt="${echapperHTML(p.nom)}"
-        loading="lazy"
-        onerror="this.onerror=null;this.src='${imgSrc("")}'">
-
-      <span class="zoom-btn">
-        🔍 Agrandir
-      </span>
-
-    </div>
-
-    <div class="info">
-
-      <h3>${echapperHTML(p.nom)}</h3>
-
-      ${p.info
-        ? `<div class="produit-info">${echapperHTML(p.info)}</div>`
-        : ""}
-
-      ${badgeEtat}
-
-      <div class="prix">
-        ${p.prix.toLocaleString("fr-FR")} FCFA
-      </div>
-
-      <div class="qte">
-        <button onclick="changerQte(${idx},-1)">−</button>
-        <span id="qte-${idx}">${p.qte}</span>
-        <button onclick="changerQte(${idx},1)">+</button>
-      </div>
-
-    </div>
-  </div>`;
-}
-
-// ===================== PACK PROFESSIONNEL =====================
-
-function renderPack(p, idx){
-
-  const dispo = estDispo(p.id);
-
-  let images = Array.isArray(p.packImages) && p.packImages.length
-    ? [...p.packImages]
-    : [p.img];
-
-  const count = Number(p.packCount || images.length || 1);
-
-  while(images.length < count){
-    images.push(images[images.length - 1] || p.img || "");
-  }
-
-  images = images.slice(0,count);
-
-  const classes =
-    "produit pack-card" +
-    (!dispo ? " indisponible" : "");
-
-  const countText = `×${count}`;
-
-  const packImagesHTML = images.map((img, i) => {
-
-    const src = imgSrc(img);
-
-    return `
-      <div
-        class="pack-item"
-        onclick="agrandir('${echapperJS(src)}','${echapperJS(p.nom)} — ${i + 1}/${count}')">
-
-        <img
-          src="${src}"
-          alt="${echapperHTML(p.nom)} ${i + 1}"
-          loading="lazy"
-          onerror="this.onerror=null;this.src='${imgSrc("")}'">
-
-        <span class="pack-item-num">
-          ${i + 1}
-        </span>
-
-      </div>
-    `;
-
-  }).join("");
-
-  const badgeEtat = !dispo
-    ? `<div class="badge-indispo">⏸ Temporairement indisponible</div>`
-    : "";
-
-  return `
-  <div class="${classes}">
-
-    <div class="pack-top">
-
-      <div class="pack-top-left">
-        <span class="pack-badge-large">
-          🎁 PACK
-        </span>
-
-        <span class="pack-type">
-          OFFRE SPÉCIALE
-        </span>
-      </div>
-
-      <span class="pack-count-top">
-        ${count} UNITÉS
-      </span>
-
-    </div>
-
-    <div class="pack-visual">
-
-      <div class="pack-items">
-        ${packImagesHTML}
-      </div>
-
-      <div class="pack-count-big">
-        ${countText}
-      </div>
-
-      <div class="pack-label">
-        ${echapperHTML(p.packLabel || `${count} ARTICLES`)}
-      </div>
-
-    </div>
-
-    ${badgeEtat}
-
-    <div class="pack-body">
-
-      <h3>
-        ${echapperHTML(p.nom)}
-      </h3>
-
-      <div class="pack-info">
-        ${echapperHTML(p.info || "")}
-      </div>
-
-      <div class="pack-livraison">
-        🚚 Livraison incluse
-      </div>
-
-      <div class="pack-separator"></div>
-
-      <div class="pack-prix-ligne">
-
-        <div class="pack-prix">
-          ${p.prix.toLocaleString("fr-FR")} FCFA
-        </div>
-
-        <div class="pack-qte">
-
-          <button onclick="changerQte(${idx},-1)">
-            −
-          </button>
-
-          <span id="qte-${idx}">
-            ${p.qte}
-          </span>
-
-          <button onclick="changerQte(${idx},1)">
-            +
-          </button>
-
-        </div>
-
-      </div>
-
-      <div class="pack-mini-note">
-        ${count} article${count > 1 ? "s" : ""} inclus dans ce pack
-      </div>
-
-    </div>
-
-  </div>`;
-}
-
-// ===================== RENDU PRODUIT =====================
-
-function renderProduit(p, idx){
-
-  if(p.type === "pack"){
-    return renderPack(p, idx);
-  }
-
-  return renderProduitNormal(p, idx);
-}
-
-// ===================== AFFICHAGE CATALOGUE =====================
-
-function afficherCatalogue(){
-
-  const sections = [
-    {key:"cremes",label:"🍦 Crèmes Glacées"},
-    {key:"popcorn",label:"🍿 Popcorn"},
-    {key:"pain",label:"🥖 Pain Anglais"},
-    {key:"esquimau",label:"🍨 Esquimau"},
-    {key:"gros",label:"📦 Gros Format"}
-  ];
-
-  let html = "";
-
-  sections.forEach(sec => {
-
-    if(catActive !== "tout" && catActive !== sec.key){
-      return;
-    }
-
-    const items = CATALOGUE.filter(
-      p => p.cat === sec.key
-    );
-
-    if(!items.length){
-      return;
-    }
-
-    html += `
-      <div class="sous-section">
-        ${sec.label}
-      </div>
-    `;
-
-    if(sec.key === "cremes"){
-
-      const petits = items.filter(
-        p => p.gr === "petit" && estDispo(p.id)
-      );
-
-      const grands = items.filter(
-        p => p.gr === "grand" && estDispo(p.id)
-      );
-
-      if(petits.length){
-
-        html += `
-          <div class="sous-section petit">
-            🍧 Petits pots 125ml
-          </div>
-        `;
-
-        petits.forEach(p => {
-          html += renderProduit(
-            p,
-            CATALOGUE.indexOf(p)
-          );
-        });
-      }
-
-      if(grands.length){
-
-        html += `
-          <div class="sous-section grand">
-            🍨 Grands pots 250ml
-          </div>
-        `;
-
-        grands.forEach(p => {
-          html += renderProduit(
-            p,
-            CATALOGUE.indexOf(p)
-          );
-        });
-      }
-
-    }else{
-
-      items.filter(p => estDispo(p.id)).forEach(p => {
-
-        html += renderProduit(
-          p,
-          CATALOGUE.indexOf(p)
-        );
-
-      });
-
-    }
-
-  });
-
-  document.getElementById("produits").innerHTML =
-    html ||
-    `<p style="text-align:center;color:#888;padding:20px">
-      Aucun produit disponible pour le moment
-    </p>`;
-
-  mettreAJourTotal();
-}
-
-function filtrer(cat){
-
-  catActive = cat;
-
-  document.querySelectorAll(".tab-btn").forEach(b => {
-
-    b.classList.toggle(
-      "actif",
-      b.dataset.cat === cat
-    );
-
-  });
-
-  afficherCatalogue();
-
-  window.scrollTo({
-    top:0,
-    behavior:"smooth"
-  });
-}// ===================== QUANTITÉS =====================
-
-function changerQte(idx,n){
-
-  CATALOGUE[idx].qte =
-    Math.max(
-      0,
-      CATALOGUE[idx].qte + n
-    );
-
-  const el =
-    document.getElementById("qte-" + idx);
-
-  if(el){
-    el.innerText =
-      CATALOGUE[idx].qte;
-  }
-
-  mettreAJourTotal();
-}
-
-// ===================== CALCULS =====================
-
-const stProduits = () =>
-  CATALOGUE
-    .filter(p => p.type === "produit")
-    .reduce(
-      (s,p) => s + p.prix * p.qte,
-      0
-    );
-
-const stPacks = () =>
-  CATALOGUE
-    .filter(p => p.type === "pack")
-    .reduce(
-      (s,p) => s + p.prix * p.qte,
-      0
-    );
-
-const stGeneral = () =>
-  CATALOGUE.reduce(
-    (s,p) => s + p.prix * p.qte,
-    0
-  );
-
-const hasPack = () =>
-  CATALOGUE.some(
-    p => p.type === "pack" && p.qte > 0
-  );
-
-const hasProduct = () =>
-  CATALOGUE.some(
-    p => p.type === "produit" && p.qte > 0
-  );
-
-function fraisActuels(){
-
-  if(modeReception === "retrait"){
-    return 0;
-  }
-
-  if(hasPack()){
-    return 0;
-  }
-
-  if(stProduits() >= 3000){
-    return 0;
-  }
-
-  return fraisLivraison;
-}
-
-function totalFinal(){
-
-  const remise =
-    promoApplique
-      ? promoApplique.remise
-      : 0;
-
-  return Math.max(
-    0,
-    stGeneral() - remise
-  ) + fraisActuels();
-}
-
-// ===================== TOTAL =====================
-
-function mettreAJourTotal(){
-
-  document.getElementById("total").innerText =
-    totalFinal().toLocaleString("fr-FR");
-
-  const lr =
-    document.getElementById("ligne-remise");
-
-  if(
-    promoApplique &&
-    promoApplique.remise > 0
-  ){
-
-    lr.innerText =
-      `🎟️ Code ${promoApplique.code} : −${promoApplique.remise.toLocaleString("fr-FR")} FCFA`;
-
-    lr.classList.add("visible");
-
-  }else{
-
-    lr.classList.remove("visible");
-
-  }
-
-  mettreAJourBanner();
-}
-
-function mettreAJourBanner(){
-
-  const b =
-    document.getElementById("banner-livraison");
-
-  if(!b){
-    return;
-  }
-
-  const st = stProduits();
-
-  if(
-    modeReception === "retrait" ||
-    hasPack() ||
-    st === 0
-  ){
-
-    b.className =
-      "banner-livraison";
-
-    return;
-  }
-
-  if(st >= 3000){
-
-    b.className =
-      "banner-livraison debloquee";
-
-    b.innerText =
-      "🎉 Livraison GRATUITE débloquée ! (commande ≥ 3 000 FCFA)";
-
-  }else{
-
-    b.className =
-      "banner-livraison incitation";
-
-    b.innerText =
-      `💡 Encore ${(3000 - st).toLocaleString("fr-FR")} FCFA pour la livraison GRATUITE !`;
-  }
-}
-
-// ===================== MODE RÉCEPTION =====================
-
-function changerModeReception(){
-
-  const r =
-    document.querySelector(
-      'input[name="modeReception"]:checked'
-    );
-
-  modeReception =
-    r ? r.value : "livraison";
-
-  document
-    .querySelectorAll(".mode-retrait-carte")
-    .forEach(c =>
-      c.classList.remove("selectionnee")
-    );
-
-  if(r){
-    r.closest(
-      ".mode-retrait-carte"
-    ).classList.add("selectionnee");
-  }
-
-  const bloc =
-    document.getElementById("bloc-adresse");
-
-  if(bloc){
-    bloc.style.display =
-      modeReception === "retrait"
-        ? "none"
-        : "block";
-  }
-
-  if(modeReception === "retrait"){
-    fraisLivraison = 0;
-  }
-
-  mettreAJourTotal();
-}
-
-// ===================== CODE PROMO =====================
-
-let timerCode = null;
-
-function verifierCode(){
-
-  clearTimeout(timerCode);
-
-  timerCode =
-    setTimeout(
-      _verifierCode,
-      600
-    );
-}
-
-function _verifierCode(){
-
-  const code =
-    (
-      document.getElementById("champ-code")?.value ||
-      ""
-    ).trim();
-
-  const zone =
-    document.getElementById("message-code");
-
-  if(!zone){
-    return;
-  }
-
-  if(!code){
-
-    promoApplique = null;
-
-    zone.innerText = "";
-    zone.className = "";
-
-    mettreAJourTotal();
-
-    return;
-  }
-
-  zone.className = "";
-  zone.innerText =
-    "⏳ Vérification...";
-
-  fetch("/api/verifier-code",{
-
-    method:"POST",
-
-    headers:{
-      "Content-Type":"application/json"
-    },
-
-    body:JSON.stringify({
-      code,
-      montantTotal:stGeneral()
-    })
-
-  })
-
-  .then(r => r.json())
-
-  .then(d => {
-
-    if(d.valide){
-
-      promoApplique = {
-        code:code.toUpperCase(),
-        remise:Number(
-          d.remise || 0
-        )
-      };
-
-      zone.className =
-        "valide";
-
-      zone.innerText =
-        `✅ Code valide ! −${promoApplique.remise.toLocaleString("fr-FR")} FCFA`;
-
-    }else{
-
-      promoApplique = null;
-
-      zone.className =
-        "invalide";
-
-      zone.innerText =
-        "❌ " +
-        (
-          d.message ||
-          "Code invalide ou expiré"
-        );
-    }
-
-    mettreAJourTotal();
-
-  })
-
-  .catch(() => {
-
-    promoApplique = null;
-
-    zone.className =
-      "invalide";
-
-    zone.innerText =
-      "❌ Vérification impossible. Réessayez.";
-
-    mettreAJourTotal();
-
-  });
-}
-
-// ===================== PAIEMENT =====================
-
-function afficherInfoPaiement(){
-
-  const r =
-    document.querySelector(
-      'input[name="paiement"]:checked'
-    );
-
-  const v =
-    r ? r.value : "especes";
-
-  document
-    .querySelectorAll(".paiement-carte")
-    .forEach(c =>
-      c.classList.remove("selectionnee")
-    );
-
-  if(r){
-
-    r.closest(
-      ".paiement-carte"
-    ).classList.add("selectionnee");
-
-  }
-
-  const zone =
-    document.getElementById("info-paiement");
-
-  if(v === "orange"){
-
-    zone.innerHTML =
-      `🟠 Orange Money :
-      <span class="info-paiement-numero">
-        65 12 09 02
-      </span>
-      <br>
-      <small>
-        Envoyez la capture de paiement avec votre commande
-      </small>`;
-
-    zone.classList.add("visible");
-
-  }else if(v === "wave"){
-
-    zone.innerHTML =
-      `🔵 Wave :
-      <span class="info-paiement-numero">
-        65 12 09 02
-      </span>
-      <br>
-      <small>
-        Envoyez la capture de paiement avec votre commande
-      </small>`;
-
-    zone.classList.add("visible");
-
-  }else{
-
-    zone.innerHTML = "";
-    zone.classList.remove("visible");
-
-  }
-}
-
-// ===================== COMMANDER =====================
-
-function validerCommande(){
-
-  const items =
-    CATALOGUE.filter(
-      p => p.qte > 0
-    );
-
-  if(!items.length){
-
-    alert(
-      "Veuillez sélectionner au moins un produit ou un pack."
-    );
-
-    return;
-  }
-
-  const tel =
-    (
-      document.getElementById("champ-tel")?.value ||
-      ""
-    ).trim();
-
-  if(!tel){
-
-    alert(
-      "Veuillez renseigner votre numéro de téléphone."
-    );
-
-    document
-      .getElementById("champ-tel")
-      ?.focus();
-
-    return;
-  }
-
-  if(modeReception === "retrait"){
-
-    fraisLivraison = 0;
-
-    afficherRecap();
-
-    return;
-  }
-
-  if(hasPack()){
-
-    fraisLivraison = 0;
-
-    afficherRecap();
-
-    return;
-  }
-
-  const st =
-    stProduits();
-
-  if(st >= 3000){
-
-    fraisLivraison = 0;
-
-    afficherRecap();
-
-    return;
-  }
-
-  const manque =
-    3000 - st;
-
-  document.getElementById(
-    "popup-total-montant"
-  ).innerText =
-    st.toLocaleString("fr-FR") +
-    " FCFA";
-
-  document.getElementById(
-    "popup-manque"
-  ).innerText =
-    manque.toLocaleString("fr-FR") +
-    " FCFA";
-
-  document
-    .getElementById("popup-livraison")
-    .classList.add("actif");
-}
-
-function ajouterArticles(){
-
-  document
-    .getElementById("popup-livraison")
-    .classList.remove("actif");
-
-  window.scrollTo({
-    top:0,
-    behavior:"smooth"
-  });
-}
-
-function choisirLivraison1500(){
-
-  fraisLivraison = 1000;
-
-  document
-    .getElementById("popup-livraison")
-    .classList.remove("actif");
-
-  mettreAJourTotal();
-
-  afficherRecap();
-}
-
-function choisirRetrait(){
-
-  modeReception = "retrait";
-  fraisLivraison = 0;
-
-  const radioRetrait =
-    document.querySelector(
-      'input[name="modeReception"][value="retrait"]'
-    );
-
-  if(radioRetrait){
-
-    radioRetrait.checked = true;
-
-    changerModeReception();
-  }
-
-  document
-    .getElementById("popup-livraison")
-    .classList.remove("actif");
-
-  afficherRecap();
-}
-
-// ===================== RECAP =====================
-
-function afficherRecap(){
-
-  const nom =
-    (
-      document.getElementById("champ-nom")?.value ||
-      ""
-    ).trim() ||
-    "Client Noogo";
-
-  const tel =
-    (
-      document.getElementById("champ-tel")?.value ||
-      ""
-    ).trim();
-
-  const loc =
-    (
-      document.getElementById("champ-localisation")?.value ||
-      ""
-    ).trim();
-
-  const codeSaisi =
-    (
-      document.getElementById("champ-code")?.value ||
-      ""
-    ).trim();
-
-  const paiement =
-    document.querySelector(
-      'input[name="paiement"]:checked'
-    )?.value ||
-    "especes";
-
-  const items =
-    CATALOGUE.filter(
-      p => p.qte > 0
-    );
-
-  const remise =
-    promoApplique
-      ? promoApplique.remise
-      : 0;
-
-  const frais =
-    fraisActuels();
-
-  const total =
-    totalFinal();
-
-  let lignesArticles =
-    items.map(p => `
-
-      <div class="recap-ligne">
-
-        <span class="recap-ligne-nom">
-          ${echapperHTML(p.nom)} ×${p.qte}
-        </span>
-
-        <span class="recap-ligne-prix">
-          ${(p.prix * p.qte).toLocaleString("fr-FR")} FCFA
-        </span>
-
-      </div>
-
-    `).join("");
-
-  let ligneLivraison = "";
-
-  if(modeReception === "retrait"){
-
-    ligneLivraison = `
-      <div class="recap-ligne">
-        <span class="recap-ligne-nom">
-          🏪 Retrait au local
-        </span>
-
-        <span class="recap-ligne-prix"
-              style="color:#1976d2">
-          Gratuit
-        </span>
-      </div>
-    `;
-
-  }else if(hasPack()){
-
-    ligneLivraison = `
-      <div class="recap-ligne">
-        <span class="recap-ligne-nom">
-          🚚 Livraison
-        </span>
-
-        <span class="recap-ligne-prix"
-              style="color:#1976d2">
-          Incluse dans le pack ✓
-        </span>
-      </div>
-    `;
-
-  }else if(stProduits() >= 3000){
-
-    ligneLivraison = `
-      <div class="recap-ligne">
-        <span class="recap-ligne-nom">
-          🚚 Livraison
-        </span>
-
-        <span class="recap-ligne-prix"
-              style="color:#1976d2">
-          Gratuite ✓ (≥ 3 000 FCFA)
-        </span>
-      </div>
-    `;
-
-  }else{
-
-    ligneLivraison = `
-      <div class="recap-ligne">
-        <span class="recap-ligne-nom">
-          🚚 Livraison à domicile
-        </span>
-
-        <span class="recap-ligne-prix">
-          ${frais.toLocaleString("fr-FR")} FCFA
-        </span>
-      </div>
-    `;
-  }
-
-  const payLabels = {
-    especes:"💵 Espèces à la livraison",
-    orange:"🟠 Orange Money (65 12 09 02)",
-    wave:"🔵 Wave (65 12 09 02)"
-  };
-
-  document.getElementById(
-    "recap-contenu"
-  ).innerHTML = `
-
-    <div class="recap-section">
-
-      <div class="recap-section-label">
-        📦 Articles
-      </div>
-
-      ${lignesArticles}
-
-    </div>
-
-    ${
-      remise > 0
-      ? `
-        <div class="recap-section">
-
-          <div class="recap-ligne">
-
-            <span class="recap-ligne-nom">
-              🎟️ Code promo (${echapperHTML(promoApplique.code)})
-            </span>
-
-            <span class="recap-ligne-prix"
-                  style="color:#1976d2">
-              −${remise.toLocaleString("fr-FR")} FCFA
-            </span>
-
-          </div>
-
-        </div>
-      `
-      : ""
-    }
-
-    <div class="recap-section">
-      ${ligneLivraison}
-    </div>
-
-    <div class="recap-total">
-
-      <span>
-        TOTAL À PAYER
-      </span>
-
-      <span>
-        ${total.toLocaleString("fr-FR")} FCFA
-      </span>
-
-    </div>
-
-    <div class="recap-infos">
-
-      <div class="recap-section-label"
-           style="margin-bottom:8px">
-
-        👤 Vos informations
-
-      </div>
-
-      <div class="recap-info-row">
-        <strong>Nom :</strong>
-        ${echapperHTML(nom)}
-      </div>
-
-      <div class="recap-info-row">
-        <strong>Téléphone :</strong>
-        ${echapperHTML(tel)}
-      </div>
-
-      <div class="recap-info-row">
-        <strong>Livraison :</strong>
-        ${
-          modeReception === "retrait"
-          ? "Retrait au local (Karpala)"
-          : echapperHTML(loc || "Non précisé")
-        }
-      </div>
-
-      <div class="recap-info-row">
-        <strong>Paiement :</strong>
-        ${payLabels[paiement] || paiement}
-      </div>
-
-    </div>
-  `;
-
-  window._cmd = {
-    nom,
-    tel,
-    loc,
-    codeSaisi,
-    paiement,
-    items,
-    remise,
-    frais,
-    total
-  };
-
-  document
-    .getElementById("recap-overlay")
-    .classList.add("actif");
-}
-
-function fermerRecap(){
-
-  document
-    .getElementById("recap-overlay")
-    .classList.remove("actif");
-}// ===================== ENVOI WHATSAPP =====================
-
-function envoyerWhatsapp(){
-
-  const d = window._cmd;
-
-  if(!d){
-    return;
-  }
-
-  const produits =
-    d.items.filter(
-      p => p.type === "produit"
-    );
-
-  const packs =
-    d.items.filter(
-      p => p.type === "pack"
-    );
-
-  const payLabels = {
-    especes:"ESPÈCES À LA LIVRAISON",
-    orange:"ORANGE MONEY (65 12 09 02)",
-    wave:"WAVE (65 12 09 02)"
-  };
-
-  let msg = [];
-
-  msg.push(
-    "🍦 *NOUVELLE COMMANDE NOOGO* 🍦"
-  );
-
-  msg.push("");
-
-  msg.push(
-    `👤 *Nom :* ${d.nom}`
-  );
-
-  msg.push(
-    `📞 *Téléphone :* ${d.tel}`
-  );
-
-  msg.push(
-    `🚚 *Mode :* ${
-      modeReception === "retrait"
-      ? "Retrait au local"
-      : "Livraison à domicile"
-    }`
-  );
-
-  if(modeReception === "livraison"){
-
-    msg.push(
-      `📍 *Lieu :* ${
-        d.loc || "Non précisé"
-      }`
-    );
-  }
-
-  if(d.codeSaisi){
-
-    msg.push(
-      `🎟️ *Code promo :* ${d.codeSaisi.toUpperCase()}`
-    );
-  }
-
-  msg.push(
-    `💳 *Paiement :* ${
-      payLabels[d.paiement] ||
-      d.paiement.toUpperCase()
-    }`
-  );
-
-  msg.push("");
-
-  if(produits.length){
-
-    msg.push("📦 *PRODUITS :*");
-
-    produits.forEach(p => {
-
-      msg.push(
-        `  • ${p.nom} ×${p.qte} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`
-      );
-
-    });
-
-    msg.push(
-      `  ➜ Sous-total produits : ${
-        produits
-          .reduce(
-            (s,p) => s + p.prix*p.qte,
-            0
-          )
-          .toLocaleString("fr-FR")
-      } FCFA`
-    );
-
-    msg.push("");
-  }
-
-  if(packs.length){
-
-    msg.push("🎁 *PACKS :*");
-
-    packs.forEach(p => {
-
-      const nb =
-        Number(
-          p.packCount ||
-          1
-        );
-
-      msg.push(
-        `  • ${p.nom} ×${p.qte} = ${(p.prix*p.qte).toLocaleString("fr-FR")} FCFA`
-      );
-
-      msg.push(
-        `    ➜ Contenu : ${nb} unités`
-      );
-
-    });
-
-    msg.push(
-      `  ➜ Livraison : Incluse dans le pack`
-    );
-
-    msg.push(
-      `  ➜ Sous-total packs : ${
-        packs
-          .reduce(
-            (s,p) => s + p.prix*p.qte,
-            0
-          )
-          .toLocaleString("fr-FR")
-      } FCFA`
-    );
-
-    msg.push("");
-  }
-
-  if(d.remise > 0){
-
-    msg.push(
-      `🎟️ *Remise code promo :* −${d.remise.toLocaleString("fr-FR")} FCFA`
-    );
-  }
-
-  if(modeReception === "retrait"){
-
-    msg.push(
-      `🚚 *Livraison :* Aucune — Retrait au local`
-    );
-
-  }else if(hasPack()){
-
-    msg.push(
-      `🚚 *Livraison :* Incluse dans le(s) pack(s)`
-    );
-
-  }else if(stProduits() >= 3000){
-
-    msg.push(
-      `🚚 *Livraison :* GRATUITE (commande ≥ 3 000 FCFA)`
-    );
-
-  }else{
-
-    msg.push(
-      `🚚 *Livraison :* ${d.frais.toLocaleString("fr-FR")} FCFA (commande < 3 000 FCFA)`
-    );
-  }
-
-  msg.push("");
-
-  msg.push(
-    `💰 *TOTAL CLIENT : ${d.total.toLocaleString("fr-FR")} FCFA*`
-  );
-
-  _enregistrerCommande(d);
-
-  window.open(
-    "https://wa.me/22661682706?text=" +
-    encodeURIComponent(
-      msg.join("\n")
-    ),
-    "_blank"
-  );
-
-  fermerRecap();
-}
-
-// ===================== ENREGISTREMENT =====================
-
-function _enregistrerCommande(d){
-
-  try{
-
-    fetch("/api/commander",{
-
-      method:"POST",
-
-      headers:{
-        "Content-Type":"application/json"
-      },
-
-      body:JSON.stringify({
-
-        nomClient:d.nom,
-
-        telClient:d.tel,
-
-        localisation:
-          modeReception === "retrait"
-          ? "Retrait au local"
-          : (
-              d.loc ||
-              "Non précisé"
-            ),
-
-        modePaiement:
-          d.paiement,
-
-        modeReception:
-          modeReception,
-
-        articles:
-          d.items.map(p => ({
-
-            id:p.id,
-            nom:p.nom,
-            type:p.type,
-            qte:p.qte,
-            prix:p.prix,
-            total:p.prix*p.qte
-
-          })),
-
-        montantTotal:
-          d.total,
-
-        montantProduits:
-          stProduits(),
-
-        montantPacks:
-          stPacks(),
-
-        fraisLivraison:
-          fraisActuels(),
-
-        remise:
-          d.remise,
-
-        codePromo:
-          d.codeSaisi || null,
-
-        partenaireCode:
-          promoApplique?.code || null
-
-      })
-
-    }).catch(()=>{});
-
-  }catch(_){}
-}
-
-// ===================== ZOOM =====================
-
-function agrandir(src,titre){
-
-  document.getElementById(
-    "zoom-img"
-  ).src = src;
-
-  document.getElementById(
-    "zoom-titre"
-  ).innerText = titre;
-
-  document
-    .getElementById("zoom-overlay")
-    .classList.add("actif");
-
-  document.body.style.overflow =
-    "hidden";
-}
-
-function fermerZoom(){
-
-  document
-    .getElementById("zoom-overlay")
-    .classList.remove("actif");
-
-  document.body.style.overflow =
-    "";
-}
-
-// ===================== LOCALISATION =====================
-
-function obtenirLocalisation(){
-
-  if(!navigator.geolocation){
-
-    alert(
-      "Géolocalisation non supportée."
-    );
-
-    return;
-  }
-
-  navigator.geolocation.getCurrentPosition(
-
-    pos => {
-
-      document.getElementById(
-        "champ-localisation"
-      ).value =
-        `GPS: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
-
-    },
-
-    () => {
-
-      alert(
-        "Impossible de récupérer votre position."
-      );
-
-    }
-
-  );
-}
-
-// ===================== SCROLL =====================
-
-function remonterEnHaut(){
-
-  window.scrollTo({
-    top:0,
-    behavior:"smooth"
-  });
-}
-
-function setupScrollBtn(){
-
-  const btn =
-    document.getElementById(
-      "bouton-haut"
-    );
-
-  window.addEventListener(
-    "scroll",
-    () => {
-
-      if(btn){
-
-        btn.classList.toggle(
-          "visible",
-          window.scrollY > 400
-        );
-
-      }
-
-    }
-  );
-}
-
-// ===================== PWA =====================
-
-function setupPWA(){
-
-  if("serviceWorker" in navigator){
-
-    navigator.serviceWorker
-      .register("/sw.js")
-      .catch(()=>{});
-
-  }
-
-  window.addEventListener(
-    "beforeinstallprompt",
-    e => {
-
-      e.preventDefault();
-
-      deferredPrompt = e;
-
-      document
-        .getElementById("install-btn")
-        ?.classList.add("visible");
-
-      document
-        .getElementById("bandeau-install")
-        ?.classList.add("visible");
-
-    }
-  );
-}
-
-// ===================== FORCE INSTALLER APP =====================
-
-function forceInstallerApp(){
-  // Tentative d'installation si deferredPrompt existe
-  if(deferredPrompt){
-    installerApp();
-  }
-}
-
-function installerApp(){
-
-  if(deferredPrompt){
-
-    deferredPrompt.prompt();
-
-    deferredPrompt.userChoice.then(
-      () => {
-
-        deferredPrompt = null;
-
-        document
-          .getElementById("install-btn")
-          ?.classList.remove("visible");
-
-        document
-          .getElementById("bandeau-install")
-          ?.classList.remove("visible");
-
-      }
-    );
-
-  }else{
-
-    const isIOS =
-      /iPhone|iPad|iPod/i.test(
-        navigator.userAgent
-      );
-
-    document.getElementById(
-      "install-etapes"
-    ).innerHTML = isIOS
-
-      ? `
-        <p>
-          1. Appuyez sur
-          <strong>🔗 Partager</strong>
-          en bas de Safari
-        </p>
-
-        <p>
-          2. Choisissez
-          <strong>Sur l'écran d'accueil</strong>
-        </p>
-
-        <p>
-          3. Appuyez sur
-          <strong>Ajouter</strong>
-        </p>
-      `
-
-      : `
-        <p>
-          1. Appuyez sur le menu
-          <strong>⋮</strong>
-          (3 points) de votre navigateur
-        </p>
-
-        <p>
-          2. Choisissez
-          <strong>Installer l'application</strong>
-          ou
-          <strong>Ajouter à l'écran d'accueil</strong>
-        </p>
-      `;
-
-    document
-      .getElementById("install-overlay")
-      .classList.add("actif");
-  }
-}
-
-function fermerGuideInstall(){
-
-  document
-    .getElementById("install-overlay")
-    .classList.remove("actif");
-}
-
-function fermerBandeauInstall(){
-
-  document
-    .getElementById("bandeau-install")
-    .classList.remove("visible");
-}
-
+/* ───────── Démarrage ───────── */
+chargerCatalogue();
 </script>
-
 </body>
 </html>

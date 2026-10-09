@@ -436,7 +436,7 @@ const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g, (c) => ({ "&":
 const fmt = (n) => Math.round(n).toLocaleString("fr-FR").replace(/[\u202f\u00a0 ]/g, "\u00a0") + "\u00a0FCFA";
 const lire = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
 const ecrire = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
-const imgUrl = (i) => !i ? "" : (/^https?:/.test(i) ? i : "/produits/" + i);
+const imgUrl = (i) => !i ? "" : (/^(https?:|\/)/.test(i) ? i : "/produits/" + i);
 let toastT;
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2600); }
 

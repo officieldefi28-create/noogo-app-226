@@ -291,7 +291,7 @@
       </div>
       <div class="carte">
         <h3>Photos des articles</h3>
-        <p style="margin:0;font-size:14px">Les photos sont envoyées sur Cloudinary (compte <b class="mono">h03nfuzc</b>). Il faut avoir créé une fois le preset <b class="mono">noogo-produits</b> : Cloudinary → Settings → Upload → Add upload preset → Signing mode : <b>Unsigned</b>.</p>
+        <p style="margin:0;font-size:14px">Pour changer une photo : ouvrez l'article, appuyez sur « Prendre une photo » (ou « Choisir une photo »), attendez « Photo envoyée », puis « Valider » et « Enregistrer le catalogue ». Rien d'autre à configurer.</p>
       </div>
       <div class="carte">
         <h3>Session</h3>
@@ -326,8 +326,6 @@
 
 /* ---------- Constantes ---------- */
 var CLE_JETON = "noogo_jeton_admin";
-var CLOUD_URL = "https://api.cloudinary.com/v1_1/h03nfuzc/image/upload";
-var CLOUD_PRESET = "noogo-produits";
 var PAR_PAGE = 15;
 var CATS = [["cremes","Crèmes glacées"],["popcorn","Popcorn"],["pain","Pain anglais"],["esquimau","Esquimaux"],["gros","Gros formats et fêtes"]];
 var TYPES_PART = [["particulier","Particulier"],["personnel","Personnel"],["ecole","École"],["entreprise","Entreprise"]];
@@ -363,7 +361,7 @@ function nouvelId(){ return "art-" + Date.now().toString(36) + Math.random().toS
 function imgSrc(i){
   i = String(i || "").trim();
   if (!i) return VIDE_IMG;
-  return /^https?:\/\//i.test(i) ? i : "/produits/" + encodeURI(i);
+  return /^(https?:\/\/|\/)/i.test(i) ? i : "/produits/" + encodeURI(i);
 }
 function copier(texte){
   if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(texte);
@@ -758,7 +756,7 @@ function supprimerArticle(){
   toast("Article supprimé. N'oubliez pas d'enregistrer le catalogue.", "ok");
 }
 
-/* --- Photo : redimensionnement + envoi Cloudinary --- */
+/* --- Photo : redimensionnement + envoi sur le site --- */
 async function redimensionner(fichier){
   var bmp;
   if (window.createImageBitmap) {
@@ -773,27 +771,37 @@ async function redimensionner(fichier){
     });
   }
   var w0 = bmp.width, h0 = bmp.height;
-  var w = Math.min(1000, w0), h = Math.round(h0 * (w / w0));
+  var w = Math.min(900, w0), h = Math.round(h0 * (w / w0));
   var cv = document.createElement("canvas"); cv.width = w; cv.height = h;
   var ctx = cv.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, w, h); ctx.drawImage(bmp, 0, 0, w, h);
   if (bmp.close) bmp.close();
-  return new Promise(function(ok, ko){ cv.toBlob(function(b){ b ? ok(b) : ko(new Error("Impossible de préparer la photo.")); }, "image/jpeg", 0.82); });
+  var essai = function(q){ return new Promise(function(ok, ko){ cv.toBlob(function(b){ b ? ok(b) : ko(new Error("Impossible de préparer la photo.")); }, "image/jpeg", q); }); };
+  var b = await essai(0.82);
+  if (b.size > 420000) b = await essai(0.65);
+  if (b.size > 420000) b = await essai(0.5);
+  return b;
 }
-function envoyerCloudinary(blob, surProgres){
+function blobEnBase64(blob){
   return new Promise(function(ok, ko){
-    var fd = new FormData();
-    fd.append("file", blob, "photo.jpg"); fd.append("upload_preset", CLOUD_PRESET); fd.append("folder", "noogo");
-    var x = new XMLHttpRequest();
-    x.open("POST", CLOUD_URL);
-    x.upload.onprogress = function(e){ if (e.lengthComputable) surProgres(e.loaded / e.total); };
-    x.onload = function(){
-      var d = {}; try { d = JSON.parse(x.responseText); } catch(e){}
-      if (x.status >= 200 && x.status < 300 && d.secure_url) ok(d.secure_url);
-      else { var er = new Error((d.error && d.error.message) || ("Erreur " + x.status)); er.cloud = true; ko(er); }
-    };
-    x.onerror = function(){ var er = new Error("Connexion impossible avec Cloudinary"); er.cloud = true; ko(er); };
-    x.send(fd);
+    var r = new FileReader();
+    r.onload = function(){ ok(String(r.result).split(",")[1] || ""); };
+    r.onerror = function(){ ko(new Error("Lecture de la photo impossible")); };
+    r.readAsDataURL(blob);
   });
+}
+async function envoyerPhoto(blob, surProgres){
+  var b64 = await blobEnBase64(blob);
+  surProgres(0.3);
+  var rep, d = {};
+  try {
+    rep = await fetch("/api/photo", { method:"POST", headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ jeton: S.jeton, donnees: b64 }) });
+  } catch(e){ var er = new Error("Connexion impossible : vérifiez internet et réessayez"); er.envoi = true; throw er; }
+  surProgres(0.9);
+  try { d = await rep.json(); } catch(e){}
+  if (rep.status === 401) { var e1 = new Error(d.erreur || "Session expirée, reconnectez-vous"); e1.envoi = true; throw e1; }
+  if (!rep.ok || !d.url) { var e2 = new Error(d.erreur || ("Erreur " + rep.status)); e2.envoi = true; throw e2; }
+  return d.url;
 }
 async function traiterPhoto(fichier){
   if (!fichier || !$("ed-img")) return;
@@ -804,16 +812,15 @@ async function traiterPhoto(fichier){
     if (!/^image\//.test(fichier.type) && !/\.(jpe?g|png|webp|gif|heic|heif)$/i.test(fichier.name)) throw new Error("Choisissez un fichier image.");
     var blob = await redimensionner(fichier);
     barre.style.width = "10%";
-    var url = await envoyerCloudinary(blob, function(f){ barre.style.width = (10 + Math.round(f * 90)) + "%"; });
+    var url = await envoyerPhoto(blob, function(f){ barre.style.width = (10 + Math.round(f * 90)) + "%"; });
     if (!$("ed-img")) return; // fenêtre fermée entre-temps
     $("ed-img").value = url; $("ed-apercu").src = url;
     barre.style.width = "100%";
     msg.innerHTML = '<div class="msg msg-ok">Photo envoyée. Appuyez sur « Valider » pour la garder.</div>';
   } catch(e){
     if (!$("ed-msg-photo")) return;
-    if (e.cloud) {
-      msg.innerHTML = '<div class="msg msg-err"><b>L\'envoi de la photo a échoué</b> (' + esc(e.message) + ').<br>Si c\'est la première fois, il faut créer le preset « noogo-produits » : Cloudinary → Settings → Upload → Add upload preset → Signing mode : <b>Unsigned</b> → nom : noogo-produits. En attendant, vous pouvez saisir un nom de fichier ou une adresse à la main ci-dessous.</div>';
-      $("ed-manuel").open = true;
+    if (e.envoi) {
+      msg.innerHTML = '<div class="msg msg-err"><b>L\'envoi de la photo a échoué</b> (' + esc(e.message) + ').<br>Réessayez. Si cela continue, déconnectez-vous puis reconnectez-vous.</div>';
     } else msg.innerHTML = '<div class="msg msg-err">' + esc(e.message) + '</div>';
   } finally {
     S.envoiPhoto = false;

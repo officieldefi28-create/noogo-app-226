@@ -59,6 +59,16 @@ async function setCatalogue(liste) {
   else await db().set("noogo:catalogue", liste);
 }
 
+// Photos envoyées depuis l'admin : stockées en base (texte base64), servies par /api/photo
+async function setPhoto(id, b64) {
+  if (MEMOIRE) { mem.kv["noogo:photo:" + id] = b64; return; }
+  await db().set("noogo:photo:" + id, b64);
+}
+async function getPhoto(id) {
+  if (MEMOIRE) return mem.kv["noogo:photo:" + id] || null;
+  return (await db().get("noogo:photo:" + id)) || null;
+}
+
 // Limite de requêtes : renvoie true si autorisé.
 async function limiter(cle, max, secondes) {
   try {
@@ -81,5 +91,5 @@ async function limiter(cle, max, secondes) {
 module.exports = {
   getPartenaires, getPartenaire, setPartenaire, deletePartenaire,
   getCommandes, getCommande, setCommande, deleteCommande,
-  getCatalogue, setCatalogue, limiter
+  getCatalogue, setCatalogue, setPhoto, getPhoto, limiter
 };

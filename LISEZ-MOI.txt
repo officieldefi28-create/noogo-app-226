@@ -1,0 +1,19 @@
+MISE A JOUR NOOGO — nouveau logo, photos propres, galerie, panier
+
+Dans ce dossier, chaque dossier correspond au meme dossier sur GitHub.
+Tout ce qui est ici REMPLACE (meme nom) ou S'AJOUTE. Rien d'autre n'est a toucher.
+
+SUR GITHUB (depuis le telephone, un dossier a la fois) :
+1) Page principale du depot -> "Add file" -> "Upload files" :
+   index.html, admin.html, catalogue.json, manifest.json, sw.js,
+   favicon.png, apple-touch-icon.png, icon-192.png, icon-512.png, icon-maskable-512.png
+   -> "Commit changes"
+2) Ouvrir le dossier "api" -> "Add file" -> "Upload files" :
+   _store.js, _catalogue.js, _site.js, admin.js, commander.js, photo.js, reglages.js -> Commit
+3) Ouvrir le dossier "assets" -> Upload : logo-noogo.jpg, embleme.jpg -> Commit
+4) Ouvrir le dossier "produits" -> Upload : les 21 photos "nv-....jpg" -> Commit
+5) NOUVEAU dossier "galerie" : page principale -> "Add file" -> "Create new file",
+   ecrire  galerie/.gitkeep  -> Commit. Puis ouvrir "galerie" -> Upload : les 13 photos -> Commit
+
+Vercel se met a jour tout seul (1 a 2 minutes).
+Apres : dans l'admin, onglet "Site" = photos de la page d'accueil + textes (delai, adresse, paiement).

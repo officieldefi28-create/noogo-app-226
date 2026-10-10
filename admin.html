@@ -213,6 +213,7 @@
       <button class="onglet" role="tab" data-tab="commandes" aria-selected="true">Commandes <span class="compteur cachee" id="cpt-commandes">0</span></button>
       <button class="onglet" role="tab" data-tab="catalogue" aria-selected="false">Catalogue</button>
       <button class="onglet" role="tab" data-tab="partenaires" aria-selected="false">Partenaires <span class="compteur cachee" id="cpt-partenaires">0</span></button>
+      <button class="onglet" role="tab" data-tab="site" aria-selected="false">Site</button>
       <button class="onglet" role="tab" data-tab="reglages" aria-selected="false">Réglages</button>
     </div>
   </nav>
@@ -267,6 +268,29 @@
       </div>
       <label class="sw" style="margin:0 0 10px"><input type="checkbox" id="chk-archives"><i></i>Afficher les archivés</label>
       <div id="liste-part"></div>
+    </section>
+
+    <!-- Site : galerie + textes -->
+    <section id="p-site" class="espace">
+      <div class="carte" style="margin-bottom:14px">
+        <h3>Photos de la page d'accueil</h3>
+        <p class="gris" style="margin:0 0 12px;font-size:14px">Ces photos apparaissent dans « Nos glaces en images » sur la page d'accueil. Ajoutez-en autant que vous voulez, changez l'ordre avec les flèches, écrivez une petite légende, puis appuyez sur « Enregistrer le site ».</p>
+        <div id="gal-liste"></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+          <label class="btn btn-or" style="margin:0;cursor:pointer">+ Prendre une photo<input type="file" id="gal-camera" accept="image/*" capture="environment" hidden></label>
+          <label class="btn btn-brun" style="margin:0;cursor:pointer">+ Choisir des photos<input type="file" id="gal-fichier" accept="image/*" multiple hidden></label>
+        </div>
+        <div id="gal-msg"></div>
+      </div>
+      <div class="carte" style="margin-bottom:14px">
+        <h3>Textes du site</h3>
+        <div id="site-champs"></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">
+        <button class="btn btn-or" type="button" id="btn-site-save" data-act="site-save">Enregistrer le site</button>
+        <button class="btn btn-clair" type="button" data-act="site-reset">Revenir aux réglages d'origine</button>
+      </div>
+      <div id="site-msg"></div>
     </section>
 
     <!-- Réglages -->
@@ -448,10 +472,11 @@ $("form-login").addEventListener("submit", async function(ev){
 function changerOnglet(nom){
   S.onglet = nom;
   document.querySelectorAll(".onglet").forEach(function(b){ b.setAttribute("aria-selected", b.getAttribute("data-tab") === nom ? "true" : "false"); });
-  ["commandes","catalogue","partenaires","reglages"].forEach(function(n){ $("p-" + n).classList.toggle("actif", n === nom); });
+  ["commandes","catalogue","partenaires","site","reglages"].forEach(function(n){ $("p-" + n).classList.toggle("actif", n === nom); });
   window.scrollTo(0, 0);
   if (nom === "reglages") verifBase();
   if (nom === "catalogue" && !S.produits) chargerCatalogue(false);
+  if (nom === "site" && !S.site) chargerSite();
 }
 
 /* ---------- Données ---------- */
@@ -545,7 +570,7 @@ function carteCommande(c){
   return '<article class="carte cmd ' + esc(st) + '">' +
     '<div class="tete"><div><div class="date">' + esc(dateFr(c.date)) + '</div><div class="petit gris mono">' + id + '</div></div><div>' + badgeSt + (c.archive ? ' <span class="badge badge-gris">Archivée</span>' : '') + '</div></div>' +
     '<div class="nom">' + esc(c.nomClient) + '</div>' +
-    '<div class="liens"><a class="btn btn-petit btn-clair" href="tel:' + esc(tel.replace(/[^\d+]/g, "")) + '">Appeler ' + esc(tel) + '</a>' +
+    '<div class="liens">' + (tel ? '<a class="btn btn-petit btn-clair" href="tel:' + esc(tel.replace(/[^\d+]/g, "")) + '">Appeler ' + esc(tel) + '</a>' : '<span class="gris petit">Pas de numéro (le client écrit sur WhatsApp)</span>') +
     (wa ? '<a class="btn btn-petit btn-vert" href="https://wa.me/' + esc(wa) + '" target="_blank" rel="noopener">WhatsApp</a>' : '') + '</div>' +
     '<div class="info-l"><b>' + (c.modeReception === "retrait" ? "Retrait" : "Livraison") + ' :</b> ' + esc(c.localisation) + '</div>' +
     '<div class="info-l"><b>Paiement :</b> ' + esc(PAIEMENTS[c.modePaiement] || c.modePaiement) + '</div>' +
@@ -1001,6 +1026,88 @@ function fermerModal(){
   $("modal-corps").innerHTML = ""; S.edition = null; S.envoiPhoto = false;
 }
 
+/* ---------- Site : galerie + textes ---------- */
+var CHAMPS_SITE = [
+  ["annonce","Bandeau tout en haut du site","text"],
+  ["delai","Délai de livraison (affiché dans le panier)","text"],
+  ["adresse","Adresse du local (retrait)","text"],
+  ["lienMaps","Lien Google Maps du local","url"],
+  ["infoPaiement","Explication du paiement (affichée dans le panier)","area"],
+  ["orangeMoney","Numéro Orange Money","text"],
+  ["wave","Numéro Wave","text"]
+];
+S.site = null; S.siteInit = "";
+async function chargerSite(){
+  try {
+    var d = await api("site_get");
+    S.site = { reglages: d.reglages, galerie: clone(d.galerie || []) }; S.siteInit = JSON.stringify(S.site);
+  } catch(e){ erreur(e); S.site = null; }
+  rendreSite();
+}
+function rendreSite(){
+  if (!S.site) { $("gal-liste").innerHTML = '<p class="gris">Chargement…</p>'; return; }
+  var g = S.site.galerie;
+  $("gal-liste").innerHTML = g.length ? g.map(function(x, i){
+    return '<div class="carte" style="display:flex;gap:10px;align-items:center;padding:10px;margin-bottom:8px">' +
+      '<img src="' + esc(imgSrc(x.url)) + '" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:10px;flex:none;background:#f1e8cf">' +
+      '<div style="flex:1;min-width:0"><input type="text" maxlength="80" placeholder="Légende (facultatif)" value="' + esc(x.legende) + '" data-gal-leg="' + i + '" style="margin:0 0 6px">' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+      '<button class="btn btn-clair btn-petit" type="button" data-act="gal-haut" data-id="' + i + '"' + (i === 0 ? " disabled" : "") + ' aria-label="Monter">↑</button>' +
+      '<button class="btn btn-clair btn-petit" type="button" data-act="gal-bas" data-id="' + i + '"' + (i === g.length - 1 ? " disabled" : "") + ' aria-label="Descendre">↓</button>' +
+      '<button class="btn btn-rouge btn-petit" type="button" data-act="gal-retirer" data-id="' + i + '">Retirer</button></div></div></div>';
+  }).join("") : '<p class="gris">Aucune photo : la section n\'apparaît pas sur le site.</p>';
+  $("site-champs").innerHTML = CHAMPS_SITE.map(function(c){
+    var v = esc(S.site.reglages[c[0]] || "");
+    return '<label for="sc-' + c[0] + '">' + esc(c[1]) + '</label>' + (c[2] === "area"
+      ? '<textarea id="sc-' + c[0] + '" rows="3" maxlength="400" data-site-champ="' + c[0] + '">' + v + '</textarea>'
+      : '<input id="sc-' + c[0] + '" type="' + (c[2] === "url" ? "url" : "text") + '" maxlength="300" data-site-champ="' + c[0] + '" value="' + v + '">');
+  }).join("");
+}
+async function ajouterPhotosGalerie(fichiers){
+  if (!S.site) return;
+  var msg = $("gal-msg"), n = 0;
+  for (var i = 0; i < fichiers.length; i++) {
+    msg.innerHTML = '<div class="msg msg-info">Envoi de la photo ' + (i + 1) + ' sur ' + fichiers.length + '…</div>';
+    try {
+      var blob = await redimensionner(fichiers[i]);
+      var url = await envoyerPhoto(blob, function(){});
+      S.site.galerie.push({ url: url, legende: "" }); n++;
+      rendreSite();
+    } catch(e){ msg.innerHTML = '<div class="msg msg-err">' + esc(e.message) + '</div>'; return; }
+  }
+  msg.innerHTML = '<div class="msg msg-ok">' + n + ' photo' + (n > 1 ? "s ajoutées" : " ajoutée") + '. Appuyez sur « Enregistrer le site » pour les publier.</div>';
+}
+function lireChampsSite(){
+  document.querySelectorAll("[data-site-champ]").forEach(function(e){ S.site.reglages[e.getAttribute("data-site-champ")] = e.value; });
+  document.querySelectorAll("[data-gal-leg]").forEach(function(e){ var x = S.site.galerie[+e.getAttribute("data-gal-leg")]; if (x) x.legende = e.value; });
+}
+async function sauverSite(t){
+  if (!S.site) return;
+  lireChampsSite(); t.disabled = true;
+  try {
+    var d = await api("site_save", { reglages: S.site.reglages, galerie: S.site.galerie });
+    S.site = { reglages: d.reglages, galerie: clone(d.galerie || []) }; S.siteInit = JSON.stringify(S.site);
+    rendreSite(); $("site-msg").innerHTML = '<div class="msg msg-ok">Site mis à jour. Les clients voient les changements dans quelques secondes.</div>';
+    toast("Site enregistré", "ok");
+  } catch(e){ erreur(e); }
+  t.disabled = false;
+}
+async function reinitSite(t){
+  if (!confirm("Revenir aux photos et textes d'origine ? Vos photos ajoutées ne seront plus affichées sur le site.")) return;
+  t.disabled = true;
+  try { var d = await api("site_reset"); S.site = { reglages: d.reglages, galerie: clone(d.galerie || []) }; S.siteInit = JSON.stringify(S.site); rendreSite(); toast("Réglages d'origine rétablis", "ok"); }
+  catch(e){ erreur(e); }
+  t.disabled = false;
+}
+function actionGalerie(act, i){
+  if (!S.site) return; lireChampsSite();
+  var g = S.site.galerie;
+  if (act === "gal-retirer") g.splice(i, 1);
+  else if (act === "gal-haut" && i > 0) g.splice(i - 1, 0, g.splice(i, 1)[0]);
+  else if (act === "gal-bas" && i < g.length - 1) g.splice(i + 1, 0, g.splice(i, 1)[0]);
+  rendreSite();
+}
+
 /* ================= ÉVÉNEMENTS ================= */
 document.addEventListener("click", function(ev){
   var t = ev.target.closest("[data-act],[data-tab],[data-filtre]"); if (!t) return;
@@ -1012,7 +1119,10 @@ document.addEventListener("click", function(ev){
     return actionCommande(act.slice(4), id, t);
   }
   if (act.indexOf("part-") === 0 && act !== "part-form-toggle") return actionPartenaire(act.slice(5), id, t);
+  if (act === "gal-haut" || act === "gal-bas" || act === "gal-retirer") return actionGalerie(act, parseInt(id, 10));
   switch (act) {
+    case "site-save": return sauverSite(t);
+    case "site-reset": return reinitSite(t);
     case "deconnexion": if (catalogueModifie() && !confirm("Des modifications du catalogue ne sont pas enregistrées. Se déconnecter quand même ?")) return; S.produitsInit = JSON.stringify(S.produits); return deconnecter("Vous êtes déconnecté.");
     case "actualiser":
       if (catalogueModifie() && S.onglet === "catalogue" && !confirm("Les modifications non enregistrées du catalogue seront perdues. Continuer ?")) return;
@@ -1055,6 +1165,7 @@ document.addEventListener("change", function(ev){
     else { if (t.checked) p.surCommande = true; else delete p.surCommande; }
     rendreCatalogue(); majSauvegarde(); return;
   }
+  if (t.id === "gal-fichier" || t.id === "gal-camera") { var fs = Array.prototype.slice.call(t.files || []); t.value = ""; return ajouterPhotosGalerie(fs); }
   if (t.id === "ed-fichier" || t.id === "ed-camera") { var f = t.files && t.files[0]; t.value = ""; return traiterPhoto(f); }
   if (t.id === "ed-type") $("bloc-pack").classList.toggle("cachee", t.value !== "pack");
   if (t.id === "chk-archives") { S.archPart = t.checked; rendrePartenaires(); }

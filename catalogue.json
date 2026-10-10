@@ -10,7 +10,7 @@
    "nom": "Crème glacée Vanille",
    "info": "Pot 125 ml",
    "prix": 700,
-   "img": "vanille-125ml.jpg",
+   "img": "nv-vanille-125.jpg",
    "desc": "Une saveur naturelle, 100 % locale et rafraîchissante."
   },
   {
@@ -22,7 +22,7 @@
    "nom": "Crème glacée Baobab — Pain de singe",
    "info": "Pot 125 ml",
    "prix": 1000,
-   "img": "baobab-125ml.jpg",
+   "img": "nv-baobab-125.jpg",
    "desc": "Le goût authentique du baobab, riche en vitamines."
   },
   {
@@ -35,7 +35,7 @@
    "info": "Pot 125 ml",
    "prix": 1000,
    "surCommande": true,
-   "img": "banane-125ml.jpg",
+   "img": "nv-banane-125.jpg",
    "desc": "Douce et naturelle, avec de vrais morceaux de banane."
   },
   {
@@ -48,7 +48,7 @@
    "info": "Pot 125 ml",
    "prix": 600,
    "surCommande": true,
-   "img": "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg"
+   "img": "nv-choco-125.jpg"
   },
   {
    "actif": true,
@@ -60,7 +60,7 @@
    "info": "Pot 125 ml",
    "prix": 700,
    "surCommande": true,
-   "img": ""
+   "img": "nv-fraise-125.jpg"
   },
   {
    "actif": true,
@@ -71,7 +71,7 @@
    "nom": "Crème glacée Vanille — Grand pot",
    "info": "Pot 250 ml",
    "prix": 1400,
-   "img": "vanille-250ml.jpg"
+   "img": "nv-vanille-250.jpg"
   },
   {
    "actif": true,
@@ -84,7 +84,7 @@
    "prix": 1900,
    "prixBarre": 2000,
    "badge": "PROMO",
-   "img": "baobab-250ml.jpg"
+   "img": "nv-baobab-250.jpg"
   },
   {
    "actif": true,
@@ -96,7 +96,7 @@
    "info": "Pot 250 ml",
    "prix": 2000,
    "surCommande": true,
-   "img": "banane-250ml.jpg"
+   "img": "nv-banane-250.jpg"
   },
   {
    "actif": true,
@@ -108,7 +108,7 @@
    "info": "Pot 250 ml",
    "prix": 1200,
    "surCommande": true,
-   "img": "Chocolat_Cacao_au_Lait_1200F.jpg"
+   "img": "nv-choco-250.jpg"
   },
   {
    "actif": true,
@@ -120,7 +120,7 @@
    "info": "Pot 250 ml",
    "prix": 1400,
    "surCommande": true,
-   "img": ""
+   "img": "nv-fraise-250.jpg"
   },
   {
    "actif": true,
@@ -131,7 +131,7 @@
    "nom": "Pack Vanille — Petit format",
    "info": "5 pots de 125 ml · livraison incluse",
    "prix": 5500,
-   "img": "vanille-125ml.jpg",
+   "img": "nv-pack-van-125.jpg",
    "packCount": 5,
    "packLabel": "5 pots · 125 ml"
   },
@@ -144,7 +144,7 @@
    "nom": "Pack Baobab — Petit format",
    "info": "5 pots de 125 ml · livraison incluse",
    "prix": 7000,
-   "img": "baobab-125ml.jpg",
+   "img": "nv-pack-bao-125.jpg",
    "packCount": 5,
    "packLabel": "5 pots · 125 ml"
   },
@@ -157,7 +157,7 @@
    "nom": "Pack Banane — Petit format",
    "info": "5 pots de 125 ml · livraison incluse",
    "prix": 7000,
-   "img": "banane-125ml.jpg",
+   "img": "nv-pack-ban-125.jpg",
    "packCount": 5,
    "packLabel": "5 pots · 125 ml",
    "surCommande": true
@@ -171,7 +171,7 @@
    "nom": "Pack Chocolat — Petit format",
    "info": "5 pots de 125 ml · livraison incluse",
    "prix": 5000,
-   "img": "Creme_Glacee_Chocolat_Cacao_au_Lait_600F.jpg",
+   "img": "nv-pack-cho-125.jpg",
    "packCount": 5,
    "packLabel": "5 pots · 125 ml",
    "surCommande": true
@@ -185,7 +185,7 @@
    "nom": "Pack Fraise — Petit format",
    "info": "5 pots de 125 ml · livraison incluse",
    "prix": 5500,
-   "img": "",
+   "img": "nv-pack-fra-125.jpg",
    "packCount": 5,
    "packLabel": "5 pots · 125 ml",
    "surCommande": true
@@ -199,7 +199,7 @@
    "nom": "Pack Découverte — Saveurs variées",
    "info": "5 pots de 125 ml · livraison incluse",
    "prix": 6000,
-   "img": "baobab-125ml.jpg",
+   "img": "nv-pack-mix-125.jpg",
    "packCount": 5,
    "packLabel": "5 pots · saveurs variées"
   },
@@ -212,7 +212,7 @@
    "nom": "Pack Vanille — Grand format",
    "info": "4 pots de 250 ml · livraison incluse",
    "prix": 7600,
-   "img": "vanille-250ml.jpg",
+   "img": "nv-pack-van-250.jpg",
    "packCount": 4,
    "packLabel": "4 pots · 250 ml"
   },
@@ -225,7 +225,7 @@
    "nom": "Pack Baobab — Grand format",
    "info": "4 pots de 250 ml · livraison incluse",
    "prix": 9600,
-   "img": "baobab-250ml.jpg",
+   "img": "nv-baobab-250.jpg",
    "packCount": 4,
    "packLabel": "4 pots · 250 ml",
    "prixBarre": 10000,
@@ -240,7 +240,7 @@
    "nom": "Pack Banane — Grand format",
    "info": "4 pots de 250 ml · livraison incluse",
    "prix": 10000,
-   "img": "banane-250ml.jpg",
+   "img": "nv-pack-ban-250.jpg",
    "packCount": 4,
    "packLabel": "4 pots · 250 ml",
    "surCommande": true
@@ -254,7 +254,7 @@
    "nom": "Pack Chocolat — Grand format",
    "info": "4 pots de 250 ml · livraison incluse",
    "prix": 6800,
-   "img": "Chocolat_Cacao_au_Lait_1200F.jpg",
+   "img": "nv-pack-cho-250.jpg",
    "packCount": 4,
    "packLabel": "4 pots · 250 ml",
    "surCommande": true
@@ -268,7 +268,7 @@
    "nom": "Pack Fraise — Grand format",
    "info": "4 pots de 250 ml · livraison incluse",
    "prix": 7600,
-   "img": "",
+   "img": "nv-pack-fra-250.jpg",
    "packCount": 4,
    "packLabel": "4 pots · 250 ml",
    "surCommande": true
@@ -282,7 +282,7 @@
    "nom": "Pack Découverte — Grand format",
    "info": "4 gros pots saveurs variées · livraison incluse",
    "prix": 10000,
-   "img": "banane-250ml.jpg",
+   "img": "nv-pack-mix-250.jpg",
    "packCount": 4,
    "packLabel": "4 pots · saveurs variées"
   },

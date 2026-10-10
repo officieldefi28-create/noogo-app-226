@@ -188,13 +188,24 @@ module.exports = async (req, res) => {
       case "desarchiver_commande": {
         const c = await S.getCommande(data.commandeId);
         if (!c) return res.status(404).json({ erreur: "Commande introuvable" });
-        if (action === "valider_livraison") c.statutLivraison = "livree";
-        else if (action === "annuler_commande") c.statutLivraison = "annulee";
-        else if (action === "remettre_en_attente") c.statutLivraison = "en_attente";
+        if (action === "valider_livraison") { c.statutLivraison = "livree"; c.dateLivraison = new Date().toISOString(); }
+        else if (action === "annuler_commande") { c.statutLivraison = "annulee"; delete c.dateLivraison; }
+        else if (action === "remettre_en_attente") { c.statutLivraison = "en_attente"; delete c.dateLivraison; }
         else if (action === "marquer_commission_payee") c.statutCommission = "paye";
         else c.archive = action === "archiver_commande";
         await S.setCommande(c);
         return res.status(200).json({ succes: true });
+      }
+
+      case "modifier_contact": {
+        const c = await S.getCommande(data.commandeId);
+        if (!c) return res.status(404).json({ erreur: "Commande introuvable" });
+        const tel = txt(data.telClient, 30);
+        if (tel && tel.replace(/\D/g, "").length < 8) return res.status(400).json({ erreur: "Numéro de téléphone invalide" });
+        c.telClient = tel;
+        if (data.nomClient !== undefined) c.nomClient = txt(data.nomClient, 80) || c.nomClient;
+        await S.setCommande(c);
+        return res.status(200).json({ succes: true, telClient: c.telClient, nomClient: c.nomClient });
       }
 
       case "supprimer_commande": {

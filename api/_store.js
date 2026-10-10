@@ -97,7 +97,31 @@ async function setReglages(v) {
   await db().set("noogo:reglages", v);
 }
 
+// ── Suivi (lots, ventes, pertes, dépenses, comptages) : une entrée par enregistrement ──
+const SUIVI_TYPES = ["lots", "ventes", "pertes", "depenses", "comptages"];
+async function suiviListe(type) {
+  if (!SUIVI_TYPES.includes(type)) throw new Error("type de suivi inconnu");
+  return valeurs(await hgetall("noogo:suivi:" + type));
+}
+async function suiviSet(type, id, obj) {
+  if (!SUIVI_TYPES.includes(type)) throw new Error("type de suivi inconnu");
+  await hset("noogo:suivi:" + type, id, obj);
+}
+async function suiviDel(type, id) {
+  if (!SUIVI_TYPES.includes(type)) throw new Error("type de suivi inconnu");
+  await hdel("noogo:suivi:" + type, id);
+}
+async function getSuiviConfig() {
+  if (MEMOIRE) return mem.kv["noogo:suivi:config"] || null;
+  return (await db().get("noogo:suivi:config")) || null;
+}
+async function setSuiviConfig(v) {
+  if (MEMOIRE) { mem.kv["noogo:suivi:config"] = v; return; }
+  await db().set("noogo:suivi:config", v);
+}
+
 module.exports = {
+  suiviListe, suiviSet, suiviDel, getSuiviConfig, setSuiviConfig,
   getReglages, setReglages,
   getPartenaires, getPartenaire, setPartenaire, deletePartenaire,
   getCommandes, getCommande, setCommande, deleteCommande,

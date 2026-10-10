@@ -94,6 +94,12 @@ function calculer(donnees) {
     const ratio = base > 0 ? nombre(c.montantApresRemise != null ? c.montantApresRemise : base) / base : 1;
     const d = jour(c.dateLivraison || c.date);
     for (const a of c.articles || []) {
+      if (Array.isArray(a.compo) && a.compo.length) {
+        // Pack au choix : chaque saveur choisie sort du stock de son propre produit
+        const tot = a.compo.reduce((s, x) => s + nombre(x.qte), 0) || 1;
+        for (const x of a.compo) pousse(x.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(x.qte), montant: (nombre(a.total) * ratio * nombre(x.qte)) / tot, ref: c.id });
+        continue;
+      }
       const p = catParId[a.id] || { id: a.id, type: a.type };
       const b = baseDe(p) || { id: a.id, n: 1 };
       pousse(b.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(a.qte) * b.n, montant: nombre(a.total) * ratio, ref: c.id });

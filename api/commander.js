@@ -57,6 +57,7 @@ module.exports = async (req, res) => {
       partenaireId,
       statutLivraison: "en_attente",
       statutCommission: "impaye",
+      note: nettoyer(d.note, 300),
       source: nettoyer(d.source, 20) || "site"
     };
     await setCommande(cmd);

@@ -213,6 +213,7 @@
       <button class="onglet" role="tab" data-tab="commandes" aria-selected="true">Commandes <span class="compteur cachee" id="cpt-commandes">0</span></button>
       <button class="onglet" role="tab" data-tab="catalogue" aria-selected="false">Catalogue</button>
       <button class="onglet" role="tab" data-tab="partenaires" aria-selected="false">Partenaires <span class="compteur cachee" id="cpt-partenaires">0</span></button>
+      <button class="onglet" role="tab" data-tab="suivi" aria-selected="false">Suivi</button>
       <button class="onglet" role="tab" data-tab="site" aria-selected="false">Site</button>
       <button class="onglet" role="tab" data-tab="reglages" aria-selected="false">Réglages</button>
     </div>
@@ -270,6 +271,9 @@
       <div id="liste-part"></div>
     </section>
 
+    <!-- Suivi : ventes, stock, production, dépenses, bilan (interface dans admin-suivi.js) -->
+    <section id="p-suivi" class="espace"></section>
+
     <!-- Site : galerie + textes -->
     <section id="p-site" class="espace">
       <div class="carte" style="margin-bottom:14px">
@@ -281,6 +285,15 @@
           <label class="btn btn-brun" style="margin:0;cursor:pointer">+ Choisir des photos<input type="file" id="gal-fichier" accept="image/*" multiple hidden></label>
         </div>
         <div id="gal-msg"></div>
+      </div>
+      <div class="carte" style="margin-bottom:14px">
+        <h3>Apparence : couleurs et images</h3>
+        <p class="gris" style="margin:0 0 6px;font-size:14px">Changez les couleurs et les logos du site. Si le résultat ne vous plaît pas, « Revenir aux réglages d'origine » en bas.</p>
+        <div id="site-apparence"></div>
+      </div>
+      <div class="carte" style="margin-bottom:14px">
+        <h3>Questions fréquentes</h3>
+        <div id="site-faq"></div>
       </div>
       <div class="carte" style="margin-bottom:14px">
         <h3>Textes du site</h3>
@@ -472,11 +485,12 @@ $("form-login").addEventListener("submit", async function(ev){
 function changerOnglet(nom){
   S.onglet = nom;
   document.querySelectorAll(".onglet").forEach(function(b){ b.setAttribute("aria-selected", b.getAttribute("data-tab") === nom ? "true" : "false"); });
-  ["commandes","catalogue","partenaires","site","reglages"].forEach(function(n){ $("p-" + n).classList.toggle("actif", n === nom); });
+  ["commandes","catalogue","partenaires","suivi","site","reglages"].forEach(function(n){ $("p-" + n).classList.toggle("actif", n === nom); });
   window.scrollTo(0, 0);
   if (nom === "reglages") verifBase();
   if (nom === "catalogue" && !S.produits) chargerCatalogue(false);
   if (nom === "site" && !S.site) chargerSite();
+  if (nom === "suivi" && window.SuiviUI) window.SuiviUI.ouvrir();
 }
 
 /* ---------- Données ---------- */
@@ -570,8 +584,11 @@ function carteCommande(c){
   return '<article class="carte cmd ' + esc(st) + '">' +
     '<div class="tete"><div><div class="date">' + esc(dateFr(c.date)) + '</div><div class="petit gris mono">' + id + '</div></div><div>' + badgeSt + (c.archive ? ' <span class="badge badge-gris">Archivée</span>' : '') + '</div></div>' +
     '<div class="nom">' + esc(c.nomClient) + '</div>' +
-    '<div class="liens">' + (tel ? '<a class="btn btn-petit btn-clair" href="tel:' + esc(tel.replace(/[^\d+]/g, "")) + '">Appeler ' + esc(tel) + '</a>' : '<span class="gris petit">Pas de numéro (le client écrit sur WhatsApp)</span>') +
-    (wa ? '<a class="btn btn-petit btn-vert" href="https://wa.me/' + esc(wa) + '" target="_blank" rel="noopener">WhatsApp</a>' : '') + '</div>' +
+    '<div class="liens">' + (tel ? '<a class="btn btn-petit btn-clair" href="tel:' + esc(tel.replace(/[^\d+]/g, "")) + '">Appeler ' + esc(tel) + '</a>' : '') +
+    (wa ? '<a class="btn btn-petit btn-vert" href="https://wa.me/' + esc(wa) + '" target="_blank" rel="noopener">WhatsApp</a>' +
+      '<button class="btn btn-petit btn-clair" type="button" data-act="cmd-relance" data-id="' + id + '">Relancer</button>' : '') +
+    '<button class="btn btn-petit btn-clair" type="button" data-act="cmd-contact" data-id="' + id + '">' + (tel ? "Modifier le numéro" : "Ajouter le numéro") + '</button></div>' +
+    (tel ? "" : '<p class="gris petit" style="margin:4px 0 0">Pas de numéro : le client vous a écrit sur WhatsApp. Touchez son numéro dans la conversation, copiez-le, puis « Ajouter le numéro » ici.</p>') +
     '<div class="info-l"><b>' + (c.modeReception === "retrait" ? "Retrait" : "Livraison") + ' :</b> ' + esc(c.localisation) + '</div>' +
     '<div class="info-l"><b>Paiement :</b> ' + esc(PAIEMENTS[c.modePaiement] || c.modePaiement) + '</div>' +
     '<div class="articles">' + arts + '</div>' +
@@ -615,6 +632,18 @@ $("tri-cmd").addEventListener("change", function(){ S.tri = this.value; S.page =
 async function actionCommande(act, id, btn){
   var c = S.commandes.find(function(x){ return x.id === id; });
   if (!c) return;
+  if (act === "contact") {
+    var saisie = prompt("Numéro de téléphone de " + (c.nomClient || "ce client") + " (laisser vide pour effacer) :", c.telClient || "");
+    if (saisie === null) return;
+    try { var r = await api("modifier_contact", { commandeId: id, telClient: saisie.trim() }); c.telClient = r.telClient; toast("Numéro enregistré", "ok"); } catch(e){ erreur(e); }
+    return rendreCommandes();
+  }
+  if (act === "relance") {
+    var wn = telNettoye(c.telClient || ""); if (!wn) return toast("Ajoutez d'abord le numéro du client.", "err");
+    var lignes = (c.articles || []).map(function(a){ return a.qte + " × " + a.nom; }).join(", ");
+    var msg = "Bonjour " + (c.nomClient && c.nomClient !== "Non renseigné" ? c.nomClient : "") + ", c'est Noogó 🍦. Pour votre commande (" + lignes + ", total " + fcfa(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) + ") : êtes-vous disponible pour la livraison ? Merci !";
+    window.open("https://wa.me/" + wn + "?text=" + encodeURIComponent(msg), "_blank", "noopener"); return;
+  }
   var API = { livree:"valider_livraison", annulee:"annuler_commande", attente:"remettre_en_attente", comm:"marquer_commission_payee", archiver:"archiver_commande", desarchiver:"desarchiver_commande", supprimer:"supprimer_commande" };
   if (act === "supprimer" && !confirm("Supprimer définitivement la commande de " + c.nomClient + " ?\nCette action est irréversible. Si vous voulez seulement la ranger, utilisez « Archiver ».")) return;
   if (act === "annulee" && c.statutLivraison === "livree" && !confirm("Cette commande est déjà livrée. L'annuler quand même ?")) return;
@@ -1028,6 +1057,12 @@ function fermerModal(){
 
 /* ---------- Site : galerie + textes ---------- */
 var CHAMPS_SITE = [
+  ["surtitre","Petite phrase au-dessus du grand titre","text"],
+  ["titre","Grand titre (début)","text"],
+  ["titreAccent","Grand titre (partie en couleur)","text"],
+  ["intro","Texte d'introduction de l'accueil","area"],
+  ["slogan","Phrase en bas de page","text"],
+  ["whatsapp","Numéro WhatsApp des commandes (avec l'indicatif, ex : 22661682706)","text"],
   ["annonce","Bandeau tout en haut du site","text"],
   ["delai","Délai de livraison (affiché dans le panier)","text"],
   ["adresse","Adresse du local (retrait)","text"],
@@ -1040,7 +1075,7 @@ S.site = null; S.siteInit = "";
 async function chargerSite(){
   try {
     var d = await api("site_get");
-    S.site = { reglages: d.reglages, galerie: clone(d.galerie || []) }; S.siteInit = JSON.stringify(S.site);
+    S.site = { reglages: d.reglages, galerie: clone(d.galerie || []), faq: clone(d.faq || []) }; S.siteInit = JSON.stringify(S.site);
   } catch(e){ erreur(e); S.site = null; }
   rendreSite();
 }
@@ -1056,6 +1091,14 @@ function rendreSite(){
       '<button class="btn btn-clair btn-petit" type="button" data-act="gal-bas" data-id="' + i + '"' + (i === g.length - 1 ? " disabled" : "") + ' aria-label="Descendre">↓</button>' +
       '<button class="btn btn-rouge btn-petit" type="button" data-act="gal-retirer" data-id="' + i + '">Retirer</button></div></div></div>';
   }).join("") : '<p class="gris">Aucune photo : la section n\'apparaît pas sur le site.</p>';
+  var R = S.site.reglages;
+  var img = function(cle, titre){ return '<div style="display:flex;gap:10px;align-items:center;margin:8px 0"><img src="' + esc(imgSrc(R[cle])) + '" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--bord);background:#f1e8cf"><div style="flex:1"><b style="font-size:14px">' + titre + '</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"><label class="btn btn-clair btn-petit" style="margin:0;cursor:pointer">Changer<input type="file" accept="image/*" hidden data-app-img="' + cle + '"></label>' + (R[cle] ? '<button class="btn btn-clair btn-petit" type="button" data-act="app-retirer" data-id="' + cle + '">Rétablir</button>' : '') + '</div></div></div>'; };
+  var coul = function(cle, titre){ return '<div style="display:flex;align-items:center;gap:10px;margin:8px 0"><input type="color" data-site-champ="' + cle + '" value="' + esc(R[cle] || "#000000") + '" style="width:56px;height:46px;min-height:46px;padding:2px"><span style="font-size:14px"><b>' + titre + '</b></span></div>'; };
+  $("site-apparence").innerHTML = coul("couleurPrincipale", "Couleur principale (en-tête, boutons, titres)") + coul("couleurAccent", "Couleur d'accent (or, détails)") + coul("couleurFond", "Couleur de fond du site") +
+    img("logo", "Grand logo de l'accueil") + img("logoRond", "Petit logo rond (en-tête)") + img("imageFond", "Image de fond de l'accueil (facultatif)");
+  $("site-faq").innerHTML = S.site.faq.map(function(x, i){
+    return '<div class="carte" style="padding:10px;margin-bottom:8px"><input type="text" maxlength="160" placeholder="Question" data-faq-q="' + i + '" value="' + esc(x.q) + '" style="margin-bottom:6px"><textarea rows="3" maxlength="700" placeholder="Réponse" data-faq-a="' + i + '">' + esc(x.a) + '</textarea><button class="btn btn-rouge btn-petit" type="button" data-act="faq-retirer" data-id="' + i + '" style="margin-top:6px">Retirer</button></div>';
+  }).join("") + '<button class="btn btn-clair btn-petit" type="button" data-act="faq-ajouter">+ Ajouter une question</button>';
   $("site-champs").innerHTML = CHAMPS_SITE.map(function(c){
     var v = esc(S.site.reglages[c[0]] || "");
     return '<label for="sc-' + c[0] + '">' + esc(c[1]) + '</label>' + (c[2] === "area"
@@ -1080,13 +1123,15 @@ async function ajouterPhotosGalerie(fichiers){
 function lireChampsSite(){
   document.querySelectorAll("[data-site-champ]").forEach(function(e){ S.site.reglages[e.getAttribute("data-site-champ")] = e.value; });
   document.querySelectorAll("[data-gal-leg]").forEach(function(e){ var x = S.site.galerie[+e.getAttribute("data-gal-leg")]; if (x) x.legende = e.value; });
+  document.querySelectorAll("[data-faq-q]").forEach(function(e){ var x = S.site.faq[+e.getAttribute("data-faq-q")]; if (x) x.q = e.value; });
+  document.querySelectorAll("[data-faq-a]").forEach(function(e){ var x = S.site.faq[+e.getAttribute("data-faq-a")]; if (x) x.a = e.value; });
 }
 async function sauverSite(t){
   if (!S.site) return;
   lireChampsSite(); t.disabled = true;
   try {
-    var d = await api("site_save", { reglages: S.site.reglages, galerie: S.site.galerie });
-    S.site = { reglages: d.reglages, galerie: clone(d.galerie || []) }; S.siteInit = JSON.stringify(S.site);
+    var d = await api("site_save", { reglages: S.site.reglages, galerie: S.site.galerie, faq: S.site.faq });
+    S.site = { reglages: d.reglages, galerie: clone(d.galerie || []), faq: clone(d.faq || []) }; S.siteInit = JSON.stringify(S.site);
     rendreSite(); $("site-msg").innerHTML = '<div class="msg msg-ok">Site mis à jour. Les clients voient les changements dans quelques secondes.</div>';
     toast("Site enregistré", "ok");
   } catch(e){ erreur(e); }
@@ -1095,7 +1140,7 @@ async function sauverSite(t){
 async function reinitSite(t){
   if (!confirm("Revenir aux photos et textes d'origine ? Vos photos ajoutées ne seront plus affichées sur le site.")) return;
   t.disabled = true;
-  try { var d = await api("site_reset"); S.site = { reglages: d.reglages, galerie: clone(d.galerie || []) }; S.siteInit = JSON.stringify(S.site); rendreSite(); toast("Réglages d'origine rétablis", "ok"); }
+  try { var d = await api("site_reset"); S.site = { reglages: d.reglages, galerie: clone(d.galerie || []), faq: clone(d.faq || []) }; S.siteInit = JSON.stringify(S.site); rendreSite(); toast("Réglages d'origine rétablis", "ok"); }
   catch(e){ erreur(e); }
   t.disabled = false;
 }
@@ -1119,6 +1164,9 @@ document.addEventListener("click", function(ev){
     return actionCommande(act.slice(4), id, t);
   }
   if (act.indexOf("part-") === 0 && act !== "part-form-toggle") return actionPartenaire(act.slice(5), id, t);
+  if (act === "faq-ajouter" && S.site) { lireChampsSite(); S.site.faq.push({ q: "", a: "" }); return rendreSite(); }
+  if (act === "faq-retirer" && S.site) { lireChampsSite(); S.site.faq.splice(parseInt(id, 10), 1); return rendreSite(); }
+  if (act === "app-retirer" && S.site) { lireChampsSite(); S.site.reglages[id] = ""; return rendreSite(); }
   if (act === "gal-haut" || act === "gal-bas" || act === "gal-retirer") return actionGalerie(act, parseInt(id, 10));
   switch (act) {
     case "site-save": return sauverSite(t);
@@ -1165,6 +1213,7 @@ document.addEventListener("change", function(ev){
     else { if (t.checked) p.surCommande = true; else delete p.surCommande; }
     rendreCatalogue(); majSauvegarde(); return;
   }
+  if (t.getAttribute && t.getAttribute("data-app-img")) { var cle = t.getAttribute("data-app-img"), f1 = t.files && t.files[0]; t.value = ""; if (!f1 || !S.site) return; lireChampsSite(); toast("Envoi de l'image…", "ok"); return redimensionner(f1).then(function(b){ return envoyerPhoto(b, function(){}); }).then(function(u){ S.site.reglages[cle] = u; rendreSite(); toast("Image envoyée : pensez à « Enregistrer le site »", "ok"); }).catch(erreur); }
   if (t.id === "gal-fichier" || t.id === "gal-camera") { var fs = Array.prototype.slice.call(t.files || []); t.value = ""; return ajouterPhotosGalerie(fs); }
   if (t.id === "ed-fichier" || t.id === "ed-camera") { var f = t.files && t.files[0]; t.value = ""; return traiterPhoto(f); }
   if (t.id === "ed-type") $("bloc-pack").classList.toggle("cachee", t.value !== "pack");
@@ -1185,10 +1234,14 @@ setInterval(function(){
   if (S.jeton && S.onglet === "commandes" && !document.hidden && $("modal").classList.contains("cachee")) chargerDonnees(true);
 }, 60000);
 
+// Passerelle pour les modules séparés (admin-suivi.js)
+window.NOOGO_ADMIN = { jeton: function(){ return S.jeton; }, toast: toast, esc: esc, deconnecter: function(m){ deconnecter(m); }, redimensionner: redimensionner, envoyerPhoto: envoyerPhoto, imgSrc: imgSrc };
+
 /* ---------- Démarrage ---------- */
 S.jeton = lireJeton();
 if (S.jeton) demarrerApp(); else afficherLogin("");
 })();
 </script>
+<script src="/admin-suivi.js" defer></script>
 </body>
 </html>

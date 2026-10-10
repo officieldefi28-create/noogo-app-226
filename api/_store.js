@@ -88,7 +88,17 @@ async function limiter(cle, max, secondes) {
   }
 }
 
+async function getReglages() {
+  if (MEMOIRE) return mem.kv["noogo:reglages"] || null;
+  return (await db().get("noogo:reglages")) || null;
+}
+async function setReglages(v) {
+  if (MEMOIRE) { mem.kv["noogo:reglages"] = v; return; }
+  await db().set("noogo:reglages", v);
+}
+
 module.exports = {
+  getReglages, setReglages,
   getPartenaires, getPartenaire, setPartenaire, deletePartenaire,
   getCommandes, getCommande, setCommande, deleteCommande,
   getCatalogue, setCatalogue, setPhoto, getPhoto, limiter

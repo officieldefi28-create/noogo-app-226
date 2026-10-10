@@ -4,6 +4,8 @@ const {
 } = require("./_auth");
 const S = require("./_store");
 const defaut = require("../catalogue.json");
+const { majPhotos } = require("./_catalogue");
+const { fusionner: fusionnerSite, valider: validerSite } = require("./_site");
 
 const CATS = ["cremes", "popcorn", "pain", "esquimau", "gros"];
 const txt = (s, max) => String(s == null ? "" : s).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max);
@@ -205,7 +207,20 @@ module.exports = async (req, res) => {
       case "catalogue_get": {
         const perso = await S.getCatalogue();
         const modifie = Array.isArray(perso) && perso.length > 0;
-        return res.status(200).json({ produits: modifie ? perso : defaut.produits, personnalise: modifie });
+        return res.status(200).json({ produits: modifie ? majPhotos(perso) : defaut.produits, personnalise: modifie });
+      }
+      // ───────── Site : textes, paiement et galerie de la page d'accueil ─────────
+      case "site_get": {
+        return res.status(200).json(fusionnerSite(await S.getReglages()));
+      }
+      case "site_save": {
+        const v = validerSite(data);
+        await S.setReglages(v);
+        return res.status(200).json({ succes: true, ...fusionnerSite(v) });
+      }
+      case "site_reset": {
+        await S.setReglages(null);
+        return res.status(200).json({ succes: true, ...fusionnerSite(null) });
       }
       case "catalogue_save": {
         let liste;

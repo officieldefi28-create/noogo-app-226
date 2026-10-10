@@ -15,7 +15,8 @@ module.exports = async (req, res) => {
     }
 
     const tel = nettoyer(d.telClient, 30);
-    if (tel.replace(/\D/g, "").length < 8) return res.status(400).json({ erreur: "Numéro de téléphone invalide" });
+    // Le téléphone est facultatif (le client écrit déjà depuis son WhatsApp) ; s'il est rempli, il doit être valide.
+    if (tel && tel.replace(/\D/g, "").length < 8) return res.status(400).json({ erreur: "Numéro de téléphone invalide" });
 
     const catalogue = await chargerCatalogue();
     const panier = calculerPanier(d.articles, catalogue);

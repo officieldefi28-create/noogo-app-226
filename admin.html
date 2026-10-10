@@ -560,7 +560,8 @@ function carteCommande(c){
   var tel = String(c.telClient || ""), wa = telNettoye(tel), id = esc(c.id);
   var arts = (c.articles || []).map(function(a){
     var b = (a.type === "pack" ? ' <span class="badge badge-bleu">Pack</span>' : "") + (a.surCommande ? ' <span class="badge badge-orange">Sur commande</span>' : "");
-    return '<div class="art"><span>' + esc(a.qte) + ' × ' + esc(a.nom) + b + '</span><span>' + esc(fcfa(a.total)) + '</span></div>';
+    var compo = a.compo && a.compo.length ? '<br><small>↳ ' + a.compo.map(function(x){ return esc(x.qte) + " × " + esc(x.nom); }).join(", ") + '</small>' : "";
+    return '<div class="art"><span>' + esc(a.qte) + ' × ' + esc(a.nom) + b + compo + '</span><span>' + esc(fcfa(a.total)) + '</span></div>';
   }).join("");
   var liv = texteLivraison(c);
   var apres = c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal;
@@ -589,7 +590,7 @@ function carteCommande(c){
       '<button class="btn btn-petit btn-clair" type="button" data-act="cmd-relance" data-id="' + id + '">Relancer</button>' : '') +
     '<button class="btn btn-petit btn-clair" type="button" data-act="cmd-contact" data-id="' + id + '">' + (tel ? "Modifier le numéro" : "Ajouter le numéro") + '</button></div>' +
     (tel ? "" : '<p class="gris petit" style="margin:4px 0 0">Pas de numéro : le client vous a écrit sur WhatsApp. Touchez son numéro dans la conversation, copiez-le, puis « Ajouter le numéro » ici.</p>') +
-    '<div class="info-l"><b>' + (c.modeReception === "retrait" ? "Retrait" : "Livraison") + ' :</b> ' + esc(c.localisation) + '</div>' +
+    '<div class="info-l"><b>' + (c.modeReception === "retrait" ? "Retrait" : "Livraison") + ' :</b> ' + esc(c.localisation) + '</div>' + (c.note ? '<div class="info-l"><b>Précisions :</b> ' + esc(c.note) + '</div>' : '') +
     '<div class="info-l"><b>Paiement :</b> ' + esc(PAIEMENTS[c.modePaiement] || c.modePaiement) + '</div>' +
     '<div class="articles">' + arts + '</div>' +
     '<div class="totaux"><div class="ligne"><span>Total articles</span><span>' + esc(fcfa(c.montantTotal)) + '</span></div>' + remise +

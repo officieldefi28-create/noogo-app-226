@@ -169,6 +169,14 @@ section{scroll-margin-top:var(--entete)}
 .bloc-info a{display:inline-block;margin-top:6px}
 .bloc-info b{color:var(--brun)}
 
+/* Packs : contenu et composition */
+.contenu{margin:2px 0 0;font-size:12.5px;color:var(--brun);font-weight:600;background:#f1f8ea;border-radius:8px;padding:5px 8px}
+.compo-box{margin:-4px 0 8px;padding:8px 10px;border-radius:10px;font-size:13px;background:#fff8e1;border:1px dashed var(--or)}
+.compo-box.ok{background:#f1f8ea;border-color:#b7d8a6}
+.compo-box button{margin-left:6px}
+.compo-ligne{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--bord)}
+.compo-ligne b{font-size:14px}
+
 /* Infos pratiques */
 .infos{display:grid;gap:16px}
 @media(min-width:760px){.infos{grid-template-columns:repeat(3,1fr)}}
@@ -481,6 +489,23 @@ let msgCode = { t: "", c: "" };            // message affiché sous le champ cod
 let reception = "livraison", paiement = "especes";
 
 const produit = (id) => CATALOGUE.find((p) => p.id === id);
+const estMix = (p) => !!p && p.type === "pack" && (/^pk-mix-/.test(p.id) || /d[ée]couverte/i.test(p.nom || ""));
+const nbPots = (p) => Math.max(1, parseInt(p.packCount, 10) || 5);
+const PACKBASE = { van: "vanille", bao: "baobab", ban: "banane", cho: "choco", fra: "fraise" };
+// Texte clair du contenu d'un pack : « 5 pots de Crème glacée Vanille (Pot 125 ml) »
+function contenuPack(p) {
+  if (!p || p.type !== "pack") return "";
+  const n = nbPots(p);
+  if (estMix(p)) return `${n} pots au choix : vous choisissez vos saveurs`;
+  const m = /^pk-(van|bao|ban|cho|fra)-(p|g)$/.exec(p.id);
+  const b = m && produit(PACKBASE[m[1]] + "-" + m[2]);
+  return b ? `${n} pots de ${b.nom.replace(/^Crème glacée /, "").replace(/ — Grand pot$/, "")} · ${(b.info || "").replace(/^Pot /, "")}` : (p.packLabel || `${n} pots`);
+}
+// Composition choisie pour les packs « au choix » : { idPack: { idProduit: quantité } }
+let compo = lire("noogo_compo") || {};
+const totalCompo = (id) => Object.values(compo[id] || {}).reduce((a, b) => a + b, 0);
+const compoComplete = (p) => totalCompo(p.id) === nbPots(p) * (panier[p.id] || 0);
+const texteCompo = (id) => Object.entries(compo[id] || {}).filter(([, q]) => q > 0).map(([k, q]) => `${q} × ${(produit(k) || { nom: k }).nom.replace(/^Crème glacée /, "").replace(/ — Grand pot$/, "").replace(/ — Pain de singe$/, "")}`).join(", ");
 
 /* ───────── Réglages du site (admin) ───────── */
 function appliquerReglages() {
@@ -569,6 +594,7 @@ function carteHTML(p) {
     <div class="corps">
       <h4>${esc(p.nom)}</h4>
       <p class="info">${esc(p.type === "pack" && p.packLabel ? p.packLabel : p.info || "")}</p>
+      ${p.type === "pack" ? `<p class="contenu">📦 ${esc(contenuPack(p))}</p>` : ""}
       ${p.desc ? `<p class="desc">${esc(p.desc)}</p>` : ""}
       <div class="prix"><b>${fmt(p.prix)}</b>${p.prixBarre ? `<s>${fmt(p.prixBarre)}</s>` : ""}</div>
       <div class="action">${actionHTML(p, q)}</div>
@@ -605,7 +631,7 @@ function totaux() {
 }
 function changer(id, delta) {
   const q = Math.max(0, Math.min(50, (panier[id] || 0) + delta));
-  if (q) panier[id] = q; else delete panier[id];
+  if (q) panier[id] = q; else { delete panier[id]; delete compo[id]; ecrire("noogo_compo", compo); }
   ecrire("noogo_panier", panier);
   document.querySelectorAll(`.produit[data-id="${CSS.escape(id)}"] .action`).forEach((a) => (a.innerHTML = actionHTML(produit(id), q)));
   if (delta > 0 && q === 1) toast("Ajouté au panier");
@@ -633,16 +659,18 @@ function fermerPanier() { $("#voile").hidden = true; document.body.classList.rem
 function rendrePanier() {
   const L = lignes(), corps = $("#panier-corps"), pied = $("#panier-pied");
   if (!L.length) { corps.innerHTML = `<div class="vide-panier"><p><b>Votre panier est vide</b></p><p>Ajoutez une crème glacée pour commencer.</p></div>`; pied.innerHTML = `<button class="btn btn-or btn-bloc" id="continuer">Voir la carte</button>`; return; }
-  const sauv = { nom: ($("#f-nom") || {}).value, tel: ($("#f-tel") || {}).value, lieu: ($("#f-lieu") || {}).value, code: ($("#f-code") || {}).value };
+  const sauv = { nom: ($("#f-nom") || {}).value, tel: ($("#f-tel") || {}).value, lieu: ($("#f-lieu") || {}).value, code: ($("#f-code") || {}).value, note: ($("#f-note") || {}).value };
   const mem = lire("noogo_client") || {};
   const t = totaux(), liv = texteLivraison(t);
   const cmd = L.filter((l) => l.p.surCommande).map((l) => l.p.nom);
   corps.innerHTML = `
     <div>${L.map((l) => `<div class="ligne">
       ${l.p.img ? `<img src="${esc(imgUrl(l.p.img))}" alt="" loading="lazy">` : `<img src="/assets/embleme.jpg" alt="">`}
-      <div class="nom"><b>${esc(l.p.nom)}</b><small>${esc(l.p.type === "pack" && l.p.packLabel ? l.p.packLabel : l.p.info || "")}${l.p.surCommande ? " · sur commande" : ""}</small></div>
+      <div class="nom"><b>${esc(l.p.nom)}</b><small>${esc(l.p.type === "pack" ? contenuPack(l.p) : l.p.info || "")}${l.p.surCommande ? " · sur commande" : ""}</small></div>
       <div class="pas"><button type="button" data-moins="${esc(l.p.id)}" aria-label="Retirer un">−</button><span>${l.qte}</span><button type="button" data-plus="${esc(l.p.id)}" aria-label="Ajouter un">+</button></div>
-      <div class="tot">${fmt(l.p.prix * l.qte)}</div></div>`).join("")}</div>
+      <div class="tot">${fmt(l.p.prix * l.qte)}</div></div>${estMix(l.p) ? (compoComplete(l.p)
+        ? `<div class="compo-box ok">✓ Saveurs : ${esc(texteCompo(l.p.id))}<button type="button" class="lien" data-compo="${esc(l.p.id)}">Modifier</button></div>`
+        : `<div class="compo-box">⚠ Choisissez les ${nbPots(l.p) * l.qte} saveurs de votre ${esc(l.p.nom.replace(/ — .*/, ""))}<button type="button" class="btn btn-or btn-petit" data-compo="${esc(l.p.id)}">Choisir les saveurs</button></div>`) : ""}`).join("")}</div>
 
     <label>Comment souhaitez-vous recevoir votre commande ?</label>
     <div class="choix">
@@ -663,6 +691,9 @@ function rendrePanier() {
       <div class="champ-ligne"><input type="text" id="f-lieu" autocomplete="street-address" placeholder="Ex : Karpala, près de la mairie" value="${esc(sauv.lieu != null ? sauv.lieu : mem.lieu || "")}"><button type="button" class="btn btn-clair btn-petit" id="btn-position" title="Partager ma position">Ma position</button></div>
       ${position ? `<p class="aide">Position partagée ✓</p>` : ""}
     </div>
+
+    <label for="f-note">Précisions <span style="font-weight:400;color:var(--gris)">(facultatif)</span></label>
+    <textarea id="f-note" rows="2" maxlength="300" placeholder="Ex : livrer ce soir après 18 h">${esc(sauv.note != null ? sauv.note : "")}</textarea>
 
     <label>Mode de paiement</label>
     <div class="choix trois">
@@ -712,8 +743,11 @@ function envoyer() {
   const tel = ($("#f-tel").value || "").trim(), nom = ($("#f-nom").value || "").trim(), lieu = ($("#f-lieu") ? $("#f-lieu").value : "").trim();
   const err = $("#erreur-cmd");
   if (tel && tel.replace(/\D/g, "").length < 8) { err.textContent = "Ce numéro de téléphone n'a pas l'air complet. Corrigez-le ou laissez la case vide."; err.classList.remove("cachee"); $("#f-tel").focus(); return; }
-  err.classList.add("cachee");
   const L = lignes(), t = totaux(), liv = texteLivraison(t);
+  const incomplet = L.filter((l) => estMix(l.p) && !compoComplete(l.p));
+  if (incomplet.length) { err.textContent = "Choisissez les saveurs de : " + incomplet.map((l) => l.p.nom.replace(/ — .*/, "")).join(", ") + "."; err.classList.remove("cachee"); return; }
+  err.classList.add("cachee");
+  const note = (($("#f-note") || {}).value || "").trim();
   ecrire("noogo_client", { nom, tel, lieu });
   const prods = L.filter((l) => l.p.type !== "pack"), packs = L.filter((l) => l.p.type === "pack");
   const m = [];
@@ -725,17 +759,22 @@ function envoyer() {
   if (promo) m.push(`🎟️ *Code promo :* ${promo.code}`);
   m.push(`💳 *Paiement :* ${PAY[paiement]}`, "");
   if (prods.length) { m.push("📦 *ARTICLES*"); prods.forEach((l) => m.push(`• ${l.p.nom} (${l.p.info || ""}) ×${l.qte} = ${fmt(l.p.prix * l.qte)}${l.p.surCommande ? " — sur commande" : ""}`)); m.push(""); }
-  if (packs.length) { m.push("🎁 *PACKS*"); packs.forEach((l) => m.push(`• ${l.p.nom} ×${l.qte} = ${fmt(l.p.prix * l.qte)}${l.p.surCommande ? " — sur commande" : ""}`)); m.push(""); }
+  if (packs.length) {
+    m.push("🎁 *PACKS*");
+    packs.forEach((l) => { m.push(`• ${l.p.nom} ×${l.qte} = ${fmt(l.p.prix * l.qte)}${l.p.surCommande ? " — sur commande" : ""}`); m.push(`   📦 ${estMix(l.p) ? "Saveurs : " + texteCompo(l.p.id) : contenuPack(l.p)}`); });
+    m.push("");
+  }
+  if (note) { m.push(`📝 *Précisions :* ${note}`, ""); }
   if (t.remise) m.push(`🎟️ Remise : −${fmt(t.remise)}`);
   m.push(`🚚 *Livraison :* ${liv.v}`);
   m.push(`💰 *TOTAL DES ARTICLES : ${fmt(t.apres)}*`);
   m.push("", "Merci de me confirmer la disponibilité et, pour une livraison d'articles seuls, le tarif. 🙏");
-  const payload = { nomClient: nom, telClient: tel, localisation: lieu + (position ? " — " + position : ""), modePaiement: paiement, modeReception: reception, articles: L.map((l) => ({ id: l.p.id, qte: l.qte })), codePromo: promo ? promo.code : "", source: "site" };
+  const payload = { nomClient: nom, telClient: tel, localisation: lieu + (position ? " — " + position : ""), modePaiement: paiement, modeReception: reception, articles: L.map((l) => (estMix(l.p) ? { id: l.p.id, qte: l.qte, compo: compo[l.p.id] } : { id: l.p.id, qte: l.qte })), note, codePromo: promo ? promo.code : "", source: "site" };
   try { fetch("/api/commander", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), keepalive: true }).catch(() => {}); } catch (e) {}
   const url = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(m.join("\n"));
   const w = window.open(url, "_blank", "noopener");
   if (!w) location.href = url;
-  panier = {}; ecrire("noogo_panier", panier); promo = null;
+  panier = {}; compo = {}; ecrire("noogo_panier", panier); ecrire("noogo_compo", compo); promo = null;
   fermerPanier(); rendreCatalogue(); majPanier();
   toast("Commande prête : envoyez le message sur WhatsApp");
 }
@@ -743,7 +782,8 @@ function envoyer() {
 /* ───────── Interactions ───────── */
 document.addEventListener("click", (e) => {
   const c = e.target.closest("button,a,[data-zoom]"); if (!c) return;
-  if (c.dataset.plus) return changer(c.dataset.plus, 1);
+  if (c.dataset.compo) return ouvrirCompo(c.dataset.compo);
+  if (c.dataset.plus) { changer(c.dataset.plus, 1); const pp = produit(c.dataset.plus); if (estMix(pp) && $("#voile").hidden && !compoComplete(pp)) ouvrirCompo(pp.id); return; }
   if (c.dataset.moins) return changer(c.dataset.moins, -1);
   if (c.dataset.f) { filtre = c.dataset.f; rendreFiltres(); rendreCatalogue(); return; }
   if (c.dataset.filtre) { filtre = c.dataset.filtre; rendreFiltres(); rendreCatalogue(); return; }
@@ -815,6 +855,24 @@ async function lancerInvite() {
 // le navigateur impose une confirmation « Installer », mais le client n'a rien à chercher.
 ["click", "touchend"].forEach((ev) => document.addEventListener(ev, () => { if (invite && !dejaPropose && !refusRecent() && $("#voile").hidden) lancerInvite(); }, { passive: true }));
 
+function ouvrirCompo(id) {
+  const p = produit(id); if (!p) return;
+  const cible = nbPots(p) * (panier[id] || 1);
+  const grand = p.gr === "grand";
+  const options = CATALOGUE.filter((x) => x.cat === "cremes" && x.type === "produit" && (x.gr === "grand") === grand);
+  const c = compo[id] && totalCompo(id) === cible ? { ...compo[id] } : {};
+  const total = () => Object.values(c).reduce((a, b) => a + b, 0);
+  const dessiner = () => {
+    $("#guide-corps").innerHTML = `<p><b>${total()} / ${cible} pots choisis</b>${total() < cible ? ` — il en reste ${cible - total()}` : " ✓"}</p>` +
+      options.map((o) => `<div class="compo-ligne"><b>${esc(o.nom.replace(/^Crème glacée /, "").replace(/ — Grand pot$/, ""))}${o.surCommande ? ' <small style="color:var(--gris)">(sur commande)</small>' : ""}</b><div class="pas" style="min-width:128px"><button type="button" data-cm="${esc(o.id)}" aria-label="Retirer un">−</button><span>${c[o.id] || 0}</span><button type="button" data-cp="${esc(o.id)}" aria-label="Ajouter un">+</button></div></div>`).join("") +
+      `<button class="btn btn-or btn-bloc" id="ok-compo" style="margin-top:14px" ${total() === cible ? "" : "disabled"}>Valider mes saveurs</button>`;
+    $("#guide-corps").querySelectorAll("[data-cm]").forEach((b) => b.addEventListener("click", () => { const k = b.dataset.cm; if (c[k]) { c[k]--; if (!c[k]) delete c[k]; } dessiner(); }));
+    $("#guide-corps").querySelectorAll("[data-cp]").forEach((b) => b.addEventListener("click", () => { const k = b.dataset.cp; if (total() < cible) c[k] = (c[k] || 0) + 1; dessiner(); }));
+    $("#ok-compo").addEventListener("click", () => { compo[id] = c; ecrire("noogo_compo", compo); $("#voile-guide").hidden = true; if (!$("#voile").hidden) rendrePanier(); toast("Saveurs enregistrées"); });
+  };
+  $("#guide-titre").textContent = "Composez votre " + p.nom.replace(/ — .*/, "");
+  dessiner(); $("#voile-guide").hidden = false;
+}
 function guide(titre, html) { $("#guide-titre").textContent = titre; $("#guide-corps").innerHTML = html + `<button class="btn btn-or btn-bloc" id="ok-guide">J'ai compris</button>`; $("#voile-guide").hidden = false; }
 function guideIOS() { guide("Installer sur iPhone", `<p>Deux touches suffisent :</p><ol><li>Touchez le bouton <b>Partager</b> <span aria-hidden="true">⬆️</span> en bas de Safari.</li><li>Choisissez <b>« Sur l'écran d'accueil »</b>, puis <b>Ajouter</b>.</li></ol><p class="aide">L'icône Noogó apparaît alors avec vos autres applications. (Ouvrez ce site dans Safari si vous le consultez depuis Facebook ou TikTok.)</p>`); }
 function guideNavigateur() {

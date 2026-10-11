@@ -37,6 +37,7 @@ function validerCatalogue(liste) {
     if (prixBarre > prix) o.prixBarre = prixBarre;
     if (p.badge) o.badge = txt(p.badge, 14).toUpperCase();
     if (p.surCommande) o.surCommande = true;
+    if (p.dispo === "faible" || p.dispo === "rupture") o.dispo = p.dispo;
     if (p.desc) o.desc = txt(p.desc, 160);
     if (o.type === "pack") {
       o.packCount = Math.max(1, Math.min(50, parseInt(p.packCount, 10) || 1));
@@ -193,6 +194,15 @@ module.exports = async (req, res) => {
         else if (action === "remettre_en_attente") { c.statutLivraison = "en_attente"; delete c.dateLivraison; }
         else if (action === "marquer_commission_payee") c.statutCommission = "paye";
         else c.archive = action === "archiver_commande";
+        await S.setCommande(c);
+        return res.status(200).json({ succes: true });
+      }
+
+      case "etape_commande": {
+        const c = await S.getCommande(data.commandeId);
+        if (!c) return res.status(404).json({ erreur: "Commande introuvable" });
+        const e = String(data.etape || "");
+        if (e === "preparation" || e === "en_route") c.etape = e; else delete c.etape;
         await S.setCommande(c);
         return res.status(200).json({ succes: true });
       }

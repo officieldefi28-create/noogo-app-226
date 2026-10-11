@@ -18,8 +18,18 @@ const DEFAUT_REGLAGES = {
   couleurFond: "#fcf8ea",
   logo: "/assets/logo-noogo.jpg",
   logoRond: "/assets/embleme.jpg",
-  imageFond: ""
+  imageFond: "",
+  histoireTitre: "Notre histoire",
+  histoireTexte: "Noogó est né à Karpala d'une idée simple : faire des glaces vraiment naturelles, avec les saveurs d'ici, sans colorant ni conservateur. Chaque pot est préparé localement, avec soin, pour que vous retrouviez le goût authentique de chez nous.",
+  fondateurNom: "",
+  fondateurPhoto: "",
+  chiffre1Valeur: "", chiffre1Texte: "",
+  chiffre2Valeur: "", chiffre2Texte: "",
+  chiffre3Valeur: "", chiffre3Texte: "",
+  chiffre4Valeur: "", chiffre4Texte: ""
 };
+// Champs que l'admin peut vider volontairement (pour masquer la section sur le site)
+const VIDABLES = ["histoireTitre", "histoireTexte", "fondateurNom", "fondateurPhoto", "chiffre1Valeur", "chiffre1Texte", "chiffre2Valeur", "chiffre2Texte", "chiffre3Valeur", "chiffre3Texte", "chiffre4Valeur", "chiffre4Texte"];
 
 const DEFAUT_FAQ = [
   { q: "Comment passer commande ?", a: "Ajoutez vos articles au panier, puis envoyez la commande sur WhatsApp. Votre numéro est facultatif. Nous vous répondons pour confirmer." },
@@ -49,7 +59,7 @@ const txt = (s, max) => String(s == null ? "" : s).replace(/[\u0000-\u001f\u007f
 function fusionner(stocke) {
   const r = { ...DEFAUT_REGLAGES };
   if (stocke && typeof stocke === "object") {
-    for (const k of Object.keys(DEFAUT_REGLAGES)) if (typeof stocke[k] === "string" && stocke[k].trim()) r[k] = stocke[k];
+    for (const k of Object.keys(DEFAUT_REGLAGES)) if (typeof stocke[k] === "string" && (stocke[k].trim() || VIDABLES.includes(k))) r[k] = stocke[k];
   }
   const galerie = stocke && Array.isArray(stocke.galerie) ? stocke.galerie : DEFAUT_GALERIE;
   const faq = stocke && Array.isArray(stocke.faq) ? stocke.faq : DEFAUT_FAQ;
@@ -71,6 +81,10 @@ function valider(d) {
   r.logo = imgOk(txt(rg.logo, 200)) ? txt(rg.logo, 200) : DEFAUT_REGLAGES.logo;
   r.logoRond = imgOk(txt(rg.logoRond, 200)) ? txt(rg.logoRond, 200) : DEFAUT_REGLAGES.logoRond;
   r.imageFond = imgOk(txt(rg.imageFond, 200)) ? txt(rg.imageFond, 200) : "";
+  for (const [k, max] of [["histoireTitre", 80], ["histoireTexte", 900], ["fondateurNom", 80], ["chiffre1Valeur", 20], ["chiffre1Texte", 50], ["chiffre2Valeur", 20], ["chiffre2Texte", 50], ["chiffre3Valeur", 20], ["chiffre3Texte", 50], ["chiffre4Valeur", 20], ["chiffre4Texte", 50]]) {
+    r[k] = typeof rg[k] === "string" ? txt(rg[k], max) : DEFAUT_REGLAGES[k];
+  }
+  r.fondateurPhoto = imgOk(txt(rg.fondateurPhoto, 200)) ? txt(rg.fondateurPhoto, 200) : "";
   r.faq = (Array.isArray(d && d.faq) ? d.faq : DEFAUT_FAQ).slice(0, 30)
     .map((x) => ({ q: txt(x && x.q, 160), a: txt(x && x.a, 700) })).filter((x) => x.q && x.a);
   const g = Array.isArray(d && d.galerie) ? d.galerie.slice(0, 60) : [];

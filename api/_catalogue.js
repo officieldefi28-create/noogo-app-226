@@ -30,7 +30,7 @@ function calculerPanier(articles, catalogue) {
   for (const a of Array.isArray(articles) ? articles.slice(0, 60) : []) {
     const p = catalogue.find((x) => x.id === a.id && x.actif !== false);
     const qte = Math.max(1, Math.min(50, parseInt(a.qte, 10) || 0));
-    if (!p || !a.qte) continue;
+    if (!p || !a.qte || p.dispo === "rupture") continue;
     const total = Number(p.prix) * qte;
     const ligne = { id: p.id, nom: p.nom, type: p.type, qte, prix: Number(p.prix), total, surCommande: !!p.surCommande };
     // Pack « au choix » : saveurs choisies par le client (validées contre le catalogue)

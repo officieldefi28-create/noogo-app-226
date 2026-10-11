@@ -120,7 +120,18 @@ async function setSuiviConfig(v) {
   await db().set("noogo:suivi:config", v);
 }
 
+// Documents libres (actualités, pages légales…) : une valeur JSON par clé
+async function getDoc(cle) {
+  if (MEMOIRE) return mem.kv["noogo:doc:" + cle] || null;
+  return (await db().get("noogo:doc:" + cle)) || null;
+}
+async function setDoc(cle, v) {
+  if (MEMOIRE) { mem.kv["noogo:doc:" + cle] = v; return; }
+  await db().set("noogo:doc:" + cle, v);
+}
+
 module.exports = {
+  hgetall, hset, hdel, hget, getDoc, setDoc,
   suiviListe, suiviSet, suiviDel, getSuiviConfig, setSuiviConfig,
   getReglages, setReglages,
   getPartenaires, getPartenaire, setPartenaire, deletePartenaire,

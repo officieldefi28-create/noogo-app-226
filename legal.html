@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Infos légales — Noogó</title>
+<meta name="theme-color" content="#14451f">
+<link rel="icon" href="/favicon.png">
+<style>
+:root{--brun:#14451f;--or:#c9982b;--creme:#fcf8ea}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--creme);color:#2b2b2b;line-height:1.65}
+header{background:#fffdf4;border-bottom:1px solid rgba(201,152,43,.5);padding:12px 16px}
+header a{color:var(--brun);font-weight:700;text-decoration:none}
+main{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+h1{color:var(--brun);margin:0 0 4px}
+h2{color:var(--brun);margin:28px 0 6px;font-size:20px;border-left:4px solid var(--or);padding-left:10px}
+p{margin:6px 0;white-space:pre-line}
+small{color:#6b6b6b}
+</style>
+</head>
+<body>
+<header><a href="/">← Retour au site Noogó</a></header>
+<main>
+  <h1>Infos légales</h1>
+  <small>Mentions légales, confidentialité, réclamations et remboursement</small>
+  <div id="contenu"><p>Chargement…</p></div>
+</main>
+<script>
+(function(){
+  var esc=function(t){return String(t==null?"":t).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})};
+  var bloc=function(t,x){return x&&x.trim()?'<h2>'+t+'</h2><p>'+esc(x)+'</p>':''};
+  fetch("/api/communaute",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"legal_lire"})})
+    .then(function(r){return r.json()})
+    .then(function(d){
+      var ids=[d.ifu&&"IFU : "+d.ifu,d.rccm&&"RCCM : "+d.rccm].filter(Boolean).join("\n");
+      document.getElementById("contenu").innerHTML=bloc("Mentions légales",(d.entreprise||"")+(ids?"\n"+ids:""))+bloc("Confidentialité de vos données",d.confidentialite)+bloc("Réclamations",d.reclamations)+bloc("Remboursement et retours",d.remboursement);
+    })
+    .catch(function(){document.getElementById("contenu").innerHTML="<p>Cette page ne se charge pas pour le moment. Écrivez-nous sur WhatsApp.</p>"});
+})();
+</script>
+</body>
+</html>

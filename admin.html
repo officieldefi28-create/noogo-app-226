@@ -214,6 +214,7 @@
       <button class="onglet" role="tab" data-tab="catalogue" aria-selected="false">Catalogue</button>
       <button class="onglet" role="tab" data-tab="partenaires" aria-selected="false">Partenaires <span class="compteur cachee" id="cpt-partenaires">0</span></button>
       <button class="onglet" role="tab" data-tab="suivi" aria-selected="false">Suivi</button>
+      <button class="onglet" role="tab" data-tab="communaute" aria-selected="false">Clients <span class="compteur cachee" id="cpt-communaute">0</span></button>
       <button class="onglet" role="tab" data-tab="site" aria-selected="false">Site</button>
       <button class="onglet" role="tab" data-tab="reglages" aria-selected="false">Réglages</button>
     </div>
@@ -273,6 +274,8 @@
 
     <!-- Suivi : ventes, stock, production, dépenses, bilan (interface dans admin-suivi.js) -->
     <section id="p-suivi" class="espace"></section>
+    <!-- Clients : avis, demandes de revendeurs, actualités, pages légales (admin-communaute.js) -->
+    <section id="p-communaute" class="espace"></section>
 
     <!-- Site : galerie + textes -->
     <section id="p-site" class="espace">
@@ -485,12 +488,13 @@ $("form-login").addEventListener("submit", async function(ev){
 function changerOnglet(nom){
   S.onglet = nom;
   document.querySelectorAll(".onglet").forEach(function(b){ b.setAttribute("aria-selected", b.getAttribute("data-tab") === nom ? "true" : "false"); });
-  ["commandes","catalogue","partenaires","suivi","site","reglages"].forEach(function(n){ $("p-" + n).classList.toggle("actif", n === nom); });
+  ["commandes","catalogue","partenaires","suivi","communaute","site","reglages"].forEach(function(n){ $("p-" + n).classList.toggle("actif", n === nom); });
   window.scrollTo(0, 0);
   if (nom === "reglages") verifBase();
   if (nom === "catalogue" && !S.produits) chargerCatalogue(false);
   if (nom === "site" && !S.site) chargerSite();
   if (nom === "suivi" && window.SuiviUI) window.SuiviUI.ouvrir();
+  if (nom === "communaute" && window.CommunauteUI) window.CommunauteUI.ouvrir();
 }
 
 /* ---------- Données ---------- */
@@ -575,6 +579,9 @@ function carteCommande(c){
 
   var bt = function(act, label, cls){ return '<button type="button" class="btn btn-petit ' + cls + '" data-act="cmd-' + act + '" data-id="' + id + '">' + label + '</button>'; };
   var actions = "";
+  if (st === "en_attente") {
+    actions += bt("etape-preparation", c.etape === "preparation" ? "✓ En préparation" : "En préparation", "btn-clair") + bt("etape-en_route", c.etape === "en_route" ? "✓ En route" : "En route", "btn-clair");
+  }
   if (st !== "livree") actions += bt("livree", "Livrée", "btn-vert");
   if (st !== "annulee") actions += bt("annulee", "Annulée", "btn-clair");
   if (st !== "en_attente") actions += bt("attente", "Remettre en attente", "btn-clair");
@@ -645,6 +652,12 @@ async function actionCommande(act, id, btn){
     var msg = "Bonjour " + (c.nomClient && c.nomClient !== "Non renseigné" ? c.nomClient : "") + ", c'est Noogó 🍦. Pour votre commande (" + lignes + ", total " + fcfa(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) + ") : êtes-vous disponible pour la livraison ? Merci !";
     window.open("https://wa.me/" + wn + "?text=" + encodeURIComponent(msg), "_blank", "noopener"); return;
   }
+  if (act.indexOf("etape-") === 0) {
+    var et = act.slice(6); if (c.etape === et) et = "";
+    btn.disabled = true;
+    try { await api("etape_commande", { commandeId: id, etape: et }); if (et) c.etape = et; else delete c.etape; toast(et ? "Le client voit : " + (et === "preparation" ? "en préparation" : "en route") : "Étape retirée", "ok"); } catch(e){ erreur(e); }
+    return rendreCommandes();
+  }
   var API = { livree:"valider_livraison", annulee:"annuler_commande", attente:"remettre_en_attente", comm:"marquer_commission_payee", archiver:"archiver_commande", desarchiver:"desarchiver_commande", supprimer:"supprimer_commande" };
   if (act === "supprimer" && !confirm("Supprimer définitivement la commande de " + c.nomClient + " ?\nCette action est irréversible. Si vous voulez seulement la ranger, utilisez « Archiver ».")) return;
   if (act === "annulee" && c.statutLivraison === "livree" && !confirm("Cette commande est déjà livrée. L'annuler quand même ?")) return;
@@ -685,7 +698,7 @@ function ligneArticle(p){
     '<div class="art-info"><b>' + esc(p.nom) + '</b><div class="sous">' + esc(p.info) + '</div>' +
     '<div class="prix">' + esc(fcfa(p.prix)) + (p.prixBarre ? '<span class="barre">' + esc(fcfa(p.prixBarre)) + '</span>' : '') + '</div>' +
     '<div class="art-badges">' + (p.type === "pack" ? '<span class="badge badge-bleu">Pack</span>' : '') + (p.badge ? '<span class="badge badge-or">' + esc(p.badge) + '</span>' : '') +
-    (p.actif === false ? '<span class="badge badge-gris">Masqué</span>' : '') + '</div></div>' +
+    (p.dispo === "rupture" ? '<span class="badge badge-rouge">Rupture</span>' : p.dispo === "faible" ? '<span class="badge badge-orange">Stock faible</span>' : '') + (p.actif === false ? '<span class="badge badge-gris">Masqué</span>' : '') + '</div></div>' +
     '<div class="art-ctrl">' +
     '<label class="sw"><input type="checkbox" data-sw="vis" data-id="' + id + '"' + (p.actif !== false ? " checked" : "") + '><i></i>Visible</label>' +
     '<label class="sw or"><input type="checkbox" data-sw="sur" data-id="' + id + '"' + (p.surCommande ? " checked" : "") + '><i></i>Sur commande</label>' +
@@ -745,6 +758,7 @@ function ouvrirEditeur(id){
     '<label for="ed-desc">Description courte (facultatif)</label><textarea id="ed-desc" maxlength="160">' + esc(p.desc || "") + '</textarea>' +
     '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:6px"><label class="sw"><input type="checkbox" id="ed-actif"' + (p.actif !== false ? " checked" : "") + '><i></i>Visible sur le site</label>' +
     '<label class="sw or"><input type="checkbox" id="ed-sur"' + (p.surCommande ? " checked" : "") + '><i></i>Sur commande</label></div>' +
+    '<label for="ed-dispo">Disponibilité affichée</label><select id="ed-dispo">' + optionsSelect([["","Normale"],["faible","Stock faible"],["rupture","Rupture (commande impossible)"]], p.dispo || "") + '</select>' +
     '<label>Photo</label>' +
     '<div class="photo-zone">' + '<img class="apercu" id="ed-apercu" alt="Aperçu" src="' + esc(imgSrc(p.img)) + '">' +
     '<div class="photo-btns">' +
@@ -778,6 +792,7 @@ function lireEditeur(){
   var set = function(k, v){ if (v) o[k] = v; else delete o[k]; };
   set("prixBarre", pb || 0); set("badge", valeurChamp("ed-badge").trim().toUpperCase()); set("gr", valeurChamp("ed-gr")); set("desc", valeurChamp("ed-desc").trim());
   if (!o.surCommande) delete o.surCommande;
+  set("dispo", valeurChamp("ed-dispo"));
   if (o.type === "pack") {
     var n = parseInt(valeurChamp("ed-pc"), 10);
     if (!(n >= 1)) throw new Error("Indiquez le nombre de pots du pack (au moins 1).");
@@ -1070,7 +1085,18 @@ var CHAMPS_SITE = [
   ["lienMaps","Lien Google Maps du local","url"],
   ["infoPaiement","Explication du paiement (affichée dans le panier)","area"],
   ["orangeMoney","Numéro Orange Money","text"],
-  ["wave","Numéro Wave","text"]
+  ["wave","Numéro Wave","text"],
+  ["histoireTitre","Notre histoire : titre (laissez vide pour masquer la section)","text"],
+  ["histoireTexte","Notre histoire : texte (le mot du fondateur)","area"],
+  ["fondateurNom","Nom et rôle du fondateur (ex : Aïcha, fondatrice de Noogó), facultatif","text"],
+  ["chiffre1Valeur","Chiffre de preuve 1 : nombre (ex : 500+)","text"],
+  ["chiffre1Texte","Chiffre de preuve 1 : texte (ex : pots vendus)","text"],
+  ["chiffre2Valeur","Chiffre de preuve 2 : nombre","text"],
+  ["chiffre2Texte","Chiffre de preuve 2 : texte","text"],
+  ["chiffre3Valeur","Chiffre de preuve 3 : nombre","text"],
+  ["chiffre3Texte","Chiffre de preuve 3 : texte","text"],
+  ["chiffre4Valeur","Chiffre de preuve 4 : nombre","text"],
+  ["chiffre4Texte","Chiffre de preuve 4 : texte","text"]
 ];
 S.site = null; S.siteInit = "";
 async function chargerSite(){
@@ -1096,7 +1122,7 @@ function rendreSite(){
   var img = function(cle, titre){ return '<div style="display:flex;gap:10px;align-items:center;margin:8px 0"><img src="' + esc(imgSrc(R[cle])) + '" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--bord);background:#f1e8cf"><div style="flex:1"><b style="font-size:14px">' + titre + '</b><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px"><label class="btn btn-clair btn-petit" style="margin:0;cursor:pointer">Changer<input type="file" accept="image/*" hidden data-app-img="' + cle + '"></label>' + (R[cle] ? '<button class="btn btn-clair btn-petit" type="button" data-act="app-retirer" data-id="' + cle + '">Rétablir</button>' : '') + '</div></div></div>'; };
   var coul = function(cle, titre){ return '<div style="display:flex;align-items:center;gap:10px;margin:8px 0"><input type="color" data-site-champ="' + cle + '" value="' + esc(R[cle] || "#000000") + '" style="width:56px;height:46px;min-height:46px;padding:2px"><span style="font-size:14px"><b>' + titre + '</b></span></div>'; };
   $("site-apparence").innerHTML = coul("couleurPrincipale", "Couleur principale (en-tête, boutons, titres)") + coul("couleurAccent", "Couleur d'accent (or, détails)") + coul("couleurFond", "Couleur de fond du site") +
-    img("logo", "Grand logo de l'accueil") + img("logoRond", "Petit logo rond (en-tête)") + img("imageFond", "Image de fond de l'accueil (facultatif)");
+    img("logo", "Grand logo de l'accueil") + img("logoRond", "Petit logo rond (en-tête)") + img("imageFond", "Image de fond de l'accueil (facultatif)") + img("fondateurPhoto", "Photo du fondateur ou de l'atelier (section Notre histoire)");
   $("site-faq").innerHTML = S.site.faq.map(function(x, i){
     return '<div class="carte" style="padding:10px;margin-bottom:8px"><input type="text" maxlength="160" placeholder="Question" data-faq-q="' + i + '" value="' + esc(x.q) + '" style="margin-bottom:6px"><textarea rows="3" maxlength="700" placeholder="Réponse" data-faq-a="' + i + '">' + esc(x.a) + '</textarea><button class="btn btn-rouge btn-petit" type="button" data-act="faq-retirer" data-id="' + i + '" style="margin-top:6px">Retirer</button></div>';
   }).join("") + '<button class="btn btn-clair btn-petit" type="button" data-act="faq-ajouter">+ Ajouter une question</button>';
@@ -1244,5 +1270,6 @@ if (S.jeton) demarrerApp(); else afficherLogin("");
 })();
 </script>
 <script src="/admin-suivi.js" defer></script>
+<script src="/admin-communaute.js" defer></script>
 </body>
 </html>

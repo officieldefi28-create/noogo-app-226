@@ -54,6 +54,27 @@ const DEFAUT_GALERIE = [
   { url: "/galerie/congelateur.jpg", legende: "Nos pots, prêts à être servis" }
 ];
 
+// Cases de l'écran d'accueil (modifiables dans l'admin : titre, sous-titre, photo, ordre, affichage)
+const CIBLES = ["carte", "dispo", "packs", "promo", "sur", "suivi", "avis", "histoire", "infos", "galerie", "actus", "revendeur", "faq", "contact", "legal", "partenaire"];
+const DEFAUT_TUILES = [
+  { id: "carte", titre: "Commander", sous: "Toute la carte, en 2 minutes", image: "/galerie/mix-vanille-baobab-250.jpg", visible: true },
+  { id: "dispo", titre: "Disponibles aujourd'hui", sous: "Prêtes à être livrées", image: "/galerie/vanille-125.jpg", visible: true },
+  { id: "packs", titre: "Packs", sous: "Livraison incluse", image: "/galerie/mix-125.jpg", visible: true },
+  { id: "promo", titre: "Promos", sous: "Les bonnes affaires", image: "/galerie/fraise-250.jpg", visible: true },
+  { id: "sur", titre: "Sur commande", sous: "Banane, chocolat, fêtes…", image: "/galerie/banane-250.jpg", visible: true },
+  { id: "suivi", titre: "Suivre ma commande", sous: "Où en est ma livraison ?", image: "", visible: true },
+  { id: "avis", titre: "Avis clients", sous: "Ce qu'ils en pensent", image: "", visible: true },
+  { id: "histoire", titre: "Notre histoire", sous: "Qui nous sommes", image: "/galerie/congelateur.jpg", visible: true },
+  { id: "infos", titre: "Livraison et paiement", sous: "Comment ça marche", image: "", visible: true },
+  { id: "galerie", titre: "Galerie photos", sous: "Nos glaces en images", image: "/galerie/chocolat-250.jpg", visible: true },
+  { id: "actus", titre: "Actualités", sous: "Quoi de neuf ?", image: "", visible: true },
+  { id: "revendeur", titre: "Devenir revendeur", sous: "Vendez Noogó près de chez vous", image: "", visible: true },
+  { id: "faq", titre: "Questions fréquentes", sous: "Toutes les réponses", image: "", visible: true },
+  { id: "contact", titre: "Contact et accès", sous: "WhatsApp, appel, itinéraire", image: "", visible: true },
+  { id: "legal", titre: "Infos légales", sous: "Confidentialité, remboursement", image: "", visible: true },
+  { id: "partenaire", titre: "Espace partenaire", sous: "Suivre mes commissions", image: "", visible: true }
+];
+
 const txt = (s, max) => String(s == null ? "" : s).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max);
 
 function fusionner(stocke) {
@@ -63,7 +84,14 @@ function fusionner(stocke) {
   }
   const galerie = stocke && Array.isArray(stocke.galerie) ? stocke.galerie : DEFAUT_GALERIE;
   const faq = stocke && Array.isArray(stocke.faq) ? stocke.faq : DEFAUT_FAQ;
-  return { reglages: r, galerie, faq };
+  // cases d'accueil : celles de l'admin + toute nouvelle case par défaut qui n'existait pas encore
+  let tuiles = DEFAUT_TUILES.map((t) => ({ ...t }));
+  if (stocke && Array.isArray(stocke.tuiles) && stocke.tuiles.length) {
+    const vues = stocke.tuiles.filter((t) => t && CIBLES.includes(t.id));
+    const ids = new Set(vues.map((t) => t.id));
+    tuiles = vues.concat(DEFAUT_TUILES.filter((t) => !ids.has(t.id)).map((t) => ({ ...t })));
+  }
+  return { reglages: r, galerie, faq, tuiles };
 }
 
 function valider(d) {
@@ -87,6 +115,15 @@ function valider(d) {
   r.fondateurPhoto = imgOk(txt(rg.fondateurPhoto, 200)) ? txt(rg.fondateurPhoto, 200) : "";
   r.faq = (Array.isArray(d && d.faq) ? d.faq : DEFAUT_FAQ).slice(0, 30)
     .map((x) => ({ q: txt(x && x.q, 160), a: txt(x && x.a, 700) })).filter((x) => x.q && x.a);
+  const T = Array.isArray(d && d.tuiles) ? d.tuiles : [];
+  const vusT = new Set();
+  r.tuiles = T.slice(0, 40).map((x) => {
+    const base = DEFAUT_TUILES.find((b) => b.id === (x && x.id));
+    if (!base || vusT.has(base.id)) return null;
+    vusT.add(base.id);
+    const im = txt(x.image, 200);
+    return { id: base.id, titre: txt(x.titre, 40) || base.titre, sous: txt(x.sous, 60), image: imgOk(im) ? im : "", visible: x.visible !== false };
+  }).filter(Boolean);
   const g = Array.isArray(d && d.galerie) ? d.galerie.slice(0, 60) : [];
   r.galerie = g
     .map((x) => ({ url: txt(x && x.url, 200), legende: txt(x && x.legende, 80) }))
@@ -94,4 +131,4 @@ function valider(d) {
   return r;
 }
 
-module.exports = { DEFAUT_REGLAGES, DEFAUT_GALERIE, DEFAUT_FAQ, fusionner, valider };
+module.exports = { DEFAUT_REGLAGES, DEFAUT_GALERIE, DEFAUT_FAQ, DEFAUT_TUILES, fusionner, valider };

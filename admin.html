@@ -295,6 +295,11 @@
         <div id="site-apparence"></div>
       </div>
       <div class="carte" style="margin-bottom:14px">
+        <h3>Cases de l'accueil</h3>
+        <p class="gris petit">Les grandes cases que le client voit en ouvrant le site. Changez leur nom, leur phrase, leur photo, leur ordre, ou masquez-les.</p>
+        <div id="site-tuiles"></div>
+      </div>
+      <div class="carte" style="margin-bottom:14px">
         <h3>Questions fréquentes</h3>
         <div id="site-faq"></div>
       </div>
@@ -1102,7 +1107,7 @@ S.site = null; S.siteInit = "";
 async function chargerSite(){
   try {
     var d = await api("site_get");
-    S.site = { reglages: d.reglages, galerie: clone(d.galerie || []), faq: clone(d.faq || []) }; S.siteInit = JSON.stringify(S.site);
+    S.site = { reglages: d.reglages, galerie: clone(d.galerie || []), faq: clone(d.faq || []), tuiles: clone(d.tuiles || []) }; S.siteInit = JSON.stringify(S.site);
   } catch(e){ erreur(e); S.site = null; }
   rendreSite();
 }
@@ -1123,6 +1128,19 @@ function rendreSite(){
   var coul = function(cle, titre){ return '<div style="display:flex;align-items:center;gap:10px;margin:8px 0"><input type="color" data-site-champ="' + cle + '" value="' + esc(R[cle] || "#000000") + '" style="width:56px;height:46px;min-height:46px;padding:2px"><span style="font-size:14px"><b>' + titre + '</b></span></div>'; };
   $("site-apparence").innerHTML = coul("couleurPrincipale", "Couleur principale (en-tête, boutons, titres)") + coul("couleurAccent", "Couleur d'accent (or, détails)") + coul("couleurFond", "Couleur de fond du site") +
     img("logo", "Grand logo de l'accueil") + img("logoRond", "Petit logo rond (en-tête)") + img("imageFond", "Image de fond de l'accueil (facultatif)") + img("fondateurPhoto", "Photo du fondateur ou de l'atelier (section Notre histoire)");
+  $("site-tuiles").innerHTML = (S.site.tuiles || []).map(function(t, i, T){
+    return '<div class="carte" style="display:flex;gap:10px;align-items:flex-start;padding:10px;margin-bottom:8px' + (t.visible === false ? ';opacity:.6' : '') + '">' +
+      '<img src="' + esc(imgSrc(t.image)) + '" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:10px;flex:none;background:#14451f">' +
+      '<div style="flex:1;min-width:0"><input type="text" maxlength="40" data-tu-titre="' + i + '" value="' + esc(t.titre) + '" placeholder="Nom de la case" style="margin:0 0 6px">' +
+      '<input type="text" maxlength="60" data-tu-sous="' + i + '" value="' + esc(t.sous) + '" placeholder="Petite phrase (facultatif)" style="margin:0 0 6px">' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' +
+      '<label class="sw" style="margin:0"><input type="checkbox" data-tu-vis="' + i + '"' + (t.visible !== false ? " checked" : "") + '><i></i>Affichée</label>' +
+      '<button class="btn btn-clair btn-petit" type="button" data-act="tu-haut" data-id="' + i + '"' + (i === 0 ? " disabled" : "") + ' aria-label="Monter">↑</button>' +
+      '<button class="btn btn-clair btn-petit" type="button" data-act="tu-bas" data-id="' + i + '"' + (i === T.length - 1 ? " disabled" : "") + ' aria-label="Descendre">↓</button>' +
+      '<label class="btn btn-clair btn-petit" style="margin:0;cursor:pointer">Photo<input type="file" accept="image/*" hidden data-tu-img="' + i + '"></label>' +
+      (t.image ? '<button class="btn btn-clair btn-petit" type="button" data-act="tu-photo-retirer" data-id="' + i + '">Sans photo</button>' : '') +
+      '</div></div></div>';
+  }).join("");
   $("site-faq").innerHTML = S.site.faq.map(function(x, i){
     return '<div class="carte" style="padding:10px;margin-bottom:8px"><input type="text" maxlength="160" placeholder="Question" data-faq-q="' + i + '" value="' + esc(x.q) + '" style="margin-bottom:6px"><textarea rows="3" maxlength="700" placeholder="Réponse" data-faq-a="' + i + '">' + esc(x.a) + '</textarea><button class="btn btn-rouge btn-petit" type="button" data-act="faq-retirer" data-id="' + i + '" style="margin-top:6px">Retirer</button></div>';
   }).join("") + '<button class="btn btn-clair btn-petit" type="button" data-act="faq-ajouter">+ Ajouter une question</button>';
@@ -1150,6 +1168,9 @@ async function ajouterPhotosGalerie(fichiers){
 function lireChampsSite(){
   document.querySelectorAll("[data-site-champ]").forEach(function(e){ S.site.reglages[e.getAttribute("data-site-champ")] = e.value; });
   document.querySelectorAll("[data-gal-leg]").forEach(function(e){ var x = S.site.galerie[+e.getAttribute("data-gal-leg")]; if (x) x.legende = e.value; });
+  document.querySelectorAll("[data-tu-titre]").forEach(function(e){ var x = (S.site.tuiles || [])[+e.getAttribute("data-tu-titre")]; if (x) x.titre = e.value; });
+  document.querySelectorAll("[data-tu-sous]").forEach(function(e){ var x = (S.site.tuiles || [])[+e.getAttribute("data-tu-sous")]; if (x) x.sous = e.value; });
+  document.querySelectorAll("[data-tu-vis]").forEach(function(e){ var x = (S.site.tuiles || [])[+e.getAttribute("data-tu-vis")]; if (x) x.visible = e.checked; });
   document.querySelectorAll("[data-faq-q]").forEach(function(e){ var x = S.site.faq[+e.getAttribute("data-faq-q")]; if (x) x.q = e.value; });
   document.querySelectorAll("[data-faq-a]").forEach(function(e){ var x = S.site.faq[+e.getAttribute("data-faq-a")]; if (x) x.a = e.value; });
 }
@@ -1157,8 +1178,8 @@ async function sauverSite(t){
   if (!S.site) return;
   lireChampsSite(); t.disabled = true;
   try {
-    var d = await api("site_save", { reglages: S.site.reglages, galerie: S.site.galerie, faq: S.site.faq });
-    S.site = { reglages: d.reglages, galerie: clone(d.galerie || []), faq: clone(d.faq || []) }; S.siteInit = JSON.stringify(S.site);
+    var d = await api("site_save", { reglages: S.site.reglages, galerie: S.site.galerie, faq: S.site.faq, tuiles: S.site.tuiles });
+    S.site = { reglages: d.reglages, galerie: clone(d.galerie || []), faq: clone(d.faq || []), tuiles: clone(d.tuiles || []) }; S.siteInit = JSON.stringify(S.site);
     rendreSite(); $("site-msg").innerHTML = '<div class="msg msg-ok">Site mis à jour. Les clients voient les changements dans quelques secondes.</div>';
     toast("Site enregistré", "ok");
   } catch(e){ erreur(e); }
@@ -1167,7 +1188,7 @@ async function sauverSite(t){
 async function reinitSite(t){
   if (!confirm("Revenir aux photos et textes d'origine ? Vos photos ajoutées ne seront plus affichées sur le site.")) return;
   t.disabled = true;
-  try { var d = await api("site_reset"); S.site = { reglages: d.reglages, galerie: clone(d.galerie || []), faq: clone(d.faq || []) }; S.siteInit = JSON.stringify(S.site); rendreSite(); toast("Réglages d'origine rétablis", "ok"); }
+  try { var d = await api("site_reset"); S.site = { reglages: d.reglages, galerie: clone(d.galerie || []), faq: clone(d.faq || []), tuiles: clone(d.tuiles || []) }; S.siteInit = JSON.stringify(S.site); rendreSite(); toast("Réglages d'origine rétablis", "ok"); }
   catch(e){ erreur(e); }
   t.disabled = false;
 }
@@ -1193,6 +1214,8 @@ document.addEventListener("click", function(ev){
   if (act.indexOf("part-") === 0 && act !== "part-form-toggle") return actionPartenaire(act.slice(5), id, t);
   if (act === "faq-ajouter" && S.site) { lireChampsSite(); S.site.faq.push({ q: "", a: "" }); return rendreSite(); }
   if (act === "faq-retirer" && S.site) { lireChampsSite(); S.site.faq.splice(parseInt(id, 10), 1); return rendreSite(); }
+  if ((act === "tu-haut" || act === "tu-bas") && S.site) { lireChampsSite(); var T = S.site.tuiles, k = parseInt(id, 10); if (act === "tu-haut" && k > 0) T.splice(k - 1, 0, T.splice(k, 1)[0]); if (act === "tu-bas" && k < T.length - 1) T.splice(k + 1, 0, T.splice(k, 1)[0]); return rendreSite(); }
+  if (act === "tu-photo-retirer" && S.site) { lireChampsSite(); S.site.tuiles[parseInt(id, 10)].image = ""; return rendreSite(); }
   if (act === "app-retirer" && S.site) { lireChampsSite(); S.site.reglages[id] = ""; return rendreSite(); }
   if (act === "gal-haut" || act === "gal-bas" || act === "gal-retirer") return actionGalerie(act, parseInt(id, 10));
   switch (act) {
@@ -1241,6 +1264,7 @@ document.addEventListener("change", function(ev){
     rendreCatalogue(); majSauvegarde(); return;
   }
   if (t.getAttribute && t.getAttribute("data-app-img")) { var cle = t.getAttribute("data-app-img"), f1 = t.files && t.files[0]; t.value = ""; if (!f1 || !S.site) return; lireChampsSite(); toast("Envoi de l'image…", "ok"); return redimensionner(f1).then(function(b){ return envoyerPhoto(b, function(){}); }).then(function(u){ S.site.reglages[cle] = u; rendreSite(); toast("Image envoyée : pensez à « Enregistrer le site »", "ok"); }).catch(erreur); }
+  if (t.getAttribute && t.getAttribute("data-tu-img") != null && t.getAttribute("data-tu-img") !== "") { var ti = +t.getAttribute("data-tu-img"), f2 = t.files && t.files[0]; t.value = ""; if (!f2 || !S.site) return; lireChampsSite(); toast("Envoi de l'image…", "ok"); return redimensionner(f2).then(function(b){ return envoyerPhoto(b, function(){}); }).then(function(u){ S.site.tuiles[ti].image = u; rendreSite(); toast("Photo envoyée : pensez à « Enregistrer le site »", "ok"); }).catch(erreur); }
   if (t.id === "gal-fichier" || t.id === "gal-camera") { var fs = Array.prototype.slice.call(t.files || []); t.value = ""; return ajouterPhotosGalerie(fs); }
   if (t.id === "ed-fichier" || t.id === "ed-camera") { var f = t.files && t.files[0]; t.value = ""; return traiterPhoto(f); }
   if (t.id === "ed-type") $("bloc-pack").classList.toggle("cachee", t.value !== "pack");

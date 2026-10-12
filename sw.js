@@ -1,5 +1,5 @@
 // Service worker Noogó — l'application s'ouvre même avec une mauvaise connexion.
-const VERSION = "noogo-v8";
+const VERSION = "noogo-v9";
 const COQUILLE = ["/", "/index.html", "/assets/noogo.css", "/assets/embleme.jpg", "/assets/logo-noogo.jpg", "/catalogue.json", "/manifest.json", "/favicon.png"];
 
 self.addEventListener("install", (e) => {

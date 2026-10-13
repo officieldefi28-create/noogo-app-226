@@ -121,7 +121,7 @@ section{scroll-margin-top:var(--entete)}
 .badge-pack{background:var(--foret);color:#fff}
 .badge-cmd{background:#fff;color:var(--brun);border:1px solid var(--bord)}
 .produit .corps{padding:12px 12px 14px;display:flex;flex-direction:column;gap:3px;flex:1}
-.produit h4{font-family:var(--police);font-size:14.5px;font-weight:600;line-height:1.3;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.produit h4{font-family:var(--police);font-size:14.5px;font-weight:600;line-height:1.3;margin:0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
 .produit .info{margin:0;font-size:12.5px;color:var(--gris)}
 .produit .desc{margin:2px 0 0;font-size:12.5px;color:var(--gris);display:none}
 @media(min-width:720px){.produit .desc{display:block}.produit h4{font-size:15.5px}}
@@ -341,7 +341,10 @@ body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 .contact-grille .ci svg{width:22px;height:22px}
 @media(max-width:699px){
   .hero .conteneur{padding:14px 0 18px}
-  .hero-visuel{width:min(150px,42vw)}
+  .hero-visuel{width:min(92px,26vw);border-radius:20px}
+  .hero .surtitre{display:none}
+  .vedettes-sec .sous-t{display:none}
+  .vedettes-sec h2{margin-bottom:10px}
   .hero .conteneur{padding:10px 0 6px;gap:2px}
   .hero h1{font-size:clamp(22px,6.4vw,28px);margin:4px 0 4px;text-align:center}
   .hero .surtitre{font-size:10.5px;justify-content:center;width:100%}

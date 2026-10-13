@@ -28,6 +28,7 @@ function calculerPanier(articles, catalogue) {
   const lignes = [];
   let produits = 0, packs = 0;
   for (const a of Array.isArray(articles) ? articles.slice(0, 60) : []) {
+    if (!a || typeof a !== "object") continue;
     const p = catalogue.find((x) => x.id === a.id && x.actif !== false);
     const qte = Math.max(1, Math.min(50, parseInt(a.qte, 10) || 0));
     if (!p || !a.qte || p.dispo === "rupture") continue;

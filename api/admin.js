@@ -37,6 +37,7 @@ function validerCatalogue(liste) {
     if (prixBarre > prix) o.prixBarre = prixBarre;
     if (p.badge) o.badge = txt(p.badge, 14).toUpperCase();
     if (p.surCommande) o.surCommande = true;
+    if (p.vedette) o.vedette = true;
     if (p.dispo === "faible" || p.dispo === "rupture") o.dispo = p.dispo;
     if (p.desc) o.desc = txt(p.desc, 160);
     if (o.type === "pack") {

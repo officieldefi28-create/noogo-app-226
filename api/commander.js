@@ -64,6 +64,7 @@ module.exports = async (req, res) => {
     return res.status(200).json({ succes: true, commandeId: cmd.id, remise, totalFinal: cmd.montantApresRemise });
   } catch (e) {
     if (e.code === "DB_NON_CONFIGUREE") return res.status(503).json({ erreur: "Enregistrement indisponible" });
+    console.error("commander", e && e.message);
     return res.status(500).json({ erreur: "Erreur lors de l'enregistrement de la commande" });
   }
 };

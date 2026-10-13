@@ -34,6 +34,14 @@ module.exports = async (req, res) => {
     const ip = ipClient(req);
 
     // ───────── Public ─────────
+    if (action === "stat") {
+      const EV = ["visite", "carte_vue", "ajout_panier", "panier_ouvert", "commande_envoyee"];
+      const ev = String(d.evt || "");
+      if (EV.includes(ev) && (await S.limiter("stat:" + ip, 60, 3600))) {
+        try { await S.hincr("noogo:stats", new Date().toISOString().slice(0, 10) + "|" + ev, 1); } catch (e) {}
+      }
+      return res.status(200).json({ ok: true });
+    }
     if (action === "avis_lire") {
       const tous = Object.values(await S.hgetall("noogo:avis")).filter((a) => a.statut === "publie").sort(parDate);
       const n = tous.length, moyenne = n ? Math.round((tous.reduce((s, a) => s + a.note, 0) / n) * 10) / 10 : 0;
@@ -85,7 +93,10 @@ module.exports = async (req, res) => {
     switch (action) {
       case "tout": {
         const [avis, demandes, actus, legal] = await Promise.all([S.hgetall("noogo:avis"), S.hgetall("noogo:demandes"), S.getDoc("actus"), S.getDoc("legal")]);
-        return res.status(200).json({ avis: Object.values(avis).sort(parDate), demandes: Object.values(demandes).sort(parDate), actus: (actus || []).sort(parDate), legal: legalPropre(legal) });
+        const brut = await S.hgetall("noogo:stats");
+        const stats = {};
+        for (const [k, v] of Object.entries(brut)) { const [j, e] = k.split("|"); if (!stats[j]) stats[j] = {}; stats[j][e] = Number(v) || 0; }
+        return res.status(200).json({ stats, avis: Object.values(avis).sort(parDate), demandes: Object.values(demandes).sort(parDate), actus: (actus || []).sort(parDate), legal: legalPropre(legal) });
       }
       case "avis_statut": {
         const a = await S.hget("noogo:avis", txt(d.id, 60));

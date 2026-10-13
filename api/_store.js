@@ -28,6 +28,10 @@ async function hset(nom, champ, valeur) {
   if (MEMOIRE) { (mem.hash[nom] = mem.hash[nom] || {})[champ] = JSON.parse(JSON.stringify(valeur)); return; }
   await db().hset(nom, { [champ]: valeur });
 }
+async function hincr(nom, champ, n = 1) {
+  if (MEMOIRE) { const h = (mem.hash[nom] = mem.hash[nom] || {}); h[champ] = (Number(h[champ]) || 0) + n; return h[champ]; }
+  return db().hincrby(nom, champ, n);
+}
 async function hdel(nom, champ) {
   if (MEMOIRE) { if (mem.hash[nom]) delete mem.hash[nom][champ]; return; }
   await db().hdel(nom, champ);
@@ -81,6 +85,7 @@ async function limiter(cle, max, secondes) {
     const k = "noogo:rl:" + cle;
     const n = await db().incr(k);
     if (n === 1) await db().expire(k, secondes);
+    else if (n % 10 === 0 && (await db().ttl(k)) < 0) await db().expire(k, secondes);
     return n <= max;
   } catch (e) {
     if (e.code === "DB_NON_CONFIGUREE") throw e;
@@ -131,7 +136,7 @@ async function setDoc(cle, v) {
 }
 
 module.exports = {
-  hgetall, hset, hdel, hget, getDoc, setDoc,
+  hgetall, hset, hdel, hget, hincr, getDoc, setDoc,
   suiviListe, suiviSet, suiviDel, getSuiviConfig, setSuiviConfig,
   getReglages, setReglages,
   getPartenaires, getPartenaire, setPartenaire, deletePartenaire,

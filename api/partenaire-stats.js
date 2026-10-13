@@ -10,7 +10,7 @@ module.exports = async (req, res) => {
     const session = verifierJeton((req.body || {}).jeton, secret);
     if (!session || session.role !== "partenaire") return res.status(401).json({ erreur: "Session expirée, merci de vous reconnecter" });
     const p = await getPartenaire(session.partenaireId);
-    if (!p || p.archive) return res.status(404).json({ erreur: "Compte introuvable" });
+    if (!p || !p.actif || p.archive) return res.status(404).json({ erreur: "Compte introuvable" });
 
     const mes = (await getCommandes()).filter((c) => c.partenaireId === p.id);
     const livrees = mes.filter((c) => c.statutLivraison === "livree");

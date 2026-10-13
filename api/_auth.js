@@ -61,6 +61,8 @@ function adminValide(jeton) {
 }
 
 function ipClient(req) {
+  const v = req.headers["x-vercel-forwarded-for"] || req.headers["x-real-ip"];
+  if (v) return String(v).split(",")[0].trim();
   const xf = req.headers["x-forwarded-for"];
   return (xf ? String(xf).split(",")[0] : req.socket && req.socket.remoteAddress) || "inconnue";
 }

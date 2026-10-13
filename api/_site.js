@@ -1,6 +1,7 @@
 // Réglages du site modifiables depuis l'admin (onglet « Site ») : textes, paiement, galerie photos.
 const DEFAUT_REGLAGES = {
   annonce: "Commandez 24h/24 · Livraison à Karpala et alentours",
+  livraisonTarifs: "0 à 15 km : 1 000 FCFA\n16 à 20 km : 1 500 FCFA\n21 à 25 km : 2 000 FCFA\n26 à 30 km : 2 500 FCFA",
   delai: "Livraison en général dans l'heure qui suit la confirmation, à Karpala et alentours.",
   adresse: "Karpala, derrière la mairie",
   lienMaps: "https://maps.google.com/?q=12.336911,-1.474793",
@@ -29,7 +30,7 @@ const DEFAUT_REGLAGES = {
   chiffre4Valeur: "", chiffre4Texte: ""
 };
 // Champs que l'admin peut vider volontairement (pour masquer la section sur le site)
-const VIDABLES = ["histoireTitre", "histoireTexte", "fondateurNom", "fondateurPhoto", "chiffre1Valeur", "chiffre1Texte", "chiffre2Valeur", "chiffre2Texte", "chiffre3Valeur", "chiffre3Texte", "chiffre4Valeur", "chiffre4Texte"];
+const VIDABLES = ["livraisonTarifs", "histoireTitre", "histoireTexte", "fondateurNom", "fondateurPhoto", "chiffre1Valeur", "chiffre1Texte", "chiffre2Valeur", "chiffre2Texte", "chiffre3Valeur", "chiffre3Texte", "chiffre4Valeur", "chiffre4Texte"];
 
 const DEFAUT_FAQ = [
   { q: "Comment passer commande ?", a: "Ajoutez vos articles au panier, puis envoyez la commande sur WhatsApp. Votre numéro est facultatif. Nous vous répondons pour confirmer." },
@@ -99,8 +100,12 @@ function valider(d) {
   for (const [k, max] of [["annonce", 140], ["delai", 200], ["adresse", 120], ["infoPaiement", 400], ["orangeMoney", 30], ["wave", 30], ["surtitre", 80], ["titre", 80], ["titreAccent", 80], ["intro", 400], ["slogan", 160]]) {
     r[k] = txt(d && d.reglages && d.reglages[k], max) || DEFAUT_REGLAGES[k];
   }
+  {
+    const brut = d && d.reglages && typeof d.reglages.livraisonTarifs === "string" ? d.reglages.livraisonTarifs : DEFAUT_REGLAGES.livraisonTarifs;
+    r.livraisonTarifs = brut.split(/\r?\n/).map((l) => txt(l, 70)).filter(Boolean).slice(0, 8).join("\n");
+  }
   const maps = txt(d && d.reglages && d.reglages.lienMaps, 300);
-  r.lienMaps = /^https:\/\/(www\.)?(maps\.google\.com|google\.com\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(maps) ? maps : DEFAUT_REGLAGES.lienMaps;
+  r.lienMaps = /^https:\/\/(www\.)?(maps\.google\.com|google\.com\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)([/?#]|$)/i.test(maps) ? maps : DEFAUT_REGLAGES.lienMaps;
   const rg = (d && d.reglages) || {};
   const wa = String(rg.whatsapp || "").replace(/\D/g, "");
   r.whatsapp = wa.length >= 8 && wa.length <= 15 ? wa : DEFAUT_REGLAGES.whatsapp;

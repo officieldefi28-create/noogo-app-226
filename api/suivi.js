@@ -119,7 +119,13 @@ module.exports = async (req, res) => {
       case "supprimer": {
         const types = { lot: "lots", vente: "ventes", perte: "pertes", depense: "depenses", comptage: "comptages" };
         if (!types[d.type]) throw new Error("Type invalide");
-        await S.suiviDel(types[d.type], txt(d.id, 80));
+        const idSup = txt(d.id, 80);
+        await S.suiviDel(types[d.type], idSup);
+        // Une ligne de l'historique repris, supprimée volontairement, ne doit jamais revenir
+        if (/^h-/.test(idSup)) {
+          const sup = (await S.getDoc("suivi-supprimes")) || [];
+          if (!sup.includes(idSup)) { sup.push(idSup); await S.setDoc("suivi-supprimes", sup.slice(-500)); }
+        }
         break;
       }
       case "config": {
@@ -127,7 +133,7 @@ module.exports = async (req, res) => {
         break;
       }
       case "importer_historique": {
-        const h = require("../data/historique-noogo.json");
+        const h = require("./_data/historique-noogo.json");
         const cfg = configPropre(await S.getSuiviConfig());
         const interne = new Set(cfg.internes.map((p) => p.id));
         for (const p of h.internes) if (!interne.has(p.id)) cfg.internes.push(p);
@@ -135,10 +141,14 @@ module.exports = async (req, res) => {
         const pv = new Set(cfg.pointsVente);
         for (const p of h.config.pointsVente) if (!pv.has(p)) cfg.pointsVente.push(p);
         await S.setSuiviConfig(configPropre(cfg));
-        for (const l of h.lots) await S.suiviSet("lots", l.id, l);
-        for (const v of h.ventes) await S.suiviSet("ventes", v.id, v);
-        for (const p of h.pertes) await S.suiviSet("pertes", p.id, p);
-        for (const x of h.depenses) await S.suiviSet("depenses", x.id, x);
+        const sup = new Set((await S.getDoc("suivi-supprimes")) || []);
+        const deja = {};
+        for (const t of ["lots", "ventes", "pertes", "depenses"]) deja[t] = new Set((await S.suiviListe(t)).map((x) => x.id));
+        const ajoute = async (t, x) => { if (!sup.has(x.id) && !deja[t].has(x.id)) await S.suiviSet(t, x.id, x); };
+        for (const l of h.lots) await ajoute("lots", l);
+        for (const v of h.ventes) await ajoute("ventes", v);
+        for (const p of h.pertes) await ajoute("pertes", p);
+        for (const x of h.depenses) await ajoute("depenses", x);
         break;
       }
       case "export": {

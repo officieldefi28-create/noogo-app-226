@@ -28,6 +28,7 @@ module.exports = async (req, res) => {
     return res.status(200).json({ valide: true, remise, montantFinal: panier.total - remise });
   } catch (e) {
     if (e.code === "DB_NON_CONFIGUREE") return res.status(503).json({ valide: false, message: "Codes promo momentanément indisponibles" });
+    console.error("verifier-code", e && e.message);
     return res.status(500).json({ valide: false, message: "Erreur serveur" });
   }
 };

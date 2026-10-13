@@ -631,6 +631,16 @@ body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 </div>
 
 <div class="zoom" id="zoom" hidden><figure><img id="zoom-img" alt=""><figcaption id="zoom-legende"></figcaption></figure></div>
+<div class="voile" id="voile-rappel" hidden style="z-index:95" role="dialog" aria-modal="true" aria-labelledby="rappel-titre">
+  <div class="feuille" style="padding:22px 20px 20px;border-radius:24px;max-width:420px;margin:auto 12px">
+    <h3 id="rappel-titre" style="margin:0 0 8px;color:var(--brun);font-size:20px">Une petite chose avant d'envoyer 🙏</h3>
+    <p id="rappel-texte" style="margin:0 0 18px;color:var(--gris);line-height:1.5"></p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button type="button" id="rappel-oui" class="btn btn-bloc" style="background:#1f8a3b;color:#fff;border:0;font-weight:700">✔ Oui, je les ajoute</button>
+      <button type="button" id="rappel-non" class="btn btn-bloc" style="background:#fff;color:#c62828;border:2px solid #c62828;font-weight:700">✖ Non, envoyer quand même</button>
+    </div>
+  </div>
+</div>
 <div class="voile" id="voile-guide" hidden>
   <div class="feuille guide" role="dialog" aria-modal="true" aria-labelledby="guide-titre">
     <div class="feuille-tete"><h2 id="guide-titre">Installer Noogó</h2><button id="fermer-guide" aria-label="Fermer">×</button></div>
@@ -977,7 +987,32 @@ let revalT; function revalider() { clearTimeout(revalT); revalT = setTimeout(() 
 
 /* ───────── Envoi WhatsApp + enregistrement ───────── */
 const PAY = { get especes() { return "Espèces"; }, get orange() { return "Orange Money (" + CONFIG.orangeMoney + ")"; }, get wave() { return "Wave (" + CONFIG.wave + ")"; } };
-function envoyer() {
+function rappelInfos(manque) {
+  const v = $("#voile-rappel"); if (!v) return Promise.resolve("non");
+  const texte = manque.length === 2
+    ? "Pour que le livreur puisse vous joindre facilement, pouvez-vous ajouter votre numéro de téléphone et votre localisation (quartier ou bouton « Ma position ») ?"
+    : manque[0] === "tel"
+    ? "Pour que le livreur puisse vous joindre facilement, pouvez-vous enregistrer votre numéro de téléphone ?"
+    : "Pour aider le livreur à vous trouver, pouvez-vous ajouter votre localisation (quartier, repère ou bouton « Ma position ») ?";
+  $("#rappel-texte").textContent = texte; v.hidden = false;
+  return new Promise((ok) => {
+    const fin = (r) => { v.hidden = true; $("#rappel-oui").onclick = $("#rappel-non").onclick = null; ok(r); };
+    $("#rappel-oui").onclick = () => fin("oui"); $("#rappel-non").onclick = () => fin("non");
+  });
+}
+let _rappelEnCours = false;
+async function envoyer(forcer) {
+  const tel0 = ($("#f-tel").value || "").trim(), lieu0 = ($("#f-lieu") ? $("#f-lieu").value : "").trim();
+  if (forcer !== true && !_rappelEnCours) {
+    const manque = [];
+    if (!tel0) manque.push("tel");
+    if (reception === "livraison" && !lieu0 && !position) manque.push("lieu");
+    if (manque.length) {
+      _rappelEnCours = true;
+      const r = await rappelInfos(manque); _rappelEnCours = false;
+      if (r === "oui") { const c = manque[0] === "tel" ? $("#f-tel") : $("#f-lieu"); if (c) { c.scrollIntoView({ block: "center", behavior: "smooth" }); setTimeout(() => c.focus(), 350); c.style.outline = "3px solid #1f8a3b"; setTimeout(() => (c.style.outline = ""), 2500); } return; }
+    }
+  }
   const tel = ($("#f-tel").value || "").trim(), nom = ($("#f-nom").value || "").trim(), lieu = ($("#f-lieu") ? $("#f-lieu").value : "").trim();
   const err = $("#erreur-cmd");
   if (tel && tel.replace(/\D/g, "").length < 8) { err.textContent = "Ce numéro de téléphone n'a pas l'air complet. Corrigez-le ou laissez la case vide."; err.classList.remove("cachee"); $("#f-tel").focus(); return; }
@@ -990,8 +1025,8 @@ function envoyer() {
   const prods = L.filter((l) => l.p.type !== "pack"), packs = L.filter((l) => l.p.type === "pack");
   const m = [];
   m.push("🍦 *NOUVELLE COMMANDE NOOGÓ*", "");
-  m.push(`👤 *Nom :* ${nom || "Non précisé"}`);
   if (tel) m.push(`📞 *Téléphone :* ${tel}`);
+  m.push(`👤 *Nom :* ${nom || "Non précisé"}`);
   m.push(`🚚 *Réception :* ${reception === "retrait" ? "Retrait au local" : "Livraison à domicile"}`);
   if (reception === "livraison") { m.push(`📍 *Lieu :* ${lieu || "Non précisé"}`); if (position) m.push(`🗺️ ${position}`); }
   if (promo) m.push(`🎟️ *Code promo :* ${promo.code}`);
@@ -1154,7 +1189,7 @@ document.addEventListener("click", (e) => {
   switch (c.id) {
     case "btn-panier": case "btn-voir-panier": return ouvrirPanier();
     case "fermer-panier": case "continuer": return fermerPanier();
-    case "btn-envoyer": return envoyer();
+    case "btn-envoyer": return envoyer(false);
     case "btn-code": $("#bloc-code").classList.remove("cachee"); c.parentElement.remove(); $("#f-code").focus(); return;
     case "btn-appliquer": return verifierCode(false);
     case "btn-position": return partagerPosition(c);

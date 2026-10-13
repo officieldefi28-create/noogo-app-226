@@ -6,7 +6,7 @@ var A = window.NOOGO_ADMIN;
 if (!A) return;
 var $ = function (id) { return document.getElementById(id); };
 var esc = A.esc;
-var E = { d: null, sous: "visites", edit: null };
+var E = { d: null, sous: "contacts", edit: null, q: "" };
 var dateFr = function (iso) { var d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }); };
 var jour = function () { return new Date().toISOString().slice(0, 10); };
 
@@ -23,30 +23,52 @@ function compteur() {
   var c = $("cpt-communaute"); if (c) { c.textContent = n; c.classList.toggle("cachee", !n); }
 }
 function charger(silencieux) {
-  return appel("tout").then(function (d) { E.d = d; compteur(); if ($("p-communaute").classList.contains("actif")) rendre(); })
+  return appel("tout").then(function (d) { E.d = d; compteur(); var ae = document.activeElement; if ($("p-communaute").classList.contains("actif") && !(ae && ae.tagName === "INPUT" && $("p-communaute").contains(ae))) rendre(); })
     .catch(function (e) { if (!silencieux && !e.silencieux) A.toast(e.message, "err"); });
 }
 function ouvrir() {
   var c = $("p-communaute");
-  if (!c.dataset.pret) { c.dataset.pret = "1"; c.addEventListener("click", clic); }
+  if (!c.dataset.pret) { c.dataset.pret = "1"; c.addEventListener("click", clic);
+    c.addEventListener("input", function (e) {
+      if (e.target.id !== "ct-q") return;
+      E.q = e.target.value; var pos = e.target.selectionStart; rendre();
+      var n = $("ct-q"); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (x) {} }
+    });
+  }
   if (!E.d) c.innerHTML = '<p class="gris">Chargement…</p>'; else rendre();
   charger(false);
 }
 setInterval(function () { if (A.jeton() && !document.hidden) charger(true); }, 120000);
 setTimeout(function () { if (A.jeton()) charger(true); }, 4000);
 
-var SOUS = [["visites", "Visites"], ["avis", "Avis"], ["revendeurs", "Revendeurs"], ["actus", "Actualités"], ["legal", "Pages légales"]];
+var SOUS = [["contacts", "Contacts"], ["visites", "Visites"], ["avis", "Avis"], ["revendeurs", "Revendeurs"], ["actus", "Actualités"], ["legal", "Pages légales"]];
 function rendre() {
   var c = $("p-communaute"), d = E.d; if (!d) return;
   var nA = d.avis.filter(function (a) { return a.statut === "attente"; }).length, nR = d.demandes.filter(function (r) { return r.statut === "nouveau"; }).length;
-  var lib = { visites: "Visites", avis: "Avis" + (nA ? " (" + nA + ")" : ""), revendeurs: "Revendeurs" + (nR ? " (" + nR + ")" : ""), actus: "Actualités", legal: "Pages légales" };
+  var lib = { contacts: "Contacts" + ((E.d && E.d.contacts && E.d.contacts.length) ? " (" + E.d.contacts.length + ")" : ""), visites: "Visites", avis: "Avis" + (nA ? " (" + nA + ")" : ""), revendeurs: "Revendeurs" + (nR ? " (" + nR + ")" : ""), actus: "Actualités", legal: "Pages légales" };
   var nav = '<div class="filtres" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' + SOUS.map(function (s) {
     return '<button type="button" class="puce" data-c="sous" data-v="' + s[0] + '" aria-pressed="' + (E.sous === s[0]) + '">' + lib[s[0]] + '</button>'; }).join("") + '</div>';
-  c.innerHTML = nav + ({ visites: vVisites, avis: vAvis, revendeurs: vRev, actus: vActus, legal: vLegal }[E.sous])(d);
+  c.innerHTML = nav + ({ contacts: vContacts, visites: vVisites, avis: vAvis, revendeurs: vRev, actus: vActus, legal: vLegal }[E.sous])(d);
 }
 function etoiles(n) { return "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n); }
 function bt(act, id, label, cls) { return '<button type="button" class="btn btn-petit ' + (cls || "btn-clair") + '" data-c="' + act + '" data-id="' + esc(id) + '">' + label + '</button>'; }
 
+function vContacts(d) {
+  var L = d.contacts || [], q = (E.q || "").toLowerCase().replace(/\s/g, "");
+  var F = L.filter(function (c) { return !q || (c.tel + " " + c.nom + " " + c.note + " " + c.lieu).toLowerCase().replace(/\s/g, "").indexOf(q) >= 0; });
+  var h = '<div class="carte"><h3>Mes clients</h3><p class="astuce" style="margin-top:0">Chaque numéro est regroupé automatiquement : vous voyez tout de suite qui est un client fidèle. Les clients qui n\'ont pas donné de numéro n\'apparaissent pas ici.</p>' +
+    '<input type="search" id="ct-q" placeholder="Chercher un nom ou un numéro" value="' + esc(E.q || "") + '" style="margin-bottom:8px">' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn btn-clair btn-petit" data-c="ct-export">Exporter la liste (fichier Excel)</button><button type="button" class="btn btn-clair btn-petit" data-c="ct-copier">Copier les numéros</button></div></div>';
+  if (!L.length) return h + '<div class="carte"><p class="gris">Aucun contact pour le moment : les numéros apparaîtront dès qu\'un client en donne un en commandant.</p></div>';
+  return h + F.map(function (c) {
+    var fid = c.commandes >= 3 ? ' <span class="badge badge-or">Fidèle</span>' : c.commandes === 1 ? ' <span class="badge badge-gris">Nouveau</span>' : '';
+    var num = c.tel.replace(/^226/, "").replace(/(\d{2})(?=\d)/g, "$1 ");
+    return '<div class="carte" style="padding:12px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><b>' + esc(c.nom || "Sans nom") + '</b>' + fid + '<br><span style="font-size:1.05rem">+226 ' + esc(num) + '</span>' +
+      '<br><small class="gris">' + c.commandes + ' commande' + (c.commandes > 1 ? 's' : '') + ' · ' + Number(c.total).toLocaleString("fr-FR") + ' FCFA · dernière : ' + esc(dateFr(c.derniere)) + (c.lieu ? '<br>📍 ' + esc(c.lieu) : '') + '</small></div></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"><a class="btn btn-petit btn-or" target="_blank" rel="noopener" href="https://wa.me/' + esc(c.tel) + '">WhatsApp</a><a class="btn btn-petit btn-clair" href="tel:+' + esc(c.tel) + '">Appeler</a></div>' +
+      '<div style="display:flex;gap:6px"><input type="text" maxlength="200" placeholder="Note (ex : aime le baobab, quartier Zogona)" data-ct-note="' + esc(c.cle) + '" value="' + esc(c.note) + '"><button type="button" class="btn btn-petit btn-clair" data-c="ct-note" data-id="' + esc(c.cle) + '">Noter</button></div></div>';
+  }).join("") || '<div class="carte"><p class="gris">Aucun résultat.</p></div>';
+}
 function vVisites(d) {
   var S = d.stats || {}, jours = Object.keys(S).sort().reverse().slice(0, 14);
   var EV = [["visite", "Visites"], ["carte_vue", "Ont vu la carte"], ["ajout_panier", "Ajouts au panier"], ["panier_ouvert", "Paniers ouverts"], ["commande_envoyee", "Commandes envoyées"]];
@@ -107,6 +129,15 @@ function vLegal(d) {
 function clic(ev) {
   var t = ev.target.closest("[data-c]"); if (!t) return;
   var a = t.getAttribute("data-c"), id = t.getAttribute("data-id"), d = E.d;
+  if (a === "ct-note") { var inp = document.querySelector('[data-ct-note="' + id + '"]'); return run("contact_note", { cle: id, note: inp ? inp.value : "" }, "Note enregistrée"); }
+  if (a === "ct-export") {
+    var csv = "\ufeffNom;Téléphone;Commandes;Total FCFA;Dernière commande;Lieu;Note\n" + (d.contacts || []).map(function (c) { return [c.nom, "+" + c.tel, c.commandes, c.total, (c.derniere || "").slice(0, 10), c.lieu, c.note].map(function (v) { return '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"'; }).join(";"); }).join("\n");
+    var u = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" })), l = document.createElement("a"); l.href = u; l.download = "clients-noogo.csv"; document.body.appendChild(l); l.click(); l.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 2000); return;
+  }
+  if (a === "ct-copier") {
+    var txt = (d.contacts || []).map(function (c) { return (c.nom || "Client") + " +" + c.tel; }).join("\n");
+    if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function () { A.toast("Numéros copiés", "ok"); }); return;
+  }
   if (a === "sous") { E.sous = t.getAttribute("data-v"); E.edit = null; return rendre(); }
   var run = function (act, extra, msg, apres) {
     t.disabled = true;

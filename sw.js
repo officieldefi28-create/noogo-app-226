@@ -1,6 +1,6 @@
 // Service worker Noogó — l'application s'ouvre même avec une mauvaise connexion.
-const VERSION = "noogo-v9";
-const COQUILLE = ["/", "/index.html", "/assets/noogo.css", "/assets/embleme.jpg", "/assets/logo-noogo.jpg", "/catalogue.json", "/manifest.json", "/favicon.png"];
+const VERSION = "noogo-v10";
+const COQUILLE = ["/", "/index.html", "/assets/noogo.css", "/assets/embleme.jpg", "/assets/logo-noogo.jpg", "/manifest.json", "/favicon.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(COQUILLE).catch(() => {})).then(() => self.skipWaiting()));

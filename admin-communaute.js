@@ -6,7 +6,7 @@ var A = window.NOOGO_ADMIN;
 if (!A) return;
 var $ = function (id) { return document.getElementById(id); };
 var esc = A.esc;
-var E = { d: null, sous: "avis", edit: null };
+var E = { d: null, sous: "visites", edit: null };
 var dateFr = function (iso) { var d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }); };
 var jour = function () { return new Date().toISOString().slice(0, 10); };
 
@@ -35,18 +35,29 @@ function ouvrir() {
 setInterval(function () { if (A.jeton() && !document.hidden) charger(true); }, 120000);
 setTimeout(function () { if (A.jeton()) charger(true); }, 4000);
 
-var SOUS = [["avis", "Avis"], ["revendeurs", "Revendeurs"], ["actus", "Actualités"], ["legal", "Pages légales"]];
+var SOUS = [["visites", "Visites"], ["avis", "Avis"], ["revendeurs", "Revendeurs"], ["actus", "Actualités"], ["legal", "Pages légales"]];
 function rendre() {
   var c = $("p-communaute"), d = E.d; if (!d) return;
   var nA = d.avis.filter(function (a) { return a.statut === "attente"; }).length, nR = d.demandes.filter(function (r) { return r.statut === "nouveau"; }).length;
-  var lib = { avis: "Avis" + (nA ? " (" + nA + ")" : ""), revendeurs: "Revendeurs" + (nR ? " (" + nR + ")" : ""), actus: "Actualités", legal: "Pages légales" };
+  var lib = { visites: "Visites", avis: "Avis" + (nA ? " (" + nA + ")" : ""), revendeurs: "Revendeurs" + (nR ? " (" + nR + ")" : ""), actus: "Actualités", legal: "Pages légales" };
   var nav = '<div class="filtres" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">' + SOUS.map(function (s) {
     return '<button type="button" class="puce" data-c="sous" data-v="' + s[0] + '" aria-pressed="' + (E.sous === s[0]) + '">' + lib[s[0]] + '</button>'; }).join("") + '</div>';
-  c.innerHTML = nav + ({ avis: vAvis, revendeurs: vRev, actus: vActus, legal: vLegal }[E.sous])(d);
+  c.innerHTML = nav + ({ visites: vVisites, avis: vAvis, revendeurs: vRev, actus: vActus, legal: vLegal }[E.sous])(d);
 }
 function etoiles(n) { return "★★★★★".slice(0, n) + "☆☆☆☆☆".slice(0, 5 - n); }
 function bt(act, id, label, cls) { return '<button type="button" class="btn btn-petit ' + (cls || "btn-clair") + '" data-c="' + act + '" data-id="' + esc(id) + '">' + label + '</button>'; }
 
+function vVisites(d) {
+  var S = d.stats || {}, jours = Object.keys(S).sort().reverse().slice(0, 14);
+  var EV = [["visite", "Visites"], ["carte_vue", "Ont vu la carte"], ["ajout_panier", "Ajouts au panier"], ["panier_ouvert", "Paniers ouverts"], ["commande_envoyee", "Commandes envoyées"]];
+  var tot = {}; EV.forEach(function (e) { tot[e[0]] = 0; });
+  jours.forEach(function (j) { EV.forEach(function (e) { tot[e[0]] += S[j][e[0]] || 0; }); });
+  var taux = tot.visite ? Math.round((tot.commande_envoyee / tot.visite) * 1000) / 10 : 0;
+  var h = '<div class="carte"><h3>14 derniers jours</h3>' + EV.map(function (e) { return '<div class="rang"><div class="g"><b>' + e[1] + '</b></div><div style="text-align:right"><b>' + tot[e[0]] + '</b></div></div>'; }).join("") +
+    '<p class="astuce">Sur 100 visiteurs, ' + taux + ' envoient une commande. Si « visites » est haut et « ajouts au panier » bas, le problème est la carte ; si les paniers sont ouverts mais pas envoyés, c\'est la livraison, le prix ou la confiance.</p></div>';
+  if (!jours.length) return '<div class="carte"><p class="gris">Les compteurs commencent à partir de maintenant : revenez demain.</p></div>';
+  return h + '<div class="carte"><h3>Jour par jour</h3>' + jours.map(function (j) { var x = S[j]; return '<div class="rang"><div class="g"><b>' + esc(dateFr(j)) + '</b><small>' + EV.map(function (e) { return e[1] + " " + (x[e[0]] || 0); }).join(" · ") + '</small></div></div>'; }).join("") + '</div>';
+}
 function vAvis(d) {
   var L = { attente: ["badge-or", "À valider"], publie: ["badge-vert", "Publié"], masque: ["badge-gris", "Masqué"] };
   var intro = '<p class="gris petit">Les avis envoyés par les clients ne s\'affichent sur le site qu\'après votre validation. Publiez seulement de vrais avis.</p>';

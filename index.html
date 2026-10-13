@@ -304,6 +304,7 @@ body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
 .vue-tete .conteneur{display:flex;align-items:center;gap:12px;padding:10px 0}
 .vue-tete button{display:inline-flex;align-items:center;gap:6px;background:var(--brun);color:var(--or-clair);border:0;border-radius:999px;padding:9px 16px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
 .vue-tete h2{margin:0;font-size:18px;color:var(--brun)}
+.vedettes-sec{padding:6px 0 18px}.vedettes-sec h2{font-size:clamp(20px,4vw,28px);color:var(--brun);margin:0 0 4px;text-align:center}.vedettes-sec .sous-t{text-align:center;color:var(--gris);margin:0 0 14px;font-size:15px}
 .tuiles-sec{padding:6px 0 26px}
 .tuiles-sec h2{font-size:clamp(20px,4vw,28px);color:var(--brun);margin:0 0 4px;text-align:center}
 .tuiles-sec .sous-t{text-align:center;color:var(--gris);margin:0 0 18px;font-size:15px}
@@ -408,6 +409,12 @@ body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
     </div>
   </section>
 
+  <section class="vedettes-sec cachee" id="vedettes-sec" data-v="accueil"><div class="conteneur">
+    <h2>Les préférés de nos clients</h2><p class="sous-t">Prix affichés, ajoutez en un geste</p>
+    <div class="grille" id="vedettes"></div>
+    <p style="text-align:center;margin:12px 0 0"><a class="btn btn-clair" href="#carte" data-filtre="tout">Voir toute la carte</a></p>
+  </div></section>
+
   <section class="tuiles-sec" id="tuiles-sec" data-v="accueil"><div class="conteneur">
     <h2>Que souhaitez-vous faire ?</h2><p class="sous-t">Touchez une case</p>
     <div class="tuiles" id="tuiles"></div>
@@ -485,7 +492,7 @@ body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
     <div class="conteneur">
       <div class="section-tete"><span class="surtitre">Pratique</span><h2>Livraison, retrait et paiement</h2></div>
       <div class="infos">
-        <div class="carte"><h3>Livraison</h3><ul><li id="info-delai">Livraison en général dans l'heure qui suit la confirmation.</li><li><b>Packs :</b> livraison incluse.</li><li><b>Articles à l'unité :</b> livraison à la charge du client, tarif confirmé sur WhatsApp selon votre quartier.</li></ul></div>
+        <div class="carte"><h3>Livraison</h3><ul><li id="info-delai">Livraison en général dans l'heure qui suit la confirmation.</li><li><b>Packs :</b> livraison incluse.</li><li><b>Articles à l'unité :</b> livraison à la charge du client, tarif confirmé sur WhatsApp selon votre quartier.</li></ul><div id="info-tarifs" class="cachee"></div></div>
         <div class="carte"><h3>Retrait au local</h3><p>Gratuit : <b id="info-adresse">Karpala, derrière la mairie</b>.</p><p><a href="https://maps.google.com/?q=12.336911,-1.474793" target="_blank" rel="noopener" class="lien maps-lien">Voir l'itinéraire →</a></p></div>
         <div class="carte"><h3>Paiement</h3><ul><li>Espèces à la livraison</li><li>Orange Money : <b id="info-om">65 12 09 02</b></li><li>Wave : <b id="info-wave">65 12 09 02</b></li></ul></div>
       </div>
@@ -642,6 +649,7 @@ const CONFIG = {
   wave: "65 12 09 02",
   adresse: "Karpala, derrière la mairie",
   lienMaps: "https://maps.google.com/?q=12.336911,-1.474793",
+  livraisonTarifs: "0 à 15 km : 1 000 FCFA\n16 à 20 km : 1 500 FCFA\n21 à 25 km : 2 000 FCFA\n26 à 30 km : 2 500 FCFA",
   delai: "Livraison en général dans l'heure qui suit la confirmation, à Karpala et alentours.",
   infoPaiement: "Espèces : vous payez au livreur ou au local. Orange Money / Wave : nous vous confirmons la commande sur WhatsApp, puis vous envoyez le montant au numéro indiqué.",
   annonce: "", surtitre: "", titre: "", titreAccent: "", intro: "", slogan: "",
@@ -691,9 +699,11 @@ const compoComplete = (p) => totalCompo(p.id) === nbPots(p) * (panier[p.id] || 0
 const texteCompo = (id) => Object.entries(compo[id] || {}).filter(([, q]) => q > 0).map(([k, q]) => `${q} × ${(produit(k) || { nom: k }).nom.replace(/^Crème glacée /, "").replace(/ — Grand pot$/, "").replace(/ — Pain de singe$/, "")}`).join(", ");
 
 /* ───────── Réglages du site (admin) ───────── */
+const tarifsLignes = () => String(CONFIG.livraisonTarifs || "").split("\n").map((x) => x.trim()).filter(Boolean);
 function appliquerReglages() {
   const t = (id, v) => { const e = $("#" + id); if (e && v) e.textContent = v; };
   t("annonce-texte", CONFIG.annonce); t("info-adresse", CONFIG.adresse); t("pied-adresse", CONFIG.adresse);
+  { const bt = $("#info-tarifs"); const l = tarifsLignes(); if (bt) { bt.classList.toggle("cachee", !l.length); bt.innerHTML = l.length ? '<p style="margin:10px 0 4px;font-weight:700">Tarifs selon la distance</p><ul>' + l.map((x) => "<li>" + esc(x) + "</li>").join("") + '</ul><p style="font-size:.85rem;opacity:.75;margin:6px 0 0">Tarifs indicatifs : le prix exact est confirmé sur WhatsApp.</p>' : ""; } }
   t("info-om", CONFIG.orangeMoney); t("info-wave", CONFIG.wave); t("info-delai", CONFIG.delai);
   document.querySelectorAll(".maps-lien").forEach((a) => (a.href = CONFIG.lienMaps));
   t("h-surtitre", CONFIG.surtitre); t("h-titre", CONFIG.titre); t("h-accent", CONFIG.titreAccent); t("h-intro", CONFIG.intro);
@@ -764,11 +774,18 @@ async function chargerCatalogue() {
     catch (e) { $("#catalogue").innerHTML = `<div class="vide-msg">La carte ne se charge pas. <a class="lien" href="https://wa.me/${CONFIG.whatsapp}">Commandez directement sur WhatsApp</a>.</div>`; }
   }
 }
+const _vus = {};
+function suivre(evt) {
+  if (_vus[evt]) return; _vus[evt] = 1;
+  try { fetch("/api/communaute", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "stat", evt }), keepalive: true }).catch(() => {}); } catch (e) {}
+}
 function demarrer() {
+  suivre("visite");
+  try { const q = new URLSearchParams(location.search).get("code"); if (q && /^[A-Za-z0-9]{2,20}$/.test(q)) { ecrire("noogo_code_lien", q.toUpperCase()); } } catch (e) {}
   CATALOGUE = CATALOGUE.filter((p) => p.actif !== false);
   // purge du panier : articles retirés de la carte
   for (const id of Object.keys(panier)) if (!produit(id) || produit(id).dispo === "rupture") delete panier[id];
-  rendreFiltres(); rendreCatalogue(); majPanier(); rendrePromo();
+  rendreFiltres(); rendreCatalogue(); majPanier(); rendrePromo(); rendreVedettes();
 }
 
 const CATS = [["tout", "Tout"], ["cremes", "Crèmes glacées"], ["packs", "Packs"], ["popcorn", "Popcorn"], ["pain", "Pain anglais"], ["esquimau", "Esquimaux"], ["gros", "Gros format"]];
@@ -821,6 +838,15 @@ function rendreCatalogue() {
   const html = groupes.filter((g) => g.items.length).map((g) => `<div class="groupe"><h3>${esc(g.titre)}${g.sous ? ` <small>${esc(g.sous)}</small>` : ""}</h3><div class="grille">${g.items.map(carteHTML).join("")}</div></div>`).join("");
   $("#catalogue").innerHTML = html || `<div class="vide-msg">${filtre === "promo" ? "Pas de prix barré en ce moment. Si vous avez un code promo, saisissez-le dans le panier." : "Aucun article dans cette catégorie pour le moment."}</div>`;
 }
+const VEDETTES_DEFAUT = ["pk-mix-p", "vanille-p", "baobab-p", "baobab-g"];
+function rendreVedettes() {
+  const sec = $("#vedettes-sec"); if (!sec) return;
+  let L = CATALOGUE.filter((p) => p.vedette && p.dispo !== "rupture");
+  if (!L.length) L = VEDETTES_DEFAUT.map(produit).filter((p) => p && p.dispo !== "rupture");
+  L = L.slice(0, 6);
+  sec.classList.toggle("cachee", !L.length);
+  $("#vedettes").innerHTML = L.map(carteHTML).join("");
+}
 function rendrePromo() {
   const p = CATALOGUE.filter((x) => x.prixBarre && x.badge === "PROMO" && x.type === "produit");
   const bloc = $("#promo");
@@ -843,6 +869,7 @@ function changer(id, delta) {
   if (q) panier[id] = q; else { delete panier[id]; delete compo[id]; ecrire("noogo_compo", compo); }
   ecrire("noogo_panier", panier);
   document.querySelectorAll(`.produit[data-id="${CSS.escape(id)}"] .action`).forEach((a) => (a.innerHTML = actionHTML(produit(id), q)));
+  if (delta > 0) suivre("ajout_panier");
   if (delta > 0 && q === 1) toast("Ajouté au panier");
   majPanier();
   if (!$("#voile").hidden) rendrePanier();
@@ -864,7 +891,7 @@ function texteLivraison(t) {
   if (t.aPack) return { v: "Incluse pour les packs", note: "Pour les articles à l'unité, la livraison est à la charge du client (tarif confirmé sur WhatsApp)." };
   return { v: "À la charge du client", note: "Le tarif dépend de votre quartier : nous vous l'annonçons sur WhatsApp." };
 }
-function ouvrirPanier() { rendrePanier(); $("#voile").hidden = false; document.body.classList.add("verrou"); setTimeout(() => $("#fermer-panier").focus(), 50); }
+function ouvrirPanier() { suivre("panier_ouvert"); rendrePanier(); if (!promo && lire("noogo_code_lien") && lignes().length) verifierCode(true); $("#voile").hidden = false; document.body.classList.add("verrou"); setTimeout(() => $("#fermer-panier").focus(), 50); }
 function fermerPanier() { $("#voile").hidden = true; document.body.classList.remove("verrou"); }
 function rendrePanier() {
   const L = lignes(), corps = $("#panier-corps"), pied = $("#panier-pied");
@@ -889,7 +916,7 @@ function rendrePanier() {
     </div>
     ${reception === "retrait"
       ? `<div class="bloc-info">📍 Local : <b>${esc(CONFIG.adresse)}</b><br><a class="btn btn-clair btn-petit" href="${esc(CONFIG.lienMaps)}" target="_blank" rel="noopener">Voir l'itinéraire</a></div>`
-      : `<div class="bloc-info">⏱ ${esc(CONFIG.delai)}</div>`}
+      : `<div class="bloc-info">⏱ ${esc(CONFIG.delai)}${tarifsLignes().length ? `<br>🚚 Livraison d'articles seuls, selon la distance : ${tarifsLignes().map(esc).join(" · ")}<br><small>Tarifs indicatifs, confirmés sur WhatsApp.</small>` : ""}</div>`}
 
     <label for="f-nom">Nom et prénom <span style="font-weight:400;color:var(--gris)">(facultatif)</span></label>
     <input type="text" id="f-nom" autocomplete="name" placeholder="Votre nom" value="${esc(sauv.nom != null ? sauv.nom : mem.nom || "")}">
@@ -916,7 +943,7 @@ function rendrePanier() {
     <p style="margin:16px 0 0">${promo ? "" : `<button type="button" class="lien" id="btn-code">J'ai un code promo</button>`}</p>
     <div id="bloc-code" class="${promo || sauv.code ? "" : "cachee"}">
       <label for="f-code">Code promo</label>
-      <div class="champ-ligne"><input type="text" id="f-code" autocapitalize="characters" autocomplete="off" placeholder="Votre code" value="${esc(promo ? promo.code : sauv.code || "")}"><button type="button" class="btn btn-brun btn-petit" id="btn-appliquer">Appliquer</button></div>
+      <div class="champ-ligne"><input type="text" id="f-code" autocapitalize="characters" autocomplete="off" placeholder="Votre code" value="${esc(promo ? promo.code : sauv.code || lire("noogo_code_lien") || "")}"><button type="button" class="btn btn-brun btn-petit" id="btn-appliquer">Appliquer</button></div>
       <div id="msg-code" class="aide" style="color:${msgCode.c}">${esc(msgCode.t)}</div>
     </div>
 
@@ -941,8 +968,9 @@ async function verifierCode(silencieux) {
     const r = await fetch("/api/verifier-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, articles: lignes().map((l) => ({ id: l.p.id, qte: l.qte })) }) });
     const d = await r.json();
     if (d.valide) { promo = { code: code.toUpperCase(), remise: Number(d.remise) || 0 }; if (!silencieux) msgCode = { t: "Code valide : −" + fmt(promo.remise), c: "var(--foret)" }; }
-    else { promo = null; msgCode = { t: d.message || "Code invalide", c: "var(--rouge)" }; }
-  } catch (e) { promo = null; msgCode = { t: "Vérification impossible, réessayez.", c: "var(--rouge)" }; }
+    else if (d.valide === false && r.status < 500 && r.status !== 429) { promo = null; msgCode = { t: d.message || "Code invalide", c: "var(--rouge)" }; }
+    else { msgCode = { t: d.message || "Vérification momentanément impossible : votre code sera revérifié à l'envoi.", c: "var(--rouge)" }; }
+  } catch (e) { msgCode = { t: "Vérification impossible (réseau). Votre code est conservé, réessayez.", c: "var(--rouge)" }; }
   if (!$("#voile").hidden) { const keep = $("#f-code") ? $("#f-code").value : code; rendrePanier(); const c = $("#f-code"); if (c && !promo) c.value = keep; }
 }
 let revalT; function revalider() { clearTimeout(revalT); revalT = setTimeout(() => verifierCode(true), 400); }
@@ -980,12 +1008,12 @@ function envoyer() {
   m.push(`💰 *TOTAL DES ARTICLES : ${fmt(t.apres)}*`);
   m.push("", "Merci de me confirmer la disponibilité et, pour une livraison d'articles seuls, le tarif. 🙏");
   const payload = { nomClient: nom, telClient: tel, localisation: lieu + (position ? " — " + position : ""), modePaiement: paiement, modeReception: reception, articles: L.map((l) => (estMix(l.p) ? { id: l.p.id, qte: l.qte, compo: compo[l.p.id] } : { id: l.p.id, qte: l.qte })), note, codePromo: promo ? promo.code : "", source: "site" };
-  try { fetch("/api/commander", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), keepalive: true }).then((r) => r.json()).then((j) => { if (j && j.commandeId) { ecrire("noogo_derniere", j.commandeId); const i = $("#sv-code"); if (i && !i.value) i.value = j.commandeId; toast("Code de suivi : " + j.commandeId + " (voir « Suivre ma commande »)"); } }).catch(() => {}); } catch (e) {}
+  try { fetch("/api/commander", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), keepalive: true }).then((r) => r.json()).then((j) => { if (j && j.commandeId) { ecrire("noogo_derniere", j.commandeId); const i = $("#sv-code"); if (i && !i.value) i.value = j.commandeId; toast("Code de suivi : " + j.commandeId + " (voir « Suivre ma commande »)"); suivre("commande_envoyee"); } else { toast("Commande non enregistrée sur le site : envoyez bien le message WhatsApp, nous la traitons."); } }).catch(() => { toast("Commande non enregistrée sur le site : envoyez bien le message WhatsApp, nous la traitons."); }); } catch (e) {}
   const url = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(m.join("\n"));
   const w = window.open(url, "_blank", "noopener");
   if (!w) location.href = url;
   panier = {}; compo = {}; ecrire("noogo_panier", panier); ecrire("noogo_compo", compo); promo = null;
-  fermerPanier(); rendreCatalogue(); majPanier();
+  fermerPanier(); rendreCatalogue(); rendreVedettes(); majPanier();
   toast("Commande prête : envoyez le message sur WhatsApp");
 }
 
@@ -1076,6 +1104,7 @@ const CIBLE_VUE = { carte: ["carte", "tout"], dispo: ["carte", "dispo"], packs: 
 let vue = "accueil";
 function afficherVue(v) {
   vue = VUES[v] !== undefined ? v : "accueil";
+  if (vue === "carte") suivre("carte_vue");
   document.querySelectorAll("[data-v]").forEach((e) => { e.hidden = !e.dataset.v.split(" ").includes(vue); });
   const tete = $("#vue-tete"); tete.hidden = vue === "accueil"; $("#vue-titre").textContent = VUES[vue];
   document.querySelectorAll(".bnav [data-nav]").forEach((b) => { const on = b.dataset.nav === vue || (vue === "accueil" && b.dataset.nav === "accueil"); if (on && b.dataset.nav !== "panier") b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
@@ -1169,7 +1198,7 @@ function afficherBanniere(texte, bouton) {
   if (bouton) $("#btn-installer").textContent = bouton;
   $("#installer").classList.remove("cachee");
 }
-window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); invite = e; afficherBanniere(); });
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); invite = e; setTimeout(() => afficherBanniere(), 25000); });
 window.addEventListener("appinstalled", () => { invite = null; $("#installer").classList.add("cachee"); toast("Noogó est installée sur votre téléphone ✓"); });
 
 async function installer() {
@@ -1217,8 +1246,8 @@ function guideGenerique() { guide("Installer Noogó", `<ol><li>Ouvrez le menu de
 
 window.addEventListener("load", () => {
   if (estInstallee) return;
-  if (estIOS) setTimeout(() => { afficherBanniere("<strong>Installez Noogó sur votre iPhone</strong> : accès direct depuis l'écran d'accueil.", "Comment faire"); if (!lire("noogo_guide_ios")) { ecrire("noogo_guide_ios", 1); guideIOS(); } }, 1800);
-  else if (navIntegre) setTimeout(() => afficherBanniere("<strong>Pour installer Noogó</strong>, ouvrez ce site dans votre navigateur.", "Ouvrir"), 1200);
+  if (estIOS) setTimeout(() => { afficherBanniere("<strong>Installez Noogó sur votre iPhone</strong> : accès direct depuis l'écran d'accueil.", "Comment faire"); if (!lire("noogo_guide_ios")) { ecrire("noogo_guide_ios", 1); guideIOS(); } }, 25000);
+  else if (navIntegre) setTimeout(() => afficherBanniere("<strong>Pour installer Noogó</strong>, ouvrez ce site dans votre navigateur.", "Ouvrir"), 20000);
   else setTimeout(() => { if (!invite) { /* Firefox, navigateurs sans invite : le bouton explique la marche à suivre */ } }, 3000);
 });
 

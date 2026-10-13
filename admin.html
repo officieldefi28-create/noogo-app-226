@@ -762,7 +762,7 @@ function ouvrirEditeur(id){
     '<div><label for="ed-pl">Texte du pack</label><input id="ed-pl" type="text" maxlength="60" value="' + esc(p.packLabel || "") + '" placeholder="Ex : 5 pots · 125 ml"></div></div>' +
     '<label for="ed-desc">Description courte (facultatif)</label><textarea id="ed-desc" maxlength="160">' + esc(p.desc || "") + '</textarea>' +
     '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:6px"><label class="sw"><input type="checkbox" id="ed-actif"' + (p.actif !== false ? " checked" : "") + '><i></i>Visible sur le site</label>' +
-    '<label class="sw or"><input type="checkbox" id="ed-sur"' + (p.surCommande ? " checked" : "") + '><i></i>Sur commande</label></div>' +
+    '<label class="sw or"><input type="checkbox" id="ed-sur"' + (p.surCommande ? " checked" : "") + '><i></i>Sur commande</label><label class="sw or"><input type="checkbox" id="ed-vedette"' + (p.vedette ? " checked" : "") + '><i></i>Vedette (en avant sur l\'accueil)</label></div>' +
     '<label for="ed-dispo">Disponibilité affichée</label><select id="ed-dispo">' + optionsSelect([["","Normale"],["faible","Stock faible"],["rupture","Rupture (commande impossible)"]], p.dispo || "") + '</select>' +
     '<label>Photo</label>' +
     '<div class="photo-zone">' + '<img class="apercu" id="ed-apercu" alt="Aperçu" src="' + esc(imgSrc(p.img)) + '">' +
@@ -798,6 +798,7 @@ function lireEditeur(){
   set("prixBarre", pb || 0); set("badge", valeurChamp("ed-badge").trim().toUpperCase()); set("gr", valeurChamp("ed-gr")); set("desc", valeurChamp("ed-desc").trim());
   if (!o.surCommande) delete o.surCommande;
   set("dispo", valeurChamp("ed-dispo"));
+  if ($("ed-vedette").checked) o.vedette = true; else delete o.vedette;
   if (o.type === "pack") {
     var n = parseInt(valeurChamp("ed-pc"), 10);
     if (!(n >= 1)) throw new Error("Indiquez le nombre de pots du pack (au moins 1).");
@@ -1086,6 +1087,7 @@ var CHAMPS_SITE = [
   ["whatsapp","Numéro WhatsApp des commandes (avec l'indicatif, ex : 22661682706)","text"],
   ["annonce","Bandeau tout en haut du site","text"],
   ["delai","Délai de livraison (affiché dans le panier)","text"],
+  ["livraisonTarifs","Tarifs de livraison par distance (une ligne par tranche, ex : 0 à 15 km : 1 000 FCFA). Indicatifs : le prix final reste confirmé sur WhatsApp. Laissez vide pour masquer.","area"],
   ["adresse","Adresse du local (retrait)","text"],
   ["lienMaps","Lien Google Maps du local","url"],
   ["infoPaiement","Explication du paiement (affichée dans le panier)","area"],

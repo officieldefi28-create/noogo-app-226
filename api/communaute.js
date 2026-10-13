@@ -93,10 +93,36 @@ module.exports = async (req, res) => {
     switch (action) {
       case "tout": {
         const [avis, demandes, actus, legal] = await Promise.all([S.hgetall("noogo:avis"), S.hgetall("noogo:demandes"), S.getDoc("actus"), S.getDoc("legal")]);
+        const cmds = await S.getCommandes();
+        const notes = (await S.getDoc("contacts-notes")) || {};
+        const map = {};
+        for (const c of cmds) {
+          const chiffres = String(c.telClient || "").replace(/\D/g, "");
+          if (chiffres.length < 8) continue;
+          const cle = chiffres.slice(-8);
+          const x = map[cle] || (map[cle] = { cle, tel: chiffres.length === 8 ? "226" + chiffres : chiffres.replace(/^00/, ""), nom: "", commandes: 0, total: 0, derniere: "", lieu: "", note: notes[cle] || "" });
+          if (c.statutLivraison === "annulee") continue;
+          x.commandes += 1; x.total += Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0;
+          if (String(c.date || "") >= x.derniere) {
+            x.derniere = c.date || "";
+            if (c.nomClient && c.nomClient !== "Non renseigné") x.nom = c.nomClient;
+            if (c.localisation && !/^(Non précisée|Retrait)/.test(c.localisation)) x.lieu = c.localisation;
+          }
+        }
+        const contacts = Object.values(map).sort((a, b) => String(b.derniere).localeCompare(String(a.derniere))).slice(0, 1000);
         const brut = await S.hgetall("noogo:stats");
         const stats = {};
         for (const [k, v] of Object.entries(brut)) { const [j, e] = k.split("|"); if (!stats[j]) stats[j] = {}; stats[j][e] = Number(v) || 0; }
-        return res.status(200).json({ stats, avis: Object.values(avis).sort(parDate), demandes: Object.values(demandes).sort(parDate), actus: (actus || []).sort(parDate), legal: legalPropre(legal) });
+        return res.status(200).json({ contacts, stats, avis: Object.values(avis).sort(parDate), demandes: Object.values(demandes).sort(parDate), actus: (actus || []).sort(parDate), legal: legalPropre(legal) });
+      }
+      case "contact_note": {
+        const cle = String(d.cle || "").replace(/\D/g, "").slice(0, 8);
+        if (cle.length !== 8) return res.status(400).json({ erreur: "Contact invalide" });
+        const notes = (await S.getDoc("contacts-notes")) || {};
+        const n = txt(d.note, 200);
+        if (n) notes[cle] = n; else delete notes[cle];
+        await S.setDoc("contacts-notes", notes);
+        return res.status(200).json({ succes: true });
       }
       case "avis_statut": {
         const a = await S.hget("noogo:avis", txt(d.id, 60));

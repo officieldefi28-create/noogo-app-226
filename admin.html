@@ -602,7 +602,7 @@ function carteCommande(c){
       '<button class="btn btn-petit btn-clair" type="button" data-act="cmd-relance" data-id="' + id + '">Relancer</button>' : '') +
     '<button class="btn btn-petit btn-clair" type="button" data-act="cmd-contact" data-id="' + id + '">' + (tel ? "Modifier le numéro" : "Ajouter le numéro") + '</button></div>' +
     (tel ? "" : '<p class="gris petit" style="margin:4px 0 0">Pas de numéro : le client vous a écrit sur WhatsApp. Touchez son numéro dans la conversation, copiez-le, puis « Ajouter le numéro » ici.</p>') +
-    '<div class="info-l"><b>' + (c.modeReception === "retrait" ? "Retrait" : "Livraison") + ' :</b> ' + esc(c.localisation) + '</div>' + (c.note ? '<div class="info-l"><b>Précisions :</b> ' + esc(c.note) + '</div>' : '') +
+    '<div class="info-l"><b>' + (c.modeReception === "retrait" ? "Retrait" : "Livraison") + ' :</b> ' + esc(c.localisation).replace(/(https:\/\/maps\.google\.com\/\?q=[-0-9.,]+)/g, '<a href="$1" target="_blank" rel="noopener" class="btn btn-petit btn-or" style="margin-left:4px">Ouvrir la position</a>') + '</div>' + (c.note ? '<div class="info-l"><b>Précisions :</b> ' + esc(c.note) + '</div>' : '') +
     '<div class="info-l"><b>Paiement :</b> ' + esc(PAIEMENTS[c.modePaiement] || c.modePaiement) + '</div>' +
     '<div class="articles">' + arts + '</div>' +
     '<div class="totaux"><div class="ligne"><span>Total articles</span><span>' + esc(fcfa(c.montantTotal)) + '</span></div>' + remise +

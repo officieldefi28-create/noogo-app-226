@@ -934,9 +934,12 @@ function rendrePanier() {
     <input type="tel" id="f-tel" inputmode="tel" autocomplete="tel" placeholder="Ex : 70 12 34 56" value="${esc(sauv.tel != null ? sauv.tel : mem.tel || "")}">
     <p class="aide">Pour que le livreur puisse vous appeler si besoin. Sans numéro, nous vous répondons sur WhatsApp.</p>
     <div id="bloc-lieu" ${reception === "retrait" ? "class='cachee'" : ""}>
-      <label for="f-lieu">Lieu de livraison (quartier, repère)</label>
-      <div class="champ-ligne"><input type="text" id="f-lieu" autocomplete="street-address" placeholder="Ex : Karpala, près de la mairie" value="${esc(sauv.lieu != null ? sauv.lieu : mem.lieu || "")}"><button type="button" class="btn btn-clair btn-petit" id="btn-position" title="Partager ma position">Ma position</button></div>
-      ${position ? `<p class="aide">Position partagée ✓</p>` : ""}
+      <label>Lieu de livraison</label>
+      <button type="button" class="btn btn-vert btn-bloc" id="btn-position">${position ? "✓ Position partagée (appuyer pour actualiser)" : "📍 Partager ma position (le plus simple)"}</button>
+      <p class="aide">${position ? "Le livreur recevra votre position exacte sur la carte." : "Un seul appui : le livreur reçoit votre position exacte."}</p>
+      ${(() => { let app = false; try { app = navIntegre; } catch (e) {} if (!app || position) return ""; const host = location.host + location.pathname; const android = /android/i.test(navigator.userAgent); return `<div class="bloc-info" style="margin:8px 0">Si le bouton ne marche pas, c'est que ce lien est ouvert dans une application. ${android ? `<a class="btn btn-clair btn-petit" style="margin-top:6px" href="intent://${esc(host)}#Intent;scheme=https;package=com.android.chrome;end">Ouvrir dans Chrome</a>` : "Touchez « ⋯ » puis « Ouvrir dans Safari »."} Ou écrivez simplement votre quartier ci-dessous.</div>`; })()}
+      <label for="f-lieu" style="font-weight:600">Ou écrivez votre quartier / un repère <span style="font-weight:400;color:var(--gris)">(facultatif)</span></label>
+      <input type="text" id="f-lieu" autocomplete="street-address" placeholder="Ex : Karpala, près de la mairie" value="${esc(sauv.lieu != null ? sauv.lieu : (mem.lieu && mem.lieu !== "Position partagée" ? mem.lieu : ""))}">
     </div>
 
     <label for="f-note">Précisions <span style="font-weight:400;color:var(--gris)">(facultatif)</span></label>
@@ -990,10 +993,10 @@ const PAY = { get especes() { return "Espèces"; }, get orange() { return "Orang
 function rappelInfos(manque) {
   const v = $("#voile-rappel"); if (!v) return Promise.resolve("non");
   const texte = manque.length === 2
-    ? "Pour que le livreur puisse vous joindre facilement, pouvez-vous ajouter votre numéro de téléphone et votre localisation (quartier ou bouton « Ma position ») ?"
+    ? "Pour que le livreur puisse vous joindre facilement, pouvez-vous ajouter votre numéro de téléphone et votre position (bouton vert « Partager ma position », ou votre quartier) ?"
     : manque[0] === "tel"
     ? "Pour que le livreur puisse vous joindre facilement, pouvez-vous enregistrer votre numéro de téléphone ?"
-    : "Pour aider le livreur à vous trouver, pouvez-vous ajouter votre localisation (quartier, repère ou bouton « Ma position ») ?";
+    : "Pour aider le livreur à vous trouver, pouvez-vous ajouter votre position (appuyez sur le bouton vert « Partager ma position », c'est le plus simple, ou écrivez votre quartier) ?";
   $("#rappel-texte").textContent = texte; v.hidden = false;
   return new Promise((ok) => {
     const fin = (r) => { v.hidden = true; $("#rappel-oui").onclick = $("#rappel-non").onclick = null; ok(r); };
@@ -1021,14 +1024,18 @@ async function envoyer(forcer) {
   if (incomplet.length) { err.textContent = "Choisissez les saveurs de : " + incomplet.map((l) => l.p.nom.replace(/ — .*/, "")).join(", ") + "."; err.classList.remove("cachee"); return; }
   err.classList.add("cachee");
   const note = (($("#f-note") || {}).value || "").trim();
-  ecrire("noogo_client", { nom, tel, lieu });
+  ecrire("noogo_client", { nom, tel, lieu: lieu === "Position partagée" ? "" : lieu });
   const prods = L.filter((l) => l.p.type !== "pack"), packs = L.filter((l) => l.p.type === "pack");
   const m = [];
   m.push("🍦 *NOUVELLE COMMANDE NOOGÓ*", "");
   if (tel) m.push(`📞 *Téléphone :* ${tel}`);
   m.push(`👤 *Nom :* ${nom || "Non précisé"}`);
   m.push(`🚚 *Réception :* ${reception === "retrait" ? "Retrait au local" : "Livraison à domicile"}`);
-  if (reception === "livraison") { m.push(`📍 *Lieu :* ${lieu || "Non précisé"}`); if (position) m.push(`🗺️ ${position}`); }
+  if (reception === "livraison") {
+    const lieuTxt = lieu === "Position partagée" ? "" : lieu;
+    if (position) { m.push(`📍 *Position GPS :* ${position}`); if (lieuTxt) m.push(`🏠 *Repère :* ${lieuTxt}`); }
+    else m.push(`📍 *Lieu :* ${lieuTxt || "Non précisé"}`);
+  }
   if (promo) m.push(`🎟️ *Code promo :* ${promo.code}`);
   m.push(`💳 *Paiement :* ${PAY[paiement]}`, "");
   if (prods.length) { m.push("📦 *ARTICLES*"); prods.forEach((l) => m.push(`• ${l.p.nom} (${l.p.info || ""}) ×${l.qte} = ${fmt(l.p.prix * l.qte)}${l.p.surCommande ? " — sur commande" : ""}`)); m.push(""); }
@@ -1042,12 +1049,12 @@ async function envoyer(forcer) {
   m.push(`🚚 *Livraison :* ${liv.v}`);
   m.push(`💰 *TOTAL DES ARTICLES : ${fmt(t.apres)}*`);
   m.push("", "Merci de me confirmer la disponibilité et, pour une livraison d'articles seuls, le tarif. 🙏");
-  const payload = { nomClient: nom, telClient: tel, localisation: lieu + (position ? " — " + position : ""), modePaiement: paiement, modeReception: reception, articles: L.map((l) => (estMix(l.p) ? { id: l.p.id, qte: l.qte, compo: compo[l.p.id] } : { id: l.p.id, qte: l.qte })), note, codePromo: promo ? promo.code : "", source: "site" };
+  const payload = { nomClient: nom, telClient: tel, localisation: [lieu === "Position partagée" ? "" : lieu, position].filter(Boolean).join(" — "), modePaiement: paiement, modeReception: reception, articles: L.map((l) => (estMix(l.p) ? { id: l.p.id, qte: l.qte, compo: compo[l.p.id] } : { id: l.p.id, qte: l.qte })), note, codePromo: promo ? promo.code : "", source: "site" };
   try { fetch("/api/commander", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), keepalive: true }).then((r) => r.json()).then((j) => { if (j && j.commandeId) { ecrire("noogo_derniere", j.commandeId); const i = $("#sv-code"); if (i && !i.value) i.value = j.commandeId; toast("Code de suivi : " + j.commandeId + " (voir « Suivre ma commande »)"); suivre("commande_envoyee"); } else { toast("Commande non enregistrée sur le site : envoyez bien le message WhatsApp, nous la traitons."); } }).catch(() => { toast("Commande non enregistrée sur le site : envoyez bien le message WhatsApp, nous la traitons."); }); } catch (e) {}
   const url = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(m.join("\n"));
   const w = window.open(url, "_blank", "noopener");
   if (!w) location.href = url;
-  panier = {}; compo = {}; ecrire("noogo_panier", panier); ecrire("noogo_compo", compo); promo = null;
+  panier = {}; compo = {}; ecrire("noogo_panier", panier); ecrire("noogo_compo", compo); promo = null; position = "";
   fermerPanier(); rendreCatalogue(); rendreVedettes(); majPanier();
   toast("Commande prête : envoyez le message sur WhatsApp");
 }
@@ -1212,8 +1219,8 @@ function partagerPosition(btn) {
   if (!navigator.geolocation) return toast("Localisation non disponible sur cet appareil");
   btn.disabled = true; btn.textContent = "Recherche…";
   navigator.geolocation.getCurrentPosition(
-    (p) => { position = `https://maps.google.com/?q=${p.coords.latitude.toFixed(6)},${p.coords.longitude.toFixed(6)}`; const keep = { n: $("#f-nom").value, t: $("#f-tel").value, l: $("#f-lieu").value }; rendrePanier(); $("#f-nom").value = keep.n; $("#f-tel").value = keep.t; $("#f-lieu").value = keep.l || "Position partagée"; toast("Position ajoutée à la commande"); },
-    () => { btn.disabled = false; btn.textContent = "Ma position"; toast("Impossible de vous localiser — écrivez votre quartier"); },
+    (p) => { position = `https://maps.google.com/?q=${p.coords.latitude.toFixed(6)},${p.coords.longitude.toFixed(6)}`; const keep = { n: ($("#f-nom") || {}).value, t: ($("#f-tel") || {}).value, l: ($("#f-lieu") || {}).value, o: ($("#f-note") || {}).value }; rendrePanier(); $("#f-nom").value = keep.n || ""; $("#f-tel").value = keep.t || ""; $("#f-lieu").value = keep.l || ""; if ($("#f-note")) $("#f-note").value = keep.o || ""; toast("Position ajoutée à la commande ✓"); },
+    () => { btn.disabled = false; btn.textContent = "📍 Partager ma position (le plus simple)"; toast("Localisation impossible ici : écrivez votre quartier dans la case en dessous"); },
     { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
   );
 }

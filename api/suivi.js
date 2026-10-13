@@ -16,7 +16,10 @@ async function charger() {
     chargerCatalogue(), S.getSuiviConfig(), S.suiviListe("lots"), S.suiviListe("ventes"), S.suiviListe("pertes"),
     S.suiviListe("depenses"), S.suiviListe("comptages"), S.getCommandes()
   ]);
-  return { catalogue, config: configPropre(config), lots, ventes, pertes, depenses, comptages, commandes };
+  const cfg = configPropre(config);
+  // « Nouveau départ » : les commandes du site livrées avant ce moment ne comptent plus dans le suivi
+  const cmds = cfg.debutHeure ? commandes.filter((c) => String(c.dateLivraison || c.date || "") >= cfg.debutHeure) : commandes;
+  return { catalogue, config: cfg, lots, ventes, pertes, depenses, comptages, commandes: cmds };
 }
 
 function configPropre(c) {
@@ -30,7 +33,8 @@ function configPropre(c) {
   return {
     caisseDepart: Math.round(Number(c.caisseDepart) || 0),
     depuis: /^\d{4}-\d{2}-\d{2}$/.test(String(c.depuis || "")) ? c.depuis : "",
-    pointsVente: pv, couts, internes
+    pointsVente: pv, couts, internes,
+    debutHeure: /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(String(c.debutHeure || "")) ? c.debutHeure : ""
   };
 }
 
@@ -125,6 +129,35 @@ module.exports = async (req, res) => {
         if (/^h-/.test(idSup)) {
           const sup = (await S.getDoc("suivi-supprimes")) || [];
           if (!sup.includes(idSup)) { sup.push(idSup); await S.setDoc("suivi-supprimes", sup.slice(-500)); }
+        }
+        break;
+      }
+      case "sauvegarde": {
+        const [lots, ventes, pertes, depenses, comptages, config] = await Promise.all([S.suiviListe("lots"), S.suiviListe("ventes"), S.suiviListe("pertes"), S.suiviListe("depenses"), S.suiviListe("comptages"), S.getSuiviConfig()]);
+        return res.status(200).json({ sauvegardeLe: new Date().toISOString(), config, lots, ventes, pertes, depenses, comptages });
+      }
+      case "nouveau_depart": {
+        const jr = date(d.date || new Date().toISOString().slice(0, 10));
+        const caisse = entier(d.caisse, 0, 1000000000, "Caisse");
+        const items = (Array.isArray(d.items) ? d.items : []).slice(0, 80)
+          .map((x) => ({ produitId: idPropre(x.produitId), qte: entier(x.qte || 0, 0, 100000, "Stock"), cu: entier(x.coutUnitaire || 0, 0, 10000000, "Coût") }))
+          .filter((x) => x.qte > 0);
+        // 1) tout effacer (la sauvegarde a été téléchargée avant par l'admin)
+        for (const t of ["lots", "ventes", "pertes", "depenses", "comptages"]) {
+          for (const x of await S.suiviListe(t)) if (x && x.id) await S.suiviDel(t, String(x.id));
+        }
+        // l'ancien classeur ne doit jamais revenir
+        const h = require("./_data/historique-noogo.json");
+        const sup = new Set((await S.getDoc("suivi-supprimes")) || []);
+        for (const k of ["lots", "ventes", "pertes", "depenses"]) for (const x of h[k] || []) sup.add(x.id);
+        await S.setDoc("suivi-supprimes", Array.from(sup).slice(-500));
+        // 2) nouveau départ : caisse + stock restant (un lot « Stock de départ » par produit)
+        const cfg = configPropre(await S.getSuiviConfig());
+        cfg.caisseDepart = caisse; cfg.depuis = jr; cfg.debutHeure = new Date().toISOString();
+        await S.setSuiviConfig(configPropre(cfg));
+        for (const it of items) {
+          const lot = { id: nouvelId("lot"), date: jr, nom: "Stock de départ", cout: it.qte * it.cu, lignes: [{ produitId: it.produitId, qte: it.qte }], note: "Nouveau départ du " + jr, depart: true };
+          await S.suiviSet("lots", lot.id, lot);
         }
         break;
       }

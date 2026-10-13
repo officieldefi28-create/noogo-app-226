@@ -178,7 +178,7 @@ function bilan(donnees, du, au) {
   const V = r.ventes.filter((x) => dans(x.date));
   const P = r.pertes.filter((x) => dans(x.date));
   const D = r.depenses.filter((x) => dans(jour(x.date)));
-  const L = r.lots.filter((x) => dans(jour(x.date)));
+  const L = r.lots.filter((x) => dans(jour(x.date)) && !x.depart);
 
   const somme = (arr, f) => arr.reduce((s, x) => s + f(x), 0);
   const ca = somme(V, (x) => x.montant), cogs = somme(V, (x) => x.cout), qte = somme(V, (x) => x.qte);
@@ -208,7 +208,7 @@ function bilan(donnees, du, au) {
   const depuis = cfg.depuis || "";
   const apres = (d) => !depuis || d >= depuis;
   const cV = somme(r.ventes.filter((x) => apres(x.date)), (x) => x.montant);
-  const cL = somme(r.lots.filter((x) => apres(jour(x.date))), (x) => nombre(x.cout));
+  const cL = somme(r.lots.filter((x) => apres(jour(x.date)) && !x.depart), (x) => nombre(x.cout));
   const cD = r.depenses.filter((x) => apres(jour(x.date)));
   const caisse = nombre(cfg.caisseDepart) + cV - cL
     - somme(cD.filter((x) => x.classe === "charge" || x.classe === "achat"), (x) => nombre(x.montant))

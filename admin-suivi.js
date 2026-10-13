@@ -83,7 +83,7 @@ function ouvrir() {
   if (!E.vue) c.innerHTML = '<p class="gris">Chargement du suivi…</p>';
   rafraichir();
   clearInterval(timer);
-  timer = setInterval(function () { if (document.hidden || !$("p-suivi").classList.contains("actif") || E.ouvert) return; rafraichir(); }, 60000);
+  timer = setInterval(function () { if (document.hidden || !$("p-suivi").classList.contains("actif") || E.ouvert || E.depart) return; rafraichir(); }, 60000);
 }
 
 /* ---------- rendu ---------- */
@@ -246,7 +246,21 @@ function vParams(v) {
   h += '<button class="btn btn-or btn-bloc" type="button" data-s="enregistrer-params">Enregistrer les réglages</button>';
   h += '<div class="carte" style="margin-top:14px"><h3>Exporter</h3><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-brun btn-petit" type="button" data-s="export" data-v="ventes">Ventes (CSV)</button><button class="btn btn-brun btn-petit" type="button" data-s="export" data-v="depenses">Dépenses (CSV)</button><button class="btn btn-brun btn-petit" type="button" data-s="export" data-v="stock">Stock (CSV)</button></div><p class="astuce" style="margin-top:8px">S\'ouvre dans Excel ou Google Sheets (pour votre comptable).</p></div>';
   h += '<div class="carte"><h3>Reprendre mon ancien classeur</h3><p class="astuce">Ajoute les productions, ventes, dépenses et pertes du 03 au 08 octobre déjà notées dans votre classeur. À faire une seule fois (refaire ne crée pas de doublons).</p><button class="btn btn-clair" type="button" data-s="importer">Reprendre l\'historique</button></div>';
+  h += '<div class="carte" style="border:2px solid #c62828"><h3>Nouveau départ (tout remettre à zéro)</h3><p class="astuce">Efface toutes les anciennes productions, ventes, pertes, dépenses et comptages. Le chiffre d\'affaires, les pertes et le résultat repartent de 0. Vous gardez seulement votre <b>caisse</b> et votre <b>stock restant</b>. Un fichier de sauvegarde est téléchargé avant, au cas où.</p>' +
+    '<button class="btn btn-clair" type="button" data-s="depart-ouvrir">' + (E.depart ? "Fermer" : "Préparer le nouveau départ") + '</button>' + (E.depart ? vDepart(v) : "") + '</div>';
   return h;
+}
+function vDepart(v) {
+  var stock = {}; (v.stock || []).forEach(function (s) { stock[s.id] = s; });
+  var lignes = v.produits.filter(function (p) { return p.actif || p.interne || (stock[p.id] && stock[p.id].theorique > 0); }).map(function (p) {
+    var s = stock[p.id] || {}, q = Math.max(0, Math.round(s.theorique || 0)), cu = Math.round(s.coutMoyen || (v.config.couts && v.config.couts[p.id]) || 0);
+    return '<div class="rang" style="align-items:center"><span style="flex:1">' + esc(p.nom) + '</span><input type="number" inputmode="numeric" min="0" style="width:74px;min-height:40px" data-nd-q="' + esc(p.id) + '" value="' + q + '" aria-label="Stock restant"><input type="number" inputmode="numeric" min="0" style="width:84px;min-height:40px" data-nd-c="' + esc(p.id) + '" value="' + cu + '" aria-label="Coût par pot"></div>';
+  }).join("");
+  return '<div class="formulaire"><label for="nd-caisse">Caisse actuelle réelle (F) : espèces + Orange Money + Wave</label><input type="number" id="nd-caisse" inputmode="numeric" min="0" value="' + Math.max(0, Math.round(v.bilan.caisse || 0)) + '">' +
+    '<p class="astuce" style="margin-top:12px"><b>Stock restant aujourd\'hui</b> : pour chaque produit, le nombre de pots que vous avez vraiment, et le coût de revient d\'un pot (colonne de droite). Mettez 0 s\'il n\'y en a plus.</p>' +
+    '<div class="rang" style="font-size:12px;color:var(--gris)"><span style="flex:1">Produit</span><span style="width:74px;text-align:center">Pots</span><span style="width:84px;text-align:center">Coût / pot</span></div>' + lignes +
+    '<label style="margin-top:10px">Pour confirmer, tapez le mot <b>ZERO</b></label><input type="text" id="nd-conf" autocomplete="off" placeholder="ZERO">' +
+    '<button class="btn btn-bloc" type="button" data-s="depart-valider" style="background:#c62828;color:#fff;margin-top:10px">Tout effacer et repartir de zéro</button></div>';
 }
 
 /* ---------- actions ---------- */
@@ -305,6 +319,20 @@ function clic(ev) {
       if (!confirm("Supprimer cette ligne ? Les chiffres seront recalculés.")) return;
       return envoyer("supprimer", { type: t.getAttribute("data-t"), id: t.getAttribute("data-id") }, "Supprimé", function () { E.soir = null; });
     case "retirer-interne": var c = paramsLus(); c.internes.splice(+t.getAttribute("data-i"), 1); return envoyer("config", { config: c }, "Réglages enregistrés");
+    case "depart-ouvrir": E.depart = !E.depart; return rendre();
+    case "depart-valider":
+      if (val("nd-conf").trim().toUpperCase() !== "ZERO") { A.toast("Tapez le mot ZERO pour confirmer", "err"); return; }
+      var itemsND = [].map.call(document.querySelectorAll("[data-nd-q]"), function (e) {
+        var id = e.getAttribute("data-nd-q"), c = document.querySelector('[data-nd-c="' + id + '"]');
+        return { produitId: id, qte: e.value, coutUnitaire: c ? c.value : 0 };
+      });
+      var caisseND = val("nd-caisse");
+      return appel("sauvegarde").then(function (s) {
+        var u = URL.createObjectURL(new Blob([JSON.stringify(s, null, 1)], { type: "application/json" })), a = document.createElement("a");
+        a.href = u; a.download = "sauvegarde-suivi-noogo-" + jourJ(0) + ".json"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 3000);
+        if (!confirm("Sauvegarde téléchargée. Tout effacer maintenant et repartir de zéro avec la caisse de " + caisseND + " F ?")) throw Object.assign(new Error("Annulé"), { silencieux: true });
+        return charge("nouveau_depart", { date: jourJ(0), caisse: caisseND, items: itemsND });
+      }).then(function () { E.depart = false; E.ouvert = null; E.soir = null; ok("Nouveau départ fait : tout repart de zéro"); rendre(); }).catch(function (e) { if (!e.silencieux) A.toast(e.message, "err"); });
     case "enregistrer-params": return envoyer("config", { config: paramsLus() }, "Réglages enregistrés");
     case "importer":
       if (!confirm("Reprendre l'historique du 03 au 08 octobre depuis votre ancien classeur ?")) return;

@@ -1,4 +1,16 @@
-CORRECTIF PACKS — a envoyer sur GitHub
-1) Page principale -> Add file -> Upload files : index.html, admin.html -> Commit
-2) Dossier "api" -> Upload files : _catalogue.js, commander.js, _suivi.js -> Commit
-Attendre 2 minutes (Vercel).
+NOOGÓ — NOUVEAU SITE (version une page)
+
+À ENVOYER SUR GITHUB (dépôt noogo-app-226) :
+1) Page principale du dépôt -> Add file -> Upload files, glissez :
+   index.html, ancien.html, admin.html, sw.js, manifest.json
+2) Entrez dans le dossier "api" du dépôt -> Add file -> Upload files, glissez :
+   _catalogue.js, admin.js (les deux qui sont dans le dossier "api" de ce zip)
+3) Commit. Attendez 2 minutes (Vercel redéploie tout seul).
+
+NE RIEN SUPPRIMER : vos produits, photos, commandes, partenaires, suivi et mot de passe restent intacts.
+L'ancien site complet reste disponible à l'adresse /ancien.html (avis, actualités, histoire, galerie, revendeurs).
+
+CHAQUE JOUR : Admin -> Catalogue -> pour chaque produit choisir
+  Disponible aujourd'hui / Sur commande / Disponible plus tard (écrire "lundi") / Stock fini
+puis appuyer sur « Enregistrer le catalogue ». Les clients voient le changement tout de suite.
+Commandes -> en bas : « Vider toutes les commandes » (avec double confirmation).

@@ -233,6 +233,9 @@
         </select>
       </div>
       <div id="liste-cmd"></div>
+      <div style="margin-top:24px;text-align:center">
+        <button class="btn btn-contour btn-petit" type="button" data-act="vider-cmds">Vider toutes les commandes</button>
+      </div>
     </section>
 
     <!-- Catalogue -->
@@ -696,6 +699,20 @@ function rendreCatalogue(){
   if (autres.length) html += '<div class="groupe"><h3>Autres</h3>' + autres.map(ligneArticle).join("") + '</div>';
   zone.innerHTML = html || '<div class="vide">Le catalogue est vide. Ajoutez un article.</div>';
 }
+function statutAdmin(p){
+  if (p.statut === "aujourdhui" || p.statut === "surcommande" || p.statut === "date" || p.statut === "rupture") return p.statut;
+  if (p.dispo === "rupture") return "rupture";
+  if (p.surCommande) return "surcommande";
+  return "aujourdhui";
+}
+var STATUTS = [["aujourdhui","Disponible aujourd'hui"],["surcommande","Sur commande"],["date","Disponible plus tard (date)"],["rupture","Stock fini"]];
+// Applique un statut en gardant les anciens champs (surCommande, dispo) synchronisés
+function appliquerStatut(p, st, date){
+  p.statut = st;
+  if (st === "surcommande") p.surCommande = true; else delete p.surCommande;
+  if (st === "rupture") p.dispo = "rupture"; else if (p.dispo === "rupture") delete p.dispo;
+  if (st === "date" && date && String(date).trim()) p.dateDispo = String(date).trim(); else delete p.dateDispo;
+}
 function ligneArticle(p){
   var id = esc(p.id);
   return '<div class="carte art-ligne' + (p.actif === false ? " masque" : "") + '">' +
@@ -706,7 +723,8 @@ function ligneArticle(p){
     (p.dispo === "rupture" ? '<span class="badge badge-rouge">Rupture</span>' : p.dispo === "faible" ? '<span class="badge badge-orange">Stock faible</span>' : '') + (p.actif === false ? '<span class="badge badge-gris">Masqué</span>' : '') + '</div></div>' +
     '<div class="art-ctrl">' +
     '<label class="sw"><input type="checkbox" data-sw="vis" data-id="' + id + '"' + (p.actif !== false ? " checked" : "") + '><i></i>Visible</label>' +
-    '<label class="sw or"><input type="checkbox" data-sw="sur" data-id="' + id + '"' + (p.surCommande ? " checked" : "") + '><i></i>Sur commande</label>' +
+    '<select data-st="1" data-id="' + id + '" aria-label="Disponibilité de ' + esc(p.nom) + '" style="min-height:42px;border-radius:10px;border:1.5px solid #d9cfae;padding:0 8px;font-weight:700;background:#fff">' + optionsSelect(STATUTS, statutAdmin(p)) + '</select>' +
+    (statutAdmin(p) === "date" ? '<input type="text" data-dd="1" data-id="' + id + '" maxlength="40" placeholder="ex : lundi" aria-label="Date de retour" value="' + esc(p.dateDispo || "") + '" style="min-height:42px;border-radius:10px;border:1.5px solid #d9cfae;padding:0 8px;width:120px">' : '') +
     '<button class="btn btn-clair btn-petit" type="button" data-act="art-modifier" data-id="' + id + '">Modifier</button></div></div>';
 }
 function majSauvegarde(forcerCacher){
@@ -762,8 +780,10 @@ function ouvrirEditeur(id){
     '<div><label for="ed-pl">Texte du pack</label><input id="ed-pl" type="text" maxlength="60" value="' + esc(p.packLabel || "") + '" placeholder="Ex : 5 pots · 125 ml"></div></div>' +
     '<label for="ed-desc">Description courte (facultatif)</label><textarea id="ed-desc" maxlength="160">' + esc(p.desc || "") + '</textarea>' +
     '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:6px"><label class="sw"><input type="checkbox" id="ed-actif"' + (p.actif !== false ? " checked" : "") + '><i></i>Visible sur le site</label>' +
-    '<label class="sw or"><input type="checkbox" id="ed-sur"' + (p.surCommande ? " checked" : "") + '><i></i>Sur commande</label><label class="sw or"><input type="checkbox" id="ed-vedette"' + (p.vedette ? " checked" : "") + '><i></i>Vedette (en avant sur l\'accueil)</label></div>' +
-    '<label for="ed-dispo">Disponibilité affichée</label><select id="ed-dispo">' + optionsSelect([["","Normale"],["faible","Stock faible"],["rupture","Rupture (commande impossible)"]], p.dispo || "") + '</select>' +
+    '<label class="sw or"><input type="checkbox" id="ed-vedette"' + (p.vedette ? " checked" : "") + '><i></i>Vedette (en avant sur l\'accueil)</label></div>' +
+    '<label for="ed-statut">Disponibilité aujourd\'hui</label><select id="ed-statut">' + optionsSelect(STATUTS, statutAdmin(p)) + '</select>' +
+    '<div class="rang2 garde"><div><label for="ed-date">Si « plus tard » : quand ?</label><input id="ed-date" type="text" maxlength="40" placeholder="ex : lundi, dimanche prochain" value="' + esc(p.dateDispo || "") + '"></div>' +
+    '<div><label for="ed-dispo">Niveau de stock</label><select id="ed-dispo">' + optionsSelect([["","Normal"],["faible","Stock faible"]], p.dispo === "faible" ? "faible" : "") + '</select></div></div>' +
     '<label>Photo</label>' +
     '<div class="photo-zone">' + '<img class="apercu" id="ed-apercu" alt="Aperçu" src="' + esc(imgSrc(p.img)) + '">' +
     '<div class="photo-btns">' +
@@ -792,12 +812,13 @@ function lireEditeur(){
   if (pbTxt && (!isFinite(pb) || pb <= prix)) throw new Error("L'ancien prix barré doit être plus élevé que le prix actuel (ou laissez vide).");
   o.nom = nom; o.info = valeurChamp("ed-info").trim(); o.prix = prix;
   o.cat = valeurChamp("ed-cat"); o.type = valeurChamp("ed-type");
-  o.actif = $("ed-actif").checked; o.surCommande = $("ed-sur").checked;
+  o.actif = $("ed-actif").checked;
   o.img = valeurChamp("ed-img").trim();
   var set = function(k, v){ if (v) o[k] = v; else delete o[k]; };
   set("prixBarre", pb || 0); set("badge", valeurChamp("ed-badge").trim().toUpperCase()); set("gr", valeurChamp("ed-gr")); set("desc", valeurChamp("ed-desc").trim());
-  if (!o.surCommande) delete o.surCommande;
-  set("dispo", valeurChamp("ed-dispo"));
+  var st = valeurChamp("ed-statut") || "aujourdhui";
+  appliquerStatut(o, st, valeurChamp("ed-date"));
+  if (st !== "rupture") set("dispo", valeurChamp("ed-dispo"));
   if ($("ed-vedette").checked) o.vedette = true; else delete o.vedette;
   if (o.type === "pack") {
     var n = parseInt(valeurChamp("ed-pc"), 10);
@@ -1228,6 +1249,11 @@ document.addEventListener("click", function(ev){
       if (catalogueModifie() && S.onglet === "catalogue" && !confirm("Les modifications non enregistrées du catalogue seront perdues. Continuer ?")) return;
       t.disabled = true;
       return Promise.all([chargerDonnees(false), S.onglet === "catalogue" || !catalogueModifie() ? chargerCatalogue(true) : null]).then(function(){ t.disabled = false; toast("Données actualisées", "ok"); });
+    case "vider-cmds":
+      if (!confirm("Supprimer TOUTES les commandes ?\nCette action est irréversible.")) return;
+      if (!confirm("Dernière confirmation : tout effacer définitivement ?")) return;
+      t.disabled = true;
+      return api("vider_commandes").then(function(d){ toast(d.supprimees + " commande(s) supprimée(s)", "ok"); return chargerDonnees(true); }).catch(erreur).then(function(){ t.disabled = false; });
     case "fermer-modal": return fermerModal();
     case "art-nouveau": if (S.produits) return ouvrirEditeur(null); return toast("Le catalogue n'est pas encore chargé.", "err");
     case "art-modifier": return ouvrirEditeur(id);
@@ -1259,6 +1285,12 @@ document.addEventListener("click", function(ev){
 });
 document.addEventListener("change", function(ev){
   var t = ev.target;
+  if (t.getAttribute && (t.getAttribute("data-st") || t.getAttribute("data-dd"))) {
+    var q = S.produits && S.produits.find(function(x){ return x.id === t.getAttribute("data-id"); }); if (!q) return;
+    if (t.getAttribute("data-st")) appliquerStatut(q, t.value, q.dateDispo || "");
+    else appliquerStatut(q, "date", t.value);
+    rendreCatalogue(); majSauvegarde(); return;
+  }
   if (t.matches && t.matches("[data-sw]")) {
     var p = S.produits && S.produits.find(function(x){ return x.id === t.getAttribute("data-id"); }); if (!p) return;
     if (t.getAttribute("data-sw") === "vis") p.actif = t.checked;

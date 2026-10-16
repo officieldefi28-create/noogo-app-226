@@ -31,9 +31,9 @@ function calculerPanier(articles, catalogue) {
     if (!a || typeof a !== "object") continue;
     const p = catalogue.find((x) => x.id === a.id && x.actif !== false);
     const qte = Math.max(1, Math.min(50, parseInt(a.qte, 10) || 0));
-    if (!p || !a.qte || p.dispo === "rupture") continue;
+    if (!p || !a.qte || p.dispo === "rupture" || p.statut === "rupture") continue;
     const total = Number(p.prix) * qte;
-    const ligne = { id: p.id, nom: p.nom, type: p.type, qte, prix: Number(p.prix), total, surCommande: !!p.surCommande };
+    const ligne = { id: p.id, nom: p.nom, type: p.type, qte, prix: Number(p.prix), total, surCommande: !!p.surCommande || p.statut === "surcommande" || p.statut === "date" };
     // Pack « au choix » : saveurs choisies par le client (validées contre le catalogue)
     if (p.type === "pack" && a.compo && typeof a.compo === "object") {
       const compo = [];

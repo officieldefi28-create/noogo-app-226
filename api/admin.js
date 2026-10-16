@@ -39,6 +39,9 @@ function validerCatalogue(liste) {
     if (p.surCommande) o.surCommande = true;
     if (p.vedette) o.vedette = true;
     if (p.dispo === "faible" || p.dispo === "rupture") o.dispo = p.dispo;
+    // Disponibilité du jour (réglée dans l'admin) : aujourd'hui · sur commande · bientôt (date) · stock fini
+    if (["aujourdhui", "surcommande", "date", "rupture"].includes(p.statut)) o.statut = p.statut;
+    if (o.statut === "date" && p.dateDispo) o.dateDispo = txt(p.dateDispo, 40);
     if (p.desc) o.desc = txt(p.desc, 160);
     if (o.type === "pack") {
       o.packCount = Math.max(1, Math.min(50, parseInt(p.packCount, 10) || 1));
@@ -219,6 +222,11 @@ module.exports = async (req, res) => {
         return res.status(200).json({ succes: true, telClient: c.telClient, nomClient: c.nomClient });
       }
 
+      case "vider_commandes": {
+        const toutes = await S.getCommandes();
+        for (const c of toutes) await S.deleteCommande(c.id);
+        return res.status(200).json({ succes: true, supprimees: toutes.length });
+      }
       case "supprimer_commande": {
         if (!(await S.getCommande(data.commandeId))) return res.status(404).json({ erreur: "Commande introuvable" });
         await S.deleteCommande(data.commandeId);

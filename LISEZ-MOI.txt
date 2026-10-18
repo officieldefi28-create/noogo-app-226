@@ -1,16 +1,4 @@
-NOOGÓ — NOUVEAU SITE (version une page)
-
-À ENVOYER SUR GITHUB (dépôt noogo-app-226) :
-1) Page principale du dépôt -> Add file -> Upload files, glissez :
-   index.html, ancien.html, admin.html, sw.js, manifest.json
-2) Entrez dans le dossier "api" du dépôt -> Add file -> Upload files, glissez :
-   _catalogue.js, admin.js (les deux qui sont dans le dossier "api" de ce zip)
-3) Commit. Attendez 2 minutes (Vercel redéploie tout seul).
-
-NE RIEN SUPPRIMER : vos produits, photos, commandes, partenaires, suivi et mot de passe restent intacts.
-L'ancien site complet reste disponible à l'adresse /ancien.html (avis, actualités, histoire, galerie, revendeurs).
-
-CHAQUE JOUR : Admin -> Catalogue -> pour chaque produit choisir
-  Disponible aujourd'hui / Sur commande / Disponible plus tard (écrire "lundi") / Stock fini
-puis appuyer sur « Enregistrer le catalogue ». Les clients voient le changement tout de suite.
-Commandes -> en bas : « Vider toutes les commandes » (avec double confirmation).
+MISE A JOUR COMPLETE (admin + Suivi + packs promo) - 7 fichiers
+Remplace/ajoute au meme endroit sur GitHub : index.html, admin.html, admin-suivi.js, api/suivi.js, api/admin.js, api/_catalogue.js, assets/admin-theme.css
+Ce zip contient tout de la mise a jour 2 + les packs promo : tu n'as pas besoin du zip precedent.
+Vercel redeploie en ~2 min.

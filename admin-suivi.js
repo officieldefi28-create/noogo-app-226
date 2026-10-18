@@ -114,14 +114,31 @@ function optionsPoints(v, vide) {
 function vResume(v) {
   var b = v.bilan;
   var kpi = function (t, val, cls, extra) { return '<div class="kpi"><small>' + t + '</small><b class="' + (cls || "") + '">' + val + '</b>' + (extra ? '<small>' + extra + '</small>' : "") + '</div>'; };
+  var pr = v.precedent;
+  var delta = function (now, avant) {
+    if (!pr) return "";
+    if (!avant) return now > 0 ? '<span class="delta">Nouveau (rien avant)</span>' : "";
+    var p = Math.round((now - avant) / Math.abs(avant) * 100);
+    return '<span class="delta ' + (p >= 0 ? "pos" : "neg") + '">' + (p >= 0 ? "▲ +" : "▼ ") + p + " % vs période d'avant</span>";
+  };
   var jours = b.parJour.slice(-14), max = Math.max.apply(null, [1].concat(jours.map(function (j) { return j.ca; })));
   var h = selPeriode();
-  h += '<div class="kpis"><div class="kpi gros"><small>Chiffre d\'affaires</small><b>' + fcfa(b.ca) + '</b><small>' + b.quantite + ' pièces vendues</small></div>' +
+  h += '<div class="kpis"><div class="kpi gros"><small>Chiffre d\'affaires</small><b>' + fcfa(b.ca) + '</b><small>' + b.quantite + ' pièces vendues</small>' + (pr ? delta(b.ca, pr.ca) : "") + '</div>' +
     kpi("Marge brute", fcfa(b.margeBrute), b.margeBrute >= 0 ? "pos" : "neg", b.margePct + " % du CA") +
     kpi("Résultat net", signe(b.resultat), b.resultat >= 0 ? "pos" : "neg", "après dépenses et pertes") +
     kpi("Dépenses", fcfa(b.charges)) + kpi("Pertes (au coût)", fcfa(b.pertes)) +
     kpi("Caisse actuelle", fcfa(b.caisse), b.caisse >= 0 ? "" : "neg", "depuis le départ réglé dans Réglages") + kpi("Valeur du stock", fcfa(b.valeurStock), "", "au coût de production") + '</div>';
-  if (b.alertes.length) h += '<div class="msg msg-err"><b>Stock négatif :</b> ' + b.alertes.map(function (a) { return esc(a.nom) + " (" + a.theorique + ")"; }).join(", ") + '. Il manque une production ou un comptage : notez-les dans « Production » ou « Ce soir ».</div>';
+  /* À surveiller */
+  var al = [];
+  if (b.alertes.length) al.push('<div class="alerte rouge"><b>Stock négatif :</b> ' + b.alertes.map(function (a) { return esc(a.nom) + " (" + a.theorique + ")"; }).join(", ") + '. Il manque une production ou un comptage.</div>');
+  var bas = (v.stock || []).filter(function (x) { return x.produit > 0 && x.theorique >= 0 && x.theorique <= 5; });
+  if (bas.length) al.push('<div class="alerte"><b>Stock bas :</b> ' + bas.map(function (x) { return esc(x.nom) + " (" + x.theorique + ")"; }).join(", ") + ' — pensez à produire.</div>');
+  var dernier = (v.comptages || []).length ? v.comptages[0].date : "";
+  if ((v.ventes || []).length && dernier < jourJ(-1)) al.push('<div class="alerte"><b>Comptage du soir manquant :</b> dernier comptage ' + (dernier ? dateFr(dernier) : "jamais") + '. Sans lui, les ventes ne sont pas fiables.</div>');
+  if (b.margeBrute < 0) al.push('<div class="alerte rouge"><b>Marge négative :</b> vous vendez moins cher que le coût de revient. Vérifiez les coûts dans Réglages.</div>');
+  if (!al.length && b.ca > 0) al.push('<div class="alerte vert">Tout est en ordre : pas de stock négatif, comptage à jour.</div>');
+  h += al.join("");
+  h += '<button class="btn btn-vert btn-bloc" type="button" data-s="rapport-wa" style="margin:6px 0 10px">Envoyer le rapport par WhatsApp</button>';
   if (b.achats) h += '<p class="astuce">Achats de marchandises à revendre (hors résultat tant que non vendus) : ' + fcfa(b.achats) + '</p>';
   if (b.apports || b.remboursements) h += '<p class="astuce">Apports d\'argent : ' + fcfa(b.apports) + (b.remboursements ? ' · Remboursés : ' + fcfa(b.remboursements) : '') + '</p>';
   h += '<div class="carte"><h3>Ventes par jour</h3>' + (jours.length ? jours.map(function (j) {
@@ -140,10 +157,15 @@ function vSoir(v) {
     '<div class="grille2"><div><label for="so-date">Jour</label><input type="date" id="so-date" value="' + esc(E.soirDate) + '"></div>' +
     '<div><label for="so-pv">Point de vente (facultatif)</label><select id="so-pv">' + optionsPoints(v, "— non précisé —") + '</select></div></div>';
   if (!s || s.date !== E.soirDate) { h += '<p class="gris">Chargement…</p></div>'; chargerSoir(); return h; }
-  h += '<table style="margin-top:12px"><tr><th>Produit</th><th class="n">Attendu</th><th class="n">Reste</th></tr>' + s.produits.map(function (p) {
+  var ligne = function (p) {
     var deja = s.deja[p.id], att = s.avant[p.id] || 0;
     return '<tr><td>' + esc(p.nom) + '</td><td class="n ' + (att < 0 ? "neg" : "") + '">' + att + '</td><td class="n"><input class="reste" type="number" inputmode="numeric" min="0" data-pid="' + esc(p.id) + '" value="' + (deja ? deja.restant : "") + '" placeholder="—"></td></tr>';
-  }).join("") + '</table><button class="btn btn-or btn-bloc" style="margin-top:14px" type="button" data-s="enregistrer-soir">Enregistrer le comptage</button>';
+  };
+  var utiles = s.produits.filter(function (p) { return (s.avant[p.id] || 0) !== 0 || s.deja[p.id]; }), autres = s.produits.filter(function (p) { return utiles.indexOf(p) < 0; });
+  var entete = '<tr><th>Produit</th><th class="n">Attendu</th><th class="n">Reste</th></tr>';
+  h += '<table style="margin-top:12px">' + entete + (utiles.length ? utiles.map(ligne).join("") : '<tr><td colspan="3" class="gris">Aucun stock attendu : notez d\'abord une production.</td></tr>') + '</table>';
+  if (autres.length) h += '<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:600;color:var(--brun-3)">Autres produits (' + autres.length + ')</summary><table>' + entete + autres.map(ligne).join("") + '</table></details>';
+  h += '<button class="btn btn-or btn-bloc" style="margin-top:14px" type="button" data-s="enregistrer-soir">Enregistrer le comptage</button>';
   var jour = (v.ventes || []).filter(function (x) { return x.date === E.soirDate; });
   if (jour.length && E.periode === "jour" || E.soirResume) {
     var tot = jour.reduce(function (a, x) { return a + x.montant; }, 0), q = jour.reduce(function (a, x) { return a + x.qte; }, 0);
@@ -293,11 +315,25 @@ function telecharger(nom, contenu) {
   document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
 
+function rapportWA() {
+  var v = E.vue, b = v.bilan, nomP = { jour: "Aujourd'hui", semaine: "7 derniers jours", mois: "Ce mois", "mois-dernier": "Mois dernier", tout: "Depuis le début", perso: "Du " + E.du + " au " + E.au }[E.periode];
+  var t = ["*NOOGÓ — Rapport de gestion*", nomP + " (" + dateFr(jourJ(0)) + ")", "",
+    "Chiffre d'affaires : " + fcfa(b.ca) + " (" + b.quantite + " pièces)",
+    "Marge brute : " + fcfa(b.margeBrute) + " (" + b.margePct + " %)",
+    "Dépenses : " + fcfa(b.charges), "Pertes : " + fcfa(b.pertes),
+    "*Résultat net : " + signe(b.resultat) + "*", "",
+    "Caisse : " + fcfa(b.caisse), "Valeur du stock : " + fcfa(b.valeurStock)];
+  if (b.parProduit.length) { t.push("", "Meilleures ventes :"); b.parProduit.slice(0, 3).forEach(function (p) { t.push("• " + p.nom + " : " + p.qte + " (" + fcfa(p.ca) + ")"); }); }
+  if (b.parPoint.length) { t.push("", "Par point de vente :"); b.parPoint.slice(0, 4).forEach(function (p) { t.push("• " + p.nom + " : " + fcfa(p.ca)); }); }
+  if (b.alertes.length) t.push("", "⚠ Stock négatif : " + b.alertes.map(function (a) { return a.nom; }).join(", "));
+  window.open("https://wa.me/?text=" + encodeURIComponent(t.join("\n")), "_blank", "noopener");
+}
 function clic(ev) {
   var t = ev.target.closest("[data-s]"); if (!t) return;
   var a = t.getAttribute("data-s"), v = t.getAttribute("data-v");
   E.message = "";
   switch (a) {
+    case "rapport-wa": return rapportWA();
     case "sous": E.sous = v; E.ouvert = null; return rendre();
     case "periode": E.periode = v; if (v === "perso") { E.du = E.du || jourJ(-30); E.au = E.au || jourJ(0); return rendre(); } return rafraichir();
     case "appliquer-dates": E.du = val("su-du"); E.au = val("su-au"); return rafraichir();

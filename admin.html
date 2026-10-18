@@ -10,8 +10,9 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/noogo.css">
+<link rel="stylesheet" href="/assets/admin-theme.css">
 <style>
   html,body{overflow-x:hidden}
   input[type=text],input[type=tel],input[type=password],input[type=number],input[type=url],select,textarea{font-size:16px;min-height:46px}
@@ -243,6 +244,7 @@
       <div class="barre">
         <h2>Catalogue</h2>
         <button class="btn btn-or" type="button" data-act="art-nouveau">+ Ajouter un article</button>
+        <button class="btn btn-clair" type="button" data-act="art-pack">+ Pack promo</button>
       </div>
       <div class="msg msg-info" style="margin:0 0 6px">Modifiez vos prix, photos et disponibilités. Rien n'est visible sur le site tant que vous n'avez pas appuyé sur <b>Enregistrer le catalogue</b>.</div>
       <div id="msg-cat"></div>
@@ -763,9 +765,10 @@ async function sauverCatalogue(){
 function optionsSelect(liste, val){
   return liste.map(function(o){ return '<option value="' + esc(o[0]) + '"' + (o[0] === val ? " selected" : "") + '>' + esc(o[1]) + '</option>'; }).join("");
 }
-function ouvrirEditeur(id){
+function ouvrirEditeur(id, modele){
   var existant = id ? S.produits.find(function(p){ return p.id === id; }) : null;
   var p = existant ? clone(existant) : { id: nouvelId(), cat:"cremes", type:"produit", nom:"", info:"", prix:"", img:"", actif:true };
+  if (!existant && modele === "pack") { p.type = "pack"; p.packCount = 6; p.packChoix = true; p.badge = "PROMO"; p.nom = "Pack promo "; }
   S.edition = { id: p.id, nouveau: !existant, base: p };
   var corps =
     '<label for="ed-nom">Nom de l\'article</label><input id="ed-nom" type="text" maxlength="90" value="' + esc(p.nom) + '" placeholder="Ex : Crème glacée Mangue">' +
@@ -777,7 +780,9 @@ function ouvrirEditeur(id){
     '<div class="rang2 garde"><div><label for="ed-type">Type</label><select id="ed-type">' + optionsSelect([["produit","Produit"],["pack","Pack"]], p.type) + '</select></div>' +
     '<div><label for="ed-gr">Format</label><select id="ed-gr">' + optionsSelect([["","Non précisé"],["petit","Petit format"],["grand","Grand format"]], p.gr || "") + '</select></div></div>' +
     '<div id="bloc-pack" class="rang2 garde' + (p.type === "pack" ? "" : " cachee") + '"><div><label for="ed-pc">Nombre de pots dans le pack</label><input id="ed-pc" type="number" inputmode="numeric" min="1" max="50" value="' + esc(p.packCount || "") + '"></div>' +
-    '<div><label for="ed-pl">Texte du pack</label><input id="ed-pl" type="text" maxlength="60" value="' + esc(p.packLabel || "") + '" placeholder="Ex : 5 pots · 125 ml"></div></div>' +
+    '<div><label for="ed-pl">Texte du pack</label><input id="ed-pl" type="text" maxlength="60" value="' + esc(p.packLabel || "") + '" placeholder="Ex : 6 boîtes · saveurs au choix"></div>' +
+    '<div><label for="ed-liv">Livraison</label><select id="ed-liv">' + optionsSelect([["incluse","Livraison incluse"],["sans","Livraison non incluse"]], p.packLiv === "sans" ? "sans" : "incluse") + '</select></div>' +
+    '<div><label for="ed-choix">Saveurs</label><select id="ed-choix">' + optionsSelect([["non","Saveurs fixes"],["oui","Le client choisit ses saveurs"]], p.packChoix ? "oui" : "non") + '</select></div></div>' +
     '<label for="ed-desc">Description courte (facultatif)</label><textarea id="ed-desc" maxlength="160">' + esc(p.desc || "") + '</textarea>' +
     '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:6px"><label class="sw"><input type="checkbox" id="ed-actif"' + (p.actif !== false ? " checked" : "") + '><i></i>Visible sur le site</label>' +
     '<label class="sw or"><input type="checkbox" id="ed-vedette"' + (p.vedette ? " checked" : "") + '><i></i>Vedette (en avant sur l\'accueil)</label></div>' +
@@ -824,7 +829,9 @@ function lireEditeur(){
     var n = parseInt(valeurChamp("ed-pc"), 10);
     if (!(n >= 1)) throw new Error("Indiquez le nombre de pots du pack (au moins 1).");
     o.packCount = n; o.packLabel = valeurChamp("ed-pl").trim();
-  } else { delete o.packCount; delete o.packLabel; }
+    if (valeurChamp("ed-liv") === "sans") o.packLiv = "sans"; else delete o.packLiv;
+    if (valeurChamp("ed-choix") === "oui") o.packChoix = true; else delete o.packChoix;
+  } else { delete o.packCount; delete o.packLabel; delete o.packLiv; delete o.packChoix; }
   return o;
 }
 function validerEditeur(){
@@ -1255,6 +1262,7 @@ document.addEventListener("click", function(ev){
       t.disabled = true;
       return api("vider_commandes").then(function(d){ toast(d.supprimees + " commande(s) supprimée(s)", "ok"); return chargerDonnees(true); }).catch(erreur).then(function(){ t.disabled = false; });
     case "fermer-modal": return fermerModal();
+    case "art-pack": if (S.produits) return ouvrirEditeur(null, "pack"); return toast("Le catalogue n'est pas encore chargé.", "err");
     case "art-nouveau": if (S.produits) return ouvrirEditeur(null); return toast("Le catalogue n'est pas encore chargé.", "err");
     case "art-modifier": return ouvrirEditeur(id);
     case "art-valider": return validerEditeur();

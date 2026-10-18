@@ -323,7 +323,7 @@ const commandable = (p) => statut(p) !== "rupture";
 const aAttendre = (p) => statut(p) === "surcommande" || statut(p) === "date";
 
 /* Packs */
-const estMix = (p) => !!p && p.type === "pack" && (/^pk-mix-/.test(p.id) || /d[ée]couverte/i.test(p.nom || ""));
+const estMix = (p) => !!p && p.type === "pack" && (/^pk-mix-/.test(p.id) || /d[ée]couverte/i.test(p.nom || "") || !!p.packChoix);
 const nbPots = (p) => Math.max(1, parseInt(p.packCount, 10) || 5);
 const PACKBASE = { van: "vanille", bao: "baobab", ban: "banane", cho: "choco", fra: "fraise" };
 const courtNom = (n) => String(n || "").replace(/^Crème glacée /, "").replace(/ — Grand pot$/, "").replace(/ — Pain de singe$/, "");
@@ -382,7 +382,7 @@ const CATS = [["tout", "Tout"], ["cremes", "Crèmes glacées"], ["packs", "Packs
 const GROUPES = [
   { t: "Crèmes glacées · pot 125 ml", ok: (p) => p.cat === "cremes" && p.type === "produit" && p.gr !== "grand", c: "cremes" },
   { t: "Crèmes glacées · grand pot 250 ml", ok: (p) => p.cat === "cremes" && p.type === "produit" && p.gr === "grand", c: "cremes" },
-  { t: "Packs · livraison incluse", ok: (p) => p.cat === "cremes" && p.type === "pack", c: "packs" },
+  { t: "Packs & promos", ok: (p) => p.cat === "cremes" && p.type === "pack", c: "packs" },
   { t: "Popcorn au lait", ok: (p) => p.cat === "popcorn", c: "popcorn" },
   { t: "Pain anglais", ok: (p) => p.cat === "pain", c: "pain" },
   { t: "Esquimaux", ok: (p) => p.cat === "esquimau", c: "esquimau" },
@@ -396,7 +396,7 @@ function actionHTML(p, q) {
 }
 function carteHTML(p) {
   const s = statut(p), q = panier[p.id] || 0;
-  const det = p.type === "pack" ? contenuPack(p) : (p.info || "");
+  const det = p.type === "pack" ? contenuPack(p) + (p.packLiv === "sans" ? " · livraison en plus" : " · livraison incluse") : (p.info || "");
   return `<article class="carte${q ? " sel" : ""}${s === "rupture" ? " fini" : ""}" data-id="${esc(p.id)}">
     <img src="${esc(imgUrl(p.img))}" alt="${esc(p.nom)}" loading="lazy" width="72" height="72" data-zoom="${esc(p.id)}">
     <div class="infos"><h3>${esc(p.nom)}</h3>${det ? `<p class="det">${esc(det)}</p>` : ""}
@@ -446,7 +446,7 @@ window.addEventListener("popstate", () => { fermerTout(); afficherVue(vueDepuisH
 function lignes() { return Object.entries(panier).map(([id, qte]) => ({ p: produit(id), qte })).filter((l) => l.p && l.qte > 0); }
 function totaux() {
   let produits = 0, packs = 0, n = 0;
-  for (const l of lignes()) { const t = l.p.prix * l.qte; n += l.qte; if (l.p.type === "pack") packs += t; else produits += t; }
+  for (const l of lignes()) { const t = l.p.prix * l.qte; n += l.qte; if (l.p.type === "pack" && l.p.packLiv !== "sans") packs += t; else produits += t; }
   const sous = produits + packs, remise = promo ? Math.min(promo.remise, sous) : 0;
   return { produits, packs, sous, remise, apres: sous - remise, n, aPack: packs > 0, aProduit: produits > 0 };
 }

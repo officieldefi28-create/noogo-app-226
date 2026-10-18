@@ -70,12 +70,12 @@ function vue(donnees, d) {
     stock: Object.values(calc.stock),
     bilan: U.bilan(donnees, du, au),
     precedent: precedente(donnees, du, au),
-    ventes: calc.ventes.filter((x) => (!du || x.date >= du) && (!au || x.date <= au)).slice(0, 400),
-    pertes: calc.pertes.filter((x) => (!du || x.date >= du) && (!au || x.date <= au)).slice(0, 300),
+    ventes: calc.ventes.filter((x) => (!du || x.date >= du) && (!au || x.date <= au)).slice(0, 3000),
+    pertes: calc.pertes.filter((x) => (!du || x.date >= du) && (!au || x.date <= au)).slice(0, 1500),
     ajustements: calc.ajustements.slice(-100),
-    lots: calc.lots.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 200),
-    depenses: calc.depenses.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 500),
-    comptages: donnees.comptages.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 300),
+    lots: calc.lots.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 600),
+    depenses: calc.depenses.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
+    comptages: donnees.comptages.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     categories: U.CATEGORIES_DEPENSE, typesPerte: U.TYPES_PERTE
   };
 }

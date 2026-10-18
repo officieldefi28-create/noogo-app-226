@@ -1,0 +1,27 @@
+/* Noogó — thème admin professionnel : crème · vert · or (même identité que le site client) */
+:root{
+  --brun:#14451f; --brun-2:#0f3518; --brun-3:#4a5a3c;
+  --or:#c9982b; --or-clair:#f0d98a; --or-fonce:#a67a12;
+  --creme:#fcf8ea; --creme-2:#f3ecd2; --bord:#e4dab8; --gris:#76705c;
+  --foret:#14451f; --foret-2:#0f3518;
+  --police-titre:"Lora",Georgia,"Times New Roman",serif;
+  --ombre-fine:0 1px 3px rgba(20,69,31,.10);
+}
+.btn{background:var(--brun);color:#fff;box-shadow:none}
+.btn:hover{filter:none;background:var(--brun-2)}
+.btn-or{background:var(--or);color:#1b1204}
+.btn-brun{background:var(--brun);color:#fff}
+#p-suivi .sous button[aria-pressed=true]{background:var(--brun);color:#fff}
+#p-suivi .kpi.gros{background:linear-gradient(150deg,#14451f,#1f5a2e)}
+#p-suivi .kpi.gros small{color:var(--or-clair)}
+#p-suivi .kpi{border-radius:12px}
+#p-suivi .kpi .delta{display:inline-block;margin-top:2px;font-size:12px;font-weight:700}
+#p-suivi .kpi.gros .delta{color:var(--or-clair)}
+#p-suivi .formulaire{background:#fffdf4;border-color:var(--or)}
+#p-suivi .alerte{border-left:4px solid var(--or);background:#fff8e4;border-radius:10px;padding:10px 14px;margin:8px 0;font-size:14px}
+#p-suivi .alerte.rouge{border-color:#c62828;background:#fdeaea}
+#p-suivi .alerte.vert{border-color:#1b7a34;background:#e8f5ea}
+#p-suivi .carte{border-radius:14px}
+#p-suivi h3{font-family:var(--police-titre)}
+.entete{background:linear-gradient(160deg,#14451f,#0f3518)!important;border-bottom:4px solid var(--or)!important}
+.onglet[aria-selected=true]{color:var(--brun)!important;border-bottom-color:var(--or)!important}

@@ -107,7 +107,7 @@ function calculer(donnees) {
   }
   for (const v of donnees.ventes || []) {
     const prix = v.prix != null && v.prix !== "" ? nombre(v.prix) : prixDe(v.produitId);
-    pousse(v.produitId, { date: jour(v.date), rang: 1, type: "vente", source: "manuel", canal: v.pointVente || CANAL_DEFAUT, qte: nombre(v.qte), montant: Math.max(0, nombre(v.qte) * prix - nombre(v.remise)), ref: v.id });
+    pousse(v.produitId, { date: jour(v.date), rang: 1, type: "vente", source: "manuel", canal: v.pointVente || CANAL_DEFAUT, qte: nombre(v.qte), montant: v.montant != null && v.montant !== "" ? Math.max(0, nombre(v.montant)) : Math.max(0, nombre(v.qte) * prix - nombre(v.remise)), ref: v.id, vendeur: v.vendeur || "", paiement: v.paiement || "", recu: v.recuId || "" });
   }
   for (const p of donnees.pertes || []) pousse(p.produitId, { date: jour(p.date), rang: 2, type: "perte", sorte: p.type, qte: nombre(p.qte), ref: p.id });
   for (const c of donnees.comptages || []) pousse(c.produitId, { date: jour(c.date), rang: 3, type: "comptage", restant: nombre(c.restant), canal: c.pointVente || CANAL_DEFAUT, prix: c.prix != null && c.prix !== "" ? nombre(c.prix) : null, ref: c.id });
@@ -124,7 +124,7 @@ function calculer(donnees) {
       if (e.type === "lot") { courant += e.qte; qteLots += e.qte; coutLots += e.qte * e.coutU; }
       else if (e.type === "vente") {
         courant -= e.qte; vendu += e.qte;
-        ventes.push({ date: e.date, produitId: id, nom: nomDe(id), qte: e.qte, montant: arrondi(e.montant), cout: arrondi(e.qte * coutMoyen()), canal: e.canal, source: e.source, ref: e.ref });
+        ventes.push({ date: e.date, produitId: id, nom: nomDe(id), qte: e.qte, montant: arrondi(e.montant), cout: arrondi(e.qte * coutMoyen()), canal: e.canal, source: e.source, ref: e.ref, vendeur: e.vendeur || "", paiement: e.paiement || "", recu: e.recu || "" });
       } else if (e.type === "perte") {
         courant -= e.qte; perdu += e.qte;
         pertes.push({ date: e.date, produitId: id, nom: nomDe(id), qte: e.qte, type: e.sorte, cout: arrondi(e.qte * coutMoyen()), ref: e.ref });
@@ -197,6 +197,8 @@ function bilan(donnees, du, au) {
   };
   const parProduit = groupe(V, (x) => x.nom, (x, o) => { if (!x) return { qte: 0, ca: 0, marge: 0 }; o.qte += x.qte; o.ca += x.montant; o.marge += x.montant - x.cout; }).sort((a, b) => b.ca - a.ca);
   const parPoint = groupe(V, (x) => x.canal, (x, o) => { if (!x) return { qte: 0, ca: 0 }; o.qte += x.qte; o.ca += x.montant; }).sort((a, b) => b.ca - a.ca);
+  const parVendeur = groupe(V.filter((x) => x.vendeur), (x) => x.vendeur, (x, o) => { if (!x) return { qte: 0, ca: 0 }; o.qte += x.qte; o.ca += x.montant; }).sort((a, b) => b.ca - a.ca);
+  const parPaiement = groupe(V.filter((x) => x.paiement), (x) => x.paiement, (x, o) => { if (!x) return { qte: 0, ca: 0 }; o.qte += x.qte; o.ca += x.montant; }).sort((a, b) => b.ca - a.ca);
   const parCategorie = groupe(D.filter((x) => x.classe === "charge"), (x) => x.categorie, (x, o) => { if (!x) return { total: 0 }; o.total += nombre(x.montant); }).sort((a, b) => b.total - a.total);
   const jours = {};
   for (const x of V) { const j = (jours[x.date] = jours[x.date] || { date: x.date, ca: 0, qte: 0, depenses: 0 }); j.ca += x.montant; j.qte += x.qte; }
@@ -225,7 +227,7 @@ function bilan(donnees, du, au) {
     resultat: arrondi(margeBrute - pertesCout - charges),
     apports: arrondi(apports), remboursements: arrondi(rembs), production: arrondi(productionCout),
     caisse: arrondi(caisse), valeurStock: arrondi(valeurStock), alertes,
-    parProduit, parPoint, parCategorie, parJour
+    parProduit, parPoint, parVendeur, parPaiement, parCategorie, parJour
   };
 }
 

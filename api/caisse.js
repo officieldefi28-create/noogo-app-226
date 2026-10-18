@@ -1,0 +1,157 @@
+// Caisse Noogó : application des caissiers et livreurs (un code par personne).
+// Ils peuvent AJOUTER des ventes et des demandes de dépense, jamais rien supprimer ni modifier.
+const crypto = require("crypto");
+const { signerJeton, verifierJeton } = require("./_auth");
+const S = require("./_store");
+const U = require("./_suivi");
+const { chargerCatalogue } = require("./_catalogue");
+
+const NUMERO_RESPONSABLE = "22665120902";
+const DUREE_MS = 30 * 24 * 3600 * 1000;
+const MODES = { especes: "Espèces", orange: "Orange Money", wave: "Wave" };
+
+const txt = (s, max) => String(s == null ? "" : s).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max);
+const aujourdhui = () => new Date().toISOString().slice(0, 10);
+const entier = (n, min, max, nom) => { const v = Math.round(Number(n)); if (!Number.isFinite(v) || v < min || v > max) throw new Error(nom + " invalide"); return v; };
+
+async function equipe() { const l = await S.getDoc("equipe"); return Array.isArray(l) ? l : []; }
+const sansCode = (m) => ({ id: m.id, nom: m.nom, point: m.point });
+
+function membre(jeton, liste) {
+  const secret = process.env.JETON_SECRET;
+  if (!secret) return null;
+  const s = verifierJeton(jeton, secret, DUREE_MS);
+  if (!s || s.role !== "caisse") return null;
+  const m = liste.find((x) => x.id === s.uid && x.actif !== false);
+  return m || null;
+}
+
+// Tout ce que la caisse peut vendre, avec le prix du serveur
+async function articles() {
+  const [catalogue, config] = await Promise.all([chargerCatalogue(), S.getSuiviConfig()]);
+  const cfg = config || {};
+  const liste = [];
+  for (const p of catalogue) {
+    if (!p || p.actif === false) continue;
+    const pack = p.type === "pack";
+    const base = pack ? U.baseDe(p) : null;
+    liste.push({
+      id: p.id, nom: p.nom, prix: Number(p.prix) || 0, type: pack ? "pack" : "produit", cat: p.cat || "", gr: p.gr || "",
+      pots: pack ? Math.max(1, parseInt(p.packCount, 10) || 1) : 1,
+      choix: pack && !(base && base.id !== p.id),            // pack dont le client choisit les saveurs
+      base: pack && base && base.id !== p.id ? base.id : null,
+      statut: p.statut || (p.dispo === "rupture" ? "rupture" : "aujourdhui")
+    });
+  }
+  for (const p of cfg.internes || []) liste.push({ id: p.id, nom: p.nom, prix: Number(p.prix) || 0, type: "produit", cat: "autres", gr: "", pots: 1, choix: false, base: null, statut: "aujourdhui" });
+  return liste;
+}
+
+function repartir(total, parts) {   // répartit un montant entier en parts proportionnelles, le reste va à la dernière
+  const somme = parts.reduce((a, b) => a + b, 0) || 1;
+  let reste = total; const out = [];
+  parts.forEach((q, i) => { const v = i === parts.length - 1 ? reste : Math.round((total * q) / somme); out.push(v); reste -= v; });
+  return out;
+}
+
+module.exports = async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (req.method !== "POST") return res.status(405).json({ erreur: "Méthode non autorisée" });
+  try {
+    const d = req.body || {};
+    const ip = String((req.headers && (req.headers["x-forwarded-for"] || "")) || (req.socket && req.socket.remoteAddress) || "x").split(",")[0].trim();
+
+    if (d.action === "connexion") {
+      if (!(await S.limiter("clogin:" + ip, 12, 600))) return res.status(429).json({ erreur: "Trop d'essais. Réessayez dans 10 minutes." });
+      const code = txt(d.code, 20);
+      const liste = await equipe();
+      const m = liste.find((x) => x.actif !== false && x.code && x.code === code);
+      if (!m) return res.status(401).json({ erreur: "Code incorrect" });
+      const jeton = signerJeton({ role: "caisse", uid: m.id, creeLe: Date.now() }, process.env.JETON_SECRET);
+      return res.status(200).json({ jeton, membre: sansCode(m), numero: NUMERO_RESPONSABLE });
+    }
+
+    const liste = await equipe();
+    const m = membre(d.jeton, liste);
+    if (!m) return res.status(401).json({ erreur: "Session terminée : entrez votre code", session: false });
+
+    switch (d.action) {
+      case "catalogue": return res.status(200).json({ articles: await articles(), membre: sansCode(m), numero: NUMERO_RESPONSABLE });
+
+      case "vendre": {
+        const idRecu = txt(d.id, 40);
+        if (!/^R[0-9A-Za-z-]{6,36}$/.test(idRecu)) throw new Error("Reçu invalide");
+        const deja = (await S.suiviListe("recus")).find((r) => r && r.id === idRecu);
+        if (deja) return res.status(200).json({ recu: deja, deja: true });   // envoi répété (hors ligne) : on ne compte pas deux fois
+        const mode = MODES[d.paiement] ? d.paiement : "especes";
+        const num = txt(d.numPaiement, 20);
+        if (mode !== "especes" && num.replace(/\D/g, "").length < 8) throw new Error("Numéro Mobile Money invalide");
+        const art = await articles();
+        const parId = {}; art.forEach((a) => (parId[a.id] = a));
+        const lignes = (Array.isArray(d.lignes) ? d.lignes : []).slice(0, 40);
+        if (!lignes.length) throw new Error("Ticket vide invalide");
+        const date = /^\d{4}-\d{2}-\d{2}$/.test(String(d.date || "")) && Math.abs(Date.parse(d.date) - Date.now()) < 3 * 86400000 ? d.date : aujourdhui();
+        const ventes = [], recuLignes = [];
+        let total = 0, k = 0;
+        for (const l of lignes) {
+          const a = parId[String(l.id)];
+          if (!a) throw new Error("Article invalide : " + txt(l.id, 30));
+          const qte = entier(l.qte, 1, 200, "Quantité");
+          const montant = a.prix * qte; total += montant;
+          const pointVente = m.point || "Local";
+          const base = { date, pointVente, vendeur: m.nom, vid: m.id, paiement: MODES[mode], recuId: idRecu };
+          if (a.type === "pack") {
+            const pots = a.pots * qte;
+            if (a.base) {
+              ventes.push({ ...base, produitId: a.base, qte: pots, montant });
+              recuLignes.push({ nom: a.nom, qte, total: montant, detail: pots + " pots" });
+            } else {
+              const compo = l.compo && typeof l.compo === "object" ? l.compo : {};
+              const ids = Object.keys(compo).filter((i) => (parId[i] && parId[i].type === "produit" && Math.round(Number(compo[i])) > 0));
+              const qtes = ids.map((i) => Math.round(Number(compo[i])));
+              if (qtes.reduce((x, y) => x + y, 0) !== pots) throw new Error("Choisissez les " + pots + " saveurs du pack");
+              const parts = repartir(montant, qtes);
+              ids.forEach((i, j) => ventes.push({ ...base, produitId: i, qte: qtes[j], montant: parts[j] }));
+              recuLignes.push({ nom: a.nom, qte, total: montant, detail: ids.map((i, j) => qtes[j] + " × " + parId[i].nom.replace(/^Crème glacée /, "")).join(", ") });
+            }
+          } else {
+            ventes.push({ ...base, produitId: a.id, qte, montant });
+            recuLignes.push({ nom: a.nom, qte, total: montant, detail: "" });
+          }
+        }
+        const recu = { id: idRecu, date, heure: new Date().toISOString(), vendeur: m.nom, vid: m.id, point: m.point || "Local", lignes: recuLignes, total, paiement: MODES[mode], numPaiement: mode === "especes" ? "" : num, note: txt(d.note, 150) };
+        // les lignes d'abord, le reçu à la fin : un reçu présent veut dire « tout est enregistré »
+        for (const v of ventes) { v.id = idRecu + "-" + (++k); await S.suiviSet("ventes", v.id, v); }
+        await S.suiviSet("recus", idRecu, recu);
+        return res.status(200).json({ recu });
+      }
+
+      case "mes_ventes": {
+        const jr = /^\d{4}-\d{2}-\d{2}$/.test(String(d.date || "")) ? d.date : aujourdhui();
+        const recus = (await S.suiviListe("recus")).filter((r) => r && r.vid === m.id && r.date === jr).sort((a, b) => (a.heure < b.heure ? 1 : -1));
+        return res.status(200).json({ date: jr, recus, total: recus.reduce((s, r) => s + r.total, 0) });
+      }
+
+      case "demander_depense": {
+        const montant = entier(d.montant, 1, 100000000, "Montant");
+        const motif = txt(d.motif, 150);
+        if (motif.length < 3) throw new Error("Motif invalide : expliquez la dépense");
+        const idD = "D" + Date.now().toString(36) + crypto.randomBytes(2).toString("hex");
+        const dem = { id: idD, date: aujourdhui(), heure: new Date().toISOString(), vid: m.id, vendeur: m.nom, montant, motif, statut: "attente" };
+        await S.suiviSet("demandes", idD, dem);
+        return res.status(200).json({ demande: dem, numero: NUMERO_RESPONSABLE });
+      }
+
+      case "mes_demandes": {
+        const l = (await S.suiviListe("demandes")).filter((x) => x && x.vid === m.id).sort((a, b) => (a.heure < b.heure ? 1 : -1)).slice(0, 30);
+        return res.status(200).json({ demandes: l });
+      }
+      default: return res.status(400).json({ erreur: "Action non reconnue" });
+    }
+  } catch (e) {
+    if (e && e.code === "DB_NON_CONFIGUREE") return res.status(503).json({ erreur: "Base de données non connectée" });
+    if (e && /invalide|Choisissez|Ticket/.test(e.message || "")) return res.status(400).json({ erreur: e.message });
+    console.error("caisse", e && e.message);
+    return res.status(500).json({ erreur: "Erreur serveur" });
+  }
+};

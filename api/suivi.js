@@ -12,14 +12,15 @@ const idPropre = (s) => { const v = txt(s, 60); if (!/^[A-Za-z0-9_-]+$/.test(v))
 const nouvelId = (p) => p + "-" + Date.now().toString(36) + crypto.randomBytes(3).toString("hex");
 
 async function charger() {
-  const [catalogue, config, lots, ventes, pertes, depenses, comptages, commandes] = await Promise.all([
+  const [catalogue, config, lots, ventes, pertes, depenses, comptages, commandes, equipe, recus, demandes] = await Promise.all([
     chargerCatalogue(), S.getSuiviConfig(), S.suiviListe("lots"), S.suiviListe("ventes"), S.suiviListe("pertes"),
-    S.suiviListe("depenses"), S.suiviListe("comptages"), S.getCommandes()
+    S.suiviListe("depenses"), S.suiviListe("comptages"), S.getCommandes(),
+    lireEquipe(), S.suiviListe("recus"), S.suiviListe("demandes")
   ]);
   const cfg = configPropre(config);
   // « Nouveau départ » : les commandes du site livrées avant ce moment ne comptent plus dans le suivi
   const cmds = cfg.debutHeure ? commandes.filter((c) => String(c.dateLivraison || c.date || "") >= cfg.debutHeure) : commandes;
-  return { catalogue, config: cfg, lots, ventes, pertes, depenses, comptages, commandes: cmds };
+  return { catalogue, config: cfg, lots, ventes, pertes, depenses, comptages, commandes: cmds, equipe, recus, demandes };
 }
 
 function configPropre(c) {
@@ -61,6 +62,26 @@ function precedente(donnees, du, au) {
   return { du: pDu, au: pAu, ca: b.ca, resultat: b.resultat, quantite: b.quantite, margeBrute: b.margeBrute };
 }
 
+// Équipe de la caisse : un code par personne (créés ici, jamais dans la caisse)
+async function lireEquipe() { const l = await S.getDoc("equipe"); return Array.isArray(l) ? l : []; }
+async function equipeSauver(liste, config) {
+  const pv = new Set((config.pointsVente || []));
+  const vus = new Set(), codes = new Set();
+  const propre = [];
+  for (const x of (Array.isArray(liste) ? liste : []).slice(0, 40)) {
+    const nom = txt(x && x.nom, 40); if (!nom) continue;
+    let id = /^[A-Za-z0-9_-]{3,40}$/.test(String(x.id || "")) ? String(x.id) : nouvelId("e");
+    if (vus.has(id)) id = nouvelId("e"); vus.add(id);
+    let code = /^\d{4,8}$/.test(String(x.code || "")) ? String(x.code) : "";
+    while (!code || codes.has(code)) code = String(crypto.randomInt(100000, 999999));
+    codes.add(code);
+    const point = txt(x.point, 40);
+    propre.push({ id, nom, code, point: point || "Local", actif: x.actif !== false });
+  }
+  await S.setDoc("equipe", propre);
+  return propre;
+}
+
 function vue(donnees, d) {
   const [du, au] = periode(d || {});
   const calc = U.calculer(donnees);
@@ -76,6 +97,8 @@ function vue(donnees, d) {
     lots: calc.lots.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 600),
     depenses: calc.depenses.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     comptages: donnees.comptages.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
+    equipe: donnees.equipe, recus: (donnees.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 800),
+    demandes: (donnees.demandes || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 200),
     categories: U.CATEGORIES_DEPENSE, typesPerte: U.TYPES_PERTE
   };
 }
@@ -142,6 +165,32 @@ module.exports = async (req, res) => {
         }
         break;
       }
+      case "equipe_save": {
+        const donnees = await charger();
+        await equipeSauver(d.liste, donnees.config);
+        break;
+      }
+      case "demande_decider": {
+        const dem = (await S.suiviListe("demandes")).find((x) => x && x.id === txt(d.id, 40));
+        if (!dem) throw new Error("Demande invalide");
+        if (dem.statut !== "attente") throw new Error("Demande invalide : déjà traitée");
+        if (d.decision === "accepter") {
+          const cat = U.CATEGORIES_DEPENSE.includes(d.categorie) ? d.categorie : "Autre dépense";
+          const dep = { id: nouvelId("d"), date: dem.date, categorie: cat, description: (dem.motif + " — " + dem.vendeur).slice(0, 120), montant: dem.montant, mode: "Caisse", note: "Demande " + dem.id };
+          await S.suiviSet("depenses", dep.id, dep);
+          dem.statut = "accepte"; dem.depenseId = dep.id;
+        } else if (d.decision === "refuser") dem.statut = "refuse";
+        else throw new Error("Décision invalide");
+        dem.decideLe = new Date().toISOString();
+        await S.suiviSet("demandes", dem.id, dem);
+        break;
+      }
+      case "supprimer_recu": {
+        const idR = txt(d.id, 60);
+        for (const v of await S.suiviListe("ventes")) if (v && v.recuId === idR) await S.suiviDel("ventes", v.id);
+        await S.suiviDel("recus", idR);
+        break;
+      }
       case "supprimer": {
         const types = { lot: "lots", vente: "ventes", perte: "pertes", depense: "depenses", comptage: "comptages" };
         if (!types[d.type]) throw new Error("Type invalide");
@@ -156,7 +205,7 @@ module.exports = async (req, res) => {
       }
       case "sauvegarde": {
         const [lots, ventes, pertes, depenses, comptages, config] = await Promise.all([S.suiviListe("lots"), S.suiviListe("ventes"), S.suiviListe("pertes"), S.suiviListe("depenses"), S.suiviListe("comptages"), S.getSuiviConfig()]);
-        return res.status(200).json({ sauvegardeLe: new Date().toISOString(), config, lots, ventes, pertes, depenses, comptages });
+        return res.status(200).json({ sauvegardeLe: new Date().toISOString(), config, lots, ventes, pertes, depenses, comptages, recus: await S.suiviListe("recus"), demandes: await S.suiviListe("demandes"), equipe: await lireEquipe() });
       }
       case "nouveau_depart": {
         const jr = date(d.date || new Date().toISOString().slice(0, 10));
@@ -165,7 +214,7 @@ module.exports = async (req, res) => {
           .map((x) => ({ produitId: idPropre(x.produitId), qte: entier(x.qte || 0, 0, 100000, "Stock"), cu: entier(x.coutUnitaire || 0, 0, 10000000, "Coût") }))
           .filter((x) => x.qte > 0);
         // 1) tout effacer (la sauvegarde a été téléchargée avant par l'admin)
-        for (const t of ["lots", "ventes", "pertes", "depenses", "comptages"]) {
+        for (const t of ["lots", "ventes", "pertes", "depenses", "comptages", "recus", "demandes"]) {
           for (const x of await S.suiviListe(t)) if (x && x.id) await S.suiviDel(t, String(x.id));
         }
         // l'ancien classeur ne doit jamais revenir

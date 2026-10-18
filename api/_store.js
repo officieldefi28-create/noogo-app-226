@@ -103,7 +103,7 @@ async function setReglages(v) {
 }
 
 // ── Suivi (lots, ventes, pertes, dépenses, comptages) : une entrée par enregistrement ──
-const SUIVI_TYPES = ["lots", "ventes", "pertes", "depenses", "comptages"];
+const SUIVI_TYPES = ["lots", "ventes", "pertes", "depenses", "comptages", "recus", "demandes"];
 async function suiviListe(type) {
   if (!SUIVI_TYPES.includes(type)) throw new Error("type de suivi inconnu");
   return valeurs(await hgetall("noogo:suivi:" + type));

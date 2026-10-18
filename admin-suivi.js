@@ -87,14 +87,15 @@ function ouvrir() {
 }
 
 /* ---------- rendu ---------- */
-var SOUS = [["resume", "Résumé"], ["soir", "Ce soir"], ["ventes", "Ventes"], ["stock", "Stock"], ["production", "Production"], ["depenses", "Dépenses"], ["params", "Réglages"]];
+var SOUS = [["resume", "Résumé"], ["caisse", "Caisse"], ["soir", "Ce soir"], ["ventes", "Ventes"], ["stock", "Stock"], ["production", "Production"], ["depenses", "Dépenses"], ["params", "Réglages"]];
 var PERIODES = [["jour", "Aujourd'hui"], ["semaine", "7 jours"], ["mois", "Ce mois"], ["mois-dernier", "Mois dernier"], ["tout", "Tout"], ["perso", "Dates…"]];
 
 function rendre() {
   var c = $("p-suivi"), v = E.vue;
   if (!v) return;
+  if (E.sous === "caisse") lireEq();
   var nav = '<div class="sous" role="tablist">' + SOUS.map(function (s) { return '<button type="button" data-s="sous" data-v="' + s[0] + '" aria-pressed="' + (E.sous === s[0]) + '">' + s[1] + '</button>'; }).join("") + '</div>';
-  var corps = { resume: vResume, soir: vSoir, ventes: vVentes, stock: vStock, production: vProduction, depenses: vDepenses, params: vParams }[E.sous](v);
+  var corps = { resume: vResume, caisse: vCaisse, soir: vSoir, ventes: vVentes, stock: vStock, production: vProduction, depenses: vDepenses, params: vParams }[E.sous](v);
   var sel = document.activeElement && document.activeElement.id;
   c.innerHTML = nav + (E.message ? '<div class="msg msg-ok">' + esc(E.message) + '</div>' : "") + corps;
   if (sel && $(sel)) { try { $(sel).focus(); } catch (e) {} }
@@ -150,6 +151,50 @@ function vResume(v) {
   return h;
 }
 
+
+/* ----- Caisse : équipe, demandes de dépense, reçus ----- */
+function lireEq() {
+  if (!E.eq) return;
+  document.querySelectorAll("[data-eq-i]").forEach(function (e) {
+    var i = +e.getAttribute("data-eq-i"), k = e.getAttribute("data-eq-k"); if (!E.eq[i]) return;
+    E.eq[i][k] = e.type === "checkbox" ? e.checked : e.value;
+  });
+}
+function vCaisse(v) {
+  if (!E.eq) E.eq = JSON.parse(JSON.stringify(v.equipe || []));
+  var lien = location.origin + "/caisse.html";
+  var h = '<div class="carte"><h3>L\'application des vendeurs</h3><p class="astuce">Donnez ce lien (et son code personnel) à chaque caissier ou livreur. Ils l\'ouvrent sur leur téléphone et l\'installent. Ils peuvent noter des ventes et demander des dépenses, mais ne peuvent rien supprimer ni modifier.</p>' +
+    '<input type="text" readonly value="' + esc(lien) + '" onclick="this.select()"><div class="grille2" style="margin-top:8px"><button class="btn btn-brun btn-petit" type="button" data-s="copier-caisse">Copier le lien</button><a class="btn btn-clair btn-petit" href="' + esc(lien) + '" target="_blank" rel="noopener">Ouvrir la caisse</a></div></div>';
+  h += '<div class="carte" style="margin-top:12px"><h3>Équipe et codes</h3><p class="astuce">Un code par personne. Désactivez quelqu\'un qui part : son code ne marche plus tout de suite.</p>';
+  h += E.eq.length ? E.eq.map(function (m, i) {
+    return '<div class="formulaire" style="margin:8px 0"><label>Nom</label><input type="text" maxlength="40" data-eq-i="' + i + '" data-eq-k="nom" value="' + esc(m.nom) + '" placeholder="Ex : Awa">' +
+      '<label>Point de vente</label><select data-eq-i="' + i + '" data-eq-k="point">' + v.config.pointsVente.concat(v.config.pointsVente.indexOf(m.point) < 0 && m.point ? [m.point] : []).map(function (p) { return '<option' + (p === m.point ? " selected" : "") + '>' + esc(p) + '</option>'; }).join("") + '</select>' +
+      '<div class="rang" style="align-items:center"><span>Code : <b style="font-size:20px;letter-spacing:.1em">' + (m.code ? esc(m.code) : "créé à l\'enregistrement") + '</b></span><label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" data-eq-i="' + i + '" data-eq-k="actif"' + (m.actif !== false ? " checked" : "") + '> Actif</label></div>' +
+      '<button class="btn btn-clair btn-petit" type="button" data-s="eq-retirer" data-i="' + i + '">Retirer</button></div>';
+  }).join("") : '<p class="gris">Aucune personne pour le moment.</p>';
+  h += '<div class="grille2"><button class="btn btn-clair" type="button" data-s="eq-ajouter">+ Ajouter une personne</button><button class="btn btn-or" type="button" data-s="eq-enregistrer">Enregistrer l\'équipe</button></div></div>';
+  var att = (v.demandes || []).filter(function (d) { return d.statut === "attente"; }), faites = (v.demandes || []).filter(function (d) { return d.statut !== "attente"; }).slice(0, 8);
+  h += '<div class="carte" style="margin-top:12px"><h3>Demandes de dépense' + (att.length ? ' <span class="badge badge-rouge">' + att.length + '</span>' : '') + '</h3>';
+  h += att.length ? att.map(function (d) {
+    return '<div class="formulaire" style="margin:8px 0"><b>' + fcfa(d.montant) + '</b> · ' + esc(d.vendeur) + '<br><span class="gris">' + esc(d.motif) + ' · ' + esc(dateFr(d.date)) + '</span>' +
+      '<label>Catégorie si acceptée</label><select id="dc-' + esc(d.id) + '">' + v.categories.map(function (c) { return '<option' + (c === "Autre dépense" ? " selected" : "") + '>' + esc(c) + '</option>'; }).join("") + '</select>' +
+      '<div class="grille2" style="margin-top:8px"><button class="btn btn-brun btn-petit" type="button" data-s="dem-ok" data-id="' + esc(d.id) + '">Accepter</button><button class="btn btn-clair btn-petit" type="button" data-s="dem-non" data-id="' + esc(d.id) + '">Refuser</button></div></div>';
+  }).join("") : '<p class="gris">Aucune demande en attente.</p>';
+  if (faites.length) h += '<p class="astuce" style="margin-top:10px">Déjà traitées :</p>' + faites.map(function (d) { return '<div class="rang"><span>' + esc(d.vendeur) + ' · ' + esc(d.motif) + '</span><b>' + fcfa(d.montant) + ' ' + (d.statut === "accepte" ? "✓" : "✕") + '</b></div>'; }).join("");
+  h += '</div>';
+  var recus = (v.recus || []).filter(function (r) { return dansPeriode(r.date); });
+  var parV = {}, parM = {}, tot = 0;
+  recus.forEach(function (r) { parV[r.vendeur] = (parV[r.vendeur] || 0) + r.total; parM[r.paiement] = (parM[r.paiement] || 0) + r.total; tot += r.total; });
+  h += '<div class="carte" style="margin-top:12px"><h3>Reçus de la caisse</h3>' + selPeriode() +
+    '<div class="kpis"><div class="kpi gros"><small>Vendu en caisse</small><b>' + fcfa(tot) + '</b><small>' + recus.length + ' reçu' + (recus.length > 1 ? "s" : "") + '</small></div></div>' +
+    (Object.keys(parV).length ? '<p class="astuce">Par vendeur</p>' + Object.keys(parV).map(function (k) { return '<div class="rang"><span>' + esc(k) + '</span><b>' + fcfa(parV[k]) + '</b></div>'; }).join("") + '<p class="astuce" style="margin-top:10px">Par mode de paiement</p>' + Object.keys(parM).map(function (k) { return '<div class="rang"><span>' + esc(k) + '</span><b>' + fcfa(parM[k]) + '</b></div>'; }).join("") : '<p class="gris">Aucune vente en caisse sur cette période.</p>') +
+    (recus.length ? '<p class="astuce" style="margin-top:12px">Détail</p>' + recus.slice(0, 150).map(function (r) {
+      var hh = new Date(r.heure);
+      return '<div class="rang"><div class="g"><b>' + esc(dateFr(r.date)) + ' ' + ("0" + hh.getHours()).slice(-2) + ':' + ("0" + hh.getMinutes()).slice(-2) + ' · ' + esc(r.vendeur) + '</b><small>' + r.lignes.map(function (l) { return l.qte + " × " + esc(l.nom) + (l.detail ? " (" + esc(l.detail) + ")" : ""); }).join(", ") + '<br>' + esc(r.paiement) + (r.numPaiement ? " · " + esc(r.numPaiement) : "") + (r.note ? " · " + esc(r.note) : "") + '</small></div><div style="text-align:right"><b>' + fcfa(r.total) + '</b><br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer-recu" data-id="' + esc(r.id) + '">Supprimer</button></div></div>';
+    }).join("") : "") + '</div>';
+  return h;
+}
+
 /* ----- Ce soir (reste du jour) ----- */
 function vSoir(v) {
   var s = E.soir;
@@ -198,7 +243,7 @@ function vVentes(v) {
   var src = { site: ["Site", "badge-vert"], manuel: ["Noté", "badge-bleu"], comptage: ["Reste du soir", "badge-or"] };
   h += '<div class="carte"><h3>Ventes</h3>' + (v.ventes.length ? v.ventes.map(function (x) {
     var s = src[x.source];
-    return '<div class="rang"><div class="g"><b>' + esc(x.nom) + '</b> × ' + x.qte + '<small>' + esc(dateFr(x.date)) + ' · ' + esc(x.canal) + ' <span class="badge ' + s[1] + '">' + s[0] + '</span></small></div><div style="text-align:right"><b>' + fcfa(x.montant) + '</b>' + (x.source === "manuel" ? '<br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="vente" data-id="' + esc(x.ref) + '">Supprimer</button>' : x.source === "comptage" ? '<br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="comptage" data-id="' + esc(x.ref) + '">Annuler ce comptage</button>' : "") + '</div></div>';
+    return '<div class="rang"><div class="g"><b>' + esc(x.nom) + '</b> × ' + x.qte + '<small>' + esc(dateFr(x.date)) + ' · ' + esc(x.canal) + (x.vendeur ? ' · ' + esc(x.vendeur) + ' · ' + esc(x.paiement) : '') + ' <span class="badge ' + s[1] + '">' + s[0] + '</span></small></div><div style="text-align:right"><b>' + fcfa(x.montant) + '</b>' + (x.recu ? '<br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer-recu" data-id="' + esc(x.recu) + '">Supprimer le reçu</button>' : x.source === "manuel" ? '<br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="vente" data-id="' + esc(x.ref) + '">Supprimer</button>' : x.source === "comptage" ? '<br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="comptage" data-id="' + esc(x.ref) + '">Annuler ce comptage</button>' : "") + '</div></div>';
   }).join("") : '<p class="gris">Aucune vente sur cette période.</p>') + '</div>';
   if (v.pertes.length) h += '<div class="carte"><h3>Pertes, offerts, dégustations</h3>' + v.pertes.map(function (x) {
     return '<div class="rang"><div class="g"><b>' + esc(x.nom) + '</b> × ' + x.qte + '<small>' + esc(dateFr(x.date)) + ' · ' + esc(v.typesPerte[x.type] || x.type) + '</small></div><div style="text-align:right"><b>' + fcfa(x.cout) + '</b><br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="perte" data-id="' + esc(x.ref) + '">Supprimer</button></div></div>';
@@ -335,6 +380,8 @@ function construireRapport(complet) {
   if (b.parProduit.length) b.parProduit.forEach(function (p) { T.push("• " + p.nom + " : " + p.qte + " → " + fcfa(p.ca) + " (marge " + fcfa(p.marge) + ")"); }); else T.push("Aucune vente.");
   T.push("", ligneTitre("4. VENTES PAR POINT DE VENTE"));
   if (b.parPoint.length) b.parPoint.forEach(function (p) { T.push("• " + p.nom + " : " + p.qte + (p.qte > 1 ? " pièces → " : " pièce → ") + fcfa(p.ca)); }); else T.push("Aucune vente.");
+  if (b.parVendeur && b.parVendeur.length) { T.push("", ligneTitre("4b. VENTES PAR VENDEUR (CAISSE)")); b.parVendeur.forEach(function (p) { T.push("• " + p.nom + " : " + p.qte + " pièces → " + fcfa(p.ca)); }); }
+  if (b.parPaiement && b.parPaiement.length) { T.push("", ligneTitre("4c. MODES DE PAIEMENT (CAISSE)")); b.parPaiement.forEach(function (p) { T.push("• " + p.nom + " : " + fcfa(p.ca)); }); }
   T.push("", ligneTitre("5. VENTES PAR JOUR"));
   if (b.parJour.length) b.parJour.forEach(function (j) { T.push("• " + dateFr(j.date) + " : " + fcfa(j.ca) + " (" + j.qte + " pièces)" + (j.depenses ? " · dépenses " + fcfa(j.depenses) : "")); }); else T.push("Aucune vente.");
   T.push("", ligneTitre("6. DÉPENSES"));
@@ -384,6 +431,16 @@ function clic(ev) {
   var a = t.getAttribute("data-s"), v = t.getAttribute("data-v");
   E.message = "";
   switch (a) {
+    case "copier-caisse":
+      try { navigator.clipboard.writeText(location.origin + "/caisse.html"); A.toast("Lien copié", "ok"); } catch (e) { A.toast("Copiez le lien dans la case", "err"); } return;
+    case "eq-ajouter": lireEq(); E.eq.push({ nom: "", point: (E.vue.config.pointsVente[0] || "Local"), actif: true }); return rendre();
+    case "eq-retirer": lireEq(); if (!confirm("Retirer cette personne ? Son code ne marchera plus.")) return; E.eq.splice(+t.getAttribute("data-i"), 1); return rendre();
+    case "eq-enregistrer": lireEq(); if (E.eq.some(function (m) { return !String(m.nom || "").trim(); })) return A.toast("Écrivez le nom de chaque personne.", "err"); return envoyer("equipe_save", { liste: E.eq }, "Équipe enregistrée", function () { E.eq = null; });
+    case "dem-ok": return envoyer("demande_decider", { id: t.getAttribute("data-id"), decision: "accepter", categorie: val("dc-" + t.getAttribute("data-id")) }, "Dépense acceptée et notée");
+    case "dem-non": return envoyer("demande_decider", { id: t.getAttribute("data-id"), decision: "refuser" }, "Demande refusée");
+    case "supprimer-recu":
+      if (!confirm("Supprimer ce reçu et toutes ses ventes ? Les chiffres et le stock seront recalculés.")) return;
+      return envoyer("supprimer_recu", { id: t.getAttribute("data-id") }, "Reçu supprimé", function () { E.soir = null; });
     case "rapport-wa": return rapportWA();
     case "rapport-complet": return rapportComplet();
     case "sous": E.sous = v; E.ouvert = null; return rendre();

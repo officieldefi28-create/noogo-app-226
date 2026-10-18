@@ -1,0 +1,18 @@
+{
+  "id": "/caisse.html",
+  "name": "Noogó — Caisse",
+  "short_name": "Caisse Noogó",
+  "description": "Caisse des vendeurs Noogó : ventes, reçus, demandes de dépense.",
+  "lang": "fr",
+  "start_url": "/caisse.html?source=app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fcf8ea",
+  "theme_color": "#14451f",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Noogó — Caisse</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#14451f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Caisse Noogó">
+<link rel="icon" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/caisse.webmanifest">
+<style>
+:root{--vert:#14451f;--vert-2:#0d3216;--or:#c9982b;--or-clair:#f0d98a;--creme:#fcf8ea;--creme-2:#f3ead0;--texte:#1c2a20;--gris:#5d6a60;--ligne:#eadfc4;--rouge:#b3261e;--ok:#1b7a34;--blanc:#fff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--texte);background:var(--creme);font-size:16px;line-height:1.35;overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+input,textarea{user-select:text;-webkit-user-select:text}
+.cachee{display:none!important}
+#app{height:100dvh;display:flex;flex-direction:column;max-width:560px;margin:0 auto;background:var(--creme);position:relative}
+/* connexion */
+#ecran-code{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;gap:14px}
+#ecran-code img{width:150px;border-radius:30px;box-shadow:0 6px 24px rgba(20,69,31,.25)}
+#ecran-code h1{font-family:Georgia,serif;color:var(--vert);margin:6px 0 0;font-size:26px}
+#ecran-code p{margin:0;color:var(--gris)}
+#champ-code{width:230px;text-align:center;font-size:30px;letter-spacing:.35em;padding:12px;border:2px solid var(--ligne);border-radius:16px;background:#fff;outline:none}
+#champ-code:focus{border-color:var(--or)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;padding:14px 20px;font-weight:800;font-size:17px;background:var(--vert);color:#fff}
+.btn.or{background:var(--or);color:#1b1204}.btn.clair{background:#fff;border:1.5px solid var(--ligne);color:var(--vert)}.btn.wa{background:#1fa855}.btn.rouge{background:var(--rouge)}
+.btn:disabled{opacity:.45}
+.erreur{color:var(--rouge);font-weight:700;min-height:22px}
+/* en-tête */
+header{background:linear-gradient(160deg,var(--vert),var(--vert-2));color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:3px solid var(--or);flex:none}
+header img{width:34px;height:34px;border-radius:50%;object-fit:cover}
+header .qui{flex:1;min-width:0;line-height:1.15}
+header .qui b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header .qui small{color:var(--or-clair);font-size:12px}
+.etat{font-size:12px;font-weight:800;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.15);white-space:nowrap}
+.etat.ok::before{content:"● ";color:#6fe08a}.etat.ko::before{content:"● ";color:#ffb74d}
+.quitter{font-size:12px;border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:5px 10px;color:#fff}
+nav{display:flex;flex:none;background:#fff;border-bottom:1px solid var(--ligne)}
+nav button{flex:1;padding:12px 4px;font-weight:800;color:var(--gris);border-bottom:3px solid transparent;font-size:15px}
+nav button[aria-selected=true]{color:var(--vert);border-bottom-color:var(--or)}
+main{flex:1;min-height:0;display:flex;flex-direction:column}
+.vue{flex:1;min-height:0;display:flex;flex-direction:column}
+/* vente */
+.filtres{display:flex;gap:8px;padding:8px 10px;flex:none;overflow-x:auto}
+.filtres button{flex:none;padding:8px 16px;border-radius:999px;background:#fff;border:1.5px solid var(--ligne);font-weight:700;color:var(--vert)}
+.filtres button[aria-pressed=true]{background:var(--vert);color:#fff;border-color:var(--vert)}
+.grille{flex:1;min-height:0;overflow-y:auto;padding:2px 10px 10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}
+.tuile{background:#fff;border:1.5px solid var(--ligne);border-radius:14px;padding:10px 10px;text-align:left;min-height:74px;display:flex;flex-direction:column;justify-content:space-between;position:relative}
+.tuile:active{transform:scale(.97);background:var(--creme-2)}
+.tuile b{font-size:14.5px;line-height:1.2;color:var(--texte)}
+.tuile span{font-weight:900;color:var(--vert);font-size:16px;margin-top:4px}
+.tuile .badge{position:absolute;top:6px;right:6px;background:var(--or);color:#1b1204;border-radius:999px;font-size:12px;font-weight:900;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0 6px}
+.tuile.fini{opacity:.55}
+.dock{flex:none;background:#fff;border-top:2px solid var(--or);box-shadow:0 -6px 18px rgba(20,69,31,.12)}
+.ticket{max-height:118px;overflow-y:auto}
+.l{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--ligne)}
+.l.sel{background:#fff6d9}
+.l .n{flex:1;min-width:0;line-height:1.15}
+.l .n b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.l .n small{color:var(--gris);font-size:12px}
+.l .n small.manque{color:var(--rouge);font-weight:800}
+.l .q{min-width:44px;text-align:center;font-weight:900;font-size:18px;background:var(--creme-2);border-radius:10px;padding:4px 8px}
+.l .t{min-width:72px;text-align:right;font-weight:900}
+.l .x{width:30px;height:30px;border-radius:50%;background:#fdeaea;color:var(--rouge);font-weight:900}
+.vide-t{padding:12px;text-align:center;color:var(--gris);font-size:14px}
+.clavier{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:8px 10px;background:var(--creme-2)}
+.clavier button{background:#fff;border:1.5px solid var(--ligne);border-radius:12px;height:44px;font-size:21px;font-weight:800}
+.clavier button:active{background:var(--or-clair)}
+.clavier .saveurs{grid-column:span 2;font-size:15px;background:#fff3d6}
+.bas{display:flex;align-items:center;gap:10px;padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
+.bas .tot{flex:1;line-height:1.1}
+.bas .tot small{color:var(--gris);font-weight:700}
+.bas .tot b{display:block;font-size:26px;font-family:Georgia,serif;color:var(--vert)}
+.bas .btn{padding:15px 22px}
+/* fenêtres */
+.voile{position:absolute;inset:0;background:rgba(10,30,15,.55);display:flex;align-items:flex-end;z-index:10}
+.feuille{background:var(--creme);width:100%;max-height:92%;overflow-y:auto;border-radius:22px 22px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom))}
+.feuille h2{font-family:Georgia,serif;color:var(--vert);margin:0 0 8px;font-size:22px}
+.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.modes button{padding:14px 4px;border-radius:14px;background:#fff;border:2px solid var(--ligne);font-weight:800;color:var(--vert)}
+.modes button[aria-pressed=true]{border-color:var(--vert);background:#e8f3ea}
+label{display:block;font-weight:700;font-size:14px;margin:12px 0 5px;color:var(--gris)}
+input[type=tel],input[type=number],input[type=text],textarea{width:100%;padding:13px 14px;border:2px solid var(--ligne);border-radius:12px;background:#fff;font-size:17px;outline:none}
+input:focus,textarea:focus{border-color:var(--or)}
+.compo-l{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--ligne)}
+.pas{display:flex;align-items:center;gap:12px}
+.pas button{width:42px;height:42px;border-radius:50%;background:var(--vert);color:#fff;font-size:22px;font-weight:900}
+.pas b{min-width:26px;text-align:center;font-size:19px}
+.recu{background:#fff;border:1px dashed var(--vert);border-radius:14px;padding:14px;margin:8px 0}
+.recu .tete{text-align:center;border-bottom:1px dashed var(--ligne);padding-bottom:8px;margin-bottom:8px}
+.recu .tete b{font-family:Georgia,serif;font-size:22px;color:var(--vert)}
+.recu .tete small{display:block;color:var(--gris)}
+.recu .r{display:flex;justify-content:space-between;gap:10px;padding:3px 0;font-size:15px}
+.recu .r small{display:block;color:var(--gris)}
+.recu .tt{border-top:2px solid var(--vert);margin-top:8px;padding-top:8px;font-size:20px;font-weight:900;color:var(--vert)}
+.tag{display:inline-block;font-size:12px;font-weight:800;border-radius:999px;padding:3px 10px}
+.tag.ok{background:#e1f3e5;color:var(--ok)}.tag.att{background:#fff0cf;color:#8a5a00}.tag.ko{background:#fdeaea;color:var(--rouge)}
+.liste{flex:1;min-height:0;overflow-y:auto;padding:10px}
+.carte{background:#fff;border:1px solid var(--ligne);border-radius:14px;padding:12px;margin-bottom:8px}
+.carte .h{display:flex;justify-content:space-between;gap:8px;font-weight:800}
+.carte small{color:var(--gris)}
+.somme{background:linear-gradient(150deg,var(--vert),#1f5a2e);color:#fff;border-radius:16px;padding:14px;margin-bottom:10px}
+.somme small{color:var(--or-clair);font-weight:700}.somme b{display:block;font-size:30px;font-family:Georgia,serif}
+.info{background:#fff6d9;border-left:4px solid var(--or);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:10px}
+#toast{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);background:var(--vert-2);color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;z-index:30;max-width:90%;text-align:center}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Connexion par code -->
+  <section id="ecran-code" class="cachee">
+    <img src="/assets/logo-noogo.jpg" alt="Noogó">
+    <h1>Caisse Noogó</h1>
+    <p>Entrez votre code personnel</p>
+    <input id="champ-code" type="tel" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="Code personnel">
+    <div id="err-code" class="erreur" role="alert"></div>
+    <button class="btn or" id="btn-code" type="button">Ouvrir ma caisse</button>
+    <button class="btn clair cachee" id="btn-installer" type="button">Installer l'application</button>
+    <p id="aide-ios" class="cachee" style="font-size:13px">Sur iPhone : appuyez sur Partager puis « Sur l'écran d'accueil ».</p>
+  </section>
+
+  <!-- Caisse -->
+  <section id="ecran-caisse" class="cachee" style="display:flex;flex-direction:column;flex:1;min-height:0">
+    <header>
+      <img src="/assets/embleme.jpg" alt="">
+      <div class="qui"><b id="h-nom">—</b><small id="h-point"></small></div>
+      <span class="etat ok" id="h-etat">En ligne</span>
+      <button class="quitter" id="btn-quitter" type="button">Sortir</button>
+    </header>
+    <nav role="tablist">
+      <button type="button" data-v="vente" aria-selected="true">Vente</button>
+      <button type="button" data-v="mes" aria-selected="false">Mes ventes</button>
+      <button type="button" data-v="dep" aria-selected="false">Dépense</button>
+    </nav>
+    <main>
+      <div class="vue" id="v-vente">
+        <div class="filtres" id="filtres"></div>
+        <div class="grille" id="grille"></div>
+        <div class="dock">
+          <div class="ticket" id="ticket"></div>
+          <div class="clavier cachee" id="clavier"></div>
+          <div class="bas"><div class="tot"><small id="nb-t">0 article</small><b id="total">0 F</b></div><button class="btn or" id="btn-encaisser" type="button" disabled>Encaisser</button></div>
+        </div>
+      </div>
+      <div class="vue cachee" id="v-mes"><div class="liste" id="liste-mes"></div></div>
+      <div class="vue cachee" id="v-dep"><div class="liste" id="liste-dep"></div></div>
+    </main>
+  </section>
+  <div id="voile" class="voile cachee"><div class="feuille" id="feuille"></div></div>
+</div>
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (n) => Math.round(Number(n) || 0).toLocaleString("fr-FR").replace(/[  ]/g, " ") + " F";
+const lire = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
+const ecrire = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const jourJ = () => new Date().toISOString().slice(0, 10);
+const NUM_DEFAUT = "22665120902";
+
+let jeton = lire("caisse_jeton", ""), membre = lire("caisse_membre", null), articles = lire("caisse_articles", []);
+let numero = lire("caisse_numero", NUM_DEFAUT);
+let ticket = [], sel = -1, frais = false, filtre = "glaces", vue = "vente";
+let file = lire("caisse_file", []);          // ventes faites hors ligne, en attente d'envoi
+let locaux = lire("caisse_recus", []);       // reçus du jour gardés sur ce téléphone
+let toastT;
+
+function toast(m) { let t = $("#toast"); if (!t) { t = document.createElement("div"); t.id = "toast"; $("#app").appendChild(t); } t.textContent = m; t.classList.remove("cachee"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.add("cachee"), 2600); }
+
+async function api(action, extra) {
+  const r = await fetch("/api/caisse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.assign({ action, jeton }, extra || {})) });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && j.session === false) { const e = new Error(j.erreur || "Session terminée"); e.session = true; throw e; }
+  if (!r.ok) { const e = new Error(j.erreur || "Erreur " + r.status); e.http = r.status; throw e; }
+  return j;
+}
+
+/* ───── Connexion ───── */
+function montrerCode() { $("#ecran-caisse").classList.add("cachee"); $("#ecran-code").classList.remove("cachee"); $("#champ-code").value = ""; }
+async function entrer() {
+  const code = $("#champ-code").value.trim(), err = $("#err-code"), b = $("#btn-code");
+  if (code.length < 4) { err.textContent = "Entrez votre code."; return; }
+  b.disabled = true; err.textContent = "";
+  try {
+    const r = await fetch("/api/caisse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "connexion", code }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.erreur || "Connexion impossible");
+    if (membre && membre.id !== j.membre.id && file.length) throw new Error("Des ventes de " + membre.nom + " attendent d'être envoyées : sa session doit d'abord se reconnecter.");
+    jeton = j.jeton; membre = j.membre; numero = j.numero || numero;
+    ecrire("caisse_jeton", jeton); ecrire("caisse_membre", membre); ecrire("caisse_numero", numero);
+    await ouvrirCaisse(true);
+  } catch (e) { err.textContent = navigator.onLine ? e.message : "Pas de réseau : la première connexion demande internet."; }
+  b.disabled = false;
+}
+function sortir() {
+  if (file.length && !confirm(file.length + " vente(s) ne sont pas encore envoyées. Sortir quand même ? (Elles resteront sur ce téléphone.)")) return;
+  jeton = ""; ecrire("caisse_jeton", ""); montrerCode();
+}
+
+/* ───── Ouverture ───── */
+async function ouvrirCaisse(frais1) {
+  $("#ecran-code").classList.add("cachee"); $("#ecran-caisse").classList.remove("cachee");
+  $("#h-nom").textContent = membre ? membre.nom : "—"; $("#h-point").textContent = membre ? membre.point : "";
+  locaux = locaux.filter((r) => r.date === jourJ()); ecrire("caisse_recus", locaux);
+  rendreFiltres(); rendreGrille(); rendreTicket(); montrerVue("vente"); etat();
+  try { const j = await api("catalogue"); articles = j.articles; membre = j.membre; numero = j.numero || numero; ecrire("caisse_articles", articles); ecrire("caisse_membre", membre); ecrire("caisse_numero", numero); rendreFiltres(); rendreGrille(); }
+  catch (e) { if (e.session) { sessionFinie(); return; } }
+  synchroniser();
+}
+function sessionFinie() { jeton = ""; ecrire("caisse_jeton", ""); montrerCode(); $("#err-code").textContent = "Session terminée : entrez votre code."; }
+function etat() {
+  const e = $("#h-etat"), enl = navigator.onLine;
+  e.className = "etat " + (enl ? "ok" : "ko");
+  e.textContent = (enl ? "En ligne" : "Hors ligne") + (file.length ? " · " + file.length + " à envoyer" : "");
+}
+window.addEventListener("online", () => { etat(); synchroniser(); });
+window.addEventListener("offline", etat);
+setInterval(() => { if (jeton && file.length) synchroniser(); }, 20000);
+
+/* ───── Articles ───── */
+const GROUPES = { glaces: (a) => a.type === "produit" && a.cat === "cremes", packs: (a) => a.type === "pack", autres: (a) => a.type === "produit" && a.cat !== "cremes" };
+const NOMS_G = { glaces: "Glaces", packs: "Packs", autres: "Autres" };
+const art = (id) => articles.find((a) => a.id === id);
+function rendreFiltres() {
+  const dispo = Object.keys(GROUPES).filter((g) => articles.some(GROUPES[g]));
+  if (!dispo.includes(filtre)) filtre = dispo[0] || "glaces";
+  $("#filtres").innerHTML = dispo.map((g) => `<button type="button" data-f="${g}" aria-pressed="${g === filtre}">${NOMS_G[g]}</button>`).join("");
+}
+function rendreGrille() {
+  const l = articles.filter(GROUPES[filtre] || (() => true));
+  $("#grille").innerHTML = l.length ? l.map((a) => {
+    const q = (ticket.find((x) => x.id === a.id) || {}).qte || 0;
+    return `<button type="button" class="tuile${a.statut === "rupture" ? " fini" : ""}" data-a="${esc(a.id)}"><b>${esc(a.nom.replace(/^Crème glacée /, ""))}</b><span>${fmt(a.prix)}</span>${q ? `<i class="badge">${q}</i>` : ""}</button>`;
+  }).join("") : `<p class="vide-t" style="grid-column:1/-1">Aucun article. Connectez-vous à internet une fois pour charger la liste.</p>`;
+}
+
+/* ───── Ticket ───── */
+const pots = (l) => { const a = art(l.id); return a ? a.pots * l.qte : 0; };
+const compoTot = (l) => Object.values(l.compo || {}).reduce((x, y) => x + y, 0);
+const incomplet = (l) => { const a = art(l.id); return !!(a && a.type === "pack" && a.choix && compoTot(l) !== pots(l)); };
+const totalTicket = () => ticket.reduce((s, l) => s + (art(l.id) ? art(l.id).prix * l.qte : 0), 0);
+function ajouter(id) {
+  const a = art(id); if (!a) return;
+  if (a.statut === "rupture" && !confirm(a.nom + " est marqué « stock fini ». Vendre quand même ?")) return;
+  let i = ticket.findIndex((l) => l.id === id);
+  if (i < 0) { ticket.push({ id, qte: 1 }); i = ticket.length - 1; } else ticket[i].qte = Math.min(200, ticket[i].qte + 1);
+  sel = i; frais = true;
+  if (a.type === "pack" && a.choix) { ticket[i].compo = {}; rendre(); ouvrirSaveurs(i); return; }
+  rendre();
+}
+function rendre() { rendreGrille(); rendreTicket(); }
+function rendreTicket() {
+  const t = $("#ticket");
+  t.innerHTML = ticket.length ? ticket.map((l, i) => {
+    const a = art(l.id) || { nom: l.id, prix: 0 };
+    const manque = incomplet(l);
+    const sous = a.type === "pack" ? (manque ? `<small class="manque">Choisir les ${pots(l)} saveurs (${compoTot(l)}/${pots(l)})</small>` : `<small>${pots(l)} pots</small>`) : `<small>${fmt(a.prix)} l'unité</small>`;
+    return `<div class="l${i === sel ? " sel" : ""}" data-l="${i}"><div class="n"><b>${esc(a.nom.replace(/^Crème glacée /, ""))}</b>${sous}</div><span class="q">${l.qte}</span><span class="t">${fmt(a.prix * l.qte)}</span><button class="x" type="button" data-x="${i}" aria-label="Retirer">×</button></div>`;
+  }).join("") : `<div class="vide-t">Touchez un article pour commencer la vente</div>`;
+  const k = $("#clavier");
+  if (sel >= 0 && ticket[sel]) {
+    const a = art(ticket[sel].id);
+    k.classList.remove("cachee");
+    k.innerHTML = [1, 2, 3, "⌫", 4, 5, 6, "C", 7, 8, 9, 0].map((x) => `<button type="button" data-k="${x}">${x}</button>`).join("") + (a && a.type === "pack" && a.choix ? `<button type="button" class="saveurs" data-saveurs="1">Saveurs du pack</button>` : "");
+  } else { k.classList.add("cachee"); k.innerHTML = ""; }
+  const n = ticket.reduce((s, l) => s + l.qte, 0);
+  $("#nb-t").textContent = n + (n > 1 ? " articles" : " article");
+  $("#total").textContent = fmt(totalTicket());
+  $("#btn-encaisser").disabled = !ticket.length || ticket.some(incomplet);
+  $("#btn-encaisser").textContent = ticket.some(incomplet) ? "Saveurs ?" : "Encaisser";
+}
+function touche(k) {
+  if (sel < 0 || !ticket[sel]) return;
+  const l = ticket[sel], avant = l.qte;
+  if (k === "C") { ticket.splice(sel, 1); sel = -1; return rendre(); }
+  if (k === "⌫") { l.qte = Math.floor(l.qte / 10); if (!l.qte) { ticket.splice(sel, 1); sel = -1; } frais = false; }
+  else { const c = Number(k); if (frais) { if (c === 0) return; l.qte = c; frais = false; } else l.qte = Math.min(200, l.qte * 10 + c); }
+  const a = ticket[sel] && art(ticket[sel].id);
+  if (a && a.type === "pack" && a.choix && ticket[sel].qte !== avant) ticket[sel].compo = {};
+  rendre();
+}
+
+/* ───── Saveurs d'un pack ───── */
+function ouvrirSaveurs(i) {
+  const l = ticket[i], a = art(l.id); if (!a) return;
+  const cible = pots(l), grand = a.gr === "grand";
+  const opts = articles.filter((x) => x.type === "produit" && x.cat === "cremes" && ((x.gr === "grand") === grand) && x.statut !== "rupture");
+  const c = Object.assign({}, l.compo || {});
+  const total = () => Object.values(c).reduce((x, y) => x + y, 0);
+  const dessiner = () => {
+    $("#feuille").innerHTML = `<h2>${esc(a.nom)}</h2><p style="margin:0 0 6px"><b>${total()} / ${cible} pots choisis</b>${total() < cible ? " — il en reste " + (cible - total()) : " ✓"}</p>` +
+      opts.map((o) => `<div class="compo-l"><b>${esc(o.nom.replace(/^Crème glacée /, ""))}</b><div class="pas"><button type="button" data-cm="${esc(o.id)}">−</button><b>${c[o.id] || 0}</b><button type="button" data-cp="${esc(o.id)}">+</button></div></div>`).join("") +
+      `<button class="btn or" id="ok-saveurs" type="button" style="width:100%;margin-top:14px" ${total() === cible ? "" : "disabled"}>Valider</button>`;
+    $("#feuille").querySelectorAll("[data-cm]").forEach((b) => (b.onclick = () => { const k = b.dataset.cm; if (c[k]) { c[k]--; if (!c[k]) delete c[k]; } dessiner(); }));
+    $("#feuille").querySelectorAll("[data-cp]").forEach((b) => (b.onclick = () => { const k = b.dataset.cp; if (total() < cible) c[k] = (c[k] || 0) + 1; dessiner(); }));
+    $("#ok-saveurs").onclick = () => { l.compo = c; fermer(); rendre(); };
+  };
+  dessiner(); ouvrir();
+}
+function ouvrir() { $("#voile").classList.remove("cachee"); }
+function fermer() { $("#voile").classList.add("cachee"); }
+
+/* ───── Encaissement ───── */
+let mode = "especes";
+function ouvrirPaiement() {
+  mode = "especes";
+  const dessiner = () => {
+    const num = ($("#c-num") || {}).value || "";
+    $("#feuille").innerHTML = `<h2>Encaisser ${fmt(totalTicket())}</h2>
+      <div class="modes">${[["especes", "Espèces"], ["orange", "Orange Money"], ["wave", "Wave"]].map(([k, n]) => `<button type="button" data-m="${k}" aria-pressed="${mode === k}">${n}</button>`).join("")}</div>
+      ${mode !== "especes" ? `<label for="c-num">Numéro ${mode === "orange" ? "Orange" : "Wave"} qui a payé (le client, le vôtre ou celui du responsable)</label><input id="c-num" type="tel" inputmode="tel" placeholder="Ex : 70 12 34 56" value="${esc(num)}">` : ""}
+      <label for="c-note">Remarque (facultatif)</label><input id="c-note" type="text" maxlength="150" placeholder="Ex : client fidèle">
+      <div id="err-p" class="erreur"></div>
+      <button class="btn or" id="ok-pay" type="button" style="width:100%;margin-top:6px">Valider la vente</button>
+      <button class="btn clair" id="non-pay" type="button" style="width:100%;margin-top:8px">Retour</button>`;
+    $("#feuille").querySelectorAll("[data-m]").forEach((b) => (b.onclick = () => { mode = b.dataset.m; dessiner(); }));
+    $("#non-pay").onclick = fermer; $("#ok-pay").onclick = validerVente;
+  };
+  dessiner(); ouvrir();
+}
+function idRecu() { const d = new Date(); const p = (n) => String(n).padStart(2, "0"); return "R" + String(d.getUTCFullYear()).slice(2) + p(d.getUTCMonth() + 1) + p(d.getUTCDate()) + "-" + Math.random().toString(36).slice(2, 7).toUpperCase() + Date.now().toString(36).slice(-3).toUpperCase(); }
+function validerVente() {
+  const num = (($("#c-num") || {}).value || "").trim(), note = ($("#c-note").value || "").trim(), err = $("#err-p");
+  if (mode !== "especes" && num.replace(/\D/g, "").length < 8) { err.textContent = "Entrez le numéro Mobile Money (8 chiffres au moins)."; return; }
+  const lignes = ticket.map((l) => ({ id: l.id, qte: l.qte, compo: l.compo }));
+  const modeNom = { especes: "Espèces", orange: "Orange Money", wave: "Wave" }[mode];
+  const recu = { id: idRecu(), date: jourJ(), heure: new Date().toISOString(), vendeur: membre.nom, vid: membre.id, point: membre.point, paiement: modeNom, numPaiement: mode === "especes" ? "" : num, note, total: totalTicket(), lignes: ticket.map((l) => { const a = art(l.id); return { nom: a.nom, qte: l.qte, total: a.prix * l.qte, detail: a.type === "pack" ? (a.choix ? Object.keys(l.compo || {}).map((k) => l.compo[k] + " × " + (art(k) ? art(k).nom.replace(/^Crème glacée /, "") : k)).join(", ") : pots(l) + " pots") : "" }; }), etat: "attente" };
+  file.push({ id: recu.id, date: recu.date, lignes, paiement: mode, numPaiement: recu.numPaiement, note });
+  locaux.unshift(recu); ecrire("caisse_file", file); ecrire("caisse_recus", locaux);
+  ticket = []; sel = -1; rendre(); etat();
+  montrerRecu(recu);
+  synchroniser();
+}
+function texteRecu(r) {
+  const h = new Date(r.heure);
+  const L = ["🧾 *REÇU NOOGÓ* n° " + r.id, h.toLocaleDateString("fr-FR") + " " + h.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }), "Vendeur : " + r.vendeur + (r.point ? " (" + r.point + ")" : ""), ""];
+  r.lignes.forEach((l) => L.push("• " + l.qte + " × " + l.nom + " = " + fmt(l.total) + (l.detail ? "\n   " + l.detail : "")));
+  L.push("", "*TOTAL : " + fmt(r.total) + "*", "Paiement : " + r.paiement + (r.numPaiement ? " (" + r.numPaiement + ")" : ""));
+  if (r.note) L.push("Remarque : " + r.note);
+  return L.join("\n");
+}
+function htmlRecu(r) {
+  const h = new Date(r.heure);
+  return `<div class="recu"><div class="tete"><b>NOOGÓ</b><small>Glaces naturelles · Karpala</small><small>Reçu n° ${esc(r.id)}</small><small>${h.toLocaleDateString("fr-FR")} ${h.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · ${esc(r.vendeur)}</small></div>
+    ${r.lignes.map((l) => `<div class="r"><div>${l.qte} × ${esc(l.nom)}${l.detail ? `<small>${esc(l.detail)}</small>` : ""}</div><b>${fmt(l.total)}</b></div>`).join("")}
+    <div class="r tt"><span>TOTAL</span><span>${fmt(r.total)}</span></div>
+    <div class="r" style="margin-top:6px"><span>Paiement</span><b>${esc(r.paiement)}${r.numPaiement ? " · " + esc(r.numPaiement) : ""}</b></div></div>`;
+}
+function montrerRecu(r) {
+  const enAttente = file.some((x) => x.id === r.id);
+  $("#feuille").innerHTML = `<h2>Vente enregistrée ✓</h2><p style="margin:0 0 6px"><span id="tag-recu" data-id="${esc(r.id)}" class="tag ${enAttente ? "att" : "ok"}">${enAttente ? "Enregistrée sur ce téléphone, envoi dès que le réseau revient" : "Envoyée au responsable"}</span></p>${htmlRecu(r)}
+    <button class="btn wa" id="r-wa" type="button" style="width:100%">Envoyer le reçu au responsable (WhatsApp)</button>
+    <button class="btn or" id="r-nouv" type="button" style="width:100%;margin-top:8px">Nouvelle vente</button>`;
+  $("#r-wa").onclick = () => { window.open("https://wa.me/" + numero + "?text=" + encodeURIComponent(texteRecu(r)), "_blank", "noopener"); };
+  $("#r-nouv").onclick = fermer; ouvrir();
+}
+
+/* ───── Envoi des ventes (hors ligne → en ligne) ───── */
+let enCours = false;
+async function synchroniser() {
+  if (enCours || !jeton || !file.length || !navigator.onLine) return;
+  enCours = true;
+  try {
+    while (file.length) {
+      const v = file[0];
+      try {
+        const j = await api("vendre", v);
+        const r = locaux.find((x) => x.id === v.id); if (r) r.etat = "envoye";
+        file.shift();
+      } catch (e) {
+        if (e.session) { sessionFinie(); break; }
+        if (e.http === 400) { const r = locaux.find((x) => x.id === v.id); if (r) { r.etat = "refuse"; r.erreur = e.message; } file.shift(); toast("Vente refusée : " + e.message); continue; }
+        break;   // pas de réseau : on réessaiera
+      }
+    }
+  } finally { enCours = false; ecrire("caisse_file", file); ecrire("caisse_recus", locaux); etat();
+    const tg = document.getElementById("tag-recu"); if (tg && !file.some((x) => x.id === tg.dataset.id)) { tg.className = "tag ok"; tg.textContent = "Envoyée au responsable"; } if (vue === "mes") chargerMes(); }
+}
+
+/* ───── Mes ventes ───── */
+async function chargerMes() {
+  const c = $("#liste-mes"); let serveur = [];
+  try { const j = await api("mes_ventes", { date: jourJ() }); serveur = j.recus || []; } catch (e) { if (e.session) return sessionFinie(); }
+  const ids = new Set(serveur.map((r) => r.id));
+  const tous = serveur.concat(locaux.filter((r) => !ids.has(r.id) && r.date === jourJ() && r.etat !== "refuse"));
+  tous.sort((a, b) => (a.heure < b.heure ? 1 : -1));
+  const total = tous.reduce((s, r) => s + r.total, 0);
+  const parMode = {}; tous.forEach((r) => (parMode[r.paiement] = (parMode[r.paiement] || 0) + r.total));
+  c.innerHTML = `<div class="somme"><small>Mes ventes d'aujourd'hui · ${tous.length} reçu${tous.length > 1 ? "s" : ""}</small><b>${fmt(total)}</b><small>${Object.keys(parMode).map((k) => k + " " + fmt(parMode[k])).join(" · ") || "Aucune vente pour le moment"}</small></div>` +
+    tous.map((r) => { const h = new Date(r.heure); const att = file.some((x) => x.id === r.id);
+      return `<div class="carte" data-r="${esc(r.id)}"><div class="h"><span>${h.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · ${esc(r.paiement)}</span><span>${fmt(r.total)}</span></div><small>${r.lignes.map((l) => l.qte + " × " + esc(l.nom.replace(/^Crème glacée /, ""))).join(", ")}</small><div style="margin-top:4px"><span class="tag ${att ? "att" : "ok"}">${att ? "En attente d'envoi" : "Envoyée"}</span></div></div>`; }).join("") +
+    `<p class="vide-t">Une vente notée ne peut plus être modifiée ni supprimée. En cas d'erreur, appelez le responsable.</p>`;
+  c._tous = tous;
+}
+
+/* ───── Dépenses (sur accord) ───── */
+async function chargerDep() {
+  const c = $("#liste-dep"); let l = [];
+  try { l = (await api("mes_demandes")).demandes; } catch (e) { if (e.session) return sessionFinie(); }
+  const st = { attente: ["att", "En attente d'accord"], accepte: ["ok", "Accordée"], refuse: ["ko", "Refusée"] };
+  c.innerHTML = `<div class="info"><b>Aucune dépense sans accord.</b><br>Appelez le responsable au <b>${esc(numero.replace(/^226/, "").replace(/(\d{2})(?=\d)/g, "$1 "))}</b>. La dépense ne compte que s'il l'accepte.</div>
+    <label for="d-m">Montant (F)</label><input id="d-m" type="tel" inputmode="numeric" placeholder="Ex : 2000">
+    <label for="d-t">Pour quoi ?</label><input id="d-t" type="text" maxlength="150" placeholder="Ex : sachets, transport…">
+    <div id="err-d" class="erreur"></div>
+    <button class="btn or" id="d-ok" type="button" style="width:100%">Appeler et envoyer la demande</button>
+    <h3 style="font-family:Georgia,serif;color:var(--vert);margin:18px 0 6px">Mes demandes</h3>` +
+    (l.length ? l.map((x) => `<div class="carte"><div class="h"><span>${fmt(x.montant)}</span><span class="tag ${st[x.statut][0]}">${st[x.statut][1]}</span></div><small>${esc(x.motif)} · ${new Date(x.heure).toLocaleDateString("fr-FR")}</small></div>`).join("") : `<p class="vide-t">Aucune demande.</p>`);
+  $("#d-ok").onclick = async () => {
+    const m = $("#d-m").value.replace(/\D/g, ""), t = $("#d-t").value.trim(), err = $("#err-d");
+    if (!m || Number(m) < 1) { err.textContent = "Entrez le montant."; return; }
+    if (t.length < 3) { err.textContent = "Dites pour quoi est cette dépense."; return; }
+    if (!navigator.onLine) { err.textContent = "Il faut du réseau pour demander une dépense."; return; }
+    $("#d-ok").disabled = true; err.textContent = "";
+    try { await api("demander_depense", { montant: Number(m), motif: t }); toast("Demande envoyée. Appel du responsable…"); setTimeout(() => { location.href = "tel:+" + numero; }, 500); chargerDep(); }
+    catch (e) { if (e.session) return sessionFinie(); err.textContent = e.message; $("#d-ok").disabled = false; }
+  };
+}
+
+/* ───── Navigation ───── */
+function montrerVue(v) {
+  vue = v;
+  document.querySelectorAll("nav button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.v === v)));
+  ["vente", "mes", "dep"].forEach((k) => $("#v-" + k).classList.toggle("cachee", k !== v));
+  if (v === "mes") chargerMes(); if (v === "dep") chargerDep();
+}
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("button, .l, .carte"); if (!t) return;
+  if (t.dataset.v) return montrerVue(t.dataset.v);
+  if (t.dataset.f) { filtre = t.dataset.f; rendreFiltres(); return rendreGrille(); }
+  if (t.dataset.a) return ajouter(t.dataset.a);
+  if (t.dataset.x !== undefined) { ticket.splice(Number(t.dataset.x), 1); sel = -1; return rendre(); }
+  if (t.dataset.k) return touche(t.dataset.k);
+  if (t.dataset.saveurs) return ouvrirSaveurs(sel);
+  if (t.classList.contains("l")) { sel = Number(t.dataset.l); frais = true; rendreTicket(); const l = ticket[sel], a = l && art(l.id); if (a && a.type === "pack" && a.choix && incomplet(l)) ouvrirSaveurs(sel); return; }
+  if (t.dataset.r) { const r = ($("#liste-mes")._tous || []).find((x) => x.id === t.dataset.r); if (r) { $("#feuille").innerHTML = `<h2>Reçu</h2>${htmlRecu(r)}<button class="btn wa" id="r-wa" type="button" style="width:100%">Envoyer au responsable (WhatsApp)</button><button class="btn clair" id="r-ok" type="button" style="width:100%;margin-top:8px">Fermer</button>`; $("#r-wa").onclick = () => window.open("https://wa.me/" + numero + "?text=" + encodeURIComponent(texteRecu(r)), "_blank", "noopener"); $("#r-ok").onclick = fermer; ouvrir(); } }
+});
+$("#btn-encaisser").onclick = () => { if (ticket.length && !ticket.some(incomplet)) ouvrirPaiement(); };
+$("#btn-code").onclick = entrer; $("#champ-code").addEventListener("keydown", (e) => { if (e.key === "Enter") entrer(); });
+$("#btn-quitter").onclick = sortir;
+$("#voile").addEventListener("click", (e) => { if (e.target.id === "voile") fermer(); });
+
+/* ───── Installation ───── */
+let invite = null;
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); invite = e; $("#btn-installer").classList.remove("cachee"); });
+$("#btn-installer").onclick = async () => { if (invite) { invite.prompt(); invite = null; $("#btn-installer").classList.add("cachee"); } };
+if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !navigator.standalone) $("#aide-ios").classList.remove("cachee");
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+
+/* ───── Démarrage ───── */
+if (jeton && membre) ouvrirCaisse(); else montrerCode();
+</script>
+</body>
+</html>

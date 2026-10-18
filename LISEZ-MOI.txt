@@ -1,3 +1,6 @@
-MISE A JOUR 4 (remplace les zips precedents) - 8 fichiers
-index.html, admin.html, admin-suivi.js, sw.js, api/suivi.js, api/admin.js, api/_catalogue.js, assets/admin-theme.css
-A mettre au meme endroit sur GitHub. Vercel redeploie en ~2 min.
+MISE A JOUR 5 : LA CAISSE (a ajouter apres la mise a jour 4)
+Mets ces fichiers au meme endroit sur GitHub (remplace ceux qui existent) :
+  caisse.html, caisse.webmanifest, admin-suivi.js, sw.js, vercel.json
+  api/caisse.js (nouveau), api/suivi.js, api/_suivi.js, api/_store.js
+Vercel redeploie en ~2 minutes.
+Ensuite : admin > Suivi > onglet "Caisse" : cree tes caissiers, copie le lien /caisse.html et donne a chacun son code.

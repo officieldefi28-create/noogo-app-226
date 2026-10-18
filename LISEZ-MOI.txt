@@ -1,4 +1,3 @@
-MISE A JOUR COMPLETE (admin + Suivi + packs promo) - 7 fichiers
-Remplace/ajoute au meme endroit sur GitHub : index.html, admin.html, admin-suivi.js, api/suivi.js, api/admin.js, api/_catalogue.js, assets/admin-theme.css
-Ce zip contient tout de la mise a jour 2 + les packs promo : tu n'as pas besoin du zip precedent.
-Vercel redeploie en ~2 min.
+MISE A JOUR 4 (remplace les zips precedents) - 8 fichiers
+index.html, admin.html, admin-suivi.js, sw.js, api/suivi.js, api/admin.js, api/_catalogue.js, assets/admin-theme.css
+A mettre au meme endroit sur GitHub. Vercel redeploie en ~2 min.

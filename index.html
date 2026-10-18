@@ -256,6 +256,14 @@ ol.pas-l li{margin:8px 0}
   </div>
 </div>
 
+<!-- Fenêtre : coordonnées pour la livraison (s'ouvre au moment d'envoyer si elles manquent) -->
+<div class="voile centre cachee" id="voile-coord">
+  <div class="feuille" role="dialog" aria-modal="true" aria-labelledby="t-coord">
+    <div class="feuille-t"><h2 id="t-coord">Où vous livrer ?</h2><button class="icone-btn" type="button" data-fermer="voile-coord" aria-label="Fermer">×</button></div>
+    <div class="feuille-c" id="coord-corps"></div>
+  </div>
+</div>
+
 <!-- Fenêtre : installer l'application -->
 <div class="voile centre cachee" id="voile-inst">
   <div class="feuille" role="dialog" aria-modal="true" aria-labelledby="t-inst">
@@ -593,6 +601,48 @@ function partagerPosition(btn) {
   );
 }
 
+/* Fenêtre des coordonnées : tout se remplit ici, sans remonter dans le panier */
+function ouvrirCoord() {
+  const mem = lire("noogo_client") || {};
+  const v = (id, d) => { const e = $("#" + id); return e && e.value ? e.value : d || ""; };
+  const liv = reception === "livraison";
+  $("#t-coord").textContent = liv ? "Où vous livrer ?" : "Votre numéro";
+  $("#coord-corps").innerHTML = `
+    <p style="margin:0 0 6px">${liv ? "Pour que le livreur vous trouve et vous appelle, ajoutez ces informations (30 secondes)." : "Ajoutez votre numéro pour que nous vous prévenions quand c'est prêt."}</p>
+    <label class="l" for="c-nom">Votre nom <span class="opt">(facultatif)</span></label>
+    <input type="text" id="c-nom" autocomplete="name" placeholder="Votre nom" value="${esc(v("f-nom", mem.nom))}">
+    <label class="l" for="c-tel">Votre numéro de téléphone <b style="color:var(--rouge)">*</b></label>
+    <input type="tel" id="c-tel" inputmode="tel" autocomplete="tel" placeholder="Ex : 70 12 34 56" value="${esc(v("f-tel", mem.tel))}">
+    ${liv ? `<label class="l">Votre position <b style="color:var(--rouge)">*</b></label>
+    <button type="button" class="btn wa" id="c-gps">${position ? "✓ Position partagée (actualiser)" : "📍 Partager ma position (1 appui)"}</button>
+    <label class="l" for="c-lieu">Ou écrivez votre quartier / un repère</label>
+    <input type="text" id="c-lieu" autocomplete="street-address" placeholder="Ex : Karpala, près de la mairie" value="${esc(v("f-lieu", mem.lieu && mem.lieu !== "Position partagée" ? mem.lieu : ""))}">` : ""}
+    <div id="c-err" class="err cachee" role="alert"></div>
+    <button type="button" class="btn wa" id="c-ok" style="margin-top:14px">Envoyer ma commande sur WhatsApp</button>
+    <p style="text-align:center;margin:10px 0 0"><button type="button" class="lien" id="c-passer">Envoyer sans ces informations</button></p>`;
+  ouvrirVoile("voile-coord");
+  setTimeout(() => { const e = $(v("c-tel") ? (liv ? "#c-lieu" : "#c-tel") : "#c-tel"); if (e && !position) e.focus(); }, 150);
+}
+function validerCoord() {
+  const tel = ($("#c-tel").value || "").trim(), lieu = $("#c-lieu") ? $("#c-lieu").value.trim() : "";
+  const err = $("#c-err"), no = (m) => { err.textContent = m; err.classList.remove("cachee"); };
+  if (tel.replace(/\D/g, "").length < 8) return no("Entrez votre numéro de téléphone (8 chiffres au moins).");
+  if (reception === "livraison" && !lieu && !position) return no("Partagez votre position ou écrivez votre quartier.");
+  if ($("#f-nom")) $("#f-nom").value = $("#c-nom").value.trim();
+  if ($("#f-tel")) $("#f-tel").value = tel;
+  if ($("#f-lieu") && $("#c-lieu")) $("#f-lieu").value = lieu;
+  fermerVoile("voile-coord"); envoyer();
+}
+function gpsCoord(btn) {
+  if (!navigator.geolocation) return toast("Localisation non disponible : écrivez votre quartier");
+  btn.disabled = true; btn.textContent = "Recherche de votre position…";
+  navigator.geolocation.getCurrentPosition(
+    (p) => { position = `https://maps.google.com/?q=${p.coords.latitude.toFixed(6)},${p.coords.longitude.toFixed(6)}`; btn.disabled = false; btn.textContent = "✓ Position partagée (actualiser)"; $("#c-err").classList.add("cachee"); },
+    () => { btn.disabled = false; btn.textContent = "📍 Partager ma position (1 appui)"; const e = $("#c-err"); e.textContent = "Localisation impossible ici : écrivez votre quartier juste en dessous."; e.classList.remove("cachee"); if ($("#c-lieu")) $("#c-lieu").focus(); },
+    { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+  );
+}
+
 /* Envoi : enregistrement sur le site + message WhatsApp */
 const PAY = { get especes() { return "Espèces"; }, get orange() { return "Orange Money (" + CONFIG.orangeMoney + ")"; }, get wave() { return "Wave (" + CONFIG.wave + ")"; } };
 function envoyer() {
@@ -604,11 +654,7 @@ function envoyer() {
   const incomplet = L.filter((l) => estMix(l.p) && !compoComplete(l.p));
   if (incomplet.length) { montrer("Choisissez les saveurs de : " + incomplet.map((l) => l.p.nom.replace(/ — .*/, "")).join(", ") + "."); return; }
   // Rappel doux (une seule fois) : un numéro et un lieu aident le livreur
-  if (!avertiInfos && (!tel || (reception === "livraison" && !lieu && !position))) {
-    avertiInfos = true;
-    montrer("Pour faciliter la livraison, ajoutez votre numéro et votre position (ou quartier). Vous pouvez aussi appuyer encore une fois pour envoyer tel quel.");
-    return;
-  }
+  if (!avertiInfos && (!tel || (reception === "livraison" && !lieu && !position))) { ouvrirCoord(); return; }
   err.classList.add("cachee");
   const note = (($("#f-note") || {}).value || "").trim();
   ecrire("noogo_client", { nom, tel, lieu });
@@ -744,6 +790,9 @@ document.addEventListener("click", (e) => {
     case "btn-code": $("#bloc-code").classList.remove("cachee"); c.parentElement.remove(); $("#f-code").focus(); return;
     case "btn-appliquer": return verifierCode(false);
     case "btn-position": return partagerPosition(c);
+    case "c-gps": return gpsCoord(c);
+    case "c-ok": return validerCoord();
+    case "c-passer": avertiInfos = true; fermerVoile("voile-coord"); return envoyer();
     case "bandeau-x": $("#bandeau").classList.add("cachee"); return;
     case "inst-x": return fermerInstall();
   }
@@ -756,7 +805,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") fermerTout();
   if (e.key === "Enter" && e.target.id === "f-code") { e.preventDefault(); verifierCode(false); }
 });
-["voile-panier", "voile-plus", "voile-compo", "voile-zoom"].forEach((id) => $("#" + id).addEventListener("click", (e) => { if (e.target.id === id) fermerVoile(id); }));
+["voile-panier", "voile-plus", "voile-compo", "voile-zoom", "voile-coord"].forEach((id) => $("#" + id).addEventListener("click", (e) => { if (e.target.id === id) fermerVoile(id); }));
 $("#voile-inst").addEventListener("click", (e) => { if (e.target.id === "voile-inst") fermerInstall(); });
 
 /* ───────── Démarrage ───────── */

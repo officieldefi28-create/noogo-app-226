@@ -138,7 +138,7 @@ function vResume(v) {
   if (b.margeBrute < 0) al.push('<div class="alerte rouge"><b>Marge négative :</b> vous vendez moins cher que le coût de revient. Vérifiez les coûts dans Réglages.</div>');
   if (!al.length && b.ca > 0) al.push('<div class="alerte vert">Tout est en ordre : pas de stock négatif, comptage à jour.</div>');
   h += al.join("");
-  h += '<button class="btn btn-vert btn-bloc" type="button" data-s="rapport-wa" style="margin:6px 0 10px">Envoyer le rapport par WhatsApp</button>';
+  h += '<div class="grille2" style="margin:6px 0 10px"><button class="btn btn-vert" type="button" data-s="rapport-wa">Résumé WhatsApp</button><button class="btn btn-brun" type="button" data-s="rapport-complet">Rapport complet</button></div><p class="astuce">« Rapport complet » contient chaque vente, dépense, production, perte et le stock : il s\'envoie comme document WhatsApp.</p>';
   if (b.achats) h += '<p class="astuce">Achats de marchandises à revendre (hors résultat tant que non vendus) : ' + fcfa(b.achats) + '</p>';
   if (b.apports || b.remboursements) h += '<p class="astuce">Apports d\'argent : ' + fcfa(b.apports) + (b.remboursements ? ' · Remboursés : ' + fcfa(b.remboursements) : '') + '</p>';
   h += '<div class="carte"><h3>Ventes par jour</h3>' + (jours.length ? jours.map(function (j) {
@@ -315,18 +315,69 @@ function telecharger(nom, contenu) {
   document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
 
+/* ---------- Rapports (WhatsApp) : résumé détaillé en message + rapport complet en fichier ---------- */
+var NOMS_PERIODE = { jour: "Aujourd'hui", semaine: "7 derniers jours", mois: "Ce mois", "mois-dernier": "Mois dernier", tout: "Depuis le début" };
+function nomPeriode() { return E.periode === "perso" ? "Du " + dateFr(E.du) + " au " + dateFr(E.au) : NOMS_PERIODE[E.periode]; }
+function dansPeriode(d) { var p = periodeCourante(); return (!p.du || d >= p.du) && (!p.au || d <= p.au); }
+function ligneTitre(t) { return "━━━━━━━━━━━━━━\n*" + t + "*"; }
+function construireRapport(complet) {
+  var v = E.vue, b = v.bilan, pr = v.precedent, T = [];
+  var noms = {}; v.produits.forEach(function (p) { noms[p.id] = p.nom; });
+  T.push("🍦 *NOOGÓ — RAPPORT DE GESTION*", nomPeriode() + " · édité le " + dateFr(jourJ(0)) + "/" + jourJ(0).slice(0, 4));
+  T.push("", ligneTitre("1. RÉSULTATS"));
+  T.push("Chiffre d'affaires : *" + fcfa(b.ca) + "* (" + b.quantite + " pièces)");
+  if (pr && pr.ca) T.push("   vs période d'avant : " + (b.ca >= pr.ca ? "▲ +" : "▼ ") + Math.round((b.ca - pr.ca) / pr.ca * 100) + " % (" + fcfa(pr.ca) + ")");
+  T.push("Coût des produits vendus : " + fcfa(b.cout), "Marge brute : " + fcfa(b.margeBrute) + " (" + b.margePct + " %)", "Pertes / offerts (au coût) : " + fcfa(b.pertes), "Dépenses : " + fcfa(b.charges), "*RÉSULTAT NET : " + signe(b.resultat) + "*");
+  T.push("", ligneTitre("2. TRÉSORERIE ET STOCK"), "Caisse théorique : *" + fcfa(b.caisse) + "*", "Valeur du stock (au coût) : " + fcfa(b.valeurStock), "Production sur la période : " + fcfa(b.production));
+  if (b.achats) T.push("Achats de marchandises à revendre : " + fcfa(b.achats));
+  if (b.apports || b.remboursements) T.push("Apports d'argent : " + fcfa(b.apports) + " · Remboursés : " + fcfa(b.remboursements));
+  T.push("", ligneTitre("3. VENTES PAR PRODUIT"));
+  if (b.parProduit.length) b.parProduit.forEach(function (p) { T.push("• " + p.nom + " : " + p.qte + " → " + fcfa(p.ca) + " (marge " + fcfa(p.marge) + ")"); }); else T.push("Aucune vente.");
+  T.push("", ligneTitre("4. VENTES PAR POINT DE VENTE"));
+  if (b.parPoint.length) b.parPoint.forEach(function (p) { T.push("• " + p.nom + " : " + p.qte + (p.qte > 1 ? " pièces → " : " pièce → ") + fcfa(p.ca)); }); else T.push("Aucune vente.");
+  T.push("", ligneTitre("5. VENTES PAR JOUR"));
+  if (b.parJour.length) b.parJour.forEach(function (j) { T.push("• " + dateFr(j.date) + " : " + fcfa(j.ca) + " (" + j.qte + " pièces)" + (j.depenses ? " · dépenses " + fcfa(j.depenses) : "")); }); else T.push("Aucune vente.");
+  T.push("", ligneTitre("6. DÉPENSES"));
+  var dep = v.depenses.filter(function (d) { return dansPeriode(d.date); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; });
+  if (b.parCategorie.length) { b.parCategorie.forEach(function (c) { T.push("• " + c.nom + " : " + fcfa(c.total)); }); T.push("Total dépenses : " + fcfa(b.charges)); } else T.push("Aucune dépense.");
+  T.push("", ligneTitre("7. STOCK ACTUEL (théorique)"));
+  var st = v.stock.filter(function (x) { return x.produit || x.vendu || x.theorique; });
+  if (st.length) st.forEach(function (x) { T.push("• " + x.nom + " : *" + x.theorique + "*" + (x.theorique < 0 ? " ⚠" : x.theorique <= 5 ? " (bas)" : "") + " — valeur " + fcfa(x.valeur)); }); else T.push("Aucun stock enregistré.");
+  var al = [];
+  if (b.alertes.length) al.push("⚠ Stock négatif : " + b.alertes.map(function (a) { return a.nom; }).join(", "));
+  var bas = v.stock.filter(function (x) { return x.produit > 0 && x.theorique >= 0 && x.theorique <= 5; });
+  if (bas.length) al.push("⚠ Stock bas : " + bas.map(function (x) { return x.nom + " (" + x.theorique + ")"; }).join(", "));
+  if (b.margeBrute < 0) al.push("⚠ Marge négative");
+  if (al.length) T.push("", ligneTitre("ALERTES"), al.join("\n"));
+  if (complet) {
+    T.push("", ligneTitre("8. DÉTAIL DE TOUTES LES VENTES"));
+    var ve = v.ventes.slice().sort(function (x, y) { return x.date < y.date ? -1 : 1; });
+    if (ve.length) ve.forEach(function (x) { T.push(dateFr(x.date) + " · " + x.nom + " ×" + x.qte + " = " + fcfa(x.montant) + " · " + x.canal + (x.source === "site" ? " (commande site " + (x.ref || "") + ")" : "")); }); else T.push("Aucune vente.");
+    T.push("", ligneTitre("9. DÉTAIL DE TOUTES LES DÉPENSES"));
+    if (dep.length) dep.forEach(function (d) { T.push(dateFr(d.date) + " · " + d.categorie + (d.description ? " — " + d.description : "") + " = " + fcfa(d.montant)); }); else T.push("Aucune dépense.");
+    T.push("", ligneTitre("10. PRODUCTIONS"));
+    var lo = v.lots.filter(function (l) { return dansPeriode(l.date) && !l.depart; });
+    if (lo.length) lo.forEach(function (l) { T.push(dateFr(l.date) + " · " + l.nom + " : " + l.lignes.map(function (x) { return x.qte + " × " + (noms[x.produitId] || x.produitId); }).join(", ") + " — coût " + fcfa(l.cout) + " (" + fcfa(l.coutUnitaire) + "/pièce)"); }); else T.push("Aucune production.");
+    T.push("", ligneTitre("11. PERTES, OFFERTS, DÉGUSTATIONS"));
+    if (v.pertes.length) v.pertes.forEach(function (x) { T.push(dateFr(x.date) + " · " + x.nom + " ×" + x.qte + " · " + (v.typesPerte[x.type] || x.type) + " · coût " + fcfa(x.cout)); }); else T.push("Aucune perte.");
+  }
+  T.push("", "— Noogó · glaces naturelles, Karpala");
+  return T.join("\n");
+}
 function rapportWA() {
-  var v = E.vue, b = v.bilan, nomP = { jour: "Aujourd'hui", semaine: "7 derniers jours", mois: "Ce mois", "mois-dernier": "Mois dernier", tout: "Depuis le début", perso: "Du " + E.du + " au " + E.au }[E.periode];
-  var t = ["*NOOGÓ — Rapport de gestion*", nomP + " (" + dateFr(jourJ(0)) + ")", "",
-    "Chiffre d'affaires : " + fcfa(b.ca) + " (" + b.quantite + " pièces)",
-    "Marge brute : " + fcfa(b.margeBrute) + " (" + b.margePct + " %)",
-    "Dépenses : " + fcfa(b.charges), "Pertes : " + fcfa(b.pertes),
-    "*Résultat net : " + signe(b.resultat) + "*", "",
-    "Caisse : " + fcfa(b.caisse), "Valeur du stock : " + fcfa(b.valeurStock)];
-  if (b.parProduit.length) { t.push("", "Meilleures ventes :"); b.parProduit.slice(0, 3).forEach(function (p) { t.push("• " + p.nom + " : " + p.qte + " (" + fcfa(p.ca) + ")"); }); }
-  if (b.parPoint.length) { t.push("", "Par point de vente :"); b.parPoint.slice(0, 4).forEach(function (p) { t.push("• " + p.nom + " : " + fcfa(p.ca)); }); }
-  if (b.alertes.length) t.push("", "⚠ Stock négatif : " + b.alertes.map(function (a) { return a.nom; }).join(", "));
-  window.open("https://wa.me/?text=" + encodeURIComponent(t.join("\n")), "_blank", "noopener");
+  var t = construireRapport(false);
+  // Un message WhatsApp reste lisible jusqu'à environ 4000 caractères : au-delà, on conseille le rapport complet
+  if (t.length > 3800) t = t.slice(0, 3700).replace(/\n[^\n]*$/, "") + "\n…\n(Rapport tronqué : utilisez « Rapport complet »)";
+  window.open("https://wa.me/?text=" + encodeURIComponent(t), "_blank", "noopener");
+}
+function rapportComplet() {
+  var t = construireRapport(true).replace(/\*/g, ""), nom = "Rapport-Noogo-" + jourJ(0) + ".txt";
+  try {
+    var f = new File([t], nom, { type: "text/plain" });
+    if (navigator.canShare && navigator.canShare({ files: [f] })) return navigator.share({ files: [f], title: "Rapport Noogó", text: "Rapport de gestion Noogó" }).catch(function () {});
+  } catch (e) {}
+  telecharger(nom, "﻿" + t);
+  A.toast("Rapport téléchargé : envoyez-le ensuite sur WhatsApp comme document.", "ok");
 }
 function clic(ev) {
   var t = ev.target.closest("[data-s]"); if (!t) return;
@@ -334,6 +385,7 @@ function clic(ev) {
   E.message = "";
   switch (a) {
     case "rapport-wa": return rapportWA();
+    case "rapport-complet": return rapportComplet();
     case "sous": E.sous = v; E.ouvert = null; return rendre();
     case "periode": E.periode = v; if (v === "perso") { E.du = E.du || jourJ(-30); E.au = E.au || jourJ(0); return rendre(); } return rafraichir();
     case "appliquer-dates": E.du = val("su-du"); E.au = val("su-au"); return rafraichir();

@@ -38,9 +38,27 @@ function configPropre(c) {
   };
 }
 
+// Un produit doit exister dans le catalogue ou dans « produits non vendus sur le site »
+async function verifierProduits(ids) {
+  const donnees = await charger();
+  const connus = new Set(U.produitsSuivis(donnees.catalogue, donnees.config).map((p) => p.id));
+  for (const id of ids) if (!connus.has(id)) throw new Error("Produit invalide : " + id);
+}
+
 function periode(d) {
   const du = d.du ? date(d.du) : "", au = d.au ? date(d.au) : "";
   return [du, au];
+}
+
+// Même durée, juste avant : sert aux comparaisons « par rapport à la période d'avant »
+function precedente(donnees, du, au) {
+  if (!du || !au) return null;
+  const j = (x) => Date.parse(x + "T00:00:00Z");
+  const jours = Math.round((j(au) - j(du)) / 86400000) + 1;
+  const fmt = (ms) => new Date(ms).toISOString().slice(0, 10);
+  const pAu = fmt(j(du) - 86400000), pDu = fmt(j(du) - jours * 86400000);
+  const b = U.bilan(donnees, pDu, pAu);
+  return { du: pDu, au: pAu, ca: b.ca, resultat: b.resultat, quantite: b.quantite, margeBrute: b.margeBrute };
 }
 
 function vue(donnees, d) {
@@ -51,6 +69,7 @@ function vue(donnees, d) {
     produits: calc.suivis,
     stock: Object.values(calc.stock),
     bilan: U.bilan(donnees, du, au),
+    precedent: precedente(donnees, du, au),
     ventes: calc.ventes.filter((x) => (!du || x.date >= du) && (!au || x.date <= au)).slice(0, 400),
     pertes: calc.pertes.filter((x) => (!du || x.date >= du) && (!au || x.date <= au)).slice(0, 300),
     ajustements: calc.ajustements.slice(-100),
@@ -85,11 +104,13 @@ module.exports = async (req, res) => {
         const lignes = (Array.isArray(d.lignes) ? d.lignes : []).slice(0, 20)
           .map((x) => ({ produitId: idPropre(x.produitId), qte: entier(x.qte, 0, 100000, "Quantité") })).filter((x) => x.qte > 0);
         if (!lignes.length) throw new Error("Ajoutez au moins un produit avec une quantité");
+        await verifierProduits(lignes.map((x) => x.produitId));
         const lot = { id: d.id ? idPropre(d.id) : nouvelId("lot"), date: date(d.date), nom: txt(d.nom, 60) || "Lot", cout: entier(d.cout, 0, 100000000, "Coût"), lignes, note: txt(d.note, 200) };
         await S.suiviSet("lots", lot.id, lot);
         break;
       }
       case "ajouter_vente": {
+        await verifierProduits([idPropre(d.produitId)]);
         const v = { id: d.id ? idPropre(d.id) : nouvelId("v"), date: date(d.date), produitId: idPropre(d.produitId), qte: entier(d.qte, 1, 100000, "Quantité"), pointVente: txt(d.pointVente, 40), remise: entier(d.remise || 0, 0, 100000000, "Remise"), note: txt(d.note, 200) };
         if (d.prix !== undefined && d.prix !== "" && d.prix !== null) v.prix = entier(d.prix, 0, 10000000, "Prix");
         await S.suiviSet("ventes", v.id, v);
@@ -97,6 +118,7 @@ module.exports = async (req, res) => {
       }
       case "ajouter_perte": {
         if (!U.TYPES_PERTE[d.type]) throw new Error("Type de perte invalide");
+        await verifierProduits([idPropre(d.produitId)]);
         const p = { id: nouvelId("p"), date: date(d.date), produitId: idPropre(d.produitId), qte: entier(d.qte, 1, 100000, "Quantité"), type: d.type, note: txt(d.note, 200) };
         await S.suiviSet("pertes", p.id, p);
         break;

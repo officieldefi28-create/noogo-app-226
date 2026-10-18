@@ -46,6 +46,8 @@ function validerCatalogue(liste) {
     if (o.type === "pack") {
       o.packCount = Math.max(1, Math.min(50, parseInt(p.packCount, 10) || 1));
       o.packLabel = txt(p.packLabel, 60);
+      if (p.packLiv === "sans") o.packLiv = "sans";   // pack promo sans livraison incluse
+      if (p.packChoix) o.packChoix = true;             // le client choisit ses saveurs
     }
     return o;
   });

@@ -26,7 +26,7 @@ async function chargerCatalogue() {
 // les prix envoyés par le navigateur ne sont jamais utilisés.
 function calculerPanier(articles, catalogue) {
   const lignes = [];
-  let produits = 0, packs = 0;
+  let produits = 0, packs = 0, packsSans = 0;
   for (const a of Array.isArray(articles) ? articles.slice(0, 60) : []) {
     if (!a || typeof a !== "object") continue;
     const p = catalogue.find((x) => x.id === a.id && x.actif !== false);
@@ -45,9 +45,10 @@ function calculerPanier(articles, catalogue) {
       if (compo.length) ligne.compo = compo;
     }
     lignes.push(ligne);
-    if (p.type === "pack") packs += total; else produits += total;
+    if (p.type === "pack" && p.packLiv !== "sans") packs += total;
+    else { if (p.type === "pack") packsSans += total; produits += total; }
   }
-  return { lignes, produits, packs, total: produits + packs, aPack: packs > 0 };
+  return { lignes, produits, packs, packsSans, total: produits + packs, aPack: packs > 0 };
 }
 
 function jourValide(partenaire) {

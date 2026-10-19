@@ -52,7 +52,7 @@ function appel(action, extra) {
     .then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (d) {
         if (r.status === 401) { A.deconnecter(d.erreur || "Session expirée, reconnectez-vous."); var e = new Error("session"); e.silencieux = true; throw e; }
-        if (!r.ok) throw new Error(d.erreur || ("Erreur " + r.status));
+        if (!r.ok) throw new Error(d.erreur === "Action non reconnue" ? "Le serveur du site n'est pas à jour (mise à jour pas encore en ligne sur Vercel). Attendez 2 minutes puis rechargez la page." : (d.erreur || ("Erreur " + r.status)));
         return d;
       });
     });

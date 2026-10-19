@@ -1,7 +1,15 @@
-MISE A JOUR 5 : LA CAISSE (a mettre apres la mise a jour 4)
-Mets ces fichiers au meme endroit sur GitHub (remplace ceux qui existent) :
-  index.html, caisse.html, caisse.webmanifest, admin-suivi.js, sw.js, vercel.json
-  api/caisse.js (nouveau), api/suivi.js, api/_suivi.js, api/_store.js
-Vercel redeploie en ~2 minutes.
-Ensuite : admin > Suivi > onglet "Caisse" : cree tes caissiers, choisis leur code, copie le lien /caisse.html.
-Mot secret (par defaut : bingo) : sur le site, "Suivre ma commande" > taper le mot > la caisse s'ouvre.
+MISE A JOUR 6 - POURQUOI LA CAISSE N'APPARAISSAIT PAS
+
+Cause : Vercel gratuit accepte 12 fonctions maximum. Ton dépôt en avait 13,
+donc Vercel refusait toutes les mises à jour depuis hier soir.
+
+ETAPE 1 (la plus importante) - SUPPRIMER 1 fichier sur GitHub :
+  GitHub > ton dépôt noogo-app-226 > dossier "api" > fichier
+  partenaire-reclaimer.js  (tout petit, il ne sert à rien)
+  > ouvrir le fichier > bouton "..." en haut à droite > Delete file > Commit changes.
+
+ETAPE 2 - Envoyer les 2 fichiers de ce zip à la RACINE du dépôt
+  (Add file > Upload files) : admin-suivi.js et sw.js > Commit.
+
+Attendre 2 minutes. Puis sur le téléphone : fermer l'appli Noogó, la rouvrir
+(2 fois si besoin).

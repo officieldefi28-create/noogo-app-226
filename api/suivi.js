@@ -17,10 +17,11 @@ async function charger() {
     S.suiviListe("depenses"), S.suiviListe("comptages"), S.getCommandes(),
     lireEquipe(), S.suiviListe("recus"), S.suiviListe("demandes")
   ]);
+  const motCaisse = (await S.getDoc("caisse-mot")) || "bingo";
   const cfg = configPropre(config);
   // « Nouveau départ » : les commandes du site livrées avant ce moment ne comptent plus dans le suivi
   const cmds = cfg.debutHeure ? commandes.filter((c) => String(c.dateLivraison || c.date || "") >= cfg.debutHeure) : commandes;
-  return { catalogue, config: cfg, lots, ventes, pertes, depenses, comptages, commandes: cmds, equipe, recus, demandes };
+  return { catalogue, config: cfg, lots, ventes, pertes, depenses, comptages, commandes: cmds, equipe, recus, demandes, motCaisse };
 }
 
 function configPropre(c) {
@@ -72,9 +73,11 @@ async function equipeSauver(liste, config) {
     const nom = txt(x && x.nom, 40); if (!nom) continue;
     let id = /^[A-Za-z0-9_-]{3,40}$/.test(String(x.id || "")) ? String(x.id) : nouvelId("e");
     if (vus.has(id)) id = nouvelId("e"); vus.add(id);
-    let code = /^\d{4,8}$/.test(String(x.code || "")) ? String(x.code) : "";
-    while (!code || codes.has(code)) code = String(crypto.randomInt(100000, 999999));
-    codes.add(code);
+    let code = txt(x.code, 20);
+    if (code && !/^[A-Za-z0-9]{4,12}$/.test(code)) throw new Error("Code invalide pour " + nom + " : 4 à 12 lettres ou chiffres, sans espace");
+    if (code && codes.has(code.toLowerCase())) throw new Error("Code invalide : « " + code + " » est déjà donné à quelqu'un d'autre");
+    while (!code || codes.has(code.toLowerCase())) code = String(crypto.randomInt(100000, 999999));
+    codes.add(code.toLowerCase());
     const point = txt(x.point, 40);
     propre.push({ id, nom, code, point: point || "Local", actif: x.actif !== false });
   }
@@ -97,7 +100,7 @@ function vue(donnees, d) {
     lots: calc.lots.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 600),
     depenses: calc.depenses.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     comptages: donnees.comptages.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
-    equipe: donnees.equipe, recus: (donnees.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 800),
+    equipe: donnees.equipe, motCaisse: donnees.motCaisse, recus: (donnees.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 800),
     demandes: (donnees.demandes || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 200),
     categories: U.CATEGORIES_DEPENSE, typesPerte: U.TYPES_PERTE
   };
@@ -168,6 +171,12 @@ module.exports = async (req, res) => {
       case "equipe_save": {
         const donnees = await charger();
         await equipeSauver(d.liste, donnees.config);
+        break;
+      }
+      case "caisse_mot": {
+        const mot = txt(d.mot, 30).toLowerCase();
+        if (!/^[a-z0-9]{3,20}$/.test(mot)) throw new Error("Mot invalide : 3 à 20 lettres ou chiffres, sans espace ni accent");
+        await S.setDoc("caisse-mot", mot);
         break;
       }
       case "demande_decider": {

@@ -61,11 +61,18 @@ module.exports = async (req, res) => {
     const d = req.body || {};
     const ip = String((req.headers && (req.headers["x-forwarded-for"] || "")) || (req.socket && req.socket.remoteAddress) || "x").split(",")[0].trim();
 
+    // Porte secrète du site : le mot tapé dans « Suivre ma commande » ouvre la caisse
+    if (d.action === "porte") {
+      if (!(await S.limiter("cporte:" + ip, 20, 600))) return res.status(429).json({ erreur: "Trop d'essais" });
+      const mot = ((await S.getDoc("caisse-mot")) || "bingo");
+      return res.status(200).json({ ok: txt(d.mot, 40).toLowerCase() === mot });
+    }
+
     if (d.action === "connexion") {
       if (!(await S.limiter("clogin:" + ip, 12, 600))) return res.status(429).json({ erreur: "Trop d'essais. Réessayez dans 10 minutes." });
-      const code = txt(d.code, 20);
+      const code = txt(d.code, 20).toLowerCase();
       const liste = await equipe();
-      const m = liste.find((x) => x.actif !== false && x.code && x.code === code);
+      const m = liste.find((x) => x.actif !== false && x.code && String(x.code).toLowerCase() === code);
       if (!m) return res.status(401).json({ erreur: "Code incorrect" });
       const jeton = signerJeton({ role: "caisse", uid: m.id, creeLe: Date.now() }, process.env.JETON_SECRET);
       return res.status(200).json({ jeton, membre: sansCode(m), numero: NUMERO_RESPONSABLE });

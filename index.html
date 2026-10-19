@@ -696,9 +696,22 @@ function ouvrirPlus(section) {
   const el = $("#acc-" + section); if (el) setTimeout(() => el.scrollIntoView({ block: "nearest" }), 60);
   const sv = $("#sv-ok"); if (sv) sv.addEventListener("click", suivreCommande);
 }
+/* Porte discrète vers la caisse des vendeurs : le mot secret se règle dans l'admin */
+async function empreinte(t) { try { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(t).toLowerCase().trim())); return Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, "0")).join(""); } catch (e) { return ""; } }
+async function motCaisse(mot) {
+  try {
+    const r = await fetch("/api/caisse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "porte", mot }) });
+    const j = await r.json();
+    if (j && j.ok) { ecrire("noogo_porte", await empreinte(mot)); return true; }
+    return false;
+  } catch (e) {            // pas de réseau : on compare avec le mot déjà reconnu sur ce téléphone
+    const h = lire("noogo_porte"); return !!h && h === (await empreinte(mot));
+  }
+}
 async function suivreCommande() {
   const res = $("#sv-res"), btn = $("#sv-ok"), code = ($("#sv-code").value || "").trim();
   if (!code) { res.innerHTML = `<p style="color:var(--rouge)">Entrez votre code de commande.</p>`; return; }
+  if (!/^CMD-/i.test(code) && code.length <= 20 && await motCaisse(code)) { location.href = "/caisse.html"; return; }
   btn.disabled = true; res.innerHTML = "<p>Recherche…</p>";
   try {
     const r = await fetch("/api/communaute", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "commande_suivre", id: code }) });

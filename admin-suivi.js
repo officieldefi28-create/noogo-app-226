@@ -169,10 +169,12 @@ function vCaisse(v) {
   h += E.eq.length ? E.eq.map(function (m, i) {
     return '<div class="formulaire" style="margin:8px 0"><label>Nom</label><input type="text" maxlength="40" data-eq-i="' + i + '" data-eq-k="nom" value="' + esc(m.nom) + '" placeholder="Ex : Awa">' +
       '<label>Point de vente</label><select data-eq-i="' + i + '" data-eq-k="point">' + v.config.pointsVente.concat(v.config.pointsVente.indexOf(m.point) < 0 && m.point ? [m.point] : []).map(function (p) { return '<option' + (p === m.point ? " selected" : "") + '>' + esc(p) + '</option>'; }).join("") + '</select>' +
-      '<div class="rang" style="align-items:center"><span>Code : <b style="font-size:20px;letter-spacing:.1em">' + (m.code ? esc(m.code) : "créé à l\'enregistrement") + '</b></span><label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" data-eq-i="' + i + '" data-eq-k="actif"' + (m.actif !== false ? " checked" : "") + '> Actif</label></div>' +
+      '<label>Code personnel (4 à 12 lettres ou chiffres, à vous de choisir)</label><input type="text" maxlength="12" autocapitalize="none" autocomplete="off" data-eq-i="' + i + '" data-eq-k="code" value="' + esc(m.code || "") + '" placeholder="Laissez vide : un code est créé">' +
+      '<div class="rang" style="align-items:center"><span class="gris">Un seul code par personne</span><label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" data-eq-i="' + i + '" data-eq-k="actif"' + (m.actif !== false ? " checked" : "") + '> Actif</label></div>' +
       '<button class="btn btn-clair btn-petit" type="button" data-s="eq-retirer" data-i="' + i + '">Retirer</button></div>';
   }).join("") : '<p class="gris">Aucune personne pour le moment.</p>';
   h += '<div class="grille2"><button class="btn btn-clair" type="button" data-s="eq-ajouter">+ Ajouter une personne</button><button class="btn btn-or" type="button" data-s="eq-enregistrer">Enregistrer l\'équipe</button></div></div>';
+  h += '<div class="carte" style="margin-top:12px"><h3>Mot secret pour ouvrir la caisse</h3><p class="astuce">Sur le site, le vendeur tape ce mot dans « Suivre ma commande » : la caisse s\'ouvre. Les clients ne le savent pas, et il faut quand même un code personnel pour entrer.</p><input type="text" id="mot-caisse" maxlength="20" autocapitalize="none" autocomplete="off" value="' + esc(v.motCaisse || "bingo") + '"><button class="btn btn-brun btn-petit" type="button" data-s="mot-enregistrer" style="margin-top:8px">Enregistrer le mot</button></div>';
   var att = (v.demandes || []).filter(function (d) { return d.statut === "attente"; }), faites = (v.demandes || []).filter(function (d) { return d.statut !== "attente"; }).slice(0, 8);
   h += '<div class="carte" style="margin-top:12px"><h3>Demandes de dépense' + (att.length ? ' <span class="badge badge-rouge">' + att.length + '</span>' : '') + '</h3>';
   h += att.length ? att.map(function (d) {
@@ -433,6 +435,7 @@ function clic(ev) {
   switch (a) {
     case "copier-caisse":
       try { navigator.clipboard.writeText(location.origin + "/caisse.html"); A.toast("Lien copié", "ok"); } catch (e) { A.toast("Copiez le lien dans la case", "err"); } return;
+    case "mot-enregistrer": return envoyer("caisse_mot", { mot: val("mot-caisse") }, "Mot secret enregistré");
     case "eq-ajouter": lireEq(); E.eq.push({ nom: "", point: (E.vue.config.pointsVente[0] || "Local"), actif: true }); return rendre();
     case "eq-retirer": lireEq(); if (!confirm("Retirer cette personne ? Son code ne marchera plus.")) return; E.eq.splice(+t.getAttribute("data-i"), 1); return rendre();
     case "eq-enregistrer": lireEq(); if (E.eq.some(function (m) { return !String(m.nom || "").trim(); })) return A.toast("Écrivez le nom de chaque personne.", "err"); return envoyer("equipe_save", { liste: E.eq }, "Équipe enregistrée", function () { E.eq = null; });

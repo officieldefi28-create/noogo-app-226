@@ -27,7 +27,7 @@ input,textarea{user-select:text;-webkit-user-select:text}
 #ecran-code img{width:150px;border-radius:30px;box-shadow:0 6px 24px rgba(20,69,31,.25)}
 #ecran-code h1{font-family:Georgia,serif;color:var(--vert);margin:6px 0 0;font-size:26px}
 #ecran-code p{margin:0;color:var(--gris)}
-#champ-code{width:230px;text-align:center;font-size:30px;letter-spacing:.35em;padding:12px;border:2px solid var(--ligne);border-radius:16px;background:#fff;outline:none}
+#champ-code{width:250px;text-align:center;font-size:28px;letter-spacing:.2em;padding:12px;border:2px solid var(--ligne);border-radius:16px;background:#fff;outline:none}
 #champ-code:focus{border-color:var(--or)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;padding:14px 20px;font-weight:800;font-size:17px;background:var(--vert);color:#fff}
 .btn.or{background:var(--or);color:#1b1204}.btn.clair{background:#fff;border:1.5px solid var(--ligne);color:var(--vert)}.btn.wa{background:#1fa855}.btn.rouge{background:var(--rouge)}
@@ -119,11 +119,13 @@ input:focus,textarea:focus{border-color:var(--or)}
     <img src="/assets/logo-noogo.jpg" alt="Noogó">
     <h1>Caisse Noogó</h1>
     <p>Entrez votre code personnel</p>
-    <input id="champ-code" type="tel" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="Code personnel">
+    <input id="champ-code" type="text" inputmode="text" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="12" aria-label="Code personnel">
     <div id="err-code" class="erreur" role="alert"></div>
     <button class="btn or" id="btn-code" type="button">Ouvrir ma caisse</button>
     <button class="btn clair cachee" id="btn-installer" type="button">Installer l'application</button>
     <p id="aide-ios" class="cachee" style="font-size:13px">Sur iPhone : appuyez sur Partager puis « Sur l'écran d'accueil ».</p>
+    <div id="aide-chrome" class="cachee info" style="text-align:left;max-width:320px"><b>Pour installer l'application</b><br>Ce lien est ouvert dans WhatsApp ou Facebook. Ouvrez-le dans Chrome :<br><button class="btn or" id="btn-chrome" type="button" style="margin-top:8px;width:100%">Ouvrir dans Chrome</button></div>
+    <p id="aide-menu" class="cachee" style="font-size:13px;max-width:320px">Pour installer : touchez le menu ⋮ de Chrome, puis « Installer l'application » (ou « Ajouter à l'écran d'accueil »).</p>
   </section>
 
   <!-- Caisse -->
@@ -451,6 +453,13 @@ let invite = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); invite = e; $("#btn-installer").classList.remove("cachee"); });
 $("#btn-installer").onclick = async () => { if (invite) { invite.prompt(); invite = null; $("#btn-installer").classList.add("cachee"); } };
 if (/iphone|ipad|ipod/i.test(navigator.userAgent) && !navigator.standalone) $("#aide-ios").classList.remove("cachee");
+const dansApp = /FBAN|FBAV|Instagram|TikTok|Line\/|MicroMessenger|; wv\)|WhatsApp/i.test(navigator.userAgent);
+const installee = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+if (!installee) {
+  if (dansApp && /android/i.test(navigator.userAgent)) $("#aide-chrome").classList.remove("cachee");
+  else if (!/iphone|ipad|ipod/i.test(navigator.userAgent)) setTimeout(() => { if (!invite) $("#aide-menu").classList.remove("cachee"); }, 2500);
+}
+$("#btn-chrome").onclick = () => { location.href = "intent://" + location.host + location.pathname + "#Intent;scheme=https;package=com.android.chrome;end"; };
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
 
 /* ───── Démarrage ───── */

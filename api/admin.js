@@ -4,7 +4,7 @@ const {
 } = require("./_auth");
 const S = require("./_store");
 const defaut = require("../catalogue.json");
-const { majPhotos } = require("./_catalogue");
+const { majPhotos, chargerCatalogue } = require("./_catalogue");
 const { fusionner: fusionnerSite, valider: validerSite } = require("./_site");
 
 const CATS = ["cremes", "popcorn", "pain", "esquimau", "gros"];
@@ -257,6 +257,12 @@ module.exports = async (req, res) => {
       case "catalogue_save": {
         let liste;
         try { liste = validerCatalogue(data.produits); } catch (e) { return res.status(400).json({ erreur: e.message }); }
+        // Avant de changer un prix : on fige les prix de l'historique du suivi (le passé ne doit jamais bouger)
+        try {
+          const avant = {}; for (const p of await chargerCatalogue()) if (p && p.type !== "pack") avant[p.id] = p.prix;
+          const change = liste.some((p) => p.type !== "pack" && avant[p.id] != null && Number(avant[p.id]) !== Number(p.prix));
+          if (change) await S.figerPrix(avant);
+        } catch (e) { console.error("figerPrix", e && e.message); }
         await S.setCatalogue(liste);
         return res.status(200).json({ succes: true, nombre: liste.length });
       }

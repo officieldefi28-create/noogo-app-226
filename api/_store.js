@@ -135,7 +135,22 @@ async function setDoc(cle, v) {
   await db().set("noogo:doc:" + cle, v);
 }
 
+// Gèle les prix dans l'historique : les comptages et ventes saisis « au prix du site » gardent le prix
+// qu'ils avaient au moment où le prix change (le chiffre d'affaires passé ne bouge plus jamais).
+async function figerPrix(prixAvant) {
+  let n = 0;
+  if (!prixAvant || typeof prixAvant !== "object") return n;
+  for (const c of await suiviListe("comptages")) {
+    if (c && c.id && (c.prix == null || c.prix === "") && prixAvant[c.produitId] != null) { await suiviSet("comptages", String(c.id), { ...c, prix: Math.round(Number(prixAvant[c.produitId]) || 0) }); n++; }
+  }
+  for (const v of await suiviListe("ventes")) {
+    if (v && v.id && (v.prix == null || v.prix === "") && (v.montant == null || v.montant === "") && prixAvant[v.produitId] != null) { await suiviSet("ventes", String(v.id), { ...v, prix: Math.round(Number(prixAvant[v.produitId]) || 0) }); n++; }
+  }
+  return n;
+}
+
 module.exports = {
+  figerPrix,
   hgetall, hset, hdel, hget, hincr, getDoc, setDoc,
   suiviListe, suiviSet, suiviDel, getSuiviConfig, setSuiviConfig,
   getReglages, setReglages,

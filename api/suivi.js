@@ -12,16 +12,16 @@ const idPropre = (s) => { const v = txt(s, 60); if (!/^[A-Za-z0-9_-]+$/.test(v))
 const nouvelId = (p) => p + "-" + Date.now().toString(36) + crypto.randomBytes(3).toString("hex");
 
 async function charger() {
-  const [catalogue, config, lots, ventes, pertes, depenses, comptages, commandes, equipe, recus, demandes] = await Promise.all([
+  const [catalogue, config, lots, ventes, pertes, depenses, comptages, commandes, equipe, recus, demandes, journal, clotures] = await Promise.all([
     chargerCatalogue(), S.getSuiviConfig(), S.suiviListe("lots"), S.suiviListe("ventes"), S.suiviListe("pertes"),
     S.suiviListe("depenses"), S.suiviListe("comptages"), S.getCommandes(),
-    lireEquipe(), S.suiviListe("recus"), S.suiviListe("demandes")
+    lireEquipe(), S.suiviListe("recus"), S.suiviListe("demandes"), S.getDoc("journal"), S.getDoc("clotures")
   ]);
   const motCaisse = (await S.getDoc("caisse-mot")) || "bingo";
   const cfg = configPropre(config);
   // « Nouveau départ » : les commandes du site livrées avant ce moment ne comptent plus dans le suivi
   const cmds = cfg.debutHeure ? commandes.filter((c) => String(c.dateLivraison || c.date || "") >= cfg.debutHeure) : commandes;
-  return { catalogue, config: cfg, lots, ventes, pertes, depenses, comptages, commandes: cmds, equipe, recus, demandes, motCaisse };
+  return { catalogue, config: cfg, lots, ventes, pertes, depenses, comptages, commandes: cmds, equipe, recus, demandes, motCaisse, journal: Array.isArray(journal) ? journal : [], clotures: Array.isArray(clotures) ? clotures : [] };
 }
 
 function configPropre(c) {
@@ -34,6 +34,8 @@ function configPropre(c) {
   const pv = (Array.isArray(c.pointsVente) ? c.pointsVente : U.POINTS_VENTE_DEFAUT).map((x) => txt(x, 40)).filter(Boolean).slice(0, 40);
   return {
     caisseDepart: Math.round(Number(c.caisseDepart) || 0),
+    objectifJour: Math.max(0, Math.min(100000000, Math.round(Number(c.objectifJour) || 0))),
+    objectifMois: Math.max(0, Math.min(1000000000, Math.round(Number(c.objectifMois) || 0))),
     depuis: /^\d{4}-\d{2}-\d{2}$/.test(String(c.depuis || "")) ? c.depuis : "",
     pointsVente: pv, couts, internes,
     debutHeure: /^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/.test(String(c.debutHeure || "")) ? c.debutHeure : ""
@@ -85,6 +87,60 @@ async function equipeSauver(liste, config) {
   return propre;
 }
 
+// Prix actuels du catalogue (hors packs) + produits internes : sert à figer le prix au moment de la saisie
+async function prixActuels() {
+  const m = {};
+  for (const p of await chargerCatalogue()) if (p && p.type !== "pack") m[p.id] = Math.round(Number(p.prix) || 0);
+  const cfg = configPropre(await S.getSuiviConfig());
+  for (const p of cfg.internes) m[p.id] = p.prix;
+  return m;
+}
+
+// Journal des modifications (qui/quoi/quand) : jamais de code ni de mot secret dedans
+async function noter(libelle, detail) {
+  try {
+    const j = (await S.getDoc("journal")) || [];
+    j.push({ t: new Date().toISOString(), a: libelle, r: String(detail || "").slice(0, 200) });
+    await S.setDoc("journal", j.slice(-400));
+  } catch (e) { /* le journal ne doit jamais bloquer une saisie */ }
+}
+const fr = (n) => String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " F";
+const jjmm = (d) => String(d || "").slice(8, 10) + "/" + String(d || "").slice(5, 7);
+function decrire(type, o, noms) {
+  if (!o) return "";
+  const nom = (id) => (noms && noms[id]) || id;
+  if (type === "lots") return (o.nom || "Production") + " · " + (o.lignes || []).map((x) => x.qte + " " + nom(x.produitId)).join(", ") + " · " + jjmm(o.date);
+  if (type === "ventes") return o.qte + " × " + nom(o.produitId) + " · " + jjmm(o.date) + (o.vendeur ? " · " + o.vendeur : "");
+  if (type === "pertes") return o.qte + " × " + nom(o.produitId) + " (" + (U.TYPES_PERTE[o.type] || o.type) + ") · " + jjmm(o.date);
+  if (type === "depenses") return (o.categorie || "Dépense") + " " + fr(o.montant) + " · " + jjmm(o.date);
+  if (type === "comptages") return "Reste de " + nom(o.produitId) + " : " + o.restant + " · " + jjmm(o.date);
+  return "";
+}
+
+// Contrôles automatiques de cohérence (comme un commissaire aux comptes) : signalent ce qui peut fausser les chiffres
+function controles(donnees, calc) {
+  const liste = [];
+  const stock = Object.values(calc.stock);
+  const neg = stock.filter((s) => s.theorique < 0);
+  if (neg.length) liste.push({ niveau: "rouge", titre: "Stock négatif", texte: neg.map((s) => s.nom + " (" + s.theorique + ")").join(", ") + " : il manque une production ou une vente est en double." });
+  const sansCout = stock.filter((s) => s.vendu > 0 && !(s.coutMoyen > 0));
+  if (sansCout.length) liste.push({ niveau: "orange", titre: "Prix de revient manquant", texte: sansCout.map((s) => s.nom).join(", ") + " : sans coût de production, la marge affichée est fausse." });
+  const sansPrix = calc.ventes.filter((v) => v.montant === 0 && v.qte > 0 && v.source !== "manuel");
+  if (sansPrix.length) liste.push({ niveau: "orange", titre: "Ventes à 0 F", texte: sansPrix.length + " vente(s) comptées sans prix : vérifiez le prix du produit." });
+  const surplus = (calc.ajustements || []).filter((a) => a.date >= new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10));
+  if (surplus.length) liste.push({ niveau: "orange", titre: "Surplus au comptage (7 jours)", texte: surplus.length + " fois vous aviez plus que prévu : production oubliée ou vente notée en double ?" });
+  const hier = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const cl = donnees.clotures || [];
+  if (calc.ventes.some((v) => v.date === hier) && !cl.some((c) => c.date === hier)) liste.push({ niveau: "info", titre: "Journée d'hier non clôturée", texte: "Allez dans « Clôture » pour compter la caisse et vérifier qu'il ne manque rien." });
+  const ecarts = cl.filter((c) => c.date >= new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10) && c.ecart !== 0);
+  if (ecarts.length) liste.push({ niveau: "orange", titre: "Écart de caisse (7 jours)", texte: ecarts.map((c) => jjmm(c.date) + " : " + (c.ecart > 0 ? "+" : "") + fr(c.ecart)).join(", ") + "." });
+  const att = (donnees.demandes || []).filter((x) => x && x.statut === "attente").length;
+  if (att) liste.push({ niveau: "orange", titre: "Demandes de dépense en attente", texte: att + " demande(s) à accepter ou refuser." });
+  const tard = (donnees.commandes || []).filter((c) => c.statutLivraison === "livree" && c.date && c.dateLivraison && String(c.dateLivraison).slice(0, 10) > String(c.date).slice(0, 10)).length;
+  if (tard) liste.push({ niveau: "info", titre: "Commandes validées le lendemain", texte: tard + " commande(s) du site validées un autre jour que la commande : leur vente est comptée à la date de validation." });
+  return liste;
+}
+
 function vue(donnees, d) {
   const [du, au] = periode(d || {});
   const calc = U.calculer(donnees);
@@ -102,6 +158,11 @@ function vue(donnees, d) {
     comptages: donnees.comptages.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     equipe: donnees.equipe, motCaisse: donnees.motCaisse, recus: (donnees.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 800),
     demandes: (donnees.demandes || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 200),
+    analyse: U.analyse(donnees, new Date().toISOString().slice(0, 10)),
+    journee: U.journee(donnees, /^\d{4}-\d{2}-\d{2}$/.test(String((d || {}).jourCloture || "")) ? d.jourCloture : new Date().toISOString().slice(0, 10)),
+    clotures: (donnees.clotures || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 60),
+    journal: (donnees.journal || []).slice(-200).reverse(),
+    controles: controles(donnees, calc),
     categories: U.CATEGORIES_DEPENSE, typesPerte: U.TYPES_PERTE
   };
 }
@@ -113,6 +174,9 @@ module.exports = async (req, res) => {
     const d = req.body || {};
     if (!adminValide(d.jeton)) return res.status(401).json({ erreur: "Session expirée, reconnectez-vous", session: false });
 
+    let trace = null;
+    const noms = {};
+    if (/^(ajouter_|comptage|supprimer$)/.test(String(d.action || ""))) { for (const p of await chargerCatalogue()) if (p) noms[p.id] = p.nom; for (const p of configPropre(await S.getSuiviConfig()).internes) noms[p.id] = p.nom; }
     switch (d.action) {
       case "lire": return res.status(200).json(vue(await charger(), d));
 
@@ -131,15 +195,20 @@ module.exports = async (req, res) => {
           .map((x) => ({ produitId: idPropre(x.produitId), qte: entier(x.qte, 0, 100000, "Quantité") })).filter((x) => x.qte > 0);
         if (!lignes.length) throw new Error("Ajoutez au moins un produit avec une quantité");
         await verifierProduits(lignes.map((x) => x.produitId));
-        const lot = { id: d.id ? idPropre(d.id) : nouvelId("lot"), date: date(d.date), nom: txt(d.nom, 60) || "Lot", cout: entier(d.cout, 0, 100000000, "Coût"), lignes, note: txt(d.note, 200) };
+        const lot = { id: d.id ? idPropre(d.id) : nouvelId("lot"), date: date(d.date), nom: txt(d.nom, 60) || "Lot", cout: entier(d.cout, 0, 100000000, "Coût"), lignes, note: txt(d.note, 200), cree: new Date().toISOString() };
+        if (d.moment === "avant" || d.moment === "apres") lot.moment = d.moment;   // « déjà dans le reste compté » ou « pour demain »
         await S.suiviSet("lots", lot.id, lot);
+        trace = ["Production ajoutée", decrire("lots", lot, noms)];
         break;
       }
       case "ajouter_vente": {
         await verifierProduits([idPropre(d.produitId)]);
         const v = { id: d.id ? idPropre(d.id) : nouvelId("v"), date: date(d.date), produitId: idPropre(d.produitId), qte: entier(d.qte, 1, 100000, "Quantité"), pointVente: txt(d.pointVente, 40), remise: entier(d.remise || 0, 0, 100000000, "Remise"), note: txt(d.note, 200) };
         if (d.prix !== undefined && d.prix !== "" && d.prix !== null) v.prix = entier(d.prix, 0, 10000000, "Prix");
+        else { const pm = await prixActuels(); if (pm[v.produitId] != null) v.prix = pm[v.produitId]; }   // prix figé à la saisie
+        v.cree = new Date().toISOString();
         await S.suiviSet("ventes", v.id, v);
+        trace = ["Vente ajoutée", decrire("ventes", v, noms)];
         break;
       }
       case "ajouter_perte": {
@@ -147,12 +216,14 @@ module.exports = async (req, res) => {
         await verifierProduits([idPropre(d.produitId)]);
         const p = { id: nouvelId("p"), date: date(d.date), produitId: idPropre(d.produitId), qte: entier(d.qte, 1, 100000, "Quantité"), type: d.type, note: txt(d.note, 200) };
         await S.suiviSet("pertes", p.id, p);
+        trace = ["Perte notée", decrire("pertes", p, noms)];
         break;
       }
       case "ajouter_depense": {
         if (!U.CATEGORIES_DEPENSE.includes(d.categorie)) throw new Error("Catégorie invalide");
         const x = { id: nouvelId("d"), date: date(d.date), categorie: d.categorie, description: txt(d.description, 120), montant: entier(d.montant, 1, 1000000000, "Montant"), mode: txt(d.mode, 30), note: txt(d.note, 200) };
         await S.suiviSet("depenses", x.id, x);
+        trace = ["Dépense ajoutée", decrire("depenses", x, noms)];
         break;
       }
       case "comptage": {
@@ -160,23 +231,42 @@ module.exports = async (req, res) => {
         const jr = date(d.date);
         const pv = txt(d.pointVente, 40);
         const items = (Array.isArray(d.items) ? d.items : []).slice(0, 300);
+        const pm = await prixActuels();
+        let nbC = 0;
         for (const it of items) {
           const pid = idPropre(it.produitId);
           const id = jr + "_" + pid;
           if (it.restant === "" || it.restant === null || it.restant === undefined) { await S.suiviDel("comptages", id); continue; }
-          await S.suiviSet("comptages", id, { id, date: jr, produitId: pid, restant: entier(it.restant, 0, 100000, "Reste"), pointVente: pv });
+          await S.suiviSet("comptages", id, { id, date: jr, produitId: pid, restant: entier(it.restant, 0, 100000, "Reste"), pointVente: pv, cree: new Date().toISOString(), prix: pm[pid] != null ? pm[pid] : null });
+          nbC++;
         }
+        trace = ["Comptage du soir", jjmm(jr) + " · " + nbC + " produit(s) compté(s)" + (pv ? " · " + pv : "")];
+        break;
+      }
+      case "cloture": {
+        const jr = date(d.date);
+        const compte = entier(d.compte, 0, 1000000000, "Espèces comptées");
+        const donnees = await charger();
+        const j = U.journee(donnees, jr);
+        const fond = d.fond === undefined || d.fond === "" || d.fond === null ? 0 : entier(d.fond, 0, 1000000000, "Fond de caisse");
+        const attendu = j.especesAttendues + fond;
+        const cl = { id: jr, date: jr, cree: new Date().toISOString(), compte, fond, attendu, ecart: compte - attendu, ca: j.ca, qte: j.qte, depenses: j.depenses, parPaiement: j.parPaiement, note: txt(d.note, 200) };
+        const liste = (await S.getDoc("clotures")) || [];
+        await S.setDoc("clotures", liste.filter((x) => x && x.date !== jr).concat([cl]).sort((a, b) => (a.date < b.date ? -1 : 1)).slice(-400));
+        trace = ["Journée clôturée", jjmm(jr) + " · ventes " + fr(cl.ca) + " · espèces comptées " + fr(compte) + " · écart " + (cl.ecart > 0 ? "+" : "") + fr(cl.ecart)];
         break;
       }
       case "equipe_save": {
         const donnees = await charger();
-        await equipeSauver(d.liste, donnees.config);
+        const eq = await equipeSauver(d.liste, donnees.config);
+        trace = ["Équipe de la caisse modifiée", eq.map((m) => m.nom + (m.actif ? "" : " (désactivé)")).join(", ")];
         break;
       }
       case "caisse_mot": {
         const mot = txt(d.mot, 30).toLowerCase();
         if (!/^[a-z0-9]{3,20}$/.test(mot)) throw new Error("Mot invalide : 3 à 20 lettres ou chiffres, sans espace ni accent");
         await S.setDoc("caisse-mot", mot);
+        trace = ["Mot secret de la caisse changé", ""];
         break;
       }
       case "demande_decider": {
@@ -192,19 +282,23 @@ module.exports = async (req, res) => {
         else throw new Error("Décision invalide");
         dem.decideLe = new Date().toISOString();
         await S.suiviSet("demandes", dem.id, dem);
+        trace = ["Demande de dépense " + (dem.statut === "accepte" ? "acceptée" : "refusée"), dem.vendeur + " · " + fr(dem.montant) + " · " + dem.motif];
         break;
       }
       case "supprimer_recu": {
         const idR = txt(d.id, 60);
         for (const v of await S.suiviListe("ventes")) if (v && v.recuId === idR) await S.suiviDel("ventes", v.id);
         await S.suiviDel("recus", idR);
+        trace = ["Reçu supprimé", idR];
         break;
       }
       case "supprimer": {
         const types = { lot: "lots", vente: "ventes", perte: "pertes", depense: "depenses", comptage: "comptages" };
         if (!types[d.type]) throw new Error("Type invalide");
         const idSup = txt(d.id, 80);
+        const ancien = (await S.suiviListe(types[d.type])).find((x) => x && String(x.id) === idSup);
         await S.suiviDel(types[d.type], idSup);
+        trace = ["Supprimé : " + ({ lot: "production", vente: "vente", perte: "perte", depense: "dépense", comptage: "comptage" })[d.type], decrire(types[d.type], ancien, noms)];
         // Une ligne de l'historique repris, supprimée volontairement, ne doit jamais revenir
         if (/^h-/.test(idSup)) {
           const sup = (await S.getDoc("suivi-supprimes")) || [];
@@ -214,7 +308,7 @@ module.exports = async (req, res) => {
       }
       case "sauvegarde": {
         const [lots, ventes, pertes, depenses, comptages, config] = await Promise.all([S.suiviListe("lots"), S.suiviListe("ventes"), S.suiviListe("pertes"), S.suiviListe("depenses"), S.suiviListe("comptages"), S.getSuiviConfig()]);
-        return res.status(200).json({ sauvegardeLe: new Date().toISOString(), config, lots, ventes, pertes, depenses, comptages, recus: await S.suiviListe("recus"), demandes: await S.suiviListe("demandes"), equipe: await lireEquipe() });
+        return res.status(200).json({ sauvegardeLe: new Date().toISOString(), config, lots, ventes, pertes, depenses, comptages, recus: await S.suiviListe("recus"), demandes: await S.suiviListe("demandes"), equipe: await lireEquipe(), clotures: (await S.getDoc("clotures")) || [], journal: (await S.getDoc("journal")) || [] });
       }
       case "nouveau_depart": {
         const jr = date(d.date || new Date().toISOString().slice(0, 10));
@@ -226,6 +320,7 @@ module.exports = async (req, res) => {
         for (const t of ["lots", "ventes", "pertes", "depenses", "comptages", "recus", "demandes"]) {
           for (const x of await S.suiviListe(t)) if (x && x.id) await S.suiviDel(t, String(x.id));
         }
+        trace = ["Nouveau départ", jr + " · caisse de départ " + fr(caisse)];
         // l'ancien classeur ne doit jamais revenir
         const h = require("./_data/historique-noogo.json");
         const sup = new Set((await S.getDoc("suivi-supprimes")) || []);
@@ -242,7 +337,12 @@ module.exports = async (req, res) => {
         break;
       }
       case "config": {
-        await S.setSuiviConfig(configPropre(d.config));
+        const avantCfg = configPropre(await S.getSuiviConfig());
+        const apresCfg = configPropre(d.config);
+        const pa = {}; avantCfg.internes.forEach((p) => (pa[p.id] = p.prix));
+        if (apresCfg.internes.some((p) => pa[p.id] != null && pa[p.id] !== p.prix)) await S.figerPrix(pa);
+        await S.setSuiviConfig(apresCfg);
+        trace = ["Paramètres modifiés", ""];
         break;
       }
       case "importer_historique": {
@@ -271,6 +371,7 @@ module.exports = async (req, res) => {
       }
       default: return res.status(400).json({ erreur: "Action non reconnue" });
     }
+    if (trace) await noter(trace[0], trace[1]);
     return res.status(200).json(vue(await charger(), d));
   } catch (e) {
     if (e && e.code === "DB_NON_CONFIGUREE") return res.status(503).json({ erreur: "Base de données non connectée", code: "DB" });

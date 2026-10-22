@@ -66,6 +66,14 @@ function produitsSuivis(catalogue, config) {
   return liste;
 }
 
+// Heure d'enregistrement d'une fiche : champ « cree », sinon l'heure inscrite dans son identifiant (lot-xxxx), sinon la valeur par défaut.
+function heureEnregistree(r, defaut) {
+  if (r && r.cree && !isNaN(Date.parse(r.cree))) return new Date(r.cree).toISOString();
+  const m = /^[A-Za-z]+-([0-9a-z]{7,9})[0-9a-f]{6}$/.exec(String((r && r.id) || ""));
+  if (m) { const t = parseInt(m[1], 36); if (t > 1.6e12 && t < 4.1e12) return new Date(t).toISOString(); }
+  return defaut;
+}
+
 // Construit tous les évènements, triés, puis rejoue l'histoire de chaque produit.
 function calculer(donnees) {
   const catalogue = donnees.catalogue || [];
@@ -83,10 +91,19 @@ function calculer(donnees) {
   const ev = {}; // produitId -> [ {date, rang, type, ...} ]
   const pousse = (id, e) => { (ev[id] = ev[id] || []).push(e); if (!parId[id]) parId[id] = { id, nom: id, prix: 0, actif: false, interne: true, inconnu: true }; };
 
+  // Heure à laquelle chaque comptage a été enregistré (anciens comptages sans heure : on suppose 18 h ce jour-là)
+  const heureComptage = {};
+  for (const c of donnees.comptages || []) heureComptage[c.produitId + "|" + jour(c.date)] = heureEnregistree(c, jour(c.date) + "T18:00:00.000Z");
   for (const l of donnees.lots || []) {
     const total = (l.lignes || []).reduce((s, x) => s + nombre(x.qte), 0);
     const coutU = total > 0 ? nombre(l.cout) / total : 0;
-    for (const x of l.lignes || []) if (nombre(x.qte) > 0) pousse(x.produitId, { date: jour(l.date), rang: 0, type: "lot", qte: nombre(x.qte), coutU, ref: l.id });
+    const hLot = heureEnregistree(l, "");
+    for (const x of l.lignes || []) if (nombre(x.qte) > 0) {
+      // Une production notée APRÈS le comptage du soir (même jour) compte pour la suite : elle ne doit jamais gonfler les ventes
+      const hC = heureComptage[x.produitId + "|" + jour(l.date)];
+      const apres = !l.depart && (l.moment === "apres" ? true : l.moment === "avant" ? false : !!(hC && hLot && hLot > hC));
+      pousse(x.produitId, { date: jour(l.date), rang: apres ? 4 : 0, type: "lot", qte: nombre(x.qte), coutU, ref: l.id });
+    }
   }
   for (const c of donnees.commandes || []) {
     if (c.statutLivraison !== "livree") continue;
@@ -231,4 +248,94 @@ function bilan(donnees, du, au) {
   };
 }
 
-module.exports = { CATEGORIES_DEPENSE, TYPES_PERTE, POINTS_VENTE_DEFAUT, CANAL_SITE, classeDepense, baseDe, produitsSuivis, calculer, stockAvant, bilan };
+// ───────── Analyse automatique : rentabilité, conseil de production, seuil de rentabilité, objectifs ─────────
+const ajouteJours = (jr, n) => { const d = new Date(jr + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+
+function analyse(donnees, auj) {
+  const r = calculer(donnees);
+  const cfg = donnees.config || {};
+  const d1 = ajouteJours(auj, -1), d7 = ajouteJours(auj, -7), d30 = ajouteJours(auj, -30);
+  // dernier coût de lot connu par produit (le coût du dernier lot montre si vos coûts ont changé)
+  const dernierCout = {};
+  const lotsTries = [...(donnees.lots || [])].filter((l) => !l.depart).sort((a, b) => (jour(a.date) + (a.cree || "")) < (jour(b.date) + (b.cree || "")) ? -1 : 1);
+  for (const l of lotsTries) {
+    const total = (l.lignes || []).reduce((sm, x) => sm + nombre(x.qte), 0);
+    if (total > 0) for (const x of l.lignes || []) if (nombre(x.qte) > 0) dernierCout[x.produitId] = nombre(l.cout) / total;
+  }
+  const produits = [];
+  for (const p of r.suivis) {
+    const st = r.stock[p.id];
+    if (!st) continue;
+    if (!p.actif && !(st.theorique > 0) && !(st.vendu > 0)) continue;
+    const vs = r.ventes.filter((v) => v.produitId === p.id);
+    const sem = vs.filter((v) => v.date >= d7 && v.date <= d1);
+    const joursVente = new Set(sem.map((v) => v.date)).size;
+    const q7 = sem.reduce((sm, v) => sm + v.qte, 0);
+    const moyenne = joursVente > 0 ? q7 / joursVente : 0;
+    const m30 = vs.filter((v) => v.date >= d30 && v.date <= auj);
+    const vendu30 = m30.reduce((sm, v) => sm + v.qte, 0);
+    const marge30 = m30.reduce((sm, v) => sm + (v.montant - v.cout), 0);
+    const ca30 = m30.reduce((sm, v) => sm + v.montant, 0);
+    const prix = p.prix, coutU = st.coutMoyen;
+    const margeU = prix - coutU;
+    const cible = Math.ceil(moyenne * 1.15);
+    let alerte = "";
+    if (!(coutU > 0)) alerte = "sans-cout";
+    else if (margeU <= 0) alerte = "perte";
+    else if (prix > 0 && margeU / prix < 0.3) alerte = "faible";
+    else if (dernierCout[p.id] != null && coutU > 0 && dernierCout[p.id] > coutU * 1.1) alerte = "cout-hausse";
+    produits.push({
+      id: p.id, nom: p.nom, prix, coutU: arrondi(coutU), coutDernier: dernierCout[p.id] != null ? arrondi(dernierCout[p.id]) : null,
+      margeU: arrondi(margeU), margePct: prix > 0 ? Math.round((margeU / prix) * 1000) / 10 : 0,
+      vendu30, ca30: arrondi(ca30), marge30: arrondi(marge30),
+      theorique: st.theorique, valeur: st.valeur,
+      moyenne: Math.round(moyenne * 10) / 10, joursDonnees: joursVente,
+      joursStock: moyenne > 0 ? Math.round((Math.max(0, st.theorique) / moyenne) * 10) / 10 : null,
+      cible, aProduire: Math.max(0, cible - Math.max(0, st.theorique)),
+      confiance: joursVente >= 3 ? "ok" : "faible", alerte
+    });
+  }
+  produits.sort((a, b) => b.marge30 - a.marge30);
+
+  const mois = auj.slice(0, 7);
+  const Vm = r.ventes.filter((v) => v.date.slice(0, 7) === mois && v.date <= auj);
+  const ca = Vm.reduce((sm, v) => sm + v.montant, 0), cg = Vm.reduce((sm, v) => sm + v.cout, 0);
+  const charges = (donnees.depenses || []).filter((x) => jour(x.date).slice(0, 7) === mois && classeDepense(x.categorie) === "charge").reduce((sm, x) => sm + nombre(x.montant), 0);
+  const margePct = ca > 0 ? (ca - cg) / ca : 0;
+  const caSeuil = margePct > 0 ? Math.round(charges / margePct) : null;
+  const jourDuMois = Number(auj.slice(8, 10)), nbJours = new Date(Date.UTC(Number(auj.slice(0, 4)), Number(auj.slice(5, 7)), 0)).getUTCDate();
+  const caJour = r.ventes.filter((v) => v.date === auj).reduce((sm, v) => sm + v.montant, 0);
+  return {
+    date: auj, produits,
+    seuil: { mois, charges: arrondi(charges), margePct: Math.round(margePct * 1000) / 10, caSeuil, caMois: arrondi(ca), projection: jourDuMois > 0 ? arrondi((ca / jourDuMois) * nbJours) : 0, atteint: caSeuil != null && ca >= caSeuil },
+    objectifs: { jour: arrondi(cfg.objectifJour), mois: arrondi(cfg.objectifMois), caJour: arrondi(caJour), caMois: arrondi(ca) }
+  };
+}
+
+// ───────── Journée (rapport de fin de journée, pour la clôture de caisse) ─────────
+function journee(donnees, date) {
+  const r = calculer(donnees);
+  const V = r.ventes.filter((v) => v.date === date);
+  const D = (donnees.depenses || []).filter((x) => jour(x.date) === date).map((x) => ({ ...x, classe: classeDepense(x.categorie) }));
+  const somme = (arr, f) => arr.reduce((sm, x) => sm + f(x), 0);
+  const eEsp = /esp|caisse|cash/i;
+  const modes = {};
+  for (const v of V) { const k = v.paiement || (v.source === "site" ? "Commandes en ligne" : "Non précisé"); modes[k] = (modes[k] || 0) + v.montant; }
+  const vend = {};
+  for (const v of V) if (v.vendeur) vend[v.vendeur] = (vend[v.vendeur] || 0) + v.montant;
+  const espVentes = somme(V.filter((v) => v.paiement === "Espèces" || (!v.paiement && v.source !== "site")), (v) => v.montant);
+  const especeDep = (x) => !x.mode || eEsp.test(x.mode);
+  const sorties = somme(D.filter((x) => (x.classe === "charge" || x.classe === "achat" || x.classe === "remb") && especeDep(x)), (x) => nombre(x.montant));
+  const entrees = somme(D.filter((x) => x.classe === "apport" && especeDep(x)), (x) => nombre(x.montant));
+  return {
+    date, ca: arrondi(somme(V, (v) => v.montant)), qte: somme(V, (v) => v.qte),
+    parPaiement: Object.keys(modes).map((k) => ({ nom: k, total: arrondi(modes[k]) })).sort((a, b) => b.total - a.total),
+    parVendeur: Object.keys(vend).map((k) => ({ nom: k, total: arrondi(vend[k]) })).sort((a, b) => b.total - a.total),
+    nbRecus: (donnees.recus || []).filter((x) => x && x.date === date).length,
+    depenses: arrondi(somme(D.filter((x) => x.classe === "charge" || x.classe === "achat"), (x) => nombre(x.montant))),
+    encaissEspeces: arrondi(espVentes), sortiesEspeces: arrondi(sorties), apportsEspeces: arrondi(entrees),
+    especesAttendues: arrondi(espVentes + entrees - sorties)
+  };
+}
+
+module.exports = { analyse, journee, CATEGORIES_DEPENSE, TYPES_PERTE, POINTS_VENTE_DEFAUT, CANAL_SITE, classeDepense, baseDe, produitsSuivis, calculer, stockAvant, bilan };

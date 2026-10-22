@@ -109,6 +109,29 @@ input:focus,textarea:focus{border-color:var(--or)}
 .somme{background:linear-gradient(150deg,var(--vert),#1f5a2e);color:#fff;border-radius:16px;padding:14px;margin-bottom:10px}
 .somme small{color:var(--or-clair);font-weight:700}.somme b{display:block;font-size:30px;font-family:Georgia,serif}
 .info{background:#fff6d9;border-left:4px solid var(--or);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:10px}
+.guide{flex:none;margin:6px 10px 2px;background:#fff6d9;border:1.5px solid var(--or);border-radius:14px;padding:9px 12px;display:flex;gap:10px;align-items:center;font-size:15.5px;line-height:1.25}
+.guide .pas-n{flex:none;width:30px;height:30px;border-radius:50%;background:var(--vert);color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center}
+.guide div{flex:1}.guide b{color:var(--vert)}
+.guide .vider{flex:none;font-size:13px;font-weight:800;color:var(--rouge);border:1.5px solid #f0c7c4;background:#fff;border-radius:999px;padding:6px 12px}
+.bandeau{flex:none;background:#fff0cf;color:#6b4300;padding:8px 12px;font-size:14px;font-weight:700;text-align:center;border-bottom:1px solid #e8d49a}
+.aide-btn{flex:none;width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,.5);color:#fff;font-weight:900;font-size:17px;background:rgba(255,255,255,.12)}
+.tuto{position:absolute;inset:0;background:var(--creme);z-index:25;display:flex;flex-direction:column;padding:26px 22px calc(22px + env(safe-area-inset-bottom));text-align:center}
+.tuto .icone{font-size:64px;margin:18px 0 6px}
+.tuto h2{font-family:Georgia,serif;color:var(--vert);font-size:26px;margin:6px 0 12px}
+.tuto p{font-size:18px;line-height:1.4;margin:0 0 10px;color:var(--texte)}
+.tuto .corps{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow-y:auto}
+.tuto .points{display:flex;justify-content:center;gap:8px;margin:10px 0 14px}
+.tuto .points i{width:10px;height:10px;border-radius:50%;background:var(--ligne)}.tuto .points i.on{background:var(--vert);width:24px;border-radius:6px}
+.tuto .btns{display:flex;flex-direction:column;gap:8px}
+details.q{background:#fff;border:1.5px solid var(--ligne);border-radius:12px;margin:8px 0;padding:0 12px}
+details.q summary{padding:13px 0;font-weight:800;color:var(--vert);cursor:pointer;list-style:none}
+details.q summary::-webkit-details-marker{display:none}
+details.q p{margin:0 0 12px;font-size:15.5px;line-height:1.4}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.chips button{padding:9px 14px;border-radius:999px;background:#fff;border:1.5px solid var(--ligne);font-weight:800;color:var(--vert)}
+.rendu{margin:8px 0;padding:12px;border-radius:12px;background:#e8f3ea;font-weight:800;font-size:19px;color:var(--vert);text-align:center}
+.rendu.manque{background:#fdeaea;color:var(--rouge)}
+.aide-t{font-size:14px;color:var(--gris);margin:2px 0 8px}
 #toast{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);background:var(--vert-2);color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;z-index:30;max-width:90%;text-align:center}
 </style>
 </head>
@@ -118,7 +141,7 @@ input:focus,textarea:focus{border-color:var(--or)}
   <section id="ecran-code" class="cachee">
     <img src="/assets/logo-noogo.jpg" alt="Noogó">
     <h1>Caisse Noogó</h1>
-    <p>Entrez votre code personnel</p>
+    <p>Entrez votre code personnel</p><p style="font-size:13.5px">Ce code vous est donné par le responsable. Il vous identifie sur chaque vente.</p>
     <input id="champ-code" type="text" inputmode="text" autocapitalize="none" autocomplete="off" autocorrect="off" spellcheck="false" maxlength="12" aria-label="Code personnel">
     <div id="err-code" class="erreur" role="alert"></div>
     <button class="btn or" id="btn-code" type="button">Ouvrir ma caisse</button>
@@ -134,15 +157,18 @@ input:focus,textarea:focus{border-color:var(--or)}
       <img src="/assets/embleme.jpg" alt="">
       <div class="qui"><b id="h-nom">—</b><small id="h-point"></small></div>
       <span class="etat ok" id="h-etat">En ligne</span>
+      <button class="aide-btn" id="btn-aide" type="button" aria-label="Aide">?</button>
       <button class="quitter" id="btn-quitter" type="button">Sortir</button>
     </header>
+    <div id="bandeau" class="bandeau cachee" role="status"></div>
     <nav role="tablist">
-      <button type="button" data-v="vente" aria-selected="true">Vente</button>
+      <button type="button" data-v="vente" aria-selected="true">Vendre</button>
       <button type="button" data-v="mes" aria-selected="false">Mes ventes</button>
-      <button type="button" data-v="dep" aria-selected="false">Dépense</button>
+      <button type="button" data-v="dep" aria-selected="false">Dépenses</button>
     </nav>
     <main>
       <div class="vue" id="v-vente">
+        <div class="guide" id="guide"></div>
         <div class="filtres" id="filtres"></div>
         <div class="grille" id="grille"></div>
         <div class="dock">
@@ -156,6 +182,7 @@ input:focus,textarea:focus{border-color:var(--or)}
     </main>
   </section>
   <div id="voile" class="voile cachee"><div class="feuille" id="feuille"></div></div>
+  <div id="tuto" class="tuto cachee"></div>
 </div>
 <script>
 "use strict";
@@ -212,6 +239,7 @@ async function ouvrirCaisse(frais1) {
   $("#h-nom").textContent = membre ? membre.nom : "—"; $("#h-point").textContent = membre ? membre.point : "";
   locaux = locaux.filter((r) => r.date === jourJ()); ecrire("caisse_recus", locaux);
   rendreFiltres(); rendreGrille(); rendreTicket(); montrerVue("vente"); etat();
+  if (!lire("caisse_tuto", 0)) lancerTuto(0);
   try { const j = await api("catalogue"); articles = j.articles; membre = j.membre; numero = j.numero || numero; ecrire("caisse_articles", articles); ecrire("caisse_membre", membre); ecrire("caisse_numero", numero); rendreFiltres(); rendreGrille(); }
   catch (e) { if (e.session) { sessionFinie(); return; } }
   synchroniser();
@@ -221,6 +249,10 @@ function etat() {
   const e = $("#h-etat"), enl = navigator.onLine;
   e.className = "etat " + (enl ? "ok" : "ko");
   e.textContent = (enl ? "En ligne" : "Hors ligne") + (file.length ? " · " + file.length + " à envoyer" : "");
+  const b = $("#bandeau");
+  if (!enl) { b.textContent = "Pas de réseau : continuez à vendre normalement. Vos ventes sont gardées sur le téléphone et partiront toutes seules."; b.classList.remove("cachee"); }
+  else if (file.length) { b.textContent = file.length + " vente" + (file.length > 1 ? "s" : "") + " en cours d'envoi au responsable…"; b.classList.remove("cachee"); }
+  else b.classList.add("cachee");
 }
 window.addEventListener("online", () => { etat(); synchroniser(); });
 window.addEventListener("offline", etat);
@@ -277,6 +309,15 @@ function rendreTicket() {
   $("#total").textContent = fmt(totalTicket());
   $("#btn-encaisser").disabled = !ticket.length || ticket.some(incomplet);
   $("#btn-encaisser").textContent = ticket.some(incomplet) ? "Saveurs ?" : "Encaisser";
+  rendreGuide();
+}
+function rendreGuide() {
+  const g = $("#guide"); if (!g) return;
+  let n = 1, h = "<b>Étape 1 :</b> touchez ce que le client veut acheter. Touchez plusieurs fois pour en ajouter.";
+  if (ticket.length && ticket.some(incomplet)) { n = 2; h = "Ce pack demande les <b>saveurs</b>. Touchez « Saveurs du pack » ou la ligne rouge du ticket."; }
+  else if (ticket.length) { n = 2; h = "<b>Étape 2 :</b> vérifiez la quantité (touchez les chiffres), puis touchez <b>Encaisser</b>."; }
+  g.innerHTML = `<span class="pas-n">${n}</span><div>${h}</div>` + (ticket.length ? `<button class="vider" type="button" id="btn-vider">Vider</button>` : "");
+  const v = $("#btn-vider"); if (v) v.onclick = () => { if (confirm("Effacer toute la vente en cours ?")) { ticket = []; sel = -1; rendre(); } };
 }
 function touche(k) {
   if (sel < 0 || !ticket[sel]) return;
@@ -297,7 +338,7 @@ function ouvrirSaveurs(i) {
   const c = Object.assign({}, l.compo || {});
   const total = () => Object.values(c).reduce((x, y) => x + y, 0);
   const dessiner = () => {
-    $("#feuille").innerHTML = `<h2>${esc(a.nom)}</h2><p style="margin:0 0 6px"><b>${total()} / ${cible} pots choisis</b>${total() < cible ? " — il en reste " + (cible - total()) : " ✓"}</p>` +
+    $("#feuille").innerHTML = `<h2>${esc(a.nom)}</h2><p style="margin:0 0 4px"><b>${total()} / ${cible} pots choisis</b>${total() < cible ? " — il en reste " + (cible - total()) : " ✓ c'est bon, touchez Valider"}</p><p class="aide-t">Touchez + pour ajouter une saveur, − pour en retirer.</p>` +
       opts.map((o) => `<div class="compo-l"><b>${esc(o.nom.replace(/^Crème glacée /, ""))}</b><div class="pas"><button type="button" data-cm="${esc(o.id)}">−</button><b>${c[o.id] || 0}</b><button type="button" data-cp="${esc(o.id)}">+</button></div></div>`).join("") +
       `<button class="btn or" id="ok-saveurs" type="button" style="width:100%;margin-top:14px" ${total() === cible ? "" : "disabled"}>Valider</button>`;
     $("#feuille").querySelectorAll("[data-cm]").forEach((b) => (b.onclick = () => { const k = b.dataset.cm; if (c[k]) { c[k]--; if (!c[k]) delete c[k]; } dessiner(); }));
@@ -311,18 +352,36 @@ function fermer() { $("#voile").classList.add("cachee"); }
 
 /* ───── Encaissement ───── */
 let mode = "especes";
+function chipsMonnaie() {
+  const t = totalTicket(), c = [t];
+  [500, 1000, 2000, 5000, 10000].forEach((b) => { if (b > t && c.length < 4 && !c.includes(b)) c.push(b); });
+  return `<label for="c-donne">Argent donné par le client (pour calculer la monnaie)</label>
+    <div class="chips">${c.map((v, i) => `<button type="button" data-donne="${v}">${i === 0 ? "Compte juste" : fmt(v)}</button>`).join("")}</div>
+    <input id="c-donne" type="tel" inputmode="numeric" placeholder="Ou écrivez le montant donné">
+    <div id="rendu" class="rendu cachee"></div>`;
+}
+function majRendu() {
+  const d = Number(($("#c-donne").value || "").replace(/\D/g, "")) || 0, t = totalTicket(), r = $("#rendu");
+  if (!d) { r.classList.add("cachee"); return; }
+  r.classList.remove("cachee"); r.classList.toggle("manque", d < t);
+  r.textContent = d >= t ? (d === t ? "Compte juste : rien à rendre ✓" : "Monnaie à rendre : " + fmt(d - t)) : "Il manque " + fmt(t - d);
+}
 function ouvrirPaiement() {
   mode = "especes";
   const dessiner = () => {
     const num = ($("#c-num") || {}).value || "";
     $("#feuille").innerHTML = `<h2>Encaisser ${fmt(totalTicket())}</h2>
+      <p class="aide-t"><b>Étape 3 :</b> comment le client paie-t-il ?</p>
       <div class="modes">${[["especes", "Espèces"], ["orange", "Orange Money"], ["wave", "Wave"]].map(([k, n]) => `<button type="button" data-m="${k}" aria-pressed="${mode === k}">${n}</button>`).join("")}</div>
       ${mode !== "especes" ? `<label for="c-num">Numéro ${mode === "orange" ? "Orange" : "Wave"} qui a payé (le client, le vôtre ou celui du responsable)</label><input id="c-num" type="tel" inputmode="tel" placeholder="Ex : 70 12 34 56" value="${esc(num)}">` : ""}
+      ${mode === "especes" ? chipsMonnaie() : ""}
       <label for="c-note">Remarque (facultatif)</label><input id="c-note" type="text" maxlength="150" placeholder="Ex : client fidèle">
       <div id="err-p" class="erreur"></div>
       <button class="btn or" id="ok-pay" type="button" style="width:100%;margin-top:6px">Valider la vente</button>
       <button class="btn clair" id="non-pay" type="button" style="width:100%;margin-top:8px">Retour</button>`;
     $("#feuille").querySelectorAll("[data-m]").forEach((b) => (b.onclick = () => { mode = b.dataset.m; dessiner(); }));
+    $("#feuille").querySelectorAll("[data-donne]").forEach((b) => (b.onclick = () => { $("#c-donne").value = b.dataset.donne; majRendu(); }));
+    const cd = $("#c-donne"); if (cd) cd.oninput = majRendu;
     $("#non-pay").onclick = fermer; $("#ok-pay").onclick = validerVente;
   };
   dessiner(); ouvrir();
@@ -407,7 +466,7 @@ async function chargerDep() {
   const c = $("#liste-dep"); let l = [];
   try { l = (await api("mes_demandes")).demandes; } catch (e) { if (e.session) return sessionFinie(); }
   const st = { attente: ["att", "En attente d'accord"], accepte: ["ok", "Accordée"], refuse: ["ko", "Refusée"] };
-  c.innerHTML = `<div class="info"><b>Aucune dépense sans accord.</b><br>Appelez le responsable au <b>${esc(numero.replace(/^226/, "").replace(/(\d{2})(?=\d)/g, "$1 "))}</b>. La dépense ne compte que s'il l'accepte.</div>
+  c.innerHTML = `<div class="info"><b>Aucune dépense sans accord.</b><br>1. Écrivez le montant.<br>2. Dites pour quoi.<br>3. Touchez le bouton : le téléphone appelle le responsable au <b>${esc(numero.replace(/^226/, "").replace(/(\d{2})(?=\d)/g, "$1 "))}</b>.<br>La dépense ne compte que s'il l'accepte.</div>
     <label for="d-m">Montant (F)</label><input id="d-m" type="tel" inputmode="numeric" placeholder="Ex : 2000">
     <label for="d-t">Pour quoi ?</label><input id="d-t" type="text" maxlength="150" placeholder="Ex : sachets, transport…">
     <div id="err-d" class="erreur"></div>
@@ -424,6 +483,41 @@ async function chargerDep() {
     catch (e) { if (e.session) return sessionFinie(); err.textContent = e.message; $("#d-ok").disabled = false; }
   };
 }
+
+/* ───── Guide de démarrage et aide ───── */
+const ETAPES = [
+  ["👋", "Bienvenue !", "Cette caisse note chaque vente pour vous. Les prix sont déjà dedans : vous n'avez rien à calculer."],
+  ["👆", "1. Touchez l'article", "Touchez ce que le client veut acheter. Touchez encore pour en ajouter, ou utilisez les chiffres en bas pour écrire la quantité."],
+  ["💰", "2. Encaissez", "Touchez le bouton « Encaisser ». Choisissez Espèces, Orange Money ou Wave. En espèces, la caisse calcule la monnaie à rendre."],
+  ["🧾", "3. Envoyez le reçu", "Le reçu s'affiche. Touchez le bouton vert pour l'envoyer au responsable sur WhatsApp."],
+  ["📶", "Pas de réseau ?", "Pas de problème. Continuez à vendre : tout est gardé sur le téléphone et part tout seul quand le réseau revient. Le mot « Hors ligne » en haut est normal."],
+  ["✋", "Une erreur ?", "Une vente notée ne peut pas être effacée. Appelez le responsable. Pour acheter quelque chose (sachets, transport…), allez dans « Dépenses » : il faut son accord."]
+];
+function lancerTuto(i) {
+  i = i || 0; const e = ETAPES[i], dernier = i === ETAPES.length - 1;
+  $("#tuto").innerHTML = `<div class="corps"><div class="icone">${e[0]}</div><h2>${e[1]}</h2><p>${e[2]}</p></div>
+    <div class="points">${ETAPES.map((_, k) => `<i class="${k === i ? "on" : ""}"></i>`).join("")}</div>
+    <div class="btns"><button class="btn or" id="tuto-suite" type="button">${dernier ? "J'ai compris, commencer" : "Suivant"}</button>${dernier ? "" : `<button class="btn clair" id="tuto-passer" type="button">Passer</button>`}</div>`;
+  $("#tuto").classList.remove("cachee");
+  $("#tuto-suite").onclick = () => (dernier ? finTuto() : lancerTuto(i + 1));
+  const p = $("#tuto-passer"); if (p) p.onclick = finTuto;
+}
+function finTuto() { ecrire("caisse_tuto", 1); $("#tuto").classList.add("cachee"); }
+function ouvrirAide() {
+  $("#feuille").innerHTML = `<h2>Aide</h2>
+    <details class="q" open><summary>Comment faire une vente ?</summary><p>1. Touchez l'article. Touchez encore pour en ajouter.<br>2. Touchez « Encaisser ».<br>3. Choisissez comment le client paie, puis « Valider la vente ».<br>4. Envoyez le reçu au responsable avec le bouton vert.</p></details>
+    <details class="q"><summary>Je veux changer la quantité</summary><p>Touchez la ligne dans le ticket (elle devient jaune), puis tapez le nombre avec les chiffres. « C » retire la ligne, « ⌫ » efface un chiffre, « × » retire aussi la ligne.</p></details>
+    <details class="q"><summary>Comment vendre un pack ?</summary><p>Touchez « Packs », puis le pack. Choisissez les saveurs avec + et − jusqu'au bon nombre de pots, puis « Valider ».</p></details>
+    <details class="q"><summary>Le client paie avec Orange Money ou Wave</summary><p>Choisissez le mode, puis écrivez le numéro qui a payé (8 chiffres au moins). Vérifiez le message de paiement avant de valider.</p></details>
+    <details class="q"><summary>Je n'ai pas de réseau</summary><p>Continuez à vendre. Les ventes restent sur le téléphone et partent toutes seules dès que le réseau revient. En haut, vous voyez « Hors ligne · 2 à envoyer ».</p></details>
+    <details class="q"><summary>Je me suis trompé dans une vente</summary><p>Vous ne pouvez pas effacer une vente notée. Appelez le responsable : lui seul peut la corriger.</p></details>
+    <details class="q"><summary>J'ai besoin d'argent pour une dépense</summary><p>Allez dans « Dépenses », écrivez le montant et pour quoi, puis touchez le bouton. Le téléphone appelle le responsable. La dépense ne compte que s'il accepte.</p></details>
+    <button class="btn or" id="aide-tuto" type="button" style="width:100%;margin-top:10px">Revoir le guide de démarrage</button>
+    <button class="btn clair" id="aide-ok" type="button" style="width:100%;margin-top:8px">Fermer</button>`;
+  $("#aide-ok").onclick = fermer; $("#aide-tuto").onclick = () => { fermer(); lancerTuto(0); };
+  ouvrir();
+}
+$("#btn-aide").onclick = ouvrirAide;
 
 /* ───── Navigation ───── */
 function montrerVue(v) {

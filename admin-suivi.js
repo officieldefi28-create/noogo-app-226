@@ -46,7 +46,7 @@ document.head.appendChild(css);
 
 /* ---------- appels ---------- */
 function appel(action, extra) {
-  var corps = Object.assign({ action: action, jeton: A.jeton() }, periodeCourante(), extra || {});
+  var corps = Object.assign({ action: action, jeton: A.jeton(), jourCloture: E.jourCloture || "" }, periodeCourante(), extra || {});
   return fetch("/api/suivi", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corps) })
     .catch(function () { throw new Error("Pas de connexion internet."); })
     .then(function (r) {
@@ -87,7 +87,7 @@ function ouvrir() {
 }
 
 /* ---------- rendu ---------- */
-var SOUS = [["resume", "Résumé"], ["caisse", "Caisse"], ["soir", "Ce soir"], ["ventes", "Ventes"], ["stock", "Stock"], ["production", "Production"], ["depenses", "Dépenses"], ["params", "Réglages"]];
+var SOUS = [["resume", "Résumé"], ["caisse", "Caisse"], ["soir", "Ce soir"], ["ventes", "Ventes"], ["analyse", "Analyse"], ["cloture", "Clôture"], ["stock", "Stock"], ["production", "Production"], ["depenses", "Dépenses"], ["journal", "Journal"], ["params", "Réglages"]];
 var PERIODES = [["jour", "Aujourd'hui"], ["semaine", "7 jours"], ["mois", "Ce mois"], ["mois-dernier", "Mois dernier"], ["tout", "Tout"], ["perso", "Dates…"]];
 
 function rendre() {
@@ -95,7 +95,7 @@ function rendre() {
   if (!v) return;
   if (E.sous === "caisse") lireEq();
   var nav = '<div class="sous" role="tablist">' + SOUS.map(function (s) { return '<button type="button" data-s="sous" data-v="' + s[0] + '" aria-pressed="' + (E.sous === s[0]) + '">' + s[1] + '</button>'; }).join("") + '</div>';
-  var corps = { resume: vResume, caisse: vCaisse, soir: vSoir, ventes: vVentes, stock: vStock, production: vProduction, depenses: vDepenses, params: vParams }[E.sous](v);
+  var corps = { resume: vResume, caisse: vCaisse, soir: vSoir, ventes: vVentes, stock: vStock, production: vProduction, depenses: vDepenses, journal: vJournal, analyse: vAnalyse, cloture: vCloture, params: vParams }[E.sous](v);
   var sel = document.activeElement && document.activeElement.id;
   c.innerHTML = nav + (E.message ? '<div class="msg msg-ok">' + esc(E.message) + '</div>' : "") + corps;
   if (sel && $(sel)) { try { $(sel).focus(); } catch (e) {} }
@@ -137,9 +137,10 @@ function vResume(v) {
   var dernier = (v.comptages || []).length ? v.comptages[0].date : "";
   if ((v.ventes || []).length && dernier < jourJ(-1)) al.push('<div class="alerte"><b>Comptage du soir manquant :</b> dernier comptage ' + (dernier ? dateFr(dernier) : "jamais") + '. Sans lui, les ventes ne sont pas fiables.</div>');
   if (b.margeBrute < 0) al.push('<div class="alerte rouge"><b>Marge négative :</b> vous vendez moins cher que le coût de revient. Vérifiez les coûts dans Réglages.</div>');
+  (v.controles || []).forEach(function (c) { if (c.titre === "Stock négatif") return; al.push('<div class="alerte' + (c.niveau === "rouge" ? " rouge" : "") + '"><b>' + esc(c.titre) + ' :</b> ' + esc(c.texte) + '</div>'); });
   if (!al.length && b.ca > 0) al.push('<div class="alerte vert">Tout est en ordre : pas de stock négatif, comptage à jour.</div>');
   h += al.join("");
-  h += '<div class="grille2" style="margin:6px 0 10px"><button class="btn btn-vert" type="button" data-s="rapport-wa">Résumé WhatsApp</button><button class="btn btn-brun" type="button" data-s="rapport-complet">Rapport complet</button></div><p class="astuce">« Rapport complet » contient chaque vente, dépense, production, perte et le stock : il s\'envoie comme document WhatsApp.</p>';
+  h += '<div class="grille2" style="margin:6px 0 10px"><button class="btn btn-vert" type="button" data-s="rapport-wa">Résumé WhatsApp</button><button class="btn btn-brun" type="button" data-s="rapport-complet">Rapport complet</button></div><button class="btn btn-clair btn-bloc" type="button" style="margin-bottom:8px" data-s="classeur">Envoyer le classeur Excel / Google Sheets</button><p class="astuce">« Rapport complet » contient chaque vente, dépense, production, perte et le stock : il s\'envoie comme document WhatsApp.</p>';
   if (b.achats) h += '<p class="astuce">Achats de marchandises à revendre (hors résultat tant que non vendus) : ' + fcfa(b.achats) + '</p>';
   if (b.apports || b.remboursements) h += '<p class="astuce">Apports d\'argent : ' + fcfa(b.apports) + (b.remboursements ? ' · Remboursés : ' + fcfa(b.remboursements) : '') + '</p>';
   h += '<div class="carte"><h3>Ventes par jour</h3>' + (jours.length ? jours.map(function (j) {
@@ -263,6 +264,73 @@ function vStock(v) {
   return h;
 }
 
+/* ----- Analyse : marge automatique, quoi produire, seuil de rentabilité, objectifs ----- */
+function barre(pct, couleur) { return '<div style="height:12px;border-radius:7px;background:#eee6d2;overflow:hidden;margin:6px 0"><div style="height:100%;width:' + Math.max(2, Math.min(100, pct)) + '%;background:' + (couleur || "linear-gradient(90deg,#1f5a2e,#c9982b)") + '"></div></div>'; }
+var ALERTES_PRODUIT = { perte: ["Vendu à perte", "#fde8e4", "#9b2c1d"], faible: ["Marge faible", "#fff3d6", "#8a5a00"], "cout-hausse": ["Coût en hausse", "#fff3d6", "#8a5a00"], "sans-cout": ["Coût inconnu", "#eee", "#555"] };
+function vAnalyse(v) {
+  var a = v.analyse, h = '<p class="astuce">Tout se calcule seul : le coût de chaque pot vient de vos productions, le reste vient de vos ventes et de votre stock.</p>';
+  var o = a.objectifs, sz = a.seuil;
+  h += '<div class="carte"><h3>Objectifs</h3>';
+  if (o.jour > 0) h += '<div class="rang"><span>Aujourd\'hui</span><b>' + fcfa(o.caJour) + ' / ' + fcfa(o.jour) + '</b></div>' + barre(o.caJour / o.jour * 100) + '<small class="gris">' + (o.caJour >= o.jour ? "Objectif du jour atteint 🎉" : "Il reste " + fcfa(o.jour - o.caJour)) + '</small>';
+  if (o.mois > 0) h += '<div class="rang" style="margin-top:8px"><span>Ce mois</span><b>' + fcfa(o.caMois) + ' / ' + fcfa(o.mois) + '</b></div>' + barre(o.caMois / o.mois * 100) + '<small class="gris">' + (sz.projection ? "À ce rythme : " + fcfa(sz.projection) + " à la fin du mois" : "") + '</small>';
+  if (!(o.jour > 0) && !(o.mois > 0)) h += '<p class="gris">Fixez un objectif du jour et du mois dans l\'onglet Réglages.</p>';
+  h += '</div>';
+  h += '<div class="carte"><h3>Seuil de rentabilité du mois</h3>';
+  if (sz.caSeuil) h += '<p class="astuce">Vos dépenses du mois (' + fcfa(sz.charges) + ') sont payées quand vous vendez pour <b>' + fcfa(sz.caSeuil) + '</b> (marge de ' + sz.margePct + ' %).</p>' + barre(sz.caMois / sz.caSeuil * 100, sz.atteint ? "linear-gradient(90deg,#1f5a2e,#3a9a52)" : "") + '<div class="rang"><span>Vendu ce mois</span><b>' + fcfa(sz.caMois) + '</b></div><p style="margin:6px 0 0;font-weight:600;color:' + (sz.atteint ? "#1f5a2e" : "#8a5a00") + '">' + (sz.atteint ? "Seuil dépassé : tout ce que vous vendez en plus est du bénéfice." : "Il reste " + fcfa(sz.caSeuil - sz.caMois) + " à vendre pour couvrir vos dépenses.") + '</p>';
+  else h += '<p class="gris">Pas encore assez de ventes avec un coût de revient pour calculer le seuil.</p>';
+  h += '</div>';
+  var prod = a.produits.filter(function (p) { return p.moyenne > 0 || p.aProduire > 0; });
+  h += '<div class="carte"><h3>À produire demain</h3><p class="astuce">Calculé avec vos ventes des 7 derniers jours (+15 % de sécurité) moins ce qu\'il reste en stock.</p>';
+  h += prod.length ? prod.map(function (p) { return '<div class="rang"><div class="g"><b>' + esc(p.nom) + '</b><small>vend ~' + p.moyenne + ' par jour · en stock : ' + Math.max(0, p.theorique) + (p.joursStock != null ? " (" + p.joursStock + " j)" : "") + (p.confiance === "faible" ? " · peu de données" : "") + '</small></div><div style="text-align:right"><b class="' + (p.aProduire > 0 ? "" : "pos") + '">' + (p.aProduire > 0 ? "Produire " + p.aProduire : "Stock suffisant") + '</b></div></div>'; }).join("") : '<p class="gris">Pas encore assez de ventes pour conseiller.</p>';
+  h += '</div>';
+  h += '<div class="carte"><h3>Rentabilité par produit</h3><p class="astuce">Marge = prix de vente − coût de revient (moyenne de vos productions). Les 30 derniers jours.</p>';
+  h += a.produits.length ? a.produits.map(function (p) {
+    var al = ALERTES_PRODUIT[p.alerte];
+    return '<div class="rang" style="align-items:flex-start"><div class="g"><b>' + esc(p.nom) + '</b><small>Prix ' + fcfa(p.prix) + ' · coût ' + (p.coutU > 0 ? fcfa(p.coutU) : "inconnu") + (p.alerte === "cout-hausse" ? " (dernier lot : " + fcfa(p.coutDernier) + ")" : "") + '<br>Vendu : ' + p.vendu30 + ' · marge gagnée : ' + fcfa(p.marge30) + '</small>' + (al ? '<span class="badge" style="background:' + al[1] + ';color:' + al[2] + ';margin-top:4px;display:inline-block">' + al[0] + '</span>' : "") + '</div><div style="text-align:right"><b class="' + (p.margeU > 0 ? "pos" : "neg") + '">' + (p.coutU > 0 ? signe(p.margeU) : "—") + '</b><br><small>' + (p.coutU > 0 ? p.margePct + " % par pot" : "notez une production") + '</small></div></div>';
+  }).join("") : '<p class="gris">Aucun produit pour le moment.</p>';
+  return h + '</div>';
+}
+
+/* ----- Clôture de journée : rapport + écart de caisse ----- */
+function vCloture(v) {
+  var j = v.journee, jr = j.date, cl = (v.clotures || []).filter(function (c) { return c.date === jr; })[0];
+  var h = '<div class="carte"><h3>Clôture de la journée</h3><p class="astuce">À faire chaque soir : comptez l\'argent en espèces dans la caisse, écrivez le montant, et le logiciel vous dit s\'il manque ou s\'il y a trop.</p>' +
+    '<label for="cl-d">Jour</label><input type="date" id="cl-d" value="' + esc(jr) + '"></div>';
+  h += '<div class="carte"><h3>Rapport du ' + esc(dateFr(jr)) + '</h3><div class="grille2" style="margin-bottom:8px"><div class="kpi"><small>Ventes</small><b>' + fcfa(j.ca) + '</b><small>' + j.qte + ' articles' + (j.nbRecus ? " · " + j.nbRecus + " reçus" : "") + '</small></div><div class="kpi"><small>Dépenses</small><b>' + fcfa(j.depenses) + '</b></div></div>';
+  h += j.parPaiement.length ? '<h4 style="margin:10px 0 4px">Par mode de paiement</h4>' + j.parPaiement.map(function (x) { return '<div class="rang"><span>' + esc(x.nom) + '</span><b>' + fcfa(x.total) + '</b></div>'; }).join("") : '<p class="gris">Aucune vente ce jour-là.</p>';
+  if (j.parVendeur.length) h += '<h4 style="margin:10px 0 4px">Par vendeur</h4>' + j.parVendeur.map(function (x) { return '<div class="rang"><span>' + esc(x.nom) + '</span><b>' + fcfa(x.total) + '</b></div>'; }).join("");
+  h += '</div>';
+  h += '<div class="carte"><h3>Espèces attendues : ' + fcfa(j.especesAttendues) + ' + fond de caisse</h3><p class="astuce">Ventes en espèces (et ventes sans mode précisé) ' + fcfa(j.encaissEspeces) + (j.apportsEspeces ? " + apports " + fcfa(j.apportsEspeces) : "") + " − dépenses payées en espèces " + fcfa(j.sortiesEspeces) + '.</p>' +
+    '<label for="cl-f">Fond de caisse du matin (F) — l\'argent déjà dans la caisse avant de commencer</label><input type="number" id="cl-f" inputmode="numeric" min="0" value="' + (cl ? cl.fond || 0 : ((v.clotures || [])[0] ? (v.clotures[0].fond || 0) : 0)) + '">' +
+    '<label for="cl-c">Espèces comptées dans la caisse (F)</label><input type="number" id="cl-c" inputmode="numeric" min="0" value="' + (cl ? cl.compte : "") + '" placeholder="Ex : ' + j.especesAttendues + '">' +
+    '<label for="cl-n">Remarque (facultatif)</label><input type="text" id="cl-n" maxlength="200" value="' + esc(cl ? cl.note || "" : "") + '" placeholder="Ex : 500 F rendus à un client">' +
+    '<button class="btn btn-or btn-bloc" type="button" style="margin-top:10px" data-s="cloturer">' + (cl ? "Refaire la clôture" : "Clôturer la journée") + '</button>';
+  if (cl) h += '<div class="alerte ' + (cl.ecart === 0 ? "vert" : "") + '" style="margin-top:10px"><b>' + (cl.ecart === 0 ? "Caisse juste ✔" : cl.ecart > 0 ? "Il y a " + fcfa(cl.ecart) + " en trop" : "Il manque " + fcfa(-cl.ecart)) + '</b><br>Comptés : ' + fcfa(cl.compte) + ' · attendus : ' + fcfa(cl.attendu) + '</div><button class="btn btn-vert btn-bloc" type="button" style="margin-top:8px" data-s="rapport-cloture">Envoyer ce rapport sur WhatsApp</button>';
+  h += '</div>';
+  var hist = (v.clotures || []).slice(0, 30);
+  h += '<div class="carte"><h3>Dernières clôtures</h3>' + (hist.length ? hist.map(function (c) { return '<div class="rang"><div class="g"><b>' + esc(dateFr(c.date)) + '</b><small>Ventes ' + fcfa(c.ca) + ' · comptés ' + fcfa(c.compte) + '</small></div><div style="text-align:right"><b class="' + (c.ecart === 0 ? "pos" : "neg") + '">' + (c.ecart === 0 ? "Juste" : signe(c.ecart)) + '</b></div></div>'; }).join("") : '<p class="gris">Aucune clôture pour le moment.</p>') + '</div>';
+  return h;
+}
+function rapportCloture() {
+  var v = E.vue, j = v.journee, cl = (v.clotures || []).filter(function (c) { return c.date === j.date; })[0]; if (!cl) return;
+  var t = "*NOOGÓ — Clôture du " + dateFr(j.date) + "*\n\nVentes : *" + fcfa(j.ca) + "* (" + j.qte + " articles)\n" + j.parPaiement.map(function (x) { return "• " + x.nom + " : " + fcfa(x.total); }).join("\n") + "\nDépenses : " + fcfa(j.depenses) + "\n\nEspèces attendues : " + fcfa(cl.attendu) + "\nEspèces comptées : " + fcfa(cl.compte) + "\n*" + (cl.ecart === 0 ? "Caisse juste ✔" : cl.ecart > 0 ? "En trop : " + fcfa(cl.ecart) : "Manque : " + fcfa(-cl.ecart)) + "*" + (cl.note ? "\nRemarque : " + cl.note : "");
+  window.open("https://wa.me/?text=" + encodeURIComponent(t), "_blank", "noopener");
+}
+
+/* ----- Journal des modifications ----- */
+function vJournal(v) {
+  var j = v.journal || [];
+  var h = '<div class="carte"><h3>Journal des modifications</h3><p class="astuce">Tout ce qui est ajouté, modifié ou supprimé dans le suivi est noté ici avec la date et l\'heure. Rien ne peut être effacé de ce journal.</p>';
+  if (!j.length) return h + '<p class="gris">Aucune modification notée pour le moment.</p></div>';
+  h += j.map(function (x) {
+    var d = new Date(x.t), p = function (n) { return String(n).padStart(2, "0"); };
+    var quand = p(d.getDate()) + "/" + p(d.getMonth() + 1) + " à " + p(d.getHours()) + "h" + p(d.getMinutes());
+    var sup = /^Supprim/.test(x.a);
+    return '<div class="rang"><div class="g"><b>' + esc(x.a) + '</b><small>' + esc(x.r || "") + '</small></div><div style="text-align:right"><small style="white-space:nowrap">' + quand + '</small>' + (sup ? '<br><span class="badge" style="background:#fde8e4;color:#9b2c1d">supprimé</span>' : '') + '</div></div>';
+  }).join("");
+  return h + '</div>';
+}
+
 /* ----- Production ----- */
 function vProduction(v) {
   var h = '<button class="btn btn-or" type="button" data-s="ouvrir" data-v="lot">+ Nouvelle production</button>';
@@ -271,6 +339,7 @@ function vProduction(v) {
       '<label for="fl-c">Dépenses totales du lot (F)</label><input type="number" id="fl-c" inputmode="numeric" min="0" placeholder="Ex : 34800">';
     for (var i = 0; i < E.nbLignesLot; i++) h += '<div class="grille2"><div><label>Produit</label><select class="fl-p">' + optionsProduits(v) + '</select></div><div><label>Quantité</label><input class="fl-q" type="number" inputmode="numeric" min="0" placeholder="Ex : 50"></div></div>';
     h += '<button class="btn btn-clair btn-petit" type="button" style="margin-top:8px" data-s="ligne-lot">+ Un autre format dans ce lot</button>' +
+      '<div id="fl-m-box" style="' + ((v.comptages || []).some(function (c) { return c.date === jourJ(0); }) ? "" : "display:none") + '"><label for="fl-m">Un comptage du soir existe déjà pour ce jour. Ces pots sont…</label><select id="fl-m"><option value="">Automatique (recommandé)</option><option value="apres">Pour demain : pas encore dans le reste compté</option><option value="avant">Déjà là quand j\'ai compté : oubli de ma part</option></select><p class="astuce">« Pour demain » : la production ne change jamais les ventes du jour.</p></div>' +
       '<p class="astuce">Le coût de revient de chaque pot = dépenses ÷ nombre total de pots. Il sert à calculer vos marges.</p>' +
       '<div style="display:flex;gap:10px;margin-top:6px"><button class="btn btn-or" type="button" data-s="enregistrer-lot">Enregistrer</button><button class="btn btn-clair" type="button" data-s="fermer">Annuler</button></div></div>';
   }
@@ -306,6 +375,7 @@ function vParams(v) {
   var c = v.config;
   var h = '<div class="carte"><h3>Caisse</h3><p class="astuce">Argent que vous aviez en caisse à la date de départ. La caisse actuelle = ce départ + ventes − productions − dépenses + apports.</p>' +
     '<div class="grille2"><div><label for="pa-cd">Caisse de départ (F)</label><input type="number" id="pa-cd" inputmode="numeric" value="' + c.caisseDepart + '"></div><div><label for="pa-dep">À partir du</label><input type="date" id="pa-dep" value="' + esc(c.depuis) + '"></div></div></div>';
+  h += '<div class="carte"><h3>Objectifs de vente</h3><p class="astuce">Ils s\'affichent avec une barre de progression dans « Analyse ». Laissez 0 pour ne pas en avoir.</p><div class="grille2"><div><label for="pa-oj">Objectif du jour (F)</label><input type="number" id="pa-oj" inputmode="numeric" min="0" value="' + (c.objectifJour || 0) + '"></div><div><label for="pa-om">Objectif du mois (F)</label><input type="number" id="pa-om" inputmode="numeric" min="0" value="' + (c.objectifMois || 0) + '"></div></div></div>';
   h += '<div class="carte"><h3>Points de vente</h3><p class="astuce">Un par ligne. Facultatif : « En ligne » existe toujours (commandes du site).</p><textarea id="pa-pv" rows="4">' + esc(c.pointsVente.join("\n")) + '</textarea></div>';
   h += '<div class="carte"><h3>Coût de revient par défaut</h3><p class="astuce">Utilisé seulement tant qu\'aucune production n\'est notée pour ce produit (sinon c\'est le coût réel des lots).</p>' +
     v.produits.filter(function (p) { return p.actif || p.interne; }).map(function (p) { return '<div class="rang"><span style="flex:1">' + esc(p.nom) + '</span><input type="number" inputmode="numeric" min="0" style="width:110px;min-height:40px" data-cout="' + esc(p.id) + '" value="' + (c.couts[p.id] || "") + '" placeholder="0"></div>'; }).join("") + '</div>';
@@ -313,7 +383,7 @@ function vParams(v) {
     c.internes.map(function (p, i) { return '<div class="grille2" style="margin-bottom:6px;align-items:center"><input type="text" data-int-nom="' + i + '" value="' + esc(p.nom) + '"><div style="display:flex;gap:6px"><input type="number" inputmode="numeric" min="0" data-int-prix="' + i + '" value="' + p.prix + '"><button class="btn btn-clair btn-petit" type="button" data-s="retirer-interne" data-i="' + i + '">✕</button></div></div>'; }).join("") +
     '<div class="grille2" style="align-items:center"><input type="text" id="pa-in-nom" placeholder="Nom du produit"><input type="number" id="pa-in-prix" inputmode="numeric" min="0" placeholder="Prix (F)"></div></div>';
   h += '<button class="btn btn-or btn-bloc" type="button" data-s="enregistrer-params">Enregistrer les réglages</button>';
-  h += '<div class="carte" style="margin-top:14px"><h3>Exporter</h3><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-brun btn-petit" type="button" data-s="export" data-v="ventes">Ventes (CSV)</button><button class="btn btn-brun btn-petit" type="button" data-s="export" data-v="depenses">Dépenses (CSV)</button><button class="btn btn-brun btn-petit" type="button" data-s="export" data-v="stock">Stock (CSV)</button></div><p class="astuce" style="margin-top:8px">S\'ouvre dans Excel ou Google Sheets (pour votre comptable).</p></div>';
+  h += '<div class="carte" style="margin-top:14px"><h3>Envoyer et exporter</h3><p class="astuce">Le bouton ci-dessous ouvre le menu d\'envoi de votre téléphone : choisissez Google Drive, Gmail, WhatsApp, Sheets, etc. Sur ordinateur, le fichier se télécharge.</p><button class="btn btn-or btn-bloc" type="button" data-s="classeur">Classeur Excel / Google Sheets (tout en un)</button><p class="astuce" style="margin-top:8px">Un seul fichier avec 7 feuilles : Ventes, Dépenses, Productions, Pertes, Stock, Rentabilité, Clôtures.</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-brun btn-petit" type="button" data-s="export" data-v="ventes">Ventes (CSV)</button><button class="btn btn-brun btn-petit" type="button" data-s="export" data-v="depenses">Dépenses (CSV)</button><button class="btn btn-brun btn-petit" type="button" data-s="export" data-v="stock">Stock (CSV)</button></div></div>';
   h += '<div class="carte"><h3>Reprendre mon ancien classeur</h3><p class="astuce">Ajoute les productions, ventes, dépenses et pertes du 03 au 08 octobre déjà notées dans votre classeur. À faire une seule fois (refaire ne crée pas de doublons).</p><button class="btn btn-clair" type="button" data-s="importer">Reprendre l\'historique</button></div>';
   h += '<div class="carte" style="border:2px solid #c62828"><h3>Nouveau départ (tout remettre à zéro)</h3><p class="astuce">Efface toutes les anciennes productions, ventes, pertes, dépenses et comptages. Le chiffre d\'affaires, les pertes et le résultat repartent de 0. Vous gardez seulement votre <b>caisse</b> et votre <b>stock restant</b>. Un fichier de sauvegarde est téléchargé avant, au cas où.</p>' +
     '<button class="btn btn-clair" type="button" data-s="depart-ouvrir">' + (E.depart ? "Fermer" : "Préparer le nouveau départ") + '</button>' + (E.depart ? vDepart(v) : "") + '</div>';
@@ -340,7 +410,7 @@ function envoyer(action, extra, msg, fin) {
 }
 function paramsLus() {
   var c = JSON.parse(JSON.stringify(E.vue.config));
-  c.caisseDepart = Number(val("pa-cd")) || 0; c.depuis = val("pa-dep");
+  c.caisseDepart = Number(val("pa-cd")) || 0; c.depuis = val("pa-dep"); c.objectifJour = Number(val("pa-oj")) || 0; c.objectifMois = Number(val("pa-om")) || 0;
   c.pointsVente = val("pa-pv").split("\n").map(function (x) { return x.trim(); }).filter(Boolean);
   c.couts = {}; document.querySelectorAll("[data-cout]").forEach(function (e) { if (e.value !== "") c.couts[e.getAttribute("data-cout")] = Number(e.value) || 0; });
   document.querySelectorAll("[data-int-nom]").forEach(function (e) { c.internes[+e.getAttribute("data-int-nom")].nom = e.value; });
@@ -357,6 +427,87 @@ function csv(lignes, colonnes) {
   var q = function (x) { x = x == null ? "" : String(x); return /[;"\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
   return "﻿" + [colonnes.map(function (c) { return q(c[1]); }).join(";")].concat(lignes.map(function (l) { return colonnes.map(function (c) { return q(l[c[0]]); }).join(";"); })).join("\r\n");
 }
+/*XLSX-DEBUT*/
+/* Mini-générateur de classeur Excel (.xlsx) : s'ouvre dans Excel, Google Sheets, Google Drive, LibreOffice */
+var CRC_T = (function () { var t = [], c, n, k; for (n = 0; n < 256; n++) { c = n; for (k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(b) { var c = 0xFFFFFFFF, i; for (i = 0; i < b.length; i++) c = CRC_T[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function octets(txt) { return new TextEncoder().encode(txt); }
+function zipStocke(fichiers) {
+  var parts = [], centr = [], pos = 0, i;
+  var u16 = function (n) { return [n & 255, (n >> 8) & 255]; }, u32 = function (n) { return [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255]; };
+  for (i = 0; i < fichiers.length; i++) {
+    var nom = octets(fichiers[i][0]), d = octets(fichiers[i][1]), crc = crc32(d);
+    var loc = [].concat([0x50, 0x4b, 3, 4], u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(d.length), u32(d.length), u16(nom.length), u16(0));
+    parts.push(new Uint8Array(loc), nom, d);
+    centr.push(new Uint8Array([].concat([0x50, 0x4b, 1, 2], u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(d.length), u32(d.length), u16(nom.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(pos))), nom);
+    pos += loc.length + nom.length + d.length;
+  }
+  var tailleC = 0; centr.forEach(function (c) { tailleC += c.length; });
+  var fin = new Uint8Array([].concat([0x50, 0x4b, 5, 6], u16(0), u16(0), u16(fichiers.length), u16(fichiers.length), u32(tailleC), u32(pos), u16(0)));
+  var tout = parts.concat(centr, [fin]), total = 0; tout.forEach(function (p) { total += p.length; });
+  var res = new Uint8Array(total), o = 0; tout.forEach(function (p) { res.set(p, o); o += p.length; });
+  return res;
+}
+function xmlEsc(t) { return String(t == null ? "" : t).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+function colLettre(n) { var s = ""; n++; while (n > 0) { var m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; }
+function xlsx(feuilles) {
+  var f = [], wb = "", rels = "", ct = "";
+  feuilles.forEach(function (fe, i) {
+    var nomF = String(fe.nom).replace(/[\\\/\?\*\[\]:]/g, " ").slice(0, 31);
+    var larg = [];
+    var lignes = fe.lignes.map(function (l, r) {
+      return '<row r="' + (r + 1) + '">' + l.map(function (c, k) {
+        var ref = colLettre(k) + (r + 1), len = String(c == null ? "" : c).length; larg[k] = Math.max(larg[k] || 8, Math.min(48, len + 2));
+        if (typeof c === "number" && isFinite(c)) return '<c r="' + ref + '"' + (r === 0 ? ' s="1"' : "") + '><v>' + c + '</v></c>';
+        return '<c r="' + ref + '" t="inlineStr"' + (r === 0 ? ' s="1"' : "") + '><is><t xml:space="preserve">' + xmlEsc(c) + '</t></is></c>';
+      }).join("") + '</row>';
+    }).join("");
+    f.push(["xl/worksheets/sheet" + (i + 1) + ".xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>' + larg.map(function (w, k) { return '<col min="' + (k + 1) + '" max="' + (k + 1) + '" width="' + w + '" customWidth="1"/>'; }).join("") + '</cols><sheetData>' + lignes + '</sheetData></worksheet>']);
+    wb += '<sheet name="' + xmlEsc(nomF) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>';
+    rels += '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>';
+    ct += '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+  });
+  var n = feuilles.length;
+  f.unshift(["[Content_Types].xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' + ct + '</Types>']);
+  f.push(["_rels/.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>']);
+  f.push(["xl/workbook.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + wb + '</sheets></workbook>']);
+  f.push(["xl/_rels/workbook.xml.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + rels + '<Relationship Id="rId' + (n + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>']);
+  f.push(["xl/styles.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1F5A2E"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>']);
+  return zipStocke(f);
+}
+/*XLSX-FIN*/
+
+/* Envoi : feuille de partage du téléphone (Google Drive, Gmail, WhatsApp, Sheets…) ou téléchargement */
+function partager(nom, donnees, mime, titre) {
+  var fichier;
+  try { fichier = new File([donnees], nom, { type: mime }); } catch (e) { fichier = null; }
+  if (fichier && navigator.canShare && navigator.canShare({ files: [fichier] }) && navigator.share) {
+    return navigator.share({ files: [fichier], title: titre || nom }).catch(function (e) { if (e && e.name === "AbortError") return; telechargerFichier(nom, donnees, mime); });
+  }
+  telechargerFichier(nom, donnees, mime);
+  A.toast("Fichier téléchargé : ouvrez-le avec Google Sheets, Drive ou Excel, ou envoyez-le par WhatsApp.", "ok");
+}
+function telechargerFichier(nom, donnees, mime) {
+  var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([donnees], { type: mime })); a.download = nom;
+  document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+}
+var MIME_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+function classeurComplet() {
+  return appel("export").then(function (d) {
+    var v = E.vue, nb = function (x) { return Math.round(Number(x) || 0); };
+    var feuilles = [
+      { nom: "Ventes", lignes: [["Date", "Produit", "Quantité", "Chiffre d'affaires (F)", "Coût (F)", "Marge (F)", "Point de vente", "Vendeur", "Paiement", "Origine"]].concat((d.ventes || []).map(function (x) { return [x.date, x.nom, nb(x.qte), nb(x.montant), nb(x.cout), nb(x.montant - x.cout), x.canal || "", x.vendeur || "", x.paiement || "", x.source || ""]; })) },
+      { nom: "Dépenses", lignes: [["Date", "Catégorie", "Description", "Montant (F)", "Paiement"]].concat((d.depenses || []).map(function (x) { return [x.date, x.categorie, x.description || "", nb(x.montant), x.mode || ""]; })) },
+      { nom: "Productions", lignes: [["Date", "Lot", "Produits", "Quantité", "Coût total (F)", "Coût par pot (F)"]].concat((d.lots || []).map(function (x) { return [x.date, x.nom || "", (x.lignes || []).map(function (l) { return l.qte + " × " + l.produitId; }).join(", "), nb(x.quantite), nb(x.cout), nb(x.coutUnitaire)]; })) },
+      { nom: "Pertes", lignes: [["Date", "Produit", "Quantité", "Type", "Coût (F)"]].concat((d.pertes || []).map(function (x) { return [x.date, x.nom, nb(x.qte), (E.vue.typesPerte || {})[x.type] || x.type, nb(x.cout)]; })) },
+      { nom: "Stock", lignes: [["Produit", "Stock actuel", "Coût moyen (F)", "Valeur du stock (F)", "Produit au total", "Vendu", "Perdu"]].concat((d.stock || []).map(function (x) { return [x.nom, nb(x.theorique), nb(x.coutMoyen), nb(x.valeur), nb(x.produit), nb(x.vendu), nb(x.perdu)]; })) },
+      { nom: "Rentabilité", lignes: [["Produit", "Prix (F)", "Coût de revient (F)", "Marge par pot (F)", "Marge (%)", "Vendu (30 j)", "Marge gagnée (30 j)", "En stock", "À produire demain"]].concat(((v.analyse || {}).produits || []).map(function (p) { return [p.nom, nb(p.prix), nb(p.coutU), nb(p.margeU), p.margePct, nb(p.vendu30), nb(p.marge30), nb(p.theorique), nb(p.aProduire)]; })) },
+      { nom: "Clôtures", lignes: [["Date", "Ventes (F)", "Fond de caisse (F)", "Espèces attendues (F)", "Espèces comptées (F)", "Écart (F)", "Remarque"]].concat((v.clotures || []).map(function (c) { return [c.date, nb(c.ca), nb(c.fond), nb(c.attendu), nb(c.compte), nb(c.ecart), c.note || ""]; })) }
+    ];
+    return partager("Noogo-classeur-" + jourJ(0) + ".xlsx", xlsx(feuilles), MIME_XLSX, "Classeur Noogó");
+  }).catch(function (e) { if (!e.silencieux) A.toast(e.message || "Impossible de préparer le classeur.", "err"); });
+}
+
 function telecharger(nom, contenu) {
   var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([contenu], { type: "text/csv;charset=utf-8" })); a.download = nom;
   document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
@@ -445,6 +596,9 @@ function clic(ev) {
       if (!confirm("Supprimer ce reçu et toutes ses ventes ? Les chiffres et le stock seront recalculés.")) return;
       return envoyer("supprimer_recu", { id: t.getAttribute("data-id") }, "Reçu supprimé", function () { E.soir = null; });
     case "rapport-wa": return rapportWA();
+    case "classeur": return classeurComplet();
+    case "rapport-cloture": return rapportCloture();
+    case "cloturer": if (val("cl-c") === "") return A.toast("Écrivez les espèces comptées dans la caisse.", "err"); return envoyer("cloture", { date: val("cl-d"), compte: val("cl-c"), fond: val("cl-f"), note: val("cl-n") }, "Journée clôturée");
     case "rapport-complet": return rapportComplet();
     case "sous": E.sous = v; E.ouvert = null; return rendre();
     case "periode": E.periode = v; if (v === "perso") { E.du = E.du || jourJ(-30); E.au = E.au || jourJ(0); return rendre(); } return rafraichir();
@@ -458,7 +612,7 @@ function clic(ev) {
     case "enregistrer-depense": return envoyer("ajouter_depense", { date: val("fd-d"), categorie: val("fd-c"), description: val("fd-t"), montant: val("fd-m"), mode: val("fd-mode") }, "Dépense enregistrée");
     case "enregistrer-lot":
       var lignes = [].map.call(document.querySelectorAll(".fl-p"), function (e, i) { return { produitId: e.value, qte: document.querySelectorAll(".fl-q")[i].value }; });
-      return envoyer("ajouter_lot", { date: val("fl-d"), nom: val("fl-n"), cout: val("fl-c"), lignes: lignes }, "Production enregistrée");
+      return envoyer("ajouter_lot", { date: val("fl-d"), nom: val("fl-n"), cout: val("fl-c"), lignes: lignes, moment: val("fl-m") }, "Production enregistrée");
     case "enregistrer-soir":
       var items = [].map.call(document.querySelectorAll("input.reste"), function (e) { return { produitId: e.getAttribute("data-pid"), restant: e.value }; });
       E.soirResume = true;
@@ -487,15 +641,17 @@ function clic(ev) {
       return envoyer("importer_historique", {}, "Historique repris : consultez le Résumé");
     case "export":
       return appel("export").then(function (d) {
-        if (v === "ventes") telecharger("noogo-ventes.csv", csv(d.ventes, [["date", "Date"], ["nom", "Produit"], ["qte", "Quantité"], ["montant", "Chiffre d'affaires (F)"], ["cout", "Coût (F)"], ["canal", "Point de vente"], ["source", "Origine"]]));
-        if (v === "depenses") telecharger("noogo-depenses.csv", csv(d.depenses, [["date", "Date"], ["categorie", "Catégorie"], ["description", "Description"], ["montant", "Montant (F)"], ["mode", "Paiement"]]));
-        if (v === "stock") telecharger("noogo-stock.csv", csv(d.stock, [["nom", "Produit"], ["theorique", "Stock"], ["coutMoyen", "Coût moyen (F)"], ["valeur", "Valeur (F)"]]));
+        if (v === "ventes") partager("noogo-ventes.csv", csv(d.ventes, [["date", "Date"], ["nom", "Produit"], ["qte", "Quantité"], ["montant", "Chiffre d'affaires (F)"], ["cout", "Coût (F)"], ["canal", "Point de vente"], ["source", "Origine"]]), "text/csv;charset=utf-8");
+        if (v === "depenses") partager("noogo-depenses.csv", csv(d.depenses, [["date", "Date"], ["categorie", "Catégorie"], ["description", "Description"], ["montant", "Montant (F)"], ["mode", "Paiement"]]), "text/csv;charset=utf-8");
+        if (v === "stock") partager("noogo-stock.csv", csv(d.stock, [["nom", "Produit"], ["theorique", "Stock"], ["coutMoyen", "Coût moyen (F)"], ["valeur", "Valeur (F)"]]), "text/csv;charset=utf-8");
       }).catch(function (e) { if (!e.silencieux) A.toast(e.message, "err"); });
   }
 }
 function change(ev) {
   var t = ev.target;
   if (t.id === "so-date") { E.soirDate = t.value || jourJ(0); E.soir = null; E.soirResume = false; rendre(); }
+  if (t.id === "fl-d" && $("fl-m-box") && E.vue) { $("fl-m-box").style.display = (E.vue.comptages || []).some(function (c) { return c.date === t.value; }) ? "" : "none"; }
+  if (t.id === "cl-d") { E.jourCloture = t.value || ""; return charge("lire").catch(function () {}); }
   if (t.id === "fv-p") { var o = t.options[t.selectedIndex]; if ($("fv-px")) $("fv-px").placeholder = "Prix du site : " + (o ? o.getAttribute("data-prix") : ""); }
 }
 

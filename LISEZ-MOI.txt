@@ -1,5 +1,7 @@
-MISE A JOUR 11 - Noogo
-1) GitHub > ouvrez le dossier "api" > Add file > Upload files : envoyez les 3 fichiers de DOSSIER-api (_suivi.js, suivi.js, caisse.js).
-2) GitHub > racine du depot > Add file > Upload files : envoyez les 6 fichiers de RACINE (admin-suivi.js, admin-communaute.js, admin.html, caisse.html, index.html, sw.js).
-3) Attendez 2 minutes (Vercel), puis rechargez.
-Ne creez AUCUN autre fichier dans api (limite de 12 fonctions).
+MISE A JOUR 10 (remplace les mises à jour 8 et 9)
+
+1) RACINE (page principale du dépôt GitHub) : admin-suivi.js, sw.js, caisse.html
+2) DOSSIER-api (à l'intérieur du dossier "api" du dépôt) : _suivi.js, suivi.js, _store.js, admin.js
+
+GitHub > Add file > Upload files > Commit  (une fois pour la racine, une fois dans le dossier api).
+Attendre 2 minutes, fermer et rouvrir l'appli. Aucun fichier à supprimer.

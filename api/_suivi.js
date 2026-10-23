@@ -10,6 +10,7 @@ const CATEGORIES_DEPENSE = [
   "Transport / livraison",
   "Publicité / recharge",
   "Salaire",
+  "Remise sur packs",
   "Impôt / taxe",
   "Loyer / courant / gaz / eau",
   "Emballage / fournitures",
@@ -106,6 +107,7 @@ function calculer(donnees) {
       pousse(x.produitId, { date: jour(l.date), rang: apres ? 4 : 0, type: "lot", qte: nombre(x.qte), coutU, ref: l.id });
     }
   }
+  const remisesSite = [];   // remise des packs vendus sur le site : comptée automatiquement comme dépense
   for (const c of donnees.commandes || []) {
     if (c.statutLivraison !== "livree") continue;
     const base = nombre(c.montantTotal);
@@ -115,11 +117,23 @@ function calculer(donnees) {
       if (Array.isArray(a.compo) && a.compo.length) {
         // Pack au choix : chaque saveur choisie sort du stock de son propre produit
         const tot = a.compo.reduce((s, x) => s + nombre(x.qte), 0) || 1;
+        const plein = a.compo.reduce((s, x) => s + prixDe(x.id) * nombre(x.qte), 0);
+        if (plein > nombre(a.total) && nombre(a.total) > 0) {   // les pots au prix normal valent plus que le pack : la différence est une remise
+          for (const x of a.compo) pousse(x.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(x.qte), montant: prixDe(x.id) * nombre(x.qte) * ratio, ref: c.id });
+          remisesSite.push({ date: d, ref: c.id, montant: (plein - nombre(a.total)) * ratio });
+          continue;
+        }
         for (const x of a.compo) pousse(x.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(x.qte), montant: (nombre(a.total) * ratio * nombre(x.qte)) / tot, ref: c.id });
         continue;
       }
       const p = catParId[a.id] || { id: a.id, type: a.type };
       const b = baseDe(p) || { id: a.id, n: 1 };
+      const plein = p.type === "pack" ? prixDe(b.id) * nombre(a.qte) * b.n : 0;
+      if (plein > nombre(a.total) && nombre(a.total) > 0) {
+        pousse(b.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(a.qte) * b.n, montant: plein * ratio, ref: c.id });
+        remisesSite.push({ date: d, ref: c.id, montant: (plein - nombre(a.total)) * ratio });
+        continue;
+      }
       pousse(b.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(a.qte) * b.n, montant: nombre(a.total) * ratio, ref: c.id });
     }
   }
@@ -168,7 +182,8 @@ function calculer(donnees) {
     lots.push({ ...l, quantite: total, coutUnitaire: total > 0 ? arrondi(nombre(l.cout) / total) : 0 });
   }
 
-  const depenses = (donnees.depenses || []).map((d) => ({ ...d, classe: classeDepense(d.categorie) }));
+  const depenses = (donnees.depenses || []).map((d) => ({ ...d, classe: classeDepense(d.categorie) }))
+    .concat(remisesSite.map((r) => ({ id: "rem-" + r.ref + "-" + arrondi(r.montant), date: r.date, categorie: "Remise sur packs", description: "Remise sur packs · commande " + r.ref, montant: arrondi(r.montant), mode: "", classe: "charge", auto: true })));
   ventes.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
   pertes.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 

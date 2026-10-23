@@ -316,6 +316,7 @@ module.exports = async (req, res) => {
           if (etat) recu.archive = new Date().toISOString(); else delete recu.archive;
           await S.suiviSet("recus", idR, recu);
           for (const v of await S.suiviListe("ventes")) if (v && v.recuId === idR) { if (etat) v.archive = recu.archive; else delete v.archive; await S.suiviSet("ventes", v.id, v); }
+          for (const x of await S.suiviListe("depenses")) if (x && x.recuId === idR) { if (etat) x.archive = recu.archive; else delete x.archive; await S.suiviSet("depenses", x.id, x); }
           trace = [etat ? "Reçu archivé" : "Reçu restauré", (recu.vendeur || "") + " · " + fr(recu.total) + " · " + jjmm(recu.date)];
         } else if (d.type === "depense") {
           const idD = txt(d.id, 80);
@@ -351,6 +352,7 @@ module.exports = async (req, res) => {
         let nr = 0, nd = 0;
         for (const r of await S.suiviListe("recus")) if (r && r.archive && (!vid || r.vid === vid)) {
           for (const v of await S.suiviListe("ventes")) if (v && v.recuId === r.id) await S.suiviDel("ventes", v.id);
+          for (const x of await S.suiviListe("depenses")) if (x && x.recuId === r.id) await S.suiviDel("depenses", x.id);
           await S.suiviDel("recus", r.id); nr++;
         }
         for (const x of decorerDepenses(await S.suiviListe("depenses"), demandes)) if (x && x.archive && (!vid || x.vid === vid)) { await S.suiviDel("depenses", String(x.id)); nd++; }
@@ -360,6 +362,7 @@ module.exports = async (req, res) => {
       case "supprimer_recu": {
         const idR = txt(d.id, 60);
         for (const v of await S.suiviListe("ventes")) if (v && v.recuId === idR) await S.suiviDel("ventes", v.id);
+        for (const x of await S.suiviListe("depenses")) if (x && x.recuId === idR) await S.suiviDel("depenses", x.id);
         await S.suiviDel("recus", idR);
         trace = ["Reçu supprimé", idR];
         break;

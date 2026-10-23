@@ -255,6 +255,7 @@ function ligneRecu(r, archive) {
 }
 function ligneDepense(d, archive) {
   var plus = d.classe === "apport";
+  if (d.auto) return '<div class="rang"><div class="g"><b>' + esc(d.description || d.categorie) + '</b><small>' + esc(dateFr(d.date)) + ' · ' + esc(d.categorie) + (d.vendeur ? " · " + esc(d.vendeur) : "") + ' · automatique, liée à la vente</small></div><div style="text-align:right"><b>' + fcfa(d.montant) + '</b></div></div>';
   return '<div class="rang"><div class="g"><b>' + esc(d.description || d.categorie) + '</b><small>' + esc(dateFr(d.date)) + ' · ' + esc(d.categorie) + (d.vendeur ? " · " + esc(d.vendeur) : "") + (d.mode ? " · " + esc(d.mode) : "") + '</small></div><div style="text-align:right"><b class="' + (plus ? "pos" : "") + '">' + (plus ? "+" : "") + fcfa(d.montant) + '</b><br>' +
     (archive ? '<button class="btn btn-brun btn-petit" type="button" data-s="archiver" data-t="depense" data-etat="0" data-id="' + esc(d.id) + '">Restaurer</button> <button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="depense" data-id="' + esc(d.id) + '">Supprimer</button>'
       : '<button class="btn btn-brun btn-petit" type="button" data-s="archiver" data-t="depense" data-etat="1" data-id="' + esc(d.id) + '">Archiver</button> <button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="depense" data-id="' + esc(d.id) + '">Supprimer</button>') + '</div></div>';
@@ -533,6 +534,7 @@ function vDepenses(v) {
       return '<div class="rang"><div class="g"><b>Production · ' + esc(l.nom) + '</b><small>' + esc(dateFr(l.date)) + ' · ' + l.lignes.map(function (x) { return x.qte + " × " + esc(noms[x.produitId] || x.produitId); }).join(", ") + ' <span class="badge badge-or">Production</span></small></div><div style="text-align:right"><b>' + fcfa(l.cout) + '</b><br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="lot" data-id="' + esc(l.id) + '">Supprimer</button></div></div>';
     }
     var d = it.x, plus = d.classe === "apport";
+    if (d.auto) return '<div class="rang"><div class="g"><b>' + esc(d.description || d.categorie) + '</b><small>' + esc(dateFr(d.date)) + ' · ' + esc(d.categorie) + ' · automatique <span class="badge badge-or">Pack</span></small></div><div style="text-align:right"><b>' + fcfa(d.montant) + '</b></div></div>';
     return '<div class="rang"><div class="g"><b>' + esc(d.description || d.categorie) + '</b><small>' + esc(dateFr(d.date)) + ' · ' + esc(d.categorie) + (d.vendeur ? " · " + esc(d.vendeur) : "") + (d.mode ? " · " + esc(d.mode) : "") + '</small></div><div style="text-align:right"><b class="' + (plus ? "pos" : "") + '">' + (plus ? "+" : "") + fcfa(d.montant) + '</b><br><button class="btn btn-brun btn-petit" type="button" data-s="archiver" data-t="depense" data-etat="1" data-id="' + esc(d.id) + '">Archiver</button> <button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="depense" data-id="' + esc(d.id) + '">Supprimer</button></div></div>';
   }).join("") : '<p class="gris">Aucune dépense sur cette période.</p>') + '</div>';
   return h;

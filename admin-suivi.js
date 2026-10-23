@@ -564,7 +564,7 @@ function vDepart(v) {
     var s = stock[p.id] || {}, q = Math.max(0, Math.round(s.theorique || 0)), cu = Math.round(s.coutMoyen || (v.config.couts && v.config.couts[p.id]) || 0);
     return '<div class="rang" style="align-items:center"><span style="flex:1">' + esc(p.nom) + '</span><input type="number" inputmode="numeric" min="0" style="width:74px;min-height:40px" data-nd-q="' + esc(p.id) + '" value="' + q + '" aria-label="Stock restant"><input type="number" inputmode="numeric" min="0" style="width:84px;min-height:40px" data-nd-c="' + esc(p.id) + '" value="' + cu + '" aria-label="Coût par pot"></div>';
   }).join("");
-  return '<div class="formulaire"><label for="nd-caisse">Caisse actuelle réelle (F) : espèces + Orange Money + Wave</label><input type="number" id="nd-caisse" inputmode="numeric" min="0" value="' + Math.max(0, Math.round(v.bilan.caisse || 0)) + '">' +
+  return '<div class="formulaire"><label for="nd-caisse">Caisse actuelle réelle (F) : espèces + Orange Money + Wave</label><input type="number" id="nd-caisse" inputmode="numeric" value="' + Math.round(v.bilan.caisse || 0) + '"><p class="astuce">Peut être négatif (ex : -41600) : l\'argent déjà dépensé sera simplement soustrait des prochaines ventes.</p><label for="nd-date">Date du départ (le suivi repart de ce jour)</label><input type="date" id="nd-date" value="' + jourJ(-1) + '">' +
     '<p class="astuce" style="margin-top:12px"><b>Stock restant aujourd\'hui</b> : pour chaque produit, le nombre de pots que vous avez vraiment, et le coût de revient d\'un pot (colonne de droite). Mettez 0 s\'il n\'y en a plus.</p>' +
     '<div class="rang" style="font-size:12px;color:var(--gris)"><span style="flex:1">Produit</span><span style="width:74px;text-align:center">Pots</span><span style="width:84px;text-align:center">Coût / pot</span></div>' + lignes +
     '<label style="margin-top:10px">Pour confirmer, tapez le mot <b>ZERO</b></label><input type="text" id="nd-conf" autocomplete="off" placeholder="ZERO">' +
@@ -822,7 +822,7 @@ function clic(ev) {
         var u = URL.createObjectURL(new Blob([JSON.stringify(s, null, 1)], { type: "application/json" })), a = document.createElement("a");
         a.href = u; a.download = "sauvegarde-suivi-noogo-" + jourJ(0) + ".json"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 3000);
         if (!confirm("Sauvegarde téléchargée. Tout effacer maintenant et repartir de zéro avec la caisse de " + caisseND + " F ?")) throw Object.assign(new Error("Annulé"), { silencieux: true });
-        return charge("nouveau_depart", { date: jourJ(0), caisse: caisseND, items: itemsND });
+        return charge("nouveau_depart", { date: val("nd-date") || jourJ(0), caisse: caisseND, items: itemsND });
       }).then(function () { E.depart = false; E.ouvert = null; E.soir = null; ok("Nouveau départ fait : tout repart de zéro"); rendre(); }).catch(function (e) { if (!e.silencieux) A.toast(e.message, "err"); });
     case "enregistrer-params": return envoyer("config", { config: paramsLus() }, "Réglages enregistrés");
     case "importer":

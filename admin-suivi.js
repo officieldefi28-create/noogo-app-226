@@ -11,7 +11,7 @@ var signe = function (n) { return (n > 0 ? "+" : "") + fcfa(n); };
 var jourJ = function (dx) { var d = new Date(Date.now() + (dx || 0) * 86400000); return d.toISOString().slice(0, 10); };
 var dateFr = function (d) { var p = String(d || "").split("-"); return p.length === 3 ? p[2] + "/" + p[1] : d; };
 
-var E = { vue: null, sous: "resume", periode: "mois", du: "", au: "", ouvert: null, soir: null, soirDate: jourJ(0), message: "", nbLignesLot: 1 };
+var E = { vue: null, sous: "resume", periode: "mois", du: "", au: "", ouvert: null, soir: null, soirDate: jourJ(0), message: "", nbLignesLot: 1, ouv: {}, saisie: null, plus: null, fiche: null, edit: null, autres: false };
 var timer = null;
 
 /* ---------- styles propres à l'onglet ---------- */
@@ -40,7 +40,24 @@ css.textContent = [
   "#p-suivi .soir input.reste{width:84px;text-align:center;font-weight:700;font-size:18px;min-height:46px}",
   "#p-suivi .formulaire{border:2px solid var(--or);border-radius:14px;padding:14px;background:#fffdf4;margin:10px 0}",
   "#p-suivi h3{margin:0 0 8px}",
-  "#p-suivi .astuce{font-size:13px;color:var(--gris);margin:0 0 10px}"
+  "#p-suivi .astuce{font-size:13px;color:var(--gris);margin:0 0 10px}",
+  "#p-suivi .sous.principal{gap:4px;overflow:visible;position:sticky;top:52px;z-index:20;background:var(--creme,#fbf6e9);padding:8px 0}",
+  "#p-suivi .sous.principal button{flex:1 1 0;padding:9px 4px;border-radius:12px;font-size:14px;text-align:center}",
+  "#p-suivi .pastille{display:inline-block;background:#c62828;color:#fff;border-radius:999px;font-size:11px;min-width:18px;padding:1px 5px;margin-left:2px}",
+  "#p-suivi details.rep{background:#fff;border:1px solid var(--bord);border-radius:14px;margin:8px 0;padding:0 14px}",
+  "#p-suivi details.rep summary{cursor:pointer;font-weight:700;color:var(--brun-3);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:44px}",
+  "#p-suivi details.rep summary::-webkit-details-marker{display:none}",
+  "#p-suivi details.rep summary::after{content:'▾';color:var(--gris);font-size:13px}",
+  "#p-suivi details.rep[open] summary::after{content:'▴'}",
+  "#p-suivi details.rep .corps{padding:0 0 12px}",
+  "#p-suivi .tuiles-ajout{display:grid;grid-template-columns:1fr 1fr;gap:10px}",
+  "#p-suivi .tuiles-ajout button{background:#fff;border:1.5px solid var(--bord);border-radius:16px;padding:16px 12px;text-align:left;cursor:pointer;min-height:112px;display:flex;flex-direction:column;gap:2px}",
+  "#p-suivi .tuiles-ajout button:active{background:#f6efe0}",
+  "#p-suivi .tuiles-ajout i{font-style:normal;font-size:26px}#p-suivi .tuiles-ajout b{font-size:16px;color:var(--brun)}#p-suivi .tuiles-ajout small{color:var(--gris);font-size:12.5px;line-height:1.25}",
+  "#p-suivi .membre{border:1.5px solid var(--bord);border-radius:14px;padding:12px;margin:10px 0;background:#fffdf4}#p-suivi .membre.inactif{opacity:.6}",
+  "#p-suivi .menu-plus{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--bord);border-radius:14px;padding:14px 16px;margin:8px 0 0;cursor:pointer;min-height:60px}",
+  "#p-suivi .menu-plus b{display:block;font-size:16px;color:var(--brun)}#p-suivi .menu-plus small{display:block;color:var(--gris);font-size:13px;margin-top:2px}",
+  "#p-suivi .retour-plus{display:inline-flex;align-items:center;border:0;background:none;color:var(--brun-3);font-weight:700;font-size:15px;padding:6px 0 10px;cursor:pointer;min-height:44px}"
 ].join("");
 document.head.appendChild(css);
 
@@ -67,6 +84,7 @@ function periodeCourante() {
     var fin = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0));
     return { du: d.toISOString().slice(0, 10), au: fin.toISOString().slice(0, 10) };
   }
+  if (p === "hier") { var h1 = jourJ(-1); return { du: h1, au: h1 }; }
   if (p === "perso") return { du: E.du, au: E.au };
   return { du: "", au: "" };
 }
@@ -79,7 +97,10 @@ function rafraichir() { return charge("lire").catch(function () {}); }
 /* ---------- ouverture ---------- */
 function ouvrir() {
   var c = $("p-suivi");
-  if (!c.dataset.pret) { c.dataset.pret = "1"; c.addEventListener("click", clic); c.addEventListener("change", change); }
+  if (!c.dataset.pret) {
+    c.dataset.pret = "1"; c.addEventListener("click", clic); c.addEventListener("change", change);
+    c.addEventListener("toggle", function (ev) { var d = ev.target; if (d && d.classList && d.classList.contains("rep")) E.ouv[d.getAttribute("data-t")] = d.open; }, true);
+  }
   if (!E.vue) c.innerHTML = '<p class="gris">Chargement du suivi…</p>';
   rafraichir();
   clearInterval(timer);
@@ -87,22 +108,33 @@ function ouvrir() {
 }
 
 /* ---------- rendu ---------- */
-var SOUS = [["resume", "Résumé"], ["caisse", "Caisse"], ["soir", "Ce soir"], ["ventes", "Ventes"], ["analyse", "Analyse"], ["cloture", "Clôture"], ["stock", "Stock"], ["production", "Production"], ["depenses", "Dépenses"], ["journal", "Journal"], ["params", "Réglages"]];
-var PERIODES = [["jour", "Aujourd'hui"], ["semaine", "7 jours"], ["mois", "Ce mois"], ["mois-dernier", "Mois dernier"], ["tout", "Tout"], ["perso", "Dates…"]];
+/* Cinq entrées seulement : tout le reste est rangé dans « Ajouter » et « Plus » */
+var SOUS = [["resume", "Résumé"], ["ajout", "Ajouter"], ["equipe", "Équipe"], ["stock", "Stock"], ["plus", "Plus"]];
+var PERIODES = [["jour", "Aujourd'hui"], ["hier", "Hier"], ["semaine", "7 jours"], ["mois", "Ce mois"]];
+var PERIODES_PLUS = [["mois-dernier", "Mois dernier"], ["tout", "Tout"], ["perso", "Dates…"]];
 
 function rendre() {
   var c = $("p-suivi"), v = E.vue;
   if (!v) return;
-  if (E.sous === "caisse") lireEq();
-  var nav = '<div class="sous" role="tablist">' + SOUS.map(function (s) { return '<button type="button" data-s="sous" data-v="' + s[0] + '" aria-pressed="' + (E.sous === s[0]) + '">' + s[1] + '</button>'; }).join("") + '</div>';
-  var corps = { resume: vResume, caisse: vCaisse, soir: vSoir, ventes: vVentes, stock: vStock, production: vProduction, depenses: vDepenses, journal: vJournal, analyse: vAnalyse, cloture: vCloture, params: vParams }[E.sous](v);
+  if (E.sous === "equipe") lireEq();
+  var nav = '<div class="sous principal" role="tablist">' + SOUS.map(function (s) { return '<button type="button" data-s="sous" data-v="' + s[0] + '" aria-pressed="' + (E.sous === s[0]) + '">' + s[1] + (s[0] === "equipe" && nbDemandes(v) ? ' <span class="pastille">' + nbDemandes(v) + '</span>' : "") + '</button>'; }).join("") + '</div>';
+  var corps = { resume: vResume, ajout: vAjout, equipe: vEquipe, stock: vStockOnglet, plus: vPlus }[E.sous](v);
   var sel = document.activeElement && document.activeElement.id;
   c.innerHTML = nav + (E.message ? '<div class="msg msg-ok">' + esc(E.message) + '</div>' : "") + corps;
   if (sel && $(sel)) { try { $(sel).focus(); } catch (e) {} }
 }
+function nbDemandes(v) { return (v.demandes || []).filter(function (d) { return d.statut === "attente"; }).length; }
+/* Bloc repliable : l'état ouvert/fermé est retenu même quand la page se met à jour */
+function repliable(titre, corps, ouvert) {
+  var o = E.ouv[titre] != null ? E.ouv[titre] : !!ouvert;
+  return '<details class="rep" data-t="' + esc(titre) + '"' + (o ? " open" : "") + '><summary>' + titre + '</summary><div class="corps">' + corps + '</div></details>';
+}
 function selPeriode() {
-  return '<div class="sous">' + PERIODES.map(function (p) { return '<button type="button" data-s="periode" data-v="' + p[0] + '" aria-pressed="' + (E.periode === p[0]) + '">' + p[1] + '</button>'; }).join("") + '</div>' +
-    (E.periode === "perso" ? '<div class="grille2" style="margin-bottom:10px"><div><label for="su-du">Du</label><input type="date" id="su-du" value="' + esc(E.du) + '"></div><div><label for="su-au">Au</label><input type="date" id="su-au" value="' + esc(E.au) + '"></div></div><button class="btn btn-brun btn-petit" type="button" data-s="appliquer-dates">Afficher</button>' : "");
+  var extra = PERIODES_PLUS.some(function (p) { return p[0] === E.periode; });
+  var bouton = function (p) { return '<button type="button" data-s="periode" data-v="' + p[0] + '" aria-pressed="' + (E.periode === p[0]) + '">' + p[1] + '</button>'; };
+  return '<div class="sous">' + PERIODES.map(bouton).join("") + '<button type="button" data-s="autres" aria-pressed="' + (extra || !!E.autres) + '">Autres ▾</button></div>' +
+    (extra || E.autres ? '<div class="sous">' + PERIODES_PLUS.map(bouton).join("") + '</div>' : "") +
+    (E.periode === "perso" ? '<div class="grille2" style="margin-bottom:10px"><div><label for="su-du">Du</label><input type="date" id="su-du" value="' + esc(E.du) + '"></div><div><label for="su-au">Au</label><input type="date" id="su-au" value="' + esc(E.au) + '"></div></div>' : "");
 }
 function optionsProduits(v, vide) {
   return (vide ? '<option value="">' + vide + '</option>' : "") + v.produits.filter(function (p) { return p.actif || p.interne; }).map(function (p) { return '<option value="' + esc(p.id) + '" data-prix="' + p.prix + '">' + esc(p.nom) + '</option>'; }).join("");
@@ -110,8 +142,9 @@ function optionsProduits(v, vide) {
 function optionsPoints(v, vide) {
   return '<option value="">' + vide + '</option>' + v.config.pointsVente.map(function (p) { return '<option>' + esc(p) + '</option>'; }).join("");
 }
+function retour(texte, action, valeur) { return '<button class="retour-plus" type="button" data-s="' + action + '"' + (valeur != null ? ' data-v="' + valeur + '"' : "") + '>← ' + texte + '</button>'; }
 
-/* ----- Résumé ----- */
+/* ----- Résumé : l'essentiel d'abord, le détail se déplie ----- */
 function vResume(v) {
   var b = v.bilan;
   var kpi = function (t, val, cls, extra) { return '<div class="kpi"><small>' + t + '</small><b class="' + (cls || "") + '">' + val + '</b>' + (extra ? '<small>' + extra + '</small>' : "") + '</div>'; };
@@ -122,38 +155,68 @@ function vResume(v) {
     var p = Math.round((now - avant) / Math.abs(avant) * 100);
     return '<span class="delta ' + (p >= 0 ? "pos" : "neg") + '">' + (p >= 0 ? "▲ +" : "▼ ") + p + " % vs période d'avant</span>";
   };
-  var jours = b.parJour.slice(-14), max = Math.max.apply(null, [1].concat(jours.map(function (j) { return j.ca; })));
   var h = selPeriode();
-  h += '<div class="kpis"><div class="kpi gros"><small>Chiffre d\'affaires</small><b>' + fcfa(b.ca) + '</b><small>' + b.quantite + ' pièces vendues</small>' + (pr ? delta(b.ca, pr.ca) : "") + '</div>' +
-    kpi("Marge brute", fcfa(b.margeBrute), b.margeBrute >= 0 ? "pos" : "neg", b.margePct + " % du CA") +
-    kpi("Résultat net", signe(b.resultat), b.resultat >= 0 ? "pos" : "neg", "après dépenses et pertes") +
-    kpi("Dépenses", fcfa(b.charges)) + kpi("Pertes (au coût)", fcfa(b.pertes)) +
-    kpi("Caisse actuelle", fcfa(b.caisse), b.caisse >= 0 ? "" : "neg", "depuis le départ réglé dans Réglages") + kpi("Valeur du stock", fcfa(b.valeurStock), "", "au coût de production") + '</div>';
-  /* À surveiller */
+  h += '<div class="kpis"><div class="kpi gros"><small>Chiffre d\'affaires · ' + esc(nomPeriode()) + '</small><b>' + fcfa(b.ca) + '</b><small>' + b.quantite + ' pièces vendues</small>' + (pr ? delta(b.ca, pr.ca) : "") + '</div>' +
+    kpi("Résultat net", signe(b.resultat), b.resultat >= 0 ? "pos" : "neg", "ce que vous gagnez vraiment") +
+    kpi("Caisse actuelle", fcfa(b.caisse), b.caisse >= 0 ? "" : "neg", "argent attendu en caisse") +
+    kpi("Dépenses", fcfa(b.depensesTotales), "", b.production ? "dont production " + fcfa(b.production) : "frais, publicité, salaires…") +
+    kpi("Marge brute", fcfa(b.margeBrute), b.margeBrute >= 0 ? "pos" : "neg", b.margePct + " % du CA") + '</div>';
+
+  /* À surveiller : deux alertes visibles, le reste se déplie */
   var al = [];
-  if (b.alertes.length) al.push('<div class="alerte rouge"><b>Stock négatif :</b> ' + b.alertes.map(function (a) { return esc(a.nom) + " (" + a.theorique + ")"; }).join(", ") + '. Il manque une production ou un comptage.</div>');
-  var bas = (v.stock || []).filter(function (x) { return x.produit > 0 && x.theorique >= 0 && x.theorique <= 5; });
-  if (bas.length) al.push('<div class="alerte"><b>Stock bas :</b> ' + bas.map(function (x) { return esc(x.nom) + " (" + x.theorique + ")"; }).join(", ") + ' — pensez à produire.</div>');
+  var nomsOk = function (l) { return l.map(function (x) { return esc(x.nom) + " (" + x.theorique + ")"; }).join(", "); };
+  if (b.alertes.length) al.push('<div class="alerte rouge"><b>Stock négatif :</b> ' + nomsOk(b.alertes) + '. Il manque une production ou un comptage.</div>');
+  var bas = (v.stock || []).filter(function (x) { return x.actif && x.produit > 0 && x.theorique >= 0 && x.theorique <= 5; });
+  if (bas.length) al.push('<div class="alerte"><b>Stock bas :</b> ' + nomsOk(bas) + ' — pensez à produire.</div>');
   var dernier = (v.comptages || []).length ? v.comptages[0].date : "";
   if ((v.ventes || []).length && dernier < jourJ(-1)) al.push('<div class="alerte"><b>Comptage du soir manquant :</b> dernier comptage ' + (dernier ? dateFr(dernier) : "jamais") + '. Sans lui, les ventes ne sont pas fiables.</div>');
-  if (b.margeBrute < 0) al.push('<div class="alerte rouge"><b>Marge négative :</b> vous vendez moins cher que le coût de revient. Vérifiez les coûts dans Réglages.</div>');
+  if (b.margeBrute < 0) al.push('<div class="alerte rouge"><b>Marge négative :</b> vous vendez moins cher que le coût de revient. Vérifiez les coûts dans Plus › Réglages.</div>');
   (v.controles || []).forEach(function (c) { if (c.titre === "Stock négatif") return; al.push('<div class="alerte' + (c.niveau === "rouge" ? " rouge" : "") + '"><b>' + esc(c.titre) + ' :</b> ' + esc(c.texte) + '</div>'); });
   if (!al.length && b.ca > 0) al.push('<div class="alerte vert">Tout est en ordre : pas de stock négatif, comptage à jour.</div>');
-  h += al.join("");
-  h += '<div class="grille2" style="margin:6px 0 10px"><button class="btn btn-vert" type="button" data-s="rapport-wa">Résumé WhatsApp</button><button class="btn btn-brun" type="button" data-s="rapport-complet">Rapport complet</button></div><button class="btn btn-clair btn-bloc" type="button" style="margin-bottom:8px" data-s="classeur">Envoyer le classeur Excel / Google Sheets</button><p class="astuce">« Rapport complet » contient chaque vente, dépense, production, perte et le stock : il s\'envoie comme document WhatsApp.</p>';
-  if (b.achats) h += '<p class="astuce">Achats de marchandises à revendre (hors résultat tant que non vendus) : ' + fcfa(b.achats) + '</p>';
-  if (b.apports || b.remboursements) h += '<p class="astuce">Apports d\'argent : ' + fcfa(b.apports) + (b.remboursements ? ' · Remboursés : ' + fcfa(b.remboursements) : '') + '</p>';
-  h += '<div class="carte"><h3>Ventes par jour</h3>' + (jours.length ? jours.map(function (j) {
+  h += al.slice(0, 2).join("");
+  if (al.length > 2) h += repliable((al.length - 2) + " autre" + (al.length > 3 ? "s" : "") + " alerte" + (al.length > 3 ? "s" : ""), al.slice(2).join(""));
+
+  h += '<div class="grille2" style="margin:10px 0"><button class="btn btn-vert" type="button" data-s="rapport-wa">Rapport WhatsApp</button><button class="btn btn-clair" type="button" data-s="vers" data-v="envoi">Envoyer / exporter</button></div>';
+
+  /* Détail de la caisse : d'où vient chaque franc */
+  var cd = b.caisseDetail || {};
+  var lc = function (t, val, cls) { return '<div class="rang"><span>' + t + '</span><b class="' + (cls || "") + '">' + val + '</b></div>'; };
+  var det = '<p class="astuce">Voici d\'où vient le chiffre « Caisse actuelle » (depuis ' + (cd.depuis ? dateFr(cd.depuis) : "le début") + ').</p>' +
+    lc("Caisse de départ", fcfa(cd.depart)) + lc("+ Ventes encaissées", fcfa(cd.ventes), "pos") + lc("− Production (coût des lots)", fcfa(cd.production), "neg") + lc("− Dépenses", fcfa(cd.depenses), "neg") +
+    (cd.achats ? lc("− Achats de marchandises", fcfa(cd.achats), "neg") : "") + (cd.apports ? lc("+ Apports d'argent", fcfa(cd.apports), "pos") : "") + (cd.remboursements ? lc("− Remboursements d'apport", fcfa(cd.remboursements), "neg") : "") +
+    '<div class="rang" style="font-weight:800"><span>= Caisse actuelle</span><b>' + fcfa(b.caisse) + '</b></div>' +
+    '<p class="astuce" style="margin-top:10px">Sur la période affichée : ventes ' + fcfa(b.ca) + ' − argent sorti ' + fcfa(b.sortiesPeriode) + ' (dépenses ' + fcfa(b.charges) + ' + production ' + fcfa(b.production) + (b.achats ? ' + achats ' + fcfa(b.achats) : "") + ') = <b class="' + (b.fluxPeriode >= 0 ? "pos" : "neg") + '">' + signe(b.fluxPeriode) + '</b>.</p>' +
+    '<p class="astuce">La caisse monte quand vous vendez et descend quand vous produisez ou dépensez. Pour le <b>résultat net</b>, la production ne compte qu\'au fur et à mesure que les glaces se vendent (coût des produits vendus : ' + fcfa(b.cout) + ') : sinon vous seriez « en perte » le jour où vous produisez, alors que le stock vaut de l\'argent.</p>';
+  h += repliable("Détail de la caisse", det);
+
+  var jours = b.parJour.slice(-14), max = Math.max.apply(null, [1].concat(jours.map(function (j) { return j.ca; })));
+  h += repliable("Ventes par jour", jours.length ? jours.map(function (j) {
     return '<div class="ligne-j"><span>' + esc(dateFr(j.date)) + '</span><div class="bar" style="width:' + Math.max(2, Math.round(j.ca / max * 100)) + '%"></div><b style="text-align:right">' + fcfa(j.ca) + '</b></div>';
-  }).join("") : '<p class="gris">Aucune vente sur cette période.</p>') + '</div>';
-  h += '<div class="carte"><h3>Par produit</h3>' + (b.parProduit.length ? '<table><tr><th>Produit</th><th class="n">Qté</th><th class="n">CA</th><th class="n">Marge</th></tr>' + b.parProduit.map(function (p) { return '<tr><td>' + esc(p.nom) + '</td><td class="n">' + p.qte + '</td><td class="n">' + fcfa(p.ca) + '</td><td class="n ' + (p.marge >= 0 ? "pos" : "neg") + '">' + fcfa(p.marge) + '</td></tr>'; }).join("") + '</table>' : '<p class="gris">Rien pour le moment.</p>') + '</div>';
-  h += '<div class="carte"><h3>Par point de vente</h3>' + (b.parPoint.length ? '<table><tr><th>Point</th><th class="n">Qté</th><th class="n">CA</th></tr>' + b.parPoint.map(function (p) { return '<tr><td>' + esc(p.nom) + '</td><td class="n">' + p.qte + '</td><td class="n">' + fcfa(p.ca) + '</td></tr>'; }).join("") + '</table>' : '<p class="gris">Rien pour le moment.</p>') + '</div>';
-  h += '<div class="carte"><h3>Dépenses par catégorie</h3>' + (b.parCategorie.length ? '<table>' + b.parCategorie.map(function (p) { return '<tr><td>' + esc(p.nom) + '</td><td class="n">' + fcfa(p.total) + '</td></tr>'; }).join("") + '</table>' : '<p class="gris">Aucune dépense.</p>') + '</div>';
+  }).join("") : '<p class="gris">Aucune vente sur cette période.</p>');
+  h += repliable("Par produit", b.parProduit.length ? '<table><tr><th>Produit</th><th class="n">Qté</th><th class="n">CA</th><th class="n">Marge</th></tr>' + b.parProduit.map(function (p) { return '<tr><td>' + esc(p.nom) + '</td><td class="n">' + p.qte + '</td><td class="n">' + fcfa(p.ca) + '</td><td class="n ' + (p.marge >= 0 ? "pos" : "neg") + '">' + fcfa(p.marge) + '</td></tr>'; }).join("") + '</table>' : '<p class="gris">Rien pour le moment.</p>');
+  h += repliable("Par point de vente", b.parPoint.length ? '<table><tr><th>Point</th><th class="n">Qté</th><th class="n">CA</th></tr>' + b.parPoint.map(function (p) { return '<tr><td>' + esc(p.nom) + '</td><td class="n">' + p.qte + '</td><td class="n">' + fcfa(p.ca) + '</td></tr>'; }).join("") + '</table>' : '<p class="gris">Rien pour le moment.</p>');
+  if (b.parVendeur && b.parVendeur.length) h += repliable("Par vendeur (caisse)", '<table>' + b.parVendeur.map(function (p) { return '<tr><td>' + esc(p.nom) + '</td><td class="n">' + p.qte + ' pièces</td><td class="n">' + fcfa(p.ca) + '</td></tr>'; }).join("") + '</table>');
+  h += repliable("Dépenses par catégorie", b.parCategorie.length || b.production ? '<table>' + b.parCategorie.map(function (p) { return '<tr><td>' + esc(p.nom) + '</td><td class="n">' + fcfa(p.total) + '</td></tr>'; }).join("") + (b.production ? '<tr><td>Production (lots)</td><td class="n">' + fcfa(b.production) + '</td></tr>' : "") + '</table>' : '<p class="gris">Aucune dépense.</p>');
+  var autres = '<div class="rang"><span>Pertes, offerts (au coût)</span><b>' + fcfa(b.pertes) + '</b></div><div class="rang"><span>Valeur du stock (au coût)</span><b>' + fcfa(b.valeurStock) + '</b></div><div class="rang"><span>Coût des produits vendus</span><b>' + fcfa(b.cout) + '</b></div>';
+  if (b.achats) autres += '<div class="rang"><span>Achats de marchandises à revendre</span><b>' + fcfa(b.achats) + '</b></div>';
+  if (b.apports || b.remboursements) autres += '<div class="rang"><span>Apports d\'argent' + (b.remboursements ? " · remboursés" : "") + '</span><b>' + fcfa(b.apports) + (b.remboursements ? " · " + fcfa(b.remboursements) : "") + '</b></div>';
+  h += repliable("Autres chiffres", autres);
   return h;
 }
 
+/* ----- Ajouter : un seul écran de choix, puis le formulaire voulu ----- */
+function vAjout(v) {
+  if (!E.saisie) {
+    var T = [["production", "🍦", "Production", "J'ai produit des glaces"], ["soir", "🌙", "Reste du soir", "Compter ce qu'il reste"], ["vente", "🛒", "Vente", "Noter ou revoir les ventes"], ["depense", "💸", "Dépense", "Frais, publicité, apport d'argent"], ["perte", "🗑️", "Perte ou offert", "Gâté, offert, dégustation"]];
+    return '<p class="astuce">Que voulez-vous noter ?</p><div class="tuiles-ajout">' + T.map(function (t) { return '<button type="button" data-s="saisie" data-v="' + t[0] + '"><i>' + t[1] + '</i><b>' + t[2] + '</b><small>' + t[3] + '</small></button>'; }).join("") + '</div>';
+  }
+  var corps = { production: vProduction, soir: vSoir, vente: function (x) { return vVentes(x, "vente"); }, perte: function (x) { return vVentes(x, "perte"); }, depense: vDepenses }[E.saisie](v);
+  return retour("Ajouter", "saisie", "") + corps;
+}
 
-/* ----- Caisse : équipe, demandes de dépense, reçus ----- */
+/* ----- Équipe : une caisse par personne ----- */
+var nomPoste = function (p) { return p === "livreur" ? "Livreur" : "Caissier"; };
+function lienDe(m) { return m && m.lien ? location.origin + "/caisse.html?c=" + m.lien : ""; }
 function lireEq() {
   if (!E.eq) return;
   document.querySelectorAll("[data-eq-i]").forEach(function (e) {
@@ -161,40 +224,106 @@ function lireEq() {
     E.eq[i][k] = e.type === "checkbox" ? e.checked : e.value;
   });
 }
-function vCaisse(v) {
-  if (!E.eq) E.eq = JSON.parse(JSON.stringify(v.equipe || []));
-  var lien = location.origin + "/caisse.html";
-  var h = '<div class="carte"><h3>L\'application des vendeurs</h3><p class="astuce">Donnez ce lien (et son code personnel) à chaque caissier ou livreur. Ils l\'ouvrent sur leur téléphone et l\'installent. Ils peuvent noter des ventes et demander des dépenses, mais ne peuvent rien supprimer ni modifier.</p>' +
-    '<input type="text" readonly value="' + esc(lien) + '" onclick="this.select()"><div class="grille2" style="margin-top:8px"><button class="btn btn-brun btn-petit" type="button" data-s="copier-caisse">Copier le lien</button><a class="btn btn-clair btn-petit" href="' + esc(lien) + '" target="_blank" rel="noopener">Ouvrir la caisse</a></div></div>';
-  h += '<div class="carte" style="margin-top:12px"><h3>Équipe et codes</h3><p class="astuce">Un code par personne. Désactivez quelqu\'un qui part : son code ne marche plus tout de suite.</p>';
-  h += E.eq.length ? E.eq.map(function (m, i) {
-    return '<div class="formulaire" style="margin:8px 0"><label>Nom</label><input type="text" maxlength="40" data-eq-i="' + i + '" data-eq-k="nom" value="' + esc(m.nom) + '" placeholder="Ex : Awa">' +
-      '<label>Point de vente</label><select data-eq-i="' + i + '" data-eq-k="point">' + v.config.pointsVente.concat(v.config.pointsVente.indexOf(m.point) < 0 && m.point ? [m.point] : []).map(function (p) { return '<option' + (p === m.point ? " selected" : "") + '>' + esc(p) + '</option>'; }).join("") + '</select>' +
-      '<label>Code personnel (4 à 12 lettres ou chiffres, à vous de choisir)</label><input type="text" maxlength="12" autocapitalize="none" autocomplete="off" data-eq-i="' + i + '" data-eq-k="code" value="' + esc(m.code || "") + '" placeholder="Laissez vide : un code est créé">' +
-      '<div class="rang" style="align-items:center"><span class="gris">Un seul code par personne</span><label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" data-eq-i="' + i + '" data-eq-k="actif"' + (m.actif !== false ? " checked" : "") + '> Actif</label></div>' +
-      '<button class="btn btn-clair btn-petit" type="button" data-s="eq-retirer" data-i="' + i + '">Retirer</button></div>';
-  }).join("") : '<p class="gris">Aucune personne pour le moment.</p>';
-  h += '<div class="grille2"><button class="btn btn-clair" type="button" data-s="eq-ajouter">+ Ajouter une personne</button><button class="btn btn-or" type="button" data-s="eq-enregistrer">Enregistrer l\'équipe</button></div></div>';
-  h += '<div class="carte" style="margin-top:12px"><h3>Mot secret pour ouvrir la caisse</h3><p class="astuce">Sur le site, le vendeur tape ce mot dans « Suivre ma commande » : la caisse s\'ouvre. Les clients ne le savent pas, et il faut quand même un code personnel pour entrer.</p><input type="text" id="mot-caisse" maxlength="20" autocapitalize="none" autocomplete="off" value="' + esc(v.motCaisse || "bingo") + '"><button class="btn btn-brun btn-petit" type="button" data-s="mot-enregistrer" style="margin-top:8px">Enregistrer le mot</button></div>';
-  var att = (v.demandes || []).filter(function (d) { return d.statut === "attente"; }), faites = (v.demandes || []).filter(function (d) { return d.statut !== "attente"; }).slice(0, 8);
-  h += '<div class="carte" style="margin-top:12px"><h3>Demandes de dépense' + (att.length ? ' <span class="badge badge-rouge">' + att.length + '</span>' : '') + '</h3>';
+function statsMembre(v, id, du, au) {
+  var dans = function (d) { return (!du || d >= du) && (!au || d <= au); };
+  var recus = (v.recus || []).filter(function (r) { return r.vid === id && dans(r.date); });
+  var deps = (v.depenses || []).filter(function (d) { return d.vid === id && dans(d.date); });
+  var livs = (v.livraisons || []).filter(function (l) { return l.livreurId === id && dans(l.date); });
+  var parMode = {}, total = 0;
+  recus.forEach(function (r) { parMode[r.paiement] = (parMode[r.paiement] || 0) + r.total; total += r.total; });
+  livs.forEach(function (l) { var k = l.mode || "Espèces"; parMode[k] = (parMode[k] || 0) + l.total; total += l.total; });
+  return { recus: recus, deps: deps, livs: livs, parMode: parMode, total: total, depTotal: deps.reduce(function (s, d) { return s + (Number(d.montant) || 0); }, 0), nb: recus.length + livs.length };
+}
+function blocDemandes(v, vid) {
+  var tout = (v.demandes || []).filter(function (d) { return !vid || d.vid === vid; });
+  var att = tout.filter(function (d) { return d.statut === "attente"; }), faites = tout.filter(function (d) { return d.statut !== "attente"; }).slice(0, 8);
+  if (!att.length && !vid) return "";
+  var h = '<div class="carte"><h3>Demandes de dépense' + (att.length ? ' <span class="badge badge-rouge">' + att.length + '</span>' : '') + '</h3>';
   h += att.length ? att.map(function (d) {
     return '<div class="formulaire" style="margin:8px 0"><b>' + fcfa(d.montant) + '</b> · ' + esc(d.vendeur) + '<br><span class="gris">' + esc(d.motif) + ' · ' + esc(dateFr(d.date)) + '</span>' +
       '<label>Catégorie si acceptée</label><select id="dc-' + esc(d.id) + '">' + v.categories.map(function (c) { return '<option' + (c === "Autre dépense" ? " selected" : "") + '>' + esc(c) + '</option>'; }).join("") + '</select>' +
       '<div class="grille2" style="margin-top:8px"><button class="btn btn-brun btn-petit" type="button" data-s="dem-ok" data-id="' + esc(d.id) + '">Accepter</button><button class="btn btn-clair btn-petit" type="button" data-s="dem-non" data-id="' + esc(d.id) + '">Refuser</button></div></div>';
   }).join("") : '<p class="gris">Aucune demande en attente.</p>';
   if (faites.length) h += '<p class="astuce" style="margin-top:10px">Déjà traitées :</p>' + faites.map(function (d) { return '<div class="rang"><span>' + esc(d.vendeur) + ' · ' + esc(d.motif) + '</span><b>' + fcfa(d.montant) + ' ' + (d.statut === "accepte" ? "✓" : "✕") + '</b></div>'; }).join("");
+  return h + '</div>';
+}
+function heureFr(iso) { var hh = new Date(iso); return ("0" + hh.getHours()).slice(-2) + ":" + ("0" + hh.getMinutes()).slice(-2); }
+function ligneRecu(r, archive) {
+  return '<div class="rang"><div class="g"><b>' + esc(dateFr(r.date)) + ' ' + heureFr(r.heure) + ' · ' + esc(r.vendeur) + '</b><small>' + r.lignes.map(function (l) { return l.qte + " × " + esc(l.nom) + (l.detail ? " (" + esc(l.detail) + ")" : ""); }).join(", ") + '<br>' + esc(r.paiement) + (r.numPaiement ? " · " + esc(r.numPaiement) : "") + (r.note ? " · " + esc(r.note) : "") + '</small></div><div style="text-align:right"><b>' + fcfa(r.total) + '</b><br>' +
+    (archive ? '<button class="btn btn-brun btn-petit" type="button" data-s="archiver" data-t="recu" data-etat="0" data-id="' + esc(r.id) + '">Restaurer</button> <button class="btn btn-clair btn-petit" type="button" data-s="supprimer-recu" data-id="' + esc(r.id) + '">Supprimer</button>'
+      : '<button class="btn btn-brun btn-petit" type="button" data-s="archiver" data-t="recu" data-etat="1" data-id="' + esc(r.id) + '">Archiver</button> <button class="btn btn-clair btn-petit" type="button" data-s="supprimer-recu" data-id="' + esc(r.id) + '">Supprimer</button>') + '</div></div>';
+}
+function ligneDepense(d, archive) {
+  var plus = d.classe === "apport";
+  return '<div class="rang"><div class="g"><b>' + esc(d.description || d.categorie) + '</b><small>' + esc(dateFr(d.date)) + ' · ' + esc(d.categorie) + (d.vendeur ? " · " + esc(d.vendeur) : "") + (d.mode ? " · " + esc(d.mode) : "") + '</small></div><div style="text-align:right"><b class="' + (plus ? "pos" : "") + '">' + (plus ? "+" : "") + fcfa(d.montant) + '</b><br>' +
+    (archive ? '<button class="btn btn-brun btn-petit" type="button" data-s="archiver" data-t="depense" data-etat="0" data-id="' + esc(d.id) + '">Restaurer</button> <button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="depense" data-id="' + esc(d.id) + '">Supprimer</button>'
+      : '<button class="btn btn-brun btn-petit" type="button" data-s="archiver" data-t="depense" data-etat="1" data-id="' + esc(d.id) + '">Archiver</button> <button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="depense" data-id="' + esc(d.id) + '">Supprimer</button>') + '</div></div>';
+}
+function blocArchives(v, vid) {
+  var ar = (v.archives || {}), rs = (ar.recus || []).filter(function (r) { return !vid || r.vid === vid; }), ds = (ar.depenses || []).filter(function (d) { return !vid || d.vid === vid; });
+  var h = '<p class="astuce">Les archives sont mises de côté : elles ne comptent plus dans aucun total. Vous pouvez les restaurer, ou les supprimer pour toujours.</p>';
+  if (!rs.length && !ds.length) return h + '<p class="gris">Aucune archive.</p>';
+  h += rs.map(function (r) { return ligneRecu(r, true); }).join("") + ds.map(function (d) { return ligneDepense(d, true); }).join("");
+  h += '<button class="btn btn-clair btn-bloc" type="button" style="margin-top:10px" data-s="archives-vider" data-id="' + esc(vid || "") + '">Tout supprimer pour toujours (' + (rs.length + ds.length) + ')</button>';
+  return h;
+}
+
+function carteMembre(v, m, i, auj) {
+  var lien = lienDe(m), st = m.id ? statsMembre(v, m.id, auj, auj) : null;
+  var h = '<div class="membre' + (m.actif === false ? " inactif" : "") + '"><div class="rang" style="border:0;padding:0 0 6px;align-items:center"><div class="g"><b>' + esc(m.nom || "Nouvelle personne") + '</b><small>' + nomPoste(m.poste) + ' · ' + esc(m.point || "") + (m.actif === false ? " · désactivé" : "") + '</small></div><span class="badge ' + (m.poste === "livreur" ? "badge-bleu" : "badge-or") + '">' + nomPoste(m.poste) + '</span></div>';
+  if (E.edit === i) {
+    h += '<label>Nom</label><input type="text" maxlength="40" data-eq-i="' + i + '" data-eq-k="nom" value="' + esc(m.nom) + '" placeholder="Ex : Awa">' +
+      '<label>Poste</label><select data-eq-i="' + i + '" data-eq-k="poste"><option value="caissier"' + (m.poste !== "livreur" ? " selected" : "") + '>Caissier (vend au comptoir)</option><option value="livreur"' + (m.poste === "livreur" ? " selected" : "") + '>Livreur (livre les commandes du site)</option></select>' +
+      '<label>Point de vente</label><select data-eq-i="' + i + '" data-eq-k="point">' + v.config.pointsVente.concat(v.config.pointsVente.indexOf(m.point) < 0 && m.point ? [m.point] : []).map(function (p) { return '<option' + (p === m.point ? " selected" : "") + '>' + esc(p) + '</option>'; }).join("") + '</select>' +
+      '<label>Code personnel (4 à 12 lettres ou chiffres)</label><input type="text" maxlength="12" autocapitalize="none" autocomplete="off" data-eq-i="' + i + '" data-eq-k="code" value="' + esc(m.code || "") + '" placeholder="Laissez vide : un code est créé">' +
+      '<label>Son numéro WhatsApp (facultatif, pour lui envoyer le lien)</label><input type="tel" inputmode="tel" maxlength="20" data-eq-i="' + i + '" data-eq-k="tel" value="' + esc(m.tel || "") + '" placeholder="Ex : 70 12 34 56">' +
+      '<div class="rang" style="align-items:center"><label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" data-eq-i="' + i + '" data-eq-k="actif"' + (m.actif !== false ? " checked" : "") + '> Actif</label>' + (m.id ? '<label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" data-eq-i="' + i + '" data-eq-k="nouveauLien"' + (m.nouveauLien ? " checked" : "") + '> Nouveau lien</label>' : "") + '</div>' +
+      '<p class="astuce">« Nouveau lien » : l\'ancien lien ne marchera plus (utile si un téléphone est perdu). Pensez à enregistrer.</p>' +
+      '<div class="grille2"><button class="btn btn-clair btn-petit" type="button" data-s="eq-fermer">Fermer</button><button class="btn btn-clair btn-petit" type="button" data-s="eq-retirer" data-i="' + i + '">Retirer cette personne</button></div>';
+  } else {
+    if (st) h += '<div class="rang" style="border:0;padding:2px 0"><span class="gris">Aujourd\'hui</span><b>' + fcfa(st.total) + ' · ' + st.nb + (m.poste === "livreur" ? " encaissement" : " reçu") + (st.nb > 1 ? "s" : "") + '</b></div>' + (st.depTotal ? '<div class="rang" style="border:0;padding:2px 0"><span class="gris">Dépenses acceptées</span><b>' + fcfa(st.depTotal) + '</b></div>' : "");
+    h += '<div class="rang" style="border:0;padding:2px 0"><span class="gris">Code</span><b>' + esc(m.code || "—") + '</b></div>';
+    if (m.id) {
+      h += '<div class="grille2" style="margin-top:8px"><button class="btn btn-vert btn-petit" type="button" data-s="lien-wa" data-i="' + i + '">Envoyer son lien</button><button class="btn btn-brun btn-petit" type="button" data-s="lien-copier" data-i="' + i + '">Copier le lien</button></div>' +
+        '<div class="grille2" style="margin-top:8px"><button class="btn btn-or btn-petit" type="button" data-s="fiche" data-v="' + esc(m.id) + '">Ses ventes et dépenses</button><button class="btn btn-clair btn-petit" type="button" data-s="eq-modifier" data-i="' + i + '">Modifier</button></div>';
+    } else h += '<p class="astuce">Enregistrez l\'équipe pour obtenir son lien.</p><button class="btn btn-clair btn-petit" type="button" data-s="eq-modifier" data-i="' + i + '">Modifier</button>';
+  }
+  return h + '</div>';
+}
+
+function vEquipe(v) {
+  if (!E.eq) E.eq = JSON.parse(JSON.stringify(v.equipe || []));
+  if (E.fiche) { var mm = E.eq.filter(function (x) { return x.id === E.fiche; })[0]; if (mm) return vFiche(v, mm); E.fiche = null; }
+  var auj = jourJ(0);
+  var h = blocDemandes(v);
+  h += '<div class="carte"><h3>Équipe</h3><p class="astuce">Chaque personne a <b>sa propre caisse</b> et ne voit que <b>ses</b> ventes et <b>ses</b> dépenses. Touchez « Envoyer son lien » : elle l\'ouvre sur son téléphone et sa caisse s\'ouvre toute seule.</p>';
+  h += E.eq.length ? E.eq.map(function (m, i) { return carteMembre(v, m, i, auj); }).join("") : '<p class="gris">Aucune personne pour le moment. Touchez « + Ajouter une personne ».</p>';
+  h += '<div class="grille2" style="margin-top:6px"><button class="btn btn-clair" type="button" data-s="eq-ajouter">+ Ajouter une personne</button><button class="btn btn-or" type="button" data-s="eq-enregistrer">Enregistrer l\'équipe</button></div></div>';
+  var na = ((v.archives || {}).recus || []).length + ((v.archives || {}).depenses || []).length;
+  h += repliable("Archives (" + na + ")", blocArchives(v, ""));
+  var acces = '<p class="astuce">Sur le site, une petite étoile ✦ (en bas à droite de l\'accueil) mène à la caisse et à l\'administration. Elle est discrète : les clients ne la remarquent pas, et un code est demandé de toute façon.</p>' +
+    '<p class="astuce">On peut aussi taper un <b>mot secret</b> dans « Suivre ma commande » : la caisse s\'ouvre.</p>' +
+    '<label for="mot-caisse">Mot secret</label><input type="text" id="mot-caisse" maxlength="20" autocapitalize="none" autocomplete="off" value="' + esc(v.motCaisse || "bingo") + '"><button class="btn btn-brun btn-petit" type="button" data-s="mot-enregistrer" style="margin-top:8px">Enregistrer le mot</button>' +
+    '<p class="astuce" style="margin-top:12px">Lien général de la caisse (demande le code personnel) :</p><input type="text" readonly value="' + esc(location.origin + "/caisse.html") + '" onclick="this.select()"><button class="btn btn-clair btn-petit" type="button" data-s="copier-caisse" style="margin-top:8px">Copier ce lien</button>';
+  h += repliable("Autres accès à la caisse", acces);
+  return h;
+}
+
+/* Fiche d'une personne : ses ventes, ses dépenses, archiver, supprimer */
+function vFiche(v, m) {
+  var p = periodeCourante(), st = statsMembre(v, m.id, p.du, p.au);
+  var h = retour("Équipe", "fiche", "") + '<div class="carte"><h3>' + esc(m.nom) + ' · ' + nomPoste(m.poste) + '</h3><p class="astuce">' + esc(m.point || "") + ' · Seules les ventes et dépenses de cette personne sont affichées ici.</p>' + selPeriode() +
+    '<div class="kpis"><div class="kpi gros"><small>' + (m.poste === "livreur" ? "Encaissé (livraisons + ventes)" : "Vendu en caisse") + '</small><b>' + fcfa(st.total) + '</b><small>' + st.nb + ' ' + (m.poste === "livreur" ? "encaissement" : "reçu") + (st.nb > 1 ? "s" : "") + '</small></div>' +
+    '<div class="kpi"><small>Dépenses acceptées</small><b>' + fcfa(st.depTotal) + '</b></div><div class="kpi"><small>Espèces à recevoir</small><b>' + fcfa(st.parMode["Espèces"] || 0) + '</b></div></div>';
+  var modes = Object.keys(st.parMode);
+  if (modes.length) h += modes.map(function (k) { return '<div class="rang"><span>' + esc(k) + '</span><b>' + fcfa(st.parMode[k]) + '</b></div>'; }).join("");
   h += '</div>';
-  var recus = (v.recus || []).filter(function (r) { return dansPeriode(r.date); });
-  var parV = {}, parM = {}, tot = 0;
-  recus.forEach(function (r) { parV[r.vendeur] = (parV[r.vendeur] || 0) + r.total; parM[r.paiement] = (parM[r.paiement] || 0) + r.total; tot += r.total; });
-  h += '<div class="carte" style="margin-top:12px"><h3>Reçus de la caisse</h3>' + selPeriode() +
-    '<div class="kpis"><div class="kpi gros"><small>Vendu en caisse</small><b>' + fcfa(tot) + '</b><small>' + recus.length + ' reçu' + (recus.length > 1 ? "s" : "") + '</small></div></div>' +
-    (Object.keys(parV).length ? '<p class="astuce">Par vendeur</p>' + Object.keys(parV).map(function (k) { return '<div class="rang"><span>' + esc(k) + '</span><b>' + fcfa(parV[k]) + '</b></div>'; }).join("") + '<p class="astuce" style="margin-top:10px">Par mode de paiement</p>' + Object.keys(parM).map(function (k) { return '<div class="rang"><span>' + esc(k) + '</span><b>' + fcfa(parM[k]) + '</b></div>'; }).join("") : '<p class="gris">Aucune vente en caisse sur cette période.</p>') +
-    (recus.length ? '<p class="astuce" style="margin-top:12px">Détail</p>' + recus.slice(0, 150).map(function (r) {
-      var hh = new Date(r.heure);
-      return '<div class="rang"><div class="g"><b>' + esc(dateFr(r.date)) + ' ' + ("0" + hh.getHours()).slice(-2) + ':' + ("0" + hh.getMinutes()).slice(-2) + ' · ' + esc(r.vendeur) + '</b><small>' + r.lignes.map(function (l) { return l.qte + " × " + esc(l.nom) + (l.detail ? " (" + esc(l.detail) + ")" : ""); }).join(", ") + '<br>' + esc(r.paiement) + (r.numPaiement ? " · " + esc(r.numPaiement) : "") + (r.note ? " · " + esc(r.note) : "") + '</small></div><div style="text-align:right"><b>' + fcfa(r.total) + '</b><br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer-recu" data-id="' + esc(r.id) + '">Supprimer</button></div></div>';
-    }).join("") : "") + '</div>';
+  h += blocDemandes(v, m.id);
+  h += '<div class="carte"><h3>Ses ventes</h3>' + (st.recus.length ? st.recus.slice(0, 150).map(function (r) { return ligneRecu(r, false); }).join("") : '<p class="gris">Aucune vente sur cette période.</p>') +
+    (st.livs.length ? '<h4 style="margin:14px 0 4px">Livraisons encaissées</h4>' + st.livs.map(function (l) { return '<div class="rang"><div class="g"><b>' + esc(dateFr(l.date)) + ' · ' + esc(l.client || "") + '</b><small>' + esc(l.mode || "Espèces") + ' · modifiable dans l\'onglet Commandes</small></div><b>' + fcfa(l.total) + '</b></div>'; }).join("") : "") + '</div>';
+  h += '<div class="carte"><h3>Ses dépenses</h3>' + (st.deps.length ? st.deps.map(function (d) { return ligneDepense(d, false); }).join("") : '<p class="gris">Aucune dépense sur cette période.</p>') + '</div>';
+  if (st.recus.length || st.deps.length) h += '<button class="btn btn-clair btn-bloc" type="button" data-s="vendeur-archiver" data-id="' + esc(m.id) + '" data-n="' + (st.recus.length + st.deps.length) + '">Tout archiver pour cette période (' + (st.recus.length + st.deps.length) + ')</button>';
+  h += repliable("Ses archives", blocArchives(v, m.id));
   return h;
 }
 
@@ -226,17 +355,17 @@ function chargerSoir() {
 }
 
 /* ----- Ventes + pertes ----- */
-function vVentes(v) {
-  var h = selPeriode();
-  h += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px"><button class="btn btn-or" type="button" data-s="ouvrir" data-v="vente">+ Vente</button><button class="btn btn-clair" type="button" data-s="ouvrir" data-v="perte">+ Perte / offert</button></div>';
-  if (E.ouvert === "vente") {
+function vVentes(v, mode) {
+  var h = mode === "vente" ? selPeriode() : "";
+  h += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px">' + (mode === "vente" ? '<button class="btn btn-or" type="button" data-s="ouvrir" data-v="vente">+ Vente</button>' : '<button class="btn btn-or" type="button" data-s="ouvrir" data-v="perte">+ Perte / offert</button>') + '</div>';
+  if (mode === "vente" && E.ouvert === "vente") {
     h += '<div class="formulaire"><h3>Nouvelle vente</h3><label for="fv-p">Produit</label><select id="fv-p">' + optionsProduits(v) + '</select>' +
       '<div class="grille2"><div><label for="fv-q">Quantité</label><input type="number" id="fv-q" inputmode="numeric" min="1" value="1"></div><div><label for="fv-d">Jour</label><input type="date" id="fv-d" value="' + jourJ(0) + '"></div></div>' +
       '<label for="fv-pv">Point de vente (facultatif)</label><select id="fv-pv">' + optionsPoints(v, "— non précisé —") + '</select>' +
       '<div class="grille2"><div><label for="fv-px">Prix unitaire (vide = prix du site)</label><input type="number" id="fv-px" inputmode="numeric" min="0"></div><div><label for="fv-r">Remise totale (F)</label><input type="number" id="fv-r" inputmode="numeric" min="0" value="0"></div></div>' +
       '<div style="display:flex;gap:10px;margin-top:12px"><button class="btn btn-or" type="button" data-s="enregistrer-vente">Enregistrer</button><button class="btn btn-clair" type="button" data-s="fermer">Annuler</button></div></div>';
   }
-  if (E.ouvert === "perte") {
+  if (mode === "perte" && E.ouvert === "perte") {
     h += '<div class="formulaire"><h3>Perte, offert ou dégustation</h3><label for="fp-p">Produit</label><select id="fp-p">' + optionsProduits(v) + '</select>' +
       '<div class="grille2"><div><label for="fp-q">Quantité</label><input type="number" id="fp-q" inputmode="numeric" min="1" value="1"></div><div><label for="fp-d">Jour</label><input type="date" id="fp-d" value="' + jourJ(0) + '"></div></div>' +
       '<label for="fp-t">Sorte</label><select id="fp-t">' + Object.keys(v.typesPerte).map(function (k) { return '<option value="' + k + '">' + esc(v.typesPerte[k]) + '</option>'; }).join("") + '</select>' +
@@ -244,51 +373,75 @@ function vVentes(v) {
       '<div style="display:flex;gap:10px;margin-top:6px"><button class="btn btn-or" type="button" data-s="enregistrer-perte">Enregistrer</button><button class="btn btn-clair" type="button" data-s="fermer">Annuler</button></div></div>';
   }
   var src = { site: ["Site", "badge-vert"], manuel: ["Noté", "badge-bleu"], comptage: ["Reste du soir", "badge-or"] };
-  h += '<div class="carte"><h3>Ventes</h3>' + (v.ventes.length ? v.ventes.map(function (x) {
+  if (mode === "vente") h += '<div class="carte"><h3>Ventes</h3>' + (v.ventes.length ? v.ventes.map(function (x) {
     var s = src[x.source];
     return '<div class="rang"><div class="g"><b>' + esc(x.nom) + '</b> × ' + x.qte + '<small>' + esc(dateFr(x.date)) + ' · ' + esc(x.canal) + (x.vendeur ? ' · ' + esc(x.vendeur) + ' · ' + esc(x.paiement) : '') + ' <span class="badge ' + s[1] + '">' + s[0] + '</span></small></div><div style="text-align:right"><b>' + fcfa(x.montant) + '</b>' + (x.recu ? '<br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer-recu" data-id="' + esc(x.recu) + '">Supprimer le reçu</button>' : x.source === "manuel" ? '<br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="vente" data-id="' + esc(x.ref) + '">Supprimer</button>' : x.source === "comptage" ? '<br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="comptage" data-id="' + esc(x.ref) + '">Annuler ce comptage</button>' : "") + '</div></div>';
   }).join("") : '<p class="gris">Aucune vente sur cette période.</p>') + '</div>';
-  if (v.pertes.length) h += '<div class="carte"><h3>Pertes, offerts, dégustations</h3>' + v.pertes.map(function (x) {
+  if (mode === "perte" && v.pertes.length) h += '<div class="carte"><h3>Pertes, offerts, dégustations</h3>' + v.pertes.map(function (x) {
     return '<div class="rang"><div class="g"><b>' + esc(x.nom) + '</b> × ' + x.qte + '<small>' + esc(dateFr(x.date)) + ' · ' + esc(v.typesPerte[x.type] || x.type) + '</small></div><div style="text-align:right"><b>' + fcfa(x.cout) + '</b><br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="perte" data-id="' + esc(x.ref) + '">Supprimer</button></div></div>';
   }).join("") + '</div>';
   return h;
 }
 
-/* ----- Stock ----- */
+/* ----- Stock + conseils de production ----- */
 function vStock(v) {
   var h = '<div class="carte"><h3>Stock en ce moment</h3><p class="astuce">Production − ventes − pertes, recalé à chaque « reste du soir ».</p><table><tr><th>Produit</th><th class="n">Stock</th><th class="n">Valeur</th></tr>' +
     v.stock.filter(function (s) { return s.produit || s.vendu || s.theorique; }).map(function (s) {
       return '<tr><td>' + esc(s.nom) + '<br><small class="gris">' + (s.dernierComptage ? "compté le " + esc(dateFr(s.dernierComptage.date)) : "jamais compté") + '</small></td><td class="n ' + (s.theorique < 0 ? "neg" : "") + '"><b>' + s.theorique + '</b></td><td class="n">' + fcfa(s.valeur) + '</td></tr>';
     }).join("") + '</table></div>';
-  if (v.ajustements.length) h += '<div class="carte"><h3>Surplus constatés au comptage</h3><p class="astuce">Vous aviez plus que prévu (production oubliée ?).</p>' + v.ajustements.map(function (a) { return '<div class="rang"><span>' + esc(dateFr(a.date)) + ' · ' + esc(a.nom) + '</span><b>+' + a.qte + '</b></div>'; }).join("") + '</div>';
+  if (v.ajustements.length) h += repliable("Surplus constatés au comptage", '<p class="astuce">Vous aviez plus que prévu (production oubliée ?).</p>' + v.ajustements.map(function (a) { return '<div class="rang"><span>' + esc(dateFr(a.date)) + ' · ' + esc(a.nom) + '</span><b>+' + a.qte + '</b></div>'; }).join(""));
   return h;
+}
+function vStockOnglet(v) {
+  return carteProduire(v.analyse) + vStock(v) + repliable("Rentabilité par produit", carteRenta(v.analyse));
 }
 
 /* ----- Analyse : marge automatique, quoi produire, seuil de rentabilité, objectifs ----- */
 function barre(pct, couleur) { return '<div style="height:12px;border-radius:7px;background:#eee6d2;overflow:hidden;margin:6px 0"><div style="height:100%;width:' + Math.max(2, Math.min(100, pct)) + '%;background:' + (couleur || "linear-gradient(90deg,#1f5a2e,#c9982b)") + '"></div></div>'; }
 var ALERTES_PRODUIT = { perte: ["Vendu à perte", "#fde8e4", "#9b2c1d"], faible: ["Marge faible", "#fff3d6", "#8a5a00"], "cout-hausse": ["Coût en hausse", "#fff3d6", "#8a5a00"], "sans-cout": ["Coût inconnu", "#eee", "#555"] };
-function vAnalyse(v) {
-  var a = v.analyse, h = '<p class="astuce">Tout se calcule seul : le coût de chaque pot vient de vos productions, le reste vient de vos ventes et de votre stock.</p>';
-  var o = a.objectifs, sz = a.seuil;
-  h += '<div class="carte"><h3>Objectifs</h3>';
-  if (o.jour > 0) h += '<div class="rang"><span>Aujourd\'hui</span><b>' + fcfa(o.caJour) + ' / ' + fcfa(o.jour) + '</b></div>' + barre(o.caJour / o.jour * 100) + '<small class="gris">' + (o.caJour >= o.jour ? "Objectif du jour atteint 🎉" : "Il reste " + fcfa(o.jour - o.caJour)) + '</small>';
-  if (o.mois > 0) h += '<div class="rang" style="margin-top:8px"><span>Ce mois</span><b>' + fcfa(o.caMois) + ' / ' + fcfa(o.mois) + '</b></div>' + barre(o.caMois / o.mois * 100) + '<small class="gris">' + (sz.projection ? "À ce rythme : " + fcfa(sz.projection) + " à la fin du mois" : "") + '</small>';
-  if (!(o.jour > 0) && !(o.mois > 0)) h += '<p class="gris">Fixez un objectif du jour et du mois dans l\'onglet Réglages.</p>';
-  h += '</div>';
-  h += '<div class="carte"><h3>Seuil de rentabilité du mois</h3>';
-  if (sz.caSeuil) h += '<p class="astuce">Vos dépenses du mois (' + fcfa(sz.charges) + ') sont payées quand vous vendez pour <b>' + fcfa(sz.caSeuil) + '</b> (marge de ' + sz.margePct + ' %).</p>' + barre(sz.caMois / sz.caSeuil * 100, sz.atteint ? "linear-gradient(90deg,#1f5a2e,#3a9a52)" : "") + '<div class="rang"><span>Vendu ce mois</span><b>' + fcfa(sz.caMois) + '</b></div><p style="margin:6px 0 0;font-weight:600;color:' + (sz.atteint ? "#1f5a2e" : "#8a5a00") + '">' + (sz.atteint ? "Seuil dépassé : tout ce que vous vendez en plus est du bénéfice." : "Il reste " + fcfa(sz.caSeuil - sz.caMois) + " à vendre pour couvrir vos dépenses.") + '</p>';
-  else h += '<p class="gris">Pas encore assez de ventes avec un coût de revient pour calculer le seuil.</p>';
-  h += '</div>';
+function carteProduire(a) {
   var prod = a.produits.filter(function (p) { return p.moyenne > 0 || p.aProduire > 0; });
-  h += '<div class="carte"><h3>À produire demain</h3><p class="astuce">Calculé avec vos ventes des 7 derniers jours (+15 % de sécurité) moins ce qu\'il reste en stock.</p>';
+  var h = '<div class="carte"><h3>À produire demain</h3><p class="astuce">Calculé avec vos ventes des 7 derniers jours (+15 % de sécurité) moins ce qu\'il reste en stock.</p>';
   h += prod.length ? prod.map(function (p) { return '<div class="rang"><div class="g"><b>' + esc(p.nom) + '</b><small>vend ~' + p.moyenne + ' par jour · en stock : ' + Math.max(0, p.theorique) + (p.joursStock != null ? " (" + p.joursStock + " j)" : "") + (p.confiance === "faible" ? " · peu de données" : "") + '</small></div><div style="text-align:right"><b class="' + (p.aProduire > 0 ? "" : "pos") + '">' + (p.aProduire > 0 ? "Produire " + p.aProduire : "Stock suffisant") + '</b></div></div>'; }).join("") : '<p class="gris">Pas encore assez de ventes pour conseiller.</p>';
-  h += '</div>';
-  h += '<div class="carte"><h3>Rentabilité par produit</h3><p class="astuce">Marge = prix de vente − coût de revient (moyenne de vos productions). Les 30 derniers jours.</p>';
+  return h + '</div>';
+}
+function carteRenta(a) {
+  var h = '<p class="astuce">Marge = prix de vente − coût de revient (moyenne de vos productions). Les 30 derniers jours.</p>';
   h += a.produits.length ? a.produits.map(function (p) {
     var al = ALERTES_PRODUIT[p.alerte];
     return '<div class="rang" style="align-items:flex-start"><div class="g"><b>' + esc(p.nom) + '</b><small>Prix ' + fcfa(p.prix) + ' · coût ' + (p.coutU > 0 ? fcfa(p.coutU) : "inconnu") + (p.alerte === "cout-hausse" ? " (dernier lot : " + fcfa(p.coutDernier) + ")" : "") + '<br>Vendu : ' + p.vendu30 + ' · marge gagnée : ' + fcfa(p.marge30) + '</small>' + (al ? '<span class="badge" style="background:' + al[1] + ';color:' + al[2] + ';margin-top:4px;display:inline-block">' + al[0] + '</span>' : "") + '</div><div style="text-align:right"><b class="' + (p.margeU > 0 ? "pos" : "neg") + '">' + (p.coutU > 0 ? signe(p.margeU) : "—") + '</b><br><small>' + (p.coutU > 0 ? p.margePct + " % par pot" : "notez une production") + '</small></div></div>';
   }).join("") : '<p class="gris">Aucun produit pour le moment.</p>';
+  return h;
+}
+function vObjectifs(v) {
+  var a = v.analyse, o = a.objectifs, sz = a.seuil;
+  var h = '<div class="carte"><h3>Objectifs</h3>';
+  if (o.jour > 0) h += '<div class="rang"><span>Aujourd\'hui</span><b>' + fcfa(o.caJour) + ' / ' + fcfa(o.jour) + '</b></div>' + barre(o.caJour / o.jour * 100) + '<small class="gris">' + (o.caJour >= o.jour ? "Objectif du jour atteint 🎉" : "Il reste " + fcfa(o.jour - o.caJour)) + '</small>';
+  if (o.mois > 0) h += '<div class="rang" style="margin-top:8px"><span>Ce mois</span><b>' + fcfa(o.caMois) + ' / ' + fcfa(o.mois) + '</b></div>' + barre(o.caMois / o.mois * 100) + '<small class="gris">' + (sz.projection ? "À ce rythme : " + fcfa(sz.projection) + " à la fin du mois" : "") + '</small>';
+  if (!(o.jour > 0) && !(o.mois > 0)) h += '<p class="gris">Fixez un objectif du jour et du mois dans Plus › Réglages.</p>';
+  h += '</div>';
+  h += '<div class="carte"><h3>Seuil de rentabilité du mois</h3>';
+  if (sz.caSeuil) h += '<p class="astuce">Vos dépenses du mois (' + fcfa(sz.charges) + ') sont payées quand vous vendez pour <b>' + fcfa(sz.caSeuil) + '</b> (marge de ' + sz.margePct + ' %).</p>' + barre(sz.caMois / sz.caSeuil * 100, sz.atteint ? "linear-gradient(90deg,#1f5a2e,#3a9a52)" : "") + '<div class="rang"><span>Vendu ce mois</span><b>' + fcfa(sz.caMois) + '</b></div><p style="margin:6px 0 0;font-weight:600;color:' + (sz.atteint ? "#1f5a2e" : "#8a5a00") + '">' + (sz.atteint ? "Seuil dépassé : tout ce que vous vendez en plus est du bénéfice." : "Il reste " + fcfa(sz.caSeuil - sz.caMois) + " à vendre pour couvrir vos dépenses.") + '</p>';
+  else h += '<p class="gris">Pas encore assez de ventes avec un coût de revient pour calculer le seuil.</p>';
   return h + '</div>';
+}
+
+/* ----- Plus : les outils rangés ----- */
+function vPlus(v) {
+  if (!E.plus) {
+    var M = [["cloture", "Clôture de la journée", "Compter la caisse du soir, voir s'il manque de l'argent"], ["objectifs", "Objectifs et seuil de rentabilité", "Où j'en suis ce jour et ce mois"], ["envoi", "Envoyer et exporter", "Rapport WhatsApp, Excel, Google Sheets, Drive"], ["journal", "Journal des modifications", "Qui a changé quoi, et quand"], ["params", "Réglages du suivi", "Caisse de départ, coûts, points de vente"]];
+    return '<div class="carte"><h3>Plus</h3>' + M.map(function (m) { return '<button class="menu-plus" type="button" data-s="vers" data-v="' + m[0] + '"><span><b>' + m[1] + '</b><small>' + m[2] + '</small></span><span>›</span></button>'; }).join("") + '</div>';
+  }
+  var corps = { cloture: vCloture, objectifs: vObjectifs, envoi: vEnvoi, journal: vJournal, params: vParams }[E.plus](v);
+  return retour("Plus", "vers", "") + corps;
+}
+function vEnvoi(v) {
+  return '<div class="carte"><h3>Envoyer et exporter</h3><p class="astuce">Ces boutons ouvrent le menu d\'envoi de votre téléphone : choisissez WhatsApp, Google Drive, Gmail, Sheets… Sur ordinateur, le fichier se télécharge. Les chiffres suivent la période choisie dans le Résumé (' + esc(nomPeriode()) + ').</p>' +
+    '<button class="btn btn-vert btn-bloc" type="button" data-s="rapport-wa">Résumé détaillé sur WhatsApp</button>' +
+    '<button class="btn btn-brun btn-bloc" type="button" style="margin-top:8px" data-s="rapport-complet">Rapport complet (document avec chaque vente et dépense)</button>' +
+    '<button class="btn btn-or btn-bloc" type="button" style="margin-top:8px" data-s="classeur">Classeur Excel / Google Sheets (tout en un)</button>' +
+    '<p class="astuce" style="margin-top:8px">Le classeur contient 7 feuilles : Ventes, Dépenses, Productions, Pertes, Stock, Rentabilité, Clôtures.</p>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-clair btn-petit" type="button" data-s="export" data-v="ventes">Ventes (CSV)</button><button class="btn btn-clair btn-petit" type="button" data-s="export" data-v="depenses">Dépenses (CSV)</button><button class="btn btn-clair btn-petit" type="button" data-s="export" data-v="stock">Stock (CSV)</button></div></div>';
 }
 
 /* ----- Clôture de journée : rapport + écart de caisse ----- */
@@ -350,22 +503,37 @@ function vProduction(v) {
   return h;
 }
 
-/* ----- Dépenses ----- */
+/* ----- Dépenses (la production y est comptée : c'est de l'argent sorti de la caisse) ----- */
 function vDepenses(v) {
   var p = periodeCourante();
-  var liste = v.depenses.filter(function (d) { return (!p.du || d.date >= p.du) && (!p.au || d.date <= p.au); });
-  var h = selPeriode() + '<button class="btn btn-or" type="button" data-s="ouvrir" data-v="depense">+ Dépense ou apport</button>';
+  var dans = function (d) { d = String(d || "").slice(0, 10); return (!p.du || d >= p.du) && (!p.au || d <= p.au); };
+  var liste = v.depenses.filter(function (d) { return dans(d.date); });
+  var lots = (v.lots || []).filter(function (l) { return !l.depart && dans(l.date); });
+  var noms = {}; v.produits.forEach(function (x) { noms[x.id] = x.nom; });
+  var somme = function (arr, f) { return arr.reduce(function (s, x) { return s + (Number(f(x)) || 0); }, 0); };
+  var frais = somme(liste.filter(function (d) { return d.classe === "charge"; }), function (d) { return d.montant; });
+  var achats = somme(liste.filter(function (d) { return d.classe === "achat"; }), function (d) { return d.montant; });
+  var prod = somme(lots, function (l) { return l.cout; });
+  var h = selPeriode();
+  h += '<div class="kpis"><div class="kpi gros"><small>Argent sorti de la caisse · ' + esc(nomPeriode()) + '</small><b>' + fcfa(frais + achats + prod) + '</b><small>dépenses ' + fcfa(frais) + (achats ? " + achats " + fcfa(achats) : "") + ' + production ' + fcfa(prod) + '</small></div></div>';
+  h += '<button class="btn btn-or" type="button" data-s="ouvrir" data-v="depense">+ Dépense ou apport</button>';
   if (E.ouvert === "depense") {
     h += '<div class="formulaire"><h3>Dépense ou apport d\'argent</h3><div class="grille2"><div><label for="fd-d">Jour</label><input type="date" id="fd-d" value="' + jourJ(0) + '"></div><div><label for="fd-m">Montant (F)</label><input type="number" id="fd-m" inputmode="numeric" min="1"></div></div>' +
       '<label for="fd-c">Catégorie</label><select id="fd-c">' + v.categories.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join("") + '</select>' +
       '<label for="fd-t">Description</label><input type="text" id="fd-t" maxlength="120" placeholder="Ex : Gaz, impression, salaire de Hamed…">' +
       '<label for="fd-mode">Paiement (facultatif)</label><select id="fd-mode"><option value="">—</option><option>Espèces</option><option>Orange Money</option><option>Moov Money</option><option>Wave</option><option>Autre</option></select>' +
-      '<p class="astuce">Les productions se notent dans « Production » (pas ici), pour ne pas compter deux fois.</p>' +
+      '<p class="astuce">Les productions se notent dans « Production » : elles apparaissent ici toutes seules, sans être comptées deux fois.</p>' +
       '<div style="display:flex;gap:10px;margin-top:6px"><button class="btn btn-or" type="button" data-s="enregistrer-depense">Enregistrer</button><button class="btn btn-clair" type="button" data-s="fermer">Annuler</button></div></div>';
   }
-  h += '<div class="carte" style="margin-top:12px"><h3>Dépenses</h3>' + (liste.length ? liste.map(function (d) {
-    var plus = d.classe === "apport";
-    return '<div class="rang"><div class="g"><b>' + esc(d.description || d.categorie) + '</b><small>' + esc(dateFr(d.date)) + ' · ' + esc(d.categorie) + (d.mode ? " · " + esc(d.mode) : "") + '</small></div><div style="text-align:right"><b class="' + (plus ? "pos" : "") + '">' + (plus ? "+" : "") + fcfa(d.montant) + '</b><br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="depense" data-id="' + esc(d.id) + '">Supprimer</button></div></div>';
+  var tout = liste.map(function (d) { return { t: "dep", d: String(d.date).slice(0, 10), x: d }; }).concat(lots.map(function (l) { return { t: "lot", d: String(l.date).slice(0, 10), x: l }; }))
+    .sort(function (a, b) { return a.d < b.d ? 1 : a.d > b.d ? -1 : 0; });
+  h += '<div class="carte" style="margin-top:12px"><h3>Dépenses et productions</h3>' + (tout.length ? tout.map(function (it) {
+    if (it.t === "lot") {
+      var l = it.x;
+      return '<div class="rang"><div class="g"><b>Production · ' + esc(l.nom) + '</b><small>' + esc(dateFr(l.date)) + ' · ' + l.lignes.map(function (x) { return x.qte + " × " + esc(noms[x.produitId] || x.produitId); }).join(", ") + ' <span class="badge badge-or">Production</span></small></div><div style="text-align:right"><b>' + fcfa(l.cout) + '</b><br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="lot" data-id="' + esc(l.id) + '">Supprimer</button></div></div>';
+    }
+    var d = it.x, plus = d.classe === "apport";
+    return '<div class="rang"><div class="g"><b>' + esc(d.description || d.categorie) + '</b><small>' + esc(dateFr(d.date)) + ' · ' + esc(d.categorie) + (d.vendeur ? " · " + esc(d.vendeur) : "") + (d.mode ? " · " + esc(d.mode) : "") + '</small></div><div style="text-align:right"><b class="' + (plus ? "pos" : "") + '">' + (plus ? "+" : "") + fcfa(d.montant) + '</b><br><button class="btn btn-brun btn-petit" type="button" data-s="archiver" data-t="depense" data-etat="1" data-id="' + esc(d.id) + '">Archiver</button> <button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="depense" data-id="' + esc(d.id) + '">Supprimer</button></div></div>';
   }).join("") : '<p class="gris">Aucune dépense sur cette période.</p>') + '</div>';
   return h;
 }
@@ -383,10 +551,11 @@ function vParams(v) {
     c.internes.map(function (p, i) { return '<div class="grille2" style="margin-bottom:6px;align-items:center"><input type="text" data-int-nom="' + i + '" value="' + esc(p.nom) + '"><div style="display:flex;gap:6px"><input type="number" inputmode="numeric" min="0" data-int-prix="' + i + '" value="' + p.prix + '"><button class="btn btn-clair btn-petit" type="button" data-s="retirer-interne" data-i="' + i + '">✕</button></div></div>'; }).join("") +
     '<div class="grille2" style="align-items:center"><input type="text" id="pa-in-nom" placeholder="Nom du produit"><input type="number" id="pa-in-prix" inputmode="numeric" min="0" placeholder="Prix (F)"></div></div>';
   h += '<button class="btn btn-or btn-bloc" type="button" data-s="enregistrer-params">Enregistrer les réglages</button>';
-  h += '<div class="carte" style="margin-top:14px"><h3>Envoyer et exporter</h3><p class="astuce">Le bouton ci-dessous ouvre le menu d\'envoi de votre téléphone : choisissez Google Drive, Gmail, WhatsApp, Sheets, etc. Sur ordinateur, le fichier se télécharge.</p><button class="btn btn-or btn-bloc" type="button" data-s="classeur">Classeur Excel / Google Sheets (tout en un)</button><p class="astuce" style="margin-top:8px">Un seul fichier avec 7 feuilles : Ventes, Dépenses, Productions, Pertes, Stock, Rentabilité, Clôtures.</p><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-brun btn-petit" type="button" data-s="export" data-v="ventes">Ventes (CSV)</button><button class="btn btn-brun btn-petit" type="button" data-s="export" data-v="depenses">Dépenses (CSV)</button><button class="btn btn-brun btn-petit" type="button" data-s="export" data-v="stock">Stock (CSV)</button></div></div>';
-  h += '<div class="carte"><h3>Reprendre mon ancien classeur</h3><p class="astuce">Ajoute les productions, ventes, dépenses et pertes du 03 au 08 octobre déjà notées dans votre classeur. À faire une seule fois (refaire ne crée pas de doublons).</p><button class="btn btn-clair" type="button" data-s="importer">Reprendre l\'historique</button></div>';
-  h += '<div class="carte" style="border:2px solid #c62828"><h3>Nouveau départ (tout remettre à zéro)</h3><p class="astuce">Efface toutes les anciennes productions, ventes, pertes, dépenses et comptages. Le chiffre d\'affaires, les pertes et le résultat repartent de 0. Vous gardez seulement votre <b>caisse</b> et votre <b>stock restant</b>. Un fichier de sauvegarde est téléchargé avant, au cas où.</p>' +
+  var av = "";
+  av += '<div class="carte"><h3>Reprendre mon ancien classeur</h3><p class="astuce">Ajoute les productions, ventes, dépenses et pertes du 03 au 08 octobre déjà notées dans votre classeur. À faire une seule fois (refaire ne crée pas de doublons).</p><button class="btn btn-clair" type="button" data-s="importer">Reprendre l\'historique</button></div>';
+  av += '<div class="carte" style="border:2px solid #c62828"><h3>Nouveau départ (tout remettre à zéro)</h3><p class="astuce">Efface toutes les anciennes productions, ventes, pertes, dépenses et comptages. Le chiffre d\'affaires, les pertes et le résultat repartent de 0. Vous gardez seulement votre <b>caisse</b> et votre <b>stock restant</b>. Un fichier de sauvegarde est téléchargé avant, au cas où.</p>' +
     '<button class="btn btn-clair" type="button" data-s="depart-ouvrir">' + (E.depart ? "Fermer" : "Préparer le nouveau départ") + '</button>' + (E.depart ? vDepart(v) : "") + '</div>';
+  h += repliable("Outils avancés (ancien classeur, nouveau départ)", av, E.depart);
   return h;
 }
 function vDepart(v) {
@@ -514,7 +683,7 @@ function telecharger(nom, contenu) {
 }
 
 /* ---------- Rapports (WhatsApp) : résumé détaillé en message + rapport complet en fichier ---------- */
-var NOMS_PERIODE = { jour: "Aujourd'hui", semaine: "7 derniers jours", mois: "Ce mois", "mois-dernier": "Mois dernier", tout: "Depuis le début" };
+var NOMS_PERIODE = { jour: "Aujourd'hui", hier: "Hier", semaine: "7 derniers jours", mois: "Ce mois", "mois-dernier": "Mois dernier", tout: "Depuis le début" };
 function nomPeriode() { return E.periode === "perso" ? "Du " + dateFr(E.du) + " au " + dateFr(E.au) : NOMS_PERIODE[E.periode]; }
 function dansPeriode(d) { var p = periodeCourante(); return (!p.du || d >= p.du) && (!p.au || d <= p.au); }
 function ligneTitre(t) { return "━━━━━━━━━━━━━━\n*" + t + "*"; }
@@ -525,7 +694,7 @@ function construireRapport(complet) {
   T.push("", ligneTitre("1. RÉSULTATS"));
   T.push("Chiffre d'affaires : *" + fcfa(b.ca) + "* (" + b.quantite + " pièces)");
   if (pr && pr.ca) T.push("   vs période d'avant : " + (b.ca >= pr.ca ? "▲ +" : "▼ ") + Math.round((b.ca - pr.ca) / pr.ca * 100) + " % (" + fcfa(pr.ca) + ")");
-  T.push("Coût des produits vendus : " + fcfa(b.cout), "Marge brute : " + fcfa(b.margeBrute) + " (" + b.margePct + " %)", "Pertes / offerts (au coût) : " + fcfa(b.pertes), "Dépenses : " + fcfa(b.charges), "*RÉSULTAT NET : " + signe(b.resultat) + "*");
+  T.push("Coût des produits vendus : " + fcfa(b.cout), "Marge brute : " + fcfa(b.margeBrute) + " (" + b.margePct + " %)", "Pertes / offerts (au coût) : " + fcfa(b.pertes), "Dépenses (hors production) : " + fcfa(b.charges), "Production payée : " + fcfa(b.production), "Total sorti de la caisse : " + fcfa(b.charges + b.production), "*RÉSULTAT NET : " + signe(b.resultat) + "*");
   T.push("", ligneTitre("2. TRÉSORERIE ET STOCK"), "Caisse théorique : *" + fcfa(b.caisse) + "*", "Valeur du stock (au coût) : " + fcfa(b.valeurStock), "Production sur la période : " + fcfa(b.production));
   if (b.achats) T.push("Achats de marchandises à revendre : " + fcfa(b.achats));
   if (b.apports || b.remboursements) T.push("Apports d'argent : " + fcfa(b.apports) + " · Remboursés : " + fcfa(b.remboursements));
@@ -539,20 +708,20 @@ function construireRapport(complet) {
   if (b.parJour.length) b.parJour.forEach(function (j) { T.push("• " + dateFr(j.date) + " : " + fcfa(j.ca) + " (" + j.qte + " pièces)" + (j.depenses ? " · dépenses " + fcfa(j.depenses) : "")); }); else T.push("Aucune vente.");
   T.push("", ligneTitre("6. DÉPENSES"));
   var dep = v.depenses.filter(function (d) { return dansPeriode(d.date); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; });
-  if (b.parCategorie.length) { b.parCategorie.forEach(function (c) { T.push("• " + c.nom + " : " + fcfa(c.total)); }); T.push("Total dépenses : " + fcfa(b.charges)); } else T.push("Aucune dépense.");
+  if (b.parCategorie.length) { b.parCategorie.forEach(function (c) { T.push("• " + c.nom + " : " + fcfa(c.total)); }); T.push("Total dépenses (hors production) : " + fcfa(b.charges)); if (b.production) T.push("Production payée (voir § 10) : " + fcfa(b.production), "Total sorti de la caisse : " + fcfa(b.charges + b.production)); } else T.push("Aucune dépense.");
   T.push("", ligneTitre("7. STOCK ACTUEL (théorique)"));
   var st = v.stock.filter(function (x) { return x.produit || x.vendu || x.theorique; });
-  if (st.length) st.forEach(function (x) { T.push("• " + x.nom + " : *" + x.theorique + "*" + (x.theorique < 0 ? " ⚠" : x.theorique <= 5 ? " (bas)" : "") + " — valeur " + fcfa(x.valeur)); }); else T.push("Aucun stock enregistré.");
+  if (st.length) st.forEach(function (x) { T.push("• " + x.nom + " : *" + x.theorique + "*" + (x.theorique < 0 ? " ⚠" : x.theorique <= 5 && x.actif ? " (bas)" : "") + " — valeur " + fcfa(x.valeur)); }); else T.push("Aucun stock enregistré.");
   var al = [];
   if (b.alertes.length) al.push("⚠ Stock négatif : " + b.alertes.map(function (a) { return a.nom; }).join(", "));
-  var bas = v.stock.filter(function (x) { return x.produit > 0 && x.theorique >= 0 && x.theorique <= 5; });
+  var bas = v.stock.filter(function (x) { return x.actif && x.produit > 0 && x.theorique >= 0 && x.theorique <= 5; });
   if (bas.length) al.push("⚠ Stock bas : " + bas.map(function (x) { return x.nom + " (" + x.theorique + ")"; }).join(", "));
   if (b.margeBrute < 0) al.push("⚠ Marge négative");
   if (al.length) T.push("", ligneTitre("ALERTES"), al.join("\n"));
   if (complet) {
     T.push("", ligneTitre("8. DÉTAIL DE TOUTES LES VENTES"));
     var ve = v.ventes.slice().sort(function (x, y) { return x.date < y.date ? -1 : 1; });
-    if (ve.length) ve.forEach(function (x) { T.push(dateFr(x.date) + " · " + x.nom + " ×" + x.qte + " = " + fcfa(x.montant) + " · " + x.canal + (x.source === "site" ? " (commande site " + (x.ref || "") + ")" : "")); }); else T.push("Aucune vente.");
+    if (ve.length) ve.forEach(function (x) { T.push(dateFr(x.date) + " · " + x.nom + " ×" + x.qte + " = " + fcfa(x.montant) + " · " + x.canal + (x.vendeur ? " · " + x.vendeur : "") + (x.paiement ? " · " + x.paiement : "") + (x.source === "site" ? " (commande site " + (x.ref || "") + ")" : x.source === "comptage" ? " (reste du soir)" : "")); }); else T.push("Aucune vente.");
     T.push("", ligneTitre("9. DÉTAIL DE TOUTES LES DÉPENSES"));
     if (dep.length) dep.forEach(function (d) { T.push(dateFr(d.date) + " · " + d.categorie + (d.description ? " — " + d.description : "") + " = " + fcfa(d.montant)); }); else T.push("Aucune dépense.");
     T.push("", ligneTitre("10. PRODUCTIONS"));
@@ -587,9 +756,30 @@ function clic(ev) {
     case "copier-caisse":
       try { navigator.clipboard.writeText(location.origin + "/caisse.html"); A.toast("Lien copié", "ok"); } catch (e) { A.toast("Copiez le lien dans la case", "err"); } return;
     case "mot-enregistrer": return envoyer("caisse_mot", { mot: val("mot-caisse") }, "Mot secret enregistré");
-    case "eq-ajouter": lireEq(); E.eq.push({ nom: "", point: (E.vue.config.pointsVente[0] || "Local"), actif: true }); return rendre();
-    case "eq-retirer": lireEq(); if (!confirm("Retirer cette personne ? Son code ne marchera plus.")) return; E.eq.splice(+t.getAttribute("data-i"), 1); return rendre();
-    case "eq-enregistrer": lireEq(); if (E.eq.some(function (m) { return !String(m.nom || "").trim(); })) return A.toast("Écrivez le nom de chaque personne.", "err"); return envoyer("equipe_save", { liste: E.eq }, "Équipe enregistrée", function () { E.eq = null; });
+    case "eq-ajouter": lireEq(); E.eq.push({ nom: "", point: (E.vue.config.pointsVente[0] || "Local"), actif: true, poste: "caissier" }); E.edit = E.eq.length - 1; return rendre();
+    case "eq-modifier": lireEq(); E.edit = +t.getAttribute("data-i"); return rendre();
+    case "eq-fermer": lireEq(); E.edit = null; return rendre();
+    case "eq-retirer": lireEq(); if (!confirm("Retirer cette personne ? Son code et son lien ne marcheront plus.")) return; E.eq.splice(+t.getAttribute("data-i"), 1); E.edit = null; return rendre();
+    case "eq-enregistrer": lireEq(); if (E.eq.some(function (m) { return !String(m.nom || "").trim(); })) return A.toast("Écrivez le nom de chaque personne.", "err"); return envoyer("equipe_save", { liste: E.eq }, "Équipe enregistrée", function () { E.eq = null; E.edit = null; });
+    case "lien-copier": lireEq(); var mc = E.eq[+t.getAttribute("data-i")], lc = lienDe(mc);
+      if (!lc) return A.toast("Enregistrez d'abord l'équipe.", "err");
+      try { navigator.clipboard.writeText(lc); A.toast("Lien de " + mc.nom + " copié", "ok"); } catch (e) { window.prompt("Copiez ce lien :", lc); } return;
+    case "lien-wa": lireEq(); var mw = E.eq[+t.getAttribute("data-i")], lw = lienDe(mw);
+      if (!lw) return A.toast("Enregistrez d'abord l'équipe.", "err");
+      var tw = "Bonjour " + mw.nom + " 👋\nVoici ta caisse Noogó (" + nomPoste(mw.poste).toLowerCase() + ") :\n" + lw + "\n\n1. Ouvre ce lien sur ton téléphone (avec Chrome).\n2. Touche « Installer l'application ».\n3. Ta caisse s'ouvre toute seule.\nTon code personnel : " + mw.code + "\n⚠ Ce lien est pour toi seul(e), ne le transmets pas.";
+      var tel = String(mw.tel || "").replace(/\D/g, ""); if (tel.length === 8) tel = "226" + tel;
+      window.open("https://wa.me/" + tel + "?text=" + encodeURIComponent(tw), "_blank", "noopener"); return;
+    case "fiche": E.fiche = v || null; window.scrollTo(0, 0); return rendre();
+    case "saisie": E.saisie = v || null; E.ouvert = ({ vente: "vente", perte: "perte", production: "lot", depense: "depense" })[v] || null; if (v === "production") E.nbLignesLot = 1; window.scrollTo(0, 0); return rendre();
+    case "vers": window.scrollTo(0, 0); if (!v) { E.plus = null; return rendre(); } E.sous = "plus"; E.plus = v; E.ouvert = null; return rendre();
+    case "autres": E.autres = !E.autres; return rendre();
+    case "archiver": return envoyer("archiver", { type: t.getAttribute("data-t"), id: t.getAttribute("data-id"), etat: t.getAttribute("data-etat") !== "0" }, t.getAttribute("data-etat") === "0" ? "Restauré" : "Archivé (il ne compte plus dans les totaux)");
+    case "vendeur-archiver":
+      if (!confirm("Archiver ces " + t.getAttribute("data-n") + " ligne(s) (ventes et dépenses de cette personne sur la période) ? Elles ne compteront plus dans les totaux. Vous pourrez les restaurer.")) return;
+      return envoyer("vendeur_archiver", { vid: t.getAttribute("data-id") }, "Archivé");
+    case "archives-vider":
+      if (!confirm("Supprimer POUR TOUJOURS ces archives ? Impossible de les récupérer.")) return;
+      return envoyer("archives_vider", { vid: t.getAttribute("data-id") }, "Archives supprimées");
     case "dem-ok": return envoyer("demande_decider", { id: t.getAttribute("data-id"), decision: "accepter", categorie: val("dc-" + t.getAttribute("data-id")) }, "Dépense acceptée et notée");
     case "dem-non": return envoyer("demande_decider", { id: t.getAttribute("data-id"), decision: "refuser" }, "Demande refusée");
     case "supprimer-recu":
@@ -600,9 +790,8 @@ function clic(ev) {
     case "rapport-cloture": return rapportCloture();
     case "cloturer": if (val("cl-c") === "") return A.toast("Écrivez les espèces comptées dans la caisse.", "err"); return envoyer("cloture", { date: val("cl-d"), compte: val("cl-c"), fond: val("cl-f"), note: val("cl-n") }, "Journée clôturée");
     case "rapport-complet": return rapportComplet();
-    case "sous": E.sous = v; E.ouvert = null; return rendre();
-    case "periode": E.periode = v; if (v === "perso") { E.du = E.du || jourJ(-30); E.au = E.au || jourJ(0); return rendre(); } return rafraichir();
-    case "appliquer-dates": E.du = val("su-du"); E.au = val("su-au"); return rafraichir();
+    case "sous": E.sous = v; E.ouvert = null; E.saisie = null; E.plus = null; E.fiche = null; return rendre();
+    case "periode": E.periode = v; if (v === "perso") { E.du = E.du || jourJ(-30); E.au = E.au || jourJ(0); } return rafraichir();
     case "ouvrir": E.ouvert = E.ouvert === v ? null : v; if (v === "lot") E.nbLignesLot = 1; return rendre();
     case "fermer": E.ouvert = null; return rendre();
     case "ligne-lot": E.nbLignesLot++; var prev = { d: val("fl-d"), n: val("fl-n"), c: val("fl-c"), p: [].map.call(document.querySelectorAll(".fl-p"), function (e) { return e.value; }), q: [].map.call(document.querySelectorAll(".fl-q"), function (e) { return e.value; }) }; rendre();
@@ -651,6 +840,11 @@ function change(ev) {
   var t = ev.target;
   if (t.id === "so-date") { E.soirDate = t.value || jourJ(0); E.soir = null; E.soirResume = false; rendre(); }
   if (t.id === "fl-d" && $("fl-m-box") && E.vue) { $("fl-m-box").style.display = (E.vue.comptages || []).some(function (c) { return c.date === t.value; }) ? "" : "none"; }
+  if (t.id === "su-du" || t.id === "su-au") {
+    E.du = val("su-du") || E.du; E.au = val("su-au") || E.au;
+    if (E.du && E.au && E.du > E.au) return A.toast("La date de début doit être avant la date de fin.", "err");
+    return rafraichir();
+  }
   if (t.id === "cl-d") { E.jourCloture = t.value || ""; return charge("lire").catch(function () {}); }
   if (t.id === "fv-p") { var o = t.options[t.selectedIndex]; if ($("fv-px")) $("fv-px").placeholder = "Prix du site : " + (o ? o.getAttribute("data-prix") : ""); }
 }

@@ -20,7 +20,7 @@ function appel(action, extra) {
 function compteur() {
   var d = E.d; if (!d) return;
   var n = d.avis.filter(function (a) { return a.statut === "attente"; }).length + d.demandes.filter(function (r) { return r.statut === "nouveau"; }).length;
-  var c = $("cpt-communaute"); if (c) { c.textContent = n; c.classList.toggle("cachee", !n); }
+  var c = $("cpt-communaute"); if (c) { c.textContent = n; c.classList.toggle("cachee", !n); } if (window.majPastillePlus) window.majPastillePlus();
 }
 function charger(silencieux) {
   return appel("tout").then(function (d) { E.d = d; compteur(); var ae = document.activeElement; if ($("p-communaute").classList.contains("actif") && !(ae && ae.tagName === "INPUT" && $("p-communaute").contains(ae))) rendre(); })

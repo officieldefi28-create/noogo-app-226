@@ -58,6 +58,8 @@ main{flex:1;min-height:0;position:relative}
 .liens{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;flex:none}
 .liens button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:12px;background:var(--creme-2);font-size:12.5px;font-weight:700;color:var(--vert)}
 .pied-ligne{flex:none;text-align:center;font-size:12.5px;color:var(--gris)}
+.etoile{position:fixed;right:6px;bottom:calc(6px + env(safe-area-inset-bottom));width:44px;height:44px;border:0;background:none;color:var(--or);font-size:17px;line-height:1;opacity:.3;cursor:pointer;z-index:5}
+.etoile:active{opacity:.9}
 
 /* vues liste */
 .barre-vue{flex:none;display:flex;align-items:center;gap:8px;padding:10px 14px 6px}
@@ -198,6 +200,7 @@ ol.pas-l li{margin:8px 0}
       <button type="button" data-plus="contact"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Nous trouver</button>
     </div>
     <div class="pied-ligne" id="pied-adresse">Karpala, derrière la mairie</div>
+    <button class="etoile" type="button" data-equipe="1" aria-label="Espace équipe">✦</button>
   </section>
 
   <!-- DISPONIBLES AUJOURD'HUI -->
@@ -682,6 +685,7 @@ function envoyer() {
 
 /* ───────── Informations (suivi, livraison, contact, questions) ───────── */
 function ouvrirPlus(section) {
+  $("#t-plus").textContent = "Informations";
   const n = CONFIG.whatsapp, aff = n.startsWith("226") && n.length === 11 ? "+226 " + n.slice(3).match(/.{2}/g).join(" ") : "+" + n;
   const derniere = lire("noogo_derniere");
   const bloc = (id, titre, html) => `<details class="acc" id="acc-${id}" ${section === id ? "open" : ""}><summary>${titre}</summary><div class="corps">${html}</div></details>`;
@@ -695,6 +699,15 @@ function ouvrirPlus(section) {
   ouvrirVoile("voile-plus");
   const el = $("#acc-" + section); if (el) setTimeout(() => el.scrollIntoView({ block: "nearest" }), 60);
   const sv = $("#sv-ok"); if (sv) sv.addEventListener("click", suivreCommande);
+}
+/* Espace équipe : l'étoile discrète de l'accueil (les clients ne la remarquent pas ; caisse et admin demandent de toute façon un code) */
+function ouvrirEquipe() {
+  const connu = !!lire("noogo_porte") || !!(() => { try { return localStorage.getItem("caisse_membre"); } catch (e) { return ""; } })();
+  $("#t-plus").textContent = "Espace équipe";
+  $("#plus-corps").innerHTML = `<p style="margin:0 0 10px;color:var(--gris)">Réservé à l'équipe Noogó. Un code personnel est demandé.</p>
+    <a class="btn ${connu ? "or" : "vert"}" href="/caisse.html" style="width:100%;margin-bottom:10px">Ma caisse</a>
+    <a class="btn clair" href="/admin.html" style="width:100%">Administration</a>`;
+  ouvrirVoile("voile-plus");
 }
 /* Porte discrète vers la caisse des vendeurs : le mot secret se règle dans l'admin */
 async function empreinte(t) { try { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(t).toLowerCase().trim())); return Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, "0")).join(""); } catch (e) { return ""; } }
@@ -790,6 +803,7 @@ document.addEventListener("click", (e) => {
   if (c.dataset.inst) return demanderInstall();
   if (c.dataset.vue) return ouvrirVue(c.dataset.vue);
   if (c.dataset.plus) return ouvrirPlus(c.dataset.plus);
+  if (c.dataset.equipe) return ouvrirEquipe();
   if (c.dataset.fermer) return fermerVoile(c.dataset.fermer);
   if (c.dataset.compo) return ouvrirCompo(c.dataset.compo);
   if (c.dataset.plusArt) { const id = c.dataset.plusArt, pp = produit(id); changer(id, 1); if (estMix(pp) && $("#voile-panier").classList.contains("cachee") && !compoComplete(pp)) ouvrirCompo(id); return; }

@@ -1,5 +1,5 @@
 // Service worker Noogó — l'application s'ouvre même avec une mauvaise connexion.
-const VERSION = "noogo-v22";
+const VERSION = "noogo-v23";
 const COQUILLE = ["/", "/index.html", "/assets/noogo.css", "/assets/embleme.jpg", "/assets/logo-noogo.jpg", "/manifest.json", "/favicon.png", "/caisse.html", "/caisse.webmanifest"];
 
 self.addEventListener("install", (e) => {
@@ -25,6 +25,15 @@ self.addEventListener("fetch", (e) => {
       const reseau = fetch(req).then((r) => { if (r && r.ok) c.put(req, r.clone()); return r; }).catch(() => connu);
       return connu || reseau;
     }));
+    return;
+  }
+
+  // La caisse : une seule copie, SANS le lien personnel (?c=…) qui ne doit jamais être gardé dans le cache
+  if (url.pathname === "/caisse.html") {
+    e.respondWith(fetch(req).then((r) => {
+      if (r && r.ok) { const copie = r.clone(); caches.open(VERSION).then((c) => c.put("/caisse.html", copie)); }
+      return r;
+    }).catch(() => caches.match("/caisse.html").then((r) => r || caches.match("/index.html"))));
     return;
   }
 

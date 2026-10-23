@@ -44,6 +44,10 @@
   .onglets .in::-webkit-scrollbar{display:none}
   .onglet{flex:1 0 auto;min-height:52px;padding:0 18px;border:0;background:none;font-weight:600;font-size:15px;color:var(--gris);cursor:pointer;border-bottom:3px solid transparent;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap}
   .onglet[aria-selected=true]{color:var(--brun);border-bottom-color:var(--orange)}
+  .menu-plus{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;background:#fff;border:1.5px solid var(--bord);border-radius:14px;padding:14px 16px;margin:8px 0 0;cursor:pointer;min-height:60px}
+  .menu-plus b{display:block;font-size:16px;color:var(--brun)}.menu-plus small{display:block;color:var(--gris);font-size:13px;margin-top:2px}
+  .menu-plus:active{background:var(--creme-2,#f6efe0)}
+  .retour-plus{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--brun-3);font-weight:700;font-size:15px;padding:8px 0 10px;cursor:pointer;min-height:44px}
   .compteur{background:var(--rouge);color:#fff;border-radius:999px;font-size:12px;font-weight:700;min-width:22px;height:22px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center}
 
   .page{max-width:1000px;margin:0 auto;padding:14px 14px 120px}
@@ -212,12 +216,9 @@
   <nav class="onglets" aria-label="Sections">
     <div class="in" role="tablist">
       <button class="onglet" role="tab" data-tab="commandes" aria-selected="true">Commandes <span class="compteur cachee" id="cpt-commandes">0</span></button>
-      <button class="onglet" role="tab" data-tab="catalogue" aria-selected="false">Catalogue</button>
-      <button class="onglet" role="tab" data-tab="partenaires" aria-selected="false">Partenaires <span class="compteur cachee" id="cpt-partenaires">0</span></button>
       <button class="onglet" role="tab" data-tab="suivi" aria-selected="false">Suivi</button>
-      <button class="onglet" role="tab" data-tab="communaute" aria-selected="false">Clients <span class="compteur cachee" id="cpt-communaute">0</span></button>
-      <button class="onglet" role="tab" data-tab="site" aria-selected="false">Site</button>
-      <button class="onglet" role="tab" data-tab="reglages" aria-selected="false">Réglages</button>
+      <button class="onglet" role="tab" data-tab="catalogue" aria-selected="false">Catalogue</button>
+      <button class="onglet" role="tab" data-tab="plus" aria-selected="false">Plus <span class="compteur cachee" id="cpt-plus">0</span></button>
     </div>
   </nav>
 
@@ -236,6 +237,18 @@
       <div id="liste-cmd"></div>
       <div style="margin-top:24px;text-align:center">
         <button class="btn btn-contour btn-petit" type="button" data-act="vider-cmds">Vider toutes les commandes</button>
+      </div>
+    </section>
+
+    <!-- Plus : les sections moins utilisées (partenaires, clients, site, réglages) -->
+    <section id="p-plus" class="espace">
+      <div class="carte">
+        <h3>Plus</h3>
+        <p class="gris" style="margin:0 0 6px;font-size:14px">Les sections que vous ouvrez moins souvent.</p>
+        <button class="menu-plus" type="button" data-tab="partenaires"><span><b>Partenaires</b><small>Codes promo, commissions, revendeurs</small></span><span class="compteur cachee" id="cpt-partenaires">0</span></button>
+        <button class="menu-plus" type="button" data-tab="communaute"><span><b>Clients</b><small>Avis, demandes, actualités, pages légales</small></span><span class="compteur cachee" id="cpt-communaute">0</span></button>
+        <button class="menu-plus" type="button" data-tab="site"><span><b>Site</b><small>Photos, couleurs, textes de l'accueil</small></span></button>
+        <button class="menu-plus" type="button" data-tab="reglages"><span><b>Réglages</b><small>Base de données, liens utiles, mot de passe</small></span></button>
       </div>
     </section>
 
@@ -496,8 +509,14 @@ $("form-login").addEventListener("submit", async function(ev){
 /* ---------- Onglets ---------- */
 function changerOnglet(nom){
   S.onglet = nom;
-  document.querySelectorAll(".onglet").forEach(function(b){ b.setAttribute("aria-selected", b.getAttribute("data-tab") === nom ? "true" : "false"); });
-  ["commandes","catalogue","partenaires","suivi","communaute","site","reglages"].forEach(function(n){ $("p-" + n).classList.toggle("actif", n === nom); });
+  var dansPlus = ["plus","partenaires","communaute","site","reglages"].indexOf(nom) >= 0;
+  document.querySelectorAll(".onglet").forEach(function(b){ var t = b.getAttribute("data-tab"); b.setAttribute("aria-selected", (t === nom || (t === "plus" && dansPlus)) ? "true" : "false"); });
+  ["commandes","catalogue","partenaires","suivi","communaute","site","reglages","plus"].forEach(function(n){ $("p-" + n).classList.toggle("actif", n === nom); });
+  // une barre « ← Plus » en haut des sections rangées dans Plus
+  ["partenaires","communaute","site","reglages"].forEach(function(n){
+    var sec = $("p-" + n), b = sec.querySelector(":scope > .retour-plus");
+    if (n === nom && !b) { b = document.createElement("button"); b.type = "button"; b.className = "retour-plus"; b.setAttribute("data-tab", "plus"); b.textContent = "← Plus"; sec.insertBefore(b, sec.firstChild); }
+  });
   window.scrollTo(0, 0);
   if (nom === "reglages") verifBase();
   if (nom === "catalogue" && !S.produits) chargerCatalogue(false);
@@ -505,6 +524,12 @@ function changerOnglet(nom){
   if (nom === "suivi" && window.SuiviUI) window.SuiviUI.ouvrir();
   if (nom === "communaute" && window.CommunauteUI) window.CommunauteUI.ouvrir();
 }
+
+function majPastillePlus(){
+  var n = 0; ["cpt-partenaires","cpt-communaute"].forEach(function(i){ var e = $(i); if (e && !e.classList.contains("cachee")) n += parseInt(e.textContent, 10) || 0; });
+  var p = $("cpt-plus"); if (p) { p.textContent = n; p.classList.toggle("cachee", !n); }
+}
+window.majPastillePlus = majPastillePlus;
 
 /* ---------- Données ---------- */
 async function chargerDonnees(silencieux){
@@ -536,6 +561,7 @@ function rendreBadges(){
   var att = S.commandes.filter(function(c){ return c.statutLivraison === "en_attente" && !c.archive; }).length;
   var rec = S.partenaires.filter(function(p){ return p.reclamationEnCours && !p.archive; }).length;
   [["cpt-commandes", att],["cpt-partenaires", rec]].forEach(function(x){ var e = $(x[0]); e.textContent = x[1]; e.classList.toggle("cachee", !x[1]); });
+  majPastillePlus();
 }
 
 /* ================= COMMANDES ================= */
@@ -569,7 +595,7 @@ function texteLivraison(c){
 }
 function carteCommande(c){
   var st = c.statutLivraison;
-  var badgeSt = st === "livree" ? '<span class="badge badge-vert">Livrée</span>' : st === "annulee" ? '<span class="badge badge-rouge">Annulée</span>' : '<span class="badge badge-or">En attente</span>';
+  var badgeSt = st === "livree" ? '<span class="badge badge-vert">Livrée' + (c.livreur ? ' par ' + esc(c.livreur) : '') + (c.encaisse && c.encaisse.mode ? ' · payée en ' + esc(c.encaisse.mode) : '') + '</span>' : st === "annulee" ? '<span class="badge badge-rouge">Annulée</span>' : '<span class="badge badge-or">' + (c.etape === "en_route" && c.livreur ? 'En route · ' + esc(c.livreur) : 'En attente') + '</span>';
   var tel = String(c.telClient || ""), wa = telNettoye(tel), id = esc(c.id);
   var arts = (c.articles || []).map(function(a){
     var b = (a.type === "pack" ? ' <span class="badge badge-bleu">Pack</span>' : "") + (a.surCommande ? ' <span class="badge badge-orange">Sur commande</span>' : "");

@@ -162,6 +162,7 @@ details.q p{margin:0 0 12px;font-size:15.5px;line-height:1.4}
     </header>
     <div id="bandeau" class="bandeau cachee" role="status"></div>
     <nav role="tablist">
+      <button type="button" data-v="liv" id="nav-liv" class="cachee" aria-selected="false">Livraisons</button>
       <button type="button" data-v="vente" aria-selected="true">Vendre</button>
       <button type="button" data-v="mes" aria-selected="false">Mes ventes</button>
       <button type="button" data-v="dep" aria-selected="false">Dépenses</button>
@@ -177,6 +178,7 @@ details.q p{margin:0 0 12px;font-size:15.5px;line-height:1.4}
           <div class="bas"><div class="tot"><small id="nb-t">0 article</small><b id="total">0 F</b></div><button class="btn or" id="btn-encaisser" type="button" disabled>Encaisser</button></div>
         </div>
       </div>
+      <div class="vue cachee" id="v-liv"><div class="liste" id="liste-liv"></div></div>
       <div class="vue cachee" id="v-mes"><div class="liste" id="liste-mes"></div></div>
       <div class="vue cachee" id="v-dep"><div class="liste" id="liste-dep"></div></div>
     </main>
@@ -199,6 +201,12 @@ let numero = lire("caisse_numero", NUM_DEFAUT);
 let ticket = [], sel = -1, frais = false, filtre = "glaces", vue = "vente";
 let file = lire("caisse_file", []);          // ventes faites hors ligne, en attente d'envoi
 let locaux = lire("caisse_recus", []);       // reçus du jour gardés sur ce téléphone
+// Chaque vente garde le numéro de la personne qui l'a faite : un téléphone prêté à quelqu'un d'autre ne montre jamais les ventes des autres
+file.forEach((x) => { if (!x.vid) x.vid = membre ? membre.id : ""; });
+const monId = () => (membre ? membre.id : "");
+const mesFile = () => file.filter((x) => x.vid === monId());
+const mesLocaux = () => locaux.filter((r) => r.vid === monId());
+const estLivreur = () => !!(membre && membre.poste === "livreur");
 let toastT;
 
 function toast(m) { let t = $("#toast"); if (!t) { t = document.createElement("div"); t.id = "toast"; $("#app").appendChild(t); } t.textContent = m; t.classList.remove("cachee"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.add("cachee"), 2600); }
@@ -221,7 +229,6 @@ async function entrer() {
     const r = await fetch("/api/caisse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "connexion", code }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.erreur || "Connexion impossible");
-    if (membre && membre.id !== j.membre.id && file.length) throw new Error("Des ventes de " + membre.nom + " attendent d'être envoyées : sa session doit d'abord se reconnecter.");
     jeton = j.jeton; membre = j.membre; numero = j.numero || numero;
     ecrire("caisse_jeton", jeton); ecrire("caisse_membre", membre); ecrire("caisse_numero", numero);
     await ouvrirCaisse(true);
@@ -229,34 +236,41 @@ async function entrer() {
   b.disabled = false;
 }
 function sortir() {
-  if (file.length && !confirm(file.length + " vente(s) ne sont pas encore envoyées. Sortir quand même ? (Elles resteront sur ce téléphone.)")) return;
+  if (mesFile().length && !confirm(mesFile().length + " vente(s) ne sont pas encore envoyées. Sortir quand même ? (Elles resteront sur ce téléphone et partiront à votre prochaine connexion.)")) return;
   jeton = ""; ecrire("caisse_jeton", ""); montrerCode();
 }
 
 /* ───── Ouverture ───── */
 async function ouvrirCaisse(frais1) {
   $("#ecran-code").classList.add("cachee"); $("#ecran-caisse").classList.remove("cachee");
-  $("#h-nom").textContent = membre ? membre.nom : "—"; $("#h-point").textContent = membre ? membre.point : "";
+  ticket = []; sel = -1;
+  entete();
   locaux = locaux.filter((r) => r.date === jourJ()); ecrire("caisse_recus", locaux);
-  rendreFiltres(); rendreGrille(); rendreTicket(); montrerVue("vente"); etat();
+  rendreFiltres(); rendreGrille(); rendreTicket(); montrerVue(estLivreur() ? "liv" : "vente"); etat();
   if (!lire("caisse_tuto", 0)) lancerTuto(0);
-  try { const j = await api("catalogue"); articles = j.articles; membre = j.membre; numero = j.numero || numero; ecrire("caisse_articles", articles); ecrire("caisse_membre", membre); ecrire("caisse_numero", numero); rendreFiltres(); rendreGrille(); }
+  try { const j = await api("catalogue"); articles = j.articles; membre = j.membre; entete(); numero = j.numero || numero; ecrire("caisse_articles", articles); ecrire("caisse_membre", membre); ecrire("caisse_numero", numero); rendreFiltres(); rendreGrille(); }
   catch (e) { if (e.session) { sessionFinie(); return; } }
   synchroniser();
+}
+function entete() {
+  $("#h-nom").textContent = membre ? membre.nom : "—";
+  $("#h-point").textContent = membre ? (estLivreur() ? "Livreur" : "Caissier") + (membre.point ? " · " + membre.point : "") : "";
+  $("#nav-liv").classList.toggle("cachee", !estLivreur());
 }
 function sessionFinie() { jeton = ""; ecrire("caisse_jeton", ""); montrerCode(); $("#err-code").textContent = "Session terminée : entrez votre code."; }
 function etat() {
   const e = $("#h-etat"), enl = navigator.onLine;
   e.className = "etat " + (enl ? "ok" : "ko");
-  e.textContent = (enl ? "En ligne" : "Hors ligne") + (file.length ? " · " + file.length + " à envoyer" : "");
+  const nf = mesFile().length;
+  e.textContent = (enl ? "En ligne" : "Hors ligne") + (nf ? " · " + nf + " à envoyer" : "");
   const b = $("#bandeau");
   if (!enl) { b.textContent = "Pas de réseau : continuez à vendre normalement. Vos ventes sont gardées sur le téléphone et partiront toutes seules."; b.classList.remove("cachee"); }
-  else if (file.length) { b.textContent = file.length + " vente" + (file.length > 1 ? "s" : "") + " en cours d'envoi au responsable…"; b.classList.remove("cachee"); }
+  else if (nf) { b.textContent = nf + " vente" + (nf > 1 ? "s" : "") + " en cours d'envoi au responsable…"; b.classList.remove("cachee"); }
   else b.classList.add("cachee");
 }
 window.addEventListener("online", () => { etat(); synchroniser(); });
 window.addEventListener("offline", etat);
-setInterval(() => { if (jeton && file.length) synchroniser(); }, 20000);
+setInterval(() => { if (jeton && mesFile().length) synchroniser(); }, 20000);
 
 /* ───── Articles ───── */
 const GROUPES = { glaces: (a) => a.type === "produit" && a.cat === "cremes", packs: (a) => a.type === "pack", autres: (a) => a.type === "produit" && a.cat !== "cremes" };
@@ -393,7 +407,7 @@ function validerVente() {
   const lignes = ticket.map((l) => ({ id: l.id, qte: l.qte, compo: l.compo }));
   const modeNom = { especes: "Espèces", orange: "Orange Money", wave: "Wave" }[mode];
   const recu = { id: idRecu(), date: jourJ(), heure: new Date().toISOString(), vendeur: membre.nom, vid: membre.id, point: membre.point, paiement: modeNom, numPaiement: mode === "especes" ? "" : num, note, total: totalTicket(), lignes: ticket.map((l) => { const a = art(l.id); return { nom: a.nom, qte: l.qte, total: a.prix * l.qte, detail: a.type === "pack" ? (a.choix ? Object.keys(l.compo || {}).map((k) => l.compo[k] + " × " + (art(k) ? art(k).nom.replace(/^Crème glacée /, "") : k)).join(", ") : pots(l) + " pots") : "" }; }), etat: "attente" };
-  file.push({ id: recu.id, date: recu.date, lignes, paiement: mode, numPaiement: recu.numPaiement, note });
+  file.push({ id: recu.id, vid: membre.id, date: recu.date, lignes, paiement: mode, numPaiement: recu.numPaiement, note });
   locaux.unshift(recu); ecrire("caisse_file", file); ecrire("caisse_recus", locaux);
   ticket = []; sel = -1; rendre(); etat();
   montrerRecu(recu);
@@ -415,7 +429,7 @@ function htmlRecu(r) {
     <div class="r" style="margin-top:6px"><span>Paiement</span><b>${esc(r.paiement)}${r.numPaiement ? " · " + esc(r.numPaiement) : ""}</b></div></div>`;
 }
 function montrerRecu(r) {
-  const enAttente = file.some((x) => x.id === r.id);
+  const enAttente = mesFile().some((x) => x.id === r.id);
   $("#feuille").innerHTML = `<h2>Vente enregistrée ✓</h2><p style="margin:0 0 6px"><span id="tag-recu" data-id="${esc(r.id)}" class="tag ${enAttente ? "att" : "ok"}">${enAttente ? "Enregistrée sur ce téléphone, envoi dès que le réseau revient" : "Envoyée au responsable"}</span></p>${htmlRecu(r)}
     <button class="btn wa" id="r-wa" type="button" style="width:100%">Envoyer le reçu au responsable (WhatsApp)</button>
     <button class="btn or" id="r-nouv" type="button" style="width:100%;margin-top:8px">Nouvelle vente</button>`;
@@ -426,39 +440,109 @@ function montrerRecu(r) {
 /* ───── Envoi des ventes (hors ligne → en ligne) ───── */
 let enCours = false;
 async function synchroniser() {
-  if (enCours || !jeton || !file.length || !navigator.onLine) return;
+  if (enCours || !jeton || !navigator.onLine) return;
+  if (!mesFile().length) return;
   enCours = true;
+  const moi = monId();
   try {
-    while (file.length) {
-      const v = file[0];
+    let v;
+    while ((v = file.find((x) => x.vid === moi))) {
+      const retirer = () => { file = file.filter((x) => x !== v); };
       try {
-        const j = await api("vendre", v);
+        const envoi = Object.assign({}, v); delete envoi.vid;
+        await api("vendre", envoi);
         const r = locaux.find((x) => x.id === v.id); if (r) r.etat = "envoye";
-        file.shift();
+        retirer();
       } catch (e) {
         if (e.session) { sessionFinie(); break; }
-        if (e.http === 400) { const r = locaux.find((x) => x.id === v.id); if (r) { r.etat = "refuse"; r.erreur = e.message; } file.shift(); toast("Vente refusée : " + e.message); continue; }
+        if (e.http === 400) { const r = locaux.find((x) => x.id === v.id); if (r) { r.etat = "refuse"; r.erreur = e.message; } retirer(); toast("Vente refusée : " + e.message); continue; }
         break;   // pas de réseau : on réessaiera
       }
     }
   } finally { enCours = false; ecrire("caisse_file", file); ecrire("caisse_recus", locaux); etat();
-    const tg = document.getElementById("tag-recu"); if (tg && !file.some((x) => x.id === tg.dataset.id)) { tg.className = "tag ok"; tg.textContent = "Envoyée au responsable"; } if (vue === "mes") chargerMes(); }
+    const tg = document.getElementById("tag-recu"); if (tg && !mesFile().some((x) => x.id === tg.dataset.id)) { tg.className = "tag ok"; tg.textContent = "Envoyée au responsable"; } if (vue === "mes") chargerMes(); }
 }
 
 /* ───── Mes ventes ───── */
 async function chargerMes() {
-  const c = $("#liste-mes"); let serveur = [];
-  try { const j = await api("mes_ventes", { date: jourJ() }); serveur = j.recus || []; } catch (e) { if (e.session) return sessionFinie(); }
+  const c = $("#liste-mes"); let serveur = [], livraisons = [], enLigne = false;
+  try { const j = await api("mes_ventes", { date: jourJ() }); serveur = j.recus || []; livraisons = j.livraisons || []; enLigne = true; } catch (e) { if (e.session) return sessionFinie(); }
   const ids = new Set(serveur.map((r) => r.id));
-  const tous = serveur.concat(locaux.filter((r) => !ids.has(r.id) && r.date === jourJ() && r.etat !== "refuse"));
+  // Seulement MES reçus. Un reçu déjà envoyé vient du serveur (ainsi, ce que le responsable archive ou supprime disparaît aussi ici) ; seuls ceux qui attendent un envoi viennent du téléphone.
+  const locauxMoi = mesLocaux().filter((r) => !ids.has(r.id) && r.date === jourJ() && r.etat !== "refuse" && (enLigne ? mesFile().some((x) => x.id === r.id) : true));
+  const tous = serveur.concat(locauxMoi);
   tous.sort((a, b) => (a.heure < b.heure ? 1 : -1));
-  const total = tous.reduce((s, r) => s + r.total, 0);
   const parMode = {}; tous.forEach((r) => (parMode[r.paiement] = (parMode[r.paiement] || 0) + r.total));
-  c.innerHTML = `<div class="somme"><small>Mes ventes d'aujourd'hui · ${tous.length} reçu${tous.length > 1 ? "s" : ""}</small><b>${fmt(total)}</b><small>${Object.keys(parMode).map((k) => k + " " + fmt(parMode[k])).join(" · ") || "Aucune vente pour le moment"}</small></div>` +
-    tous.map((r) => { const h = new Date(r.heure); const att = file.some((x) => x.id === r.id);
+  livraisons.forEach((l) => (parMode[l.paiement || "Espèces"] = (parMode[l.paiement || "Espèces"] || 0) + l.total));
+  const total = tous.reduce((s, r) => s + r.total, 0) + livraisons.reduce((s, l) => s + l.total, 0);
+  const nb = tous.length + livraisons.length;
+  const especes = parMode["Espèces"] || 0;
+  c.innerHTML = `<div class="somme"><small>Mes ventes d'aujourd'hui · ${nb} ${livraisons.length ? "encaissement" : "reçu"}${nb > 1 ? "s" : ""}</small><b>${fmt(total)}</b><small>${Object.keys(parMode).map((k) => k + " " + fmt(parMode[k])).join(" · ") || "Aucune vente pour le moment"}</small></div>` +
+    (estLivreur() && especes ? `<div class="info"><b>Espèces à remettre au responsable : ${fmt(especes)}</b></div>` : "") +
+    livraisons.map((l) => { const h = new Date(l.heure); return `<div class="carte"><div class="h"><span>${h.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · Livraison · ${esc(l.paiement || "Espèces")}</span><span>${fmt(l.total)}</span></div><small>${esc(l.nomClient)} — ${l.articles.map((a) => a.qte + " × " + esc(a.nom.replace(/^Crème glacée /, ""))).join(", ")}</small></div>`; }).join("") +
+    tous.map((r) => { const h = new Date(r.heure); const att = mesFile().some((x) => x.id === r.id);
       return `<div class="carte" data-r="${esc(r.id)}"><div class="h"><span>${h.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · ${esc(r.paiement)}</span><span>${fmt(r.total)}</span></div><small>${r.lignes.map((l) => l.qte + " × " + esc(l.nom.replace(/^Crème glacée /, ""))).join(", ")}</small><div style="margin-top:4px"><span class="tag ${att ? "att" : "ok"}">${att ? "En attente d'envoi" : "Envoyée"}</span></div></div>`; }).join("") +
-    `<p class="vide-t">Une vente notée ne peut plus être modifiée ni supprimée. En cas d'erreur, appelez le responsable.</p>`;
+    `<p class="vide-t">Une vente notée ne peut plus être modifiée ni supprimée ici. En cas d'erreur, appelez le responsable.</p>`;
   c._tous = tous;
+}
+
+/* ───── Livraisons (poste « livreur ») ───── */
+const coordsDe = (t) => { const m = /(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})/.exec(String(t || "")); return m ? m[1] + "," + m[2] : ""; };
+const lienCarte = (t) => { const c = coordsDe(t); return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(c || t); };
+let livListe = [];
+async function chargerLiv() {
+  const c = $("#liste-liv");
+  if (!navigator.onLine) { c.innerHTML = `<div class="info">Il faut du réseau pour voir les commandes à livrer. Vous pouvez quand même vendre dans « Vendre ».</div>`; return; }
+  if (!livListe.length) c.innerHTML = `<p class="vide-t">Chargement…</p>`;
+  try { livListe = (await api("a_livrer")).commandes; } catch (e) { if (e.session) return sessionFinie(); c.innerHTML = `<div class="info">${esc(e.message)}</div>`; return; }
+  c.innerHTML = `<div class="info"><b>${livListe.length ? livListe.length + " commande" + (livListe.length > 1 ? "s" : "") + " à livrer" : "Aucune commande à livrer"}</b><br>1. Touchez « Je pars livrer ». 2. Chez le client, touchez « Livrée » et notez le paiement.</div>` +
+    livListe.map((l) => {
+      const moi = l.enRouteAvec && l.livreurId === membre.id;
+      const tel = String(l.telClient || "").replace(/[^\d+]/g, "");
+      return `<div class="carte"><div class="h"><span>${esc(l.nomClient)}</span><span>${fmt(l.total)}</span></div>
+        <small>${l.articles.map((a) => a.qte + " × " + esc(a.nom.replace(/^Crème glacée /, "")) + (a.detail ? " (" + esc(a.detail) + ")" : "")).join(", ")}</small>
+        <div style="margin:6px 0"><span class="tag att">${l.retrait ? "Retrait au local" : esc(l.localisation || "Adresse non précisée")}</span> <span class="tag ok">Paiement prévu : ${esc(l.paiementPrevu)}</span>${l.enRouteAvec ? ` <span class="tag ${moi ? "ok" : "ko"}">${moi ? "Vous êtes en route" : "En route : " + esc(l.enRouteAvec)}</span>` : ""}</div>
+        ${l.note ? `<small>Note : ${esc(l.note)}</small>` : ""}
+        <div class="chips">${tel ? `<a class="btn clair" style="padding:9px 14px;font-size:15px" href="tel:${esc(tel)}">Appeler</a>` : ""}${!l.retrait && l.localisation ? `<a class="btn clair" style="padding:9px 14px;font-size:15px" target="_blank" rel="noopener" href="${esc(lienCarte(l.localisation))}">Itinéraire</a>` : ""}</div>
+        <div class="chips">${moi ? "" : `<button class="btn clair" style="padding:10px 14px;font-size:15px" type="button" data-enroute="${esc(l.id)}">Je pars livrer</button>`}<button class="btn or" style="padding:10px 16px;font-size:15px" type="button" data-livrer="${esc(l.id)}">Livrée ✓</button></div></div>`;
+    }).join("");
+}
+function ouvrirLivraison(id) {
+  const l = livListe.find((x) => x.id === id); if (!l) return;
+  let m = l.paiementPrevu === "Orange Money" ? "orange" : l.paiementPrevu === "Wave" ? "wave" : "especes";
+  const dessiner = () => {
+    const num = ($("#c-num") || {}).value || "";
+    $("#feuille").innerHTML = `<h2>Livrée à ${esc(l.nomClient)}</h2><p style="margin:0 0 4px"><b>À encaisser : ${fmt(l.total)}</b></p><p class="aide-t">Comment le client a-t-il payé ?</p>
+      <div class="modes">${[["especes", "Espèces"], ["orange", "Orange Money"], ["wave", "Wave"]].map(([k, n]) => `<button type="button" data-m="${k}" aria-pressed="${m === k}">${n}</button>`).join("")}</div>
+      ${m !== "especes" ? `<label for="c-num">Numéro ${m === "orange" ? "Orange" : "Wave"} qui a payé</label><input id="c-num" type="tel" inputmode="tel" placeholder="Ex : 70 12 34 56" value="${esc(num)}">` : ""}
+      <label for="c-note">Remarque (facultatif)</label><input id="c-note" type="text" maxlength="150" placeholder="Ex : client absent, laissé au voisin">
+      <div id="err-p" class="erreur"></div>
+      <button class="btn or" id="ok-liv" type="button" style="width:100%;margin-top:6px">Confirmer la livraison</button>
+      <button class="btn clair" id="non-liv" type="button" style="width:100%;margin-top:8px">Retour</button>`;
+    $("#feuille").querySelectorAll("[data-m]").forEach((b) => (b.onclick = () => { m = b.dataset.m; dessiner(); }));
+    $("#non-liv").onclick = fermer;
+    $("#ok-liv").onclick = async () => {
+      const n = (($("#c-num") || {}).value || "").trim(), err = $("#err-p");
+      if (m !== "especes" && n.replace(/\D/g, "").length < 8) { err.textContent = "Entrez le numéro Mobile Money (8 chiffres au moins)."; return; }
+      if (!navigator.onLine) { err.textContent = "Il faut du réseau pour confirmer une livraison."; return; }
+      $("#ok-liv").disabled = true;
+      try { await api("livrer", { id, paiement: m, numPaiement: n, note: ($("#c-note").value || "").trim() }); fermer(); toast("Livraison enregistrée ✓"); recuLivraison(l, m, n); chargerLiv(); }
+      catch (e) { if (e.session) return sessionFinie(); err.textContent = e.message; $("#ok-liv").disabled = false; }
+    };
+  };
+  dessiner(); ouvrir();
+}
+function recuLivraison(l, m, n) {
+  const nomMode = { especes: "Espèces", orange: "Orange Money", wave: "Wave" }[m];
+  const t = ["🧾 *REÇU NOOGÓ* — livraison", new Date().toLocaleDateString("fr-FR"), "Livreur : " + membre.nom, ""].concat(l.articles.map((a) => "• " + a.qte + " × " + a.nom + (a.detail ? "\n   " + a.detail : ""))).concat(["", "*TOTAL : " + fmt(l.total) + "*", "Paiement : " + nomMode + (n ? " (" + n + ")" : ""), "", "Merci et à bientôt ! 🍦"]).join("\n");
+  const tel = String(l.telClient || "").replace(/\D/g, "");
+  $("#feuille").innerHTML = `<h2>Livraison enregistrée ✓</h2><p>${esc(l.nomClient)} · ${fmt(l.total)} · ${nomMode}</p>
+    ${tel ? `<button class="btn wa" id="r-cli" type="button" style="width:100%">Envoyer le reçu au client (WhatsApp)</button>` : ""}
+    <button class="btn wa" id="r-resp" type="button" style="width:100%;margin-top:8px">Prévenir le responsable (WhatsApp)</button>
+    <button class="btn clair" id="r-ok" type="button" style="width:100%;margin-top:8px">Fermer</button>`;
+  const cli = $("#r-cli"); if (cli) cli.onclick = () => window.open("https://wa.me/" + (tel.length === 8 ? "226" + tel : tel) + "?text=" + encodeURIComponent(t), "_blank", "noopener");
+  $("#r-resp").onclick = () => window.open("https://wa.me/" + numero + "?text=" + encodeURIComponent(t), "_blank", "noopener");
+  $("#r-ok").onclick = fermer; ouvrir();
 }
 
 /* ───── Dépenses (sur accord) ───── */
@@ -493,10 +577,12 @@ const ETAPES = [
   ["📶", "Pas de réseau ?", "Pas de problème. Continuez à vendre : tout est gardé sur le téléphone et part tout seul quand le réseau revient. Le mot « Hors ligne » en haut est normal."],
   ["✋", "Une erreur ?", "Une vente notée ne peut pas être effacée. Appelez le responsable. Pour acheter quelque chose (sachets, transport…), allez dans « Dépenses » : il faut son accord."]
 ];
+const ETAPES_LIVREUR = [["🛵", "Vous êtes livreur", "L'onglet « Livraisons » montre les commandes du site à livrer. Touchez « Je pars livrer », puis « Livrée ✓ » chez le client en notant comment il a payé. Les espèces encaissées sont comptées pour vous."]];
+const listeEtapes = () => (estLivreur() ? ETAPES.slice(0, 1).concat(ETAPES_LIVREUR, ETAPES.slice(1)) : ETAPES);
 function lancerTuto(i) {
-  i = i || 0; const e = ETAPES[i], dernier = i === ETAPES.length - 1;
+  i = i || 0; const E = listeEtapes(); const e = E[i], dernier = i === E.length - 1;
   $("#tuto").innerHTML = `<div class="corps"><div class="icone">${e[0]}</div><h2>${e[1]}</h2><p>${e[2]}</p></div>
-    <div class="points">${ETAPES.map((_, k) => `<i class="${k === i ? "on" : ""}"></i>`).join("")}</div>
+    <div class="points">${E.map((_, k) => `<i class="${k === i ? "on" : ""}"></i>`).join("")}</div>
     <div class="btns"><button class="btn or" id="tuto-suite" type="button">${dernier ? "J'ai compris, commencer" : "Suivant"}</button>${dernier ? "" : `<button class="btn clair" id="tuto-passer" type="button">Passer</button>`}</div>`;
   $("#tuto").classList.remove("cachee");
   $("#tuto-suite").onclick = () => (dernier ? finTuto() : lancerTuto(i + 1));
@@ -523,12 +609,14 @@ $("#btn-aide").onclick = ouvrirAide;
 function montrerVue(v) {
   vue = v;
   document.querySelectorAll("nav button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.v === v)));
-  ["vente", "mes", "dep"].forEach((k) => $("#v-" + k).classList.toggle("cachee", k !== v));
-  if (v === "mes") chargerMes(); if (v === "dep") chargerDep();
+  ["vente", "mes", "dep", "liv"].forEach((k) => $("#v-" + k).classList.toggle("cachee", k !== v));
+  if (v === "mes") chargerMes(); if (v === "dep") chargerDep(); if (v === "liv") chargerLiv();
 }
 document.addEventListener("click", (e) => {
   const t = e.target.closest("button, .l, .carte"); if (!t) return;
   if (t.dataset.v) return montrerVue(t.dataset.v);
+  if (t.dataset.enroute) { api("en_route", { id: t.dataset.enroute }).then(() => { toast("Bonne route !"); chargerLiv(); }).catch((er) => { if (er.session) return sessionFinie(); toast(er.message); }); return; }
+  if (t.dataset.livrer) return ouvrirLivraison(t.dataset.livrer);
   if (t.dataset.f) { filtre = t.dataset.f; rendreFiltres(); return rendreGrille(); }
   if (t.dataset.a) return ajouter(t.dataset.a);
   if (t.dataset.x !== undefined) { ticket.splice(Number(t.dataset.x), 1); sel = -1; return rendre(); }
@@ -557,7 +645,23 @@ $("#btn-chrome").onclick = () => { location.href = "intent://" + location.host +
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
 
 /* ───── Démarrage ───── */
-if (jeton && membre) ouvrirCaisse(); else montrerCode();
+async function ouvrirParLien(lien) {
+  $("#ecran-caisse").classList.add("cachee"); $("#ecran-code").classList.remove("cachee");
+  $("#err-code").textContent = "Ouverture de votre caisse…";
+  if (!navigator.onLine) { $("#err-code").textContent = "Pas de réseau : ce lien a besoin d'internet la première fois."; return; }
+  try {
+    const r = await fetch("/api/caisse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "connexion", lien }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.erreur || "Connexion impossible");
+    jeton = j.jeton; membre = j.membre; numero = j.numero || numero;
+    ecrire("caisse_jeton", jeton); ecrire("caisse_membre", membre); ecrire("caisse_numero", numero);
+    $("#err-code").textContent = "";
+    await ouvrirCaisse(true);
+  } catch (e) { $("#err-code").textContent = e.message; }
+}
+const lienPerso = new URLSearchParams(location.search).get("c");
+if (lienPerso) { try { history.replaceState(null, "", "/caisse.html"); } catch (e) {} ouvrirParLien(lienPerso); }
+else if (jeton && membre) ouvrirCaisse(); else montrerCode();
 </script>
 </body>
 </html>

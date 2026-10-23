@@ -384,7 +384,7 @@ module.exports = async (req, res) => {
       }
       case "nouveau_depart": {
         const jr = date(d.date || new Date().toISOString().slice(0, 10));
-        const caisse = entier(d.caisse, 0, 1000000000, "Caisse");
+        const caisse = entier(d.caisse, -1000000000, 1000000000, "Caisse");
         const items = (Array.isArray(d.items) ? d.items : []).slice(0, 80)
           .map((x) => ({ produitId: idPropre(x.produitId), qte: entier(x.qte || 0, 0, 100000, "Stock"), cu: entier(x.coutUnitaire || 0, 0, 10000000, "Coût") }))
           .filter((x) => x.qte > 0);

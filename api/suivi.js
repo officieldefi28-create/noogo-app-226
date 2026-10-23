@@ -19,9 +19,11 @@ async function charger() {
   ]);
   const motCaisse = (await S.getDoc("caisse-mot")) || "bingo";
   const cfg = configPropre(config);
+  const actifs = (l) => (l || []).filter((x) => x && !x.archive), archives = (l) => (l || []).filter((x) => x && x.archive);
+  const archivesDonnees = { recus: archives(recus), depenses: archives(depenses) };
   // « Nouveau départ » : les commandes du site livrées avant ce moment ne comptent plus dans le suivi
   const cmds = cfg.debutHeure ? commandes.filter((c) => String(c.dateLivraison || c.date || "") >= cfg.debutHeure) : commandes;
-  return { catalogue, config: cfg, lots, ventes, pertes, depenses, comptages, commandes: cmds, equipe, recus, demandes, motCaisse, journal: Array.isArray(journal) ? journal : [], clotures: Array.isArray(clotures) ? clotures : [] };
+  return { catalogue, config: cfg, lots, ventes: actifs(ventes), pertes, depenses: actifs(depenses), comptages, commandes: cmds, equipe, recus: actifs(recus), archives: archivesDonnees, demandes, motCaisse, journal: Array.isArray(journal) ? journal : [], clotures: Array.isArray(clotures) ? clotures : [] };
 }
 
 function configPropre(c) {
@@ -67,9 +69,11 @@ function precedente(donnees, du, au) {
 
 // Équipe de la caisse : un code par personne (créés ici, jamais dans la caisse)
 async function lireEquipe() { const l = await S.getDoc("equipe"); return Array.isArray(l) ? l : []; }
+const POSTES = { caissier: "Caissier", livreur: "Livreur" };
 async function equipeSauver(liste, config) {
   const pv = new Set((config.pointsVente || []));
   const vus = new Set(), codes = new Set();
+  const anciens = {}; (await lireEquipe()).forEach((m) => (anciens[m.id] = m));
   const propre = [];
   for (const x of (Array.isArray(liste) ? liste : []).slice(0, 40)) {
     const nom = txt(x && x.nom, 40); if (!nom) continue;
@@ -81,7 +85,9 @@ async function equipeSauver(liste, config) {
     while (!code || codes.has(code.toLowerCase())) code = String(crypto.randomInt(100000, 999999));
     codes.add(code.toLowerCase());
     const point = txt(x.point, 40);
-    propre.push({ id, nom, code, point: point || "Local", actif: x.actif !== false });
+    const ancien = anciens[id];
+    const lien = !x.nouveauLien && ancien && ancien.lien ? ancien.lien : crypto.randomBytes(9).toString("hex");   // lien personnel : jamais écrit par le navigateur
+    propre.push({ id, nom, code, point: point || "Local", actif: x.actif !== false, poste: POSTES[x.poste] ? x.poste : "caissier", tel: String(x.tel || "").replace(/\D/g, "").slice(0, 15), lien });
   }
   await S.setDoc("equipe", propre);
   return propre;
@@ -105,6 +111,7 @@ async function noter(libelle, detail) {
   } catch (e) { /* le journal ne doit jamais bloquer une saisie */ }
 }
 const fr = (n) => String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " F";
+const jour = (x) => String(x || "").slice(0, 10);
 const jjmm = (d) => String(d || "").slice(8, 10) + "/" + String(d || "").slice(5, 7);
 function decrire(type, o, noms) {
   if (!o) return "";
@@ -141,6 +148,17 @@ function controles(donnees, calc) {
   return liste;
 }
 
+// Une dépense acceptée sur demande d'un vendeur garde le nom de ce vendeur (pour l'affichage par personne)
+function decorerDepenses(liste, demandes) {
+  const parId = {}; (demandes || []).forEach((x) => x && (parId[x.id] = x));
+  return (liste || []).map((x) => {
+    if (x.vid) return x;
+    const m = /^Demande (\S+)/.exec(String(x.note || ""));
+    const dem = m && parId[m[1]];
+    return dem ? { ...x, vid: dem.vid, vendeur: dem.vendeur } : x;
+  });
+}
+
 function vue(donnees, d) {
   const [du, au] = periode(d || {});
   const calc = U.calculer(donnees);
@@ -154,7 +172,10 @@ function vue(donnees, d) {
     pertes: calc.pertes.filter((x) => (!du || x.date >= du) && (!au || x.date <= au)).slice(0, 1500),
     ajustements: calc.ajustements.slice(-100),
     lots: calc.lots.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 600),
-    depenses: calc.depenses.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
+    depenses: decorerDepenses(calc.depenses, donnees.demandes).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
+    archives: { recus: (donnees.archives.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 400), depenses: decorerDepenses(donnees.archives.depenses, donnees.demandes).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 400) },
+    postes: POSTES,
+    livraisons: (donnees.commandes || []).filter((c) => c && c.statutLivraison === "livree" && c.livreurId).map((c) => ({ id: c.id, date: String(c.dateLivraison || c.date || "").slice(0, 10), heure: c.dateLivraison, livreurId: c.livreurId, livreur: c.livreur, client: c.nomClient, total: Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0, mode: (c.encaisse && c.encaisse.mode) || "" })).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 500),
     comptages: donnees.comptages.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     equipe: donnees.equipe, motCaisse: donnees.motCaisse, recus: (donnees.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 800),
     demandes: (donnees.demandes || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 200),
@@ -275,7 +296,7 @@ module.exports = async (req, res) => {
         if (dem.statut !== "attente") throw new Error("Demande invalide : déjà traitée");
         if (d.decision === "accepter") {
           const cat = U.CATEGORIES_DEPENSE.includes(d.categorie) ? d.categorie : "Autre dépense";
-          const dep = { id: nouvelId("d"), date: dem.date, categorie: cat, description: (dem.motif + " — " + dem.vendeur).slice(0, 120), montant: dem.montant, mode: "Caisse", note: "Demande " + dem.id };
+          const dep = { id: nouvelId("d"), date: dem.date, categorie: cat, description: (dem.motif + " — " + dem.vendeur).slice(0, 120), montant: dem.montant, mode: "Caisse", note: "Demande " + dem.id, vid: dem.vid, vendeur: dem.vendeur };
           await S.suiviSet("depenses", dep.id, dep);
           dem.statut = "accepte"; dem.depenseId = dep.id;
         } else if (d.decision === "refuser") dem.statut = "refuse";
@@ -283,6 +304,57 @@ module.exports = async (req, res) => {
         dem.decideLe = new Date().toISOString();
         await S.suiviSet("demandes", dem.id, dem);
         trace = ["Demande de dépense " + (dem.statut === "accepte" ? "acceptée" : "refusée"), dem.vendeur + " · " + fr(dem.montant) + " · " + dem.motif];
+        break;
+      }
+      case "archiver": {
+        // Met de côté (sans effacer) : le chiffre disparaît des totaux, on peut le restaurer
+        const etat = d.etat !== false;
+        if (d.type === "recu") {
+          const idR = txt(d.id, 60);
+          const recu = (await S.suiviListe("recus")).find((r) => r && r.id === idR);
+          if (!recu) throw new Error("Reçu invalide");
+          if (etat) recu.archive = new Date().toISOString(); else delete recu.archive;
+          await S.suiviSet("recus", idR, recu);
+          for (const v of await S.suiviListe("ventes")) if (v && v.recuId === idR) { if (etat) v.archive = recu.archive; else delete v.archive; await S.suiviSet("ventes", v.id, v); }
+          trace = [etat ? "Reçu archivé" : "Reçu restauré", (recu.vendeur || "") + " · " + fr(recu.total) + " · " + jjmm(recu.date)];
+        } else if (d.type === "depense") {
+          const idD = txt(d.id, 80);
+          const dep = (await S.suiviListe("depenses")).find((x) => x && String(x.id) === idD);
+          if (!dep) throw new Error("Dépense invalide");
+          if (etat) dep.archive = new Date().toISOString(); else delete dep.archive;
+          await S.suiviSet("depenses", idD, dep);
+          trace = [etat ? "Dépense archivée" : "Dépense restaurée", decrire("depenses", dep, noms)];
+        } else throw new Error("Type invalide");
+        break;
+      }
+      case "vendeur_archiver": {
+        // Archive d'un coup les ventes et dépenses d'une personne (option : entre deux dates)
+        const vid = txt(d.vid, 60); if (!vid) throw new Error("Personne invalide");
+        const du = d.du ? date(d.du) : "", au = d.au ? date(d.au) : "";
+        const dans = (jr) => (!du || jr >= du) && (!au || jr <= au);
+        const stamp = new Date().toISOString();
+        const demandes = await S.suiviListe("demandes");
+        let nr = 0, nd = 0;
+        for (const r of await S.suiviListe("recus")) if (r && !r.archive && r.vid === vid && dans(r.date)) {
+          r.archive = stamp; await S.suiviSet("recus", r.id, r); nr++;
+          for (const v of await S.suiviListe("ventes")) if (v && v.recuId === r.id) { v.archive = stamp; await S.suiviSet("ventes", v.id, v); }
+        }
+        for (const x of decorerDepenses(await S.suiviListe("depenses"), demandes)) if (x && !x.archive && x.vid === vid && dans(jour(x.date))) { x.archive = stamp; await S.suiviSet("depenses", x.id, x); nd++; }
+        const nom = ((await lireEquipe()).find((m) => m.id === vid) || {}).nom || vid;
+        trace = ["Archivé pour " + nom, nr + " reçu(s) et " + nd + " dépense(s)" + (du || au ? " · " + (du || "…") + " → " + (au || "…") : "")];
+        break;
+      }
+      case "archives_vider": {
+        // Supprime pour de bon ce qui est dans les archives (d'une personne, ou de tout le monde)
+        const vid = txt(d.vid, 60);
+        const demandes = await S.suiviListe("demandes");
+        let nr = 0, nd = 0;
+        for (const r of await S.suiviListe("recus")) if (r && r.archive && (!vid || r.vid === vid)) {
+          for (const v of await S.suiviListe("ventes")) if (v && v.recuId === r.id) await S.suiviDel("ventes", v.id);
+          await S.suiviDel("recus", r.id); nr++;
+        }
+        for (const x of decorerDepenses(await S.suiviListe("depenses"), demandes)) if (x && x.archive && (!vid || x.vid === vid)) { await S.suiviDel("depenses", String(x.id)); nd++; }
+        trace = ["Archives supprimées pour toujours", nr + " reçu(s) et " + nd + " dépense(s)"];
         break;
       }
       case "supprimer_recu": {

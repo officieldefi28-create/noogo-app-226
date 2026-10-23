@@ -15,7 +15,8 @@ const aujourdhui = () => new Date().toISOString().slice(0, 10);
 const entier = (n, min, max, nom) => { const v = Math.round(Number(n)); if (!Number.isFinite(v) || v < min || v > max) throw new Error(nom + " invalide"); return v; };
 
 async function equipe() { const l = await S.getDoc("equipe"); return Array.isArray(l) ? l : []; }
-const sansCode = (m) => ({ id: m.id, nom: m.nom, point: m.point });
+const sansCode = (m) => ({ id: m.id, nom: m.nom, point: m.point, poste: m.poste === "livreur" ? "livreur" : "caissier" });
+const estLivreur = (m) => m && m.poste === "livreur";
 
 function membre(jeton, liste) {
   const secret = process.env.JETON_SECRET;
@@ -54,6 +55,18 @@ function repartir(total, parts) {   // répartit un montant entier en parts prop
   return out;
 }
 
+// Ce que le livreur a besoin de voir d'une commande (jamais plus)
+function resumeLivraison(c) {
+  const total = c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal;
+  return {
+    id: c.id, date: c.date, heure: c.dateLivraison || c.date, nomClient: c.nomClient, telClient: c.telClient || "", localisation: c.localisation || "",
+    retrait: c.modeReception === "retrait", paiementPrevu: MODES[c.modePaiement] || "Espèces", total: Number(total) || 0, etape: c.etape || "recue", note: c.note || "",
+    livraison: c.livraison || "", enRouteAvec: c.livreur || "", livreurId: c.livreurId || "",
+    articles: (c.articles || []).map((a) => ({ nom: a.nom, qte: a.qte, detail: Array.isArray(a.compo) && a.compo.length ? a.compo.map((x) => x.qte + " × " + (x.nom || x.id)).join(", ") : "" })),
+    paiement: c.encaisse ? c.encaisse.mode : ""
+  };
+}
+
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "POST") return res.status(405).json({ erreur: "Méthode non autorisée" });
@@ -71,9 +84,10 @@ module.exports = async (req, res) => {
     if (d.action === "connexion") {
       if (!(await S.limiter("clogin:" + ip, 12, 600))) return res.status(429).json({ erreur: "Trop d'essais. Réessayez dans 10 minutes." });
       const code = txt(d.code, 20).toLowerCase();
+      const lienP = /^[0-9a-f]{18}$/.test(String(d.lien || "")) ? String(d.lien) : "";
       const liste = await equipe();
-      const m = liste.find((x) => x.actif !== false && x.code && String(x.code).toLowerCase() === code);
-      if (!m) return res.status(401).json({ erreur: "Code incorrect" });
+      const m = lienP ? liste.find((x) => x.actif !== false && x.lien && x.lien === lienP) : liste.find((x) => x.actif !== false && x.code && String(x.code).toLowerCase() === code);
+      if (!m) return res.status(401).json({ erreur: lienP ? "Ce lien n'est plus valable : demandez-en un nouveau au responsable." : "Code incorrect" });
       const jeton = signerJeton({ role: "caisse", uid: m.id, creeLe: Date.now() }, process.env.JETON_SECRET);
       return res.status(200).json({ jeton, membre: sansCode(m), numero: NUMERO_RESPONSABLE });
     }
@@ -135,8 +149,42 @@ module.exports = async (req, res) => {
 
       case "mes_ventes": {
         const jr = /^\d{4}-\d{2}-\d{2}$/.test(String(d.date || "")) ? d.date : aujourdhui();
-        const recus = (await S.suiviListe("recus")).filter((r) => r && r.vid === m.id && r.date === jr).sort((a, b) => (a.heure < b.heure ? 1 : -1));
-        return res.status(200).json({ date: jr, recus, total: recus.reduce((s, r) => s + r.total, 0) });
+        const recus = (await S.suiviListe("recus")).filter((r) => r && !r.archive && r.vid === m.id && r.date === jr).sort((a, b) => (a.heure < b.heure ? 1 : -1));
+        const livraisons = estLivreur(m) ? (await S.getCommandes()).filter((c) => c && c.livreurId === m.id && c.statutLivraison === "livree" && String(c.dateLivraison || "").slice(0, 10) === jr).map(resumeLivraison).sort((a, b) => (a.heure < b.heure ? 1 : -1)) : [];
+        const total = recus.reduce((s, r) => s + r.total, 0) + livraisons.reduce((s, l) => s + l.total, 0);
+        return res.status(200).json({ date: jr, recus, livraisons, total });
+      }
+
+      // ───── Poste « livreur » : commandes du site à livrer ─────
+      case "a_livrer": {
+        if (!estLivreur(m)) return res.status(403).json({ erreur: "Réservé aux livreurs" });
+        const l = (await S.getCommandes()).filter((c) => c && c.statutLivraison === "en_attente" && !c.archive).sort((a, b) => (a.date < b.date ? -1 : 1)).slice(0, 80).map(resumeLivraison);
+        return res.status(200).json({ commandes: l });
+      }
+      case "en_route": {
+        if (!estLivreur(m)) return res.status(403).json({ erreur: "Réservé aux livreurs" });
+        const c = await S.getCommande(txt(d.id, 60));
+        if (!c || c.statutLivraison !== "en_attente") throw new Error("Commande invalide : déjà livrée ou annulée");
+        c.etape = "en_route"; c.livreur = m.nom; c.livreurId = m.id;
+        await S.setCommande(c);
+        return res.status(200).json({ commande: resumeLivraison(c) });
+      }
+      case "livrer": {
+        if (!estLivreur(m)) return res.status(403).json({ erreur: "Réservé aux livreurs" });
+        const c = await S.getCommande(txt(d.id, 60));
+        if (!c) throw new Error("Commande invalide");
+        if (c.statutLivraison === "livree") return res.status(200).json({ commande: resumeLivraison(c), deja: true });
+        if (c.statutLivraison !== "en_attente") throw new Error("Commande invalide : annulée");
+        const mode = MODES[d.paiement] ? d.paiement : "especes";
+        const num = txt(d.numPaiement, 20);
+        if (mode !== "especes" && num.replace(/\D/g, "").length < 8) throw new Error("Numéro Mobile Money invalide");
+        const montant = c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal;
+        const maintenant = new Date().toISOString();
+        c.statutLivraison = "livree"; c.dateLivraison = maintenant; c.etape = "livree";
+        c.livreur = m.nom; c.livreurId = m.id;
+        c.encaisse = { mode: MODES[mode], numPaiement: mode === "especes" ? "" : num, montant, le: maintenant, par: m.nom, parId: m.id, note: txt(d.note, 150) };
+        await S.setCommande(c);
+        return res.status(200).json({ commande: resumeLivraison(c) });
       }
 
       case "demander_depense": {

@@ -89,7 +89,8 @@ function calculer(donnees) {
 
   // 1) évènements
   const ev = {}; // produitId -> [ {date, rang, type, ...} ]
-  const pousse = (id, e) => { (ev[id] = ev[id] || []).push(e); if (!parId[id]) parId[id] = { id, nom: id, prix: 0, actif: false, interne: true, inconnu: true }; };
+  const joli = (id) => { const t = String(id).replace(/[-_]+/g, " ").trim(); return "Ancien produit : " + t.charAt(0).toUpperCase() + t.slice(1); };
+  const pousse = (id, e) => { (ev[id] = ev[id] || []).push(e); if (!parId[id]) parId[id] = { id, nom: joli(id), prix: 0, actif: false, interne: true, inconnu: true }; };
 
   // Heure à laquelle chaque comptage a été enregistré (anciens comptages sans heure : on suppose 18 h ce jour-là)
   const heureComptage = {};
@@ -124,7 +125,7 @@ function calculer(donnees) {
   }
   for (const v of donnees.ventes || []) {
     const prix = v.prix != null && v.prix !== "" ? nombre(v.prix) : prixDe(v.produitId);
-    pousse(v.produitId, { date: jour(v.date), rang: 1, type: "vente", source: "manuel", canal: v.pointVente || CANAL_DEFAUT, qte: nombre(v.qte), montant: v.montant != null && v.montant !== "" ? Math.max(0, nombre(v.montant)) : Math.max(0, nombre(v.qte) * prix - nombre(v.remise)), ref: v.id, vendeur: v.vendeur || "", paiement: v.paiement || "", recu: v.recuId || "" });
+    pousse(v.produitId, { date: jour(v.date), rang: 1, type: "vente", source: "manuel", canal: v.pointVente || CANAL_DEFAUT, qte: nombre(v.qte), montant: v.montant != null && v.montant !== "" ? Math.max(0, nombre(v.montant)) : Math.max(0, nombre(v.qte) * prix - nombre(v.remise)), ref: v.id, vendeur: v.vendeur || "", vid: v.vid || "", paiement: v.paiement || "", recu: v.recuId || "" });
   }
   for (const p of donnees.pertes || []) pousse(p.produitId, { date: jour(p.date), rang: 2, type: "perte", sorte: p.type, qte: nombre(p.qte), ref: p.id });
   for (const c of donnees.comptages || []) pousse(c.produitId, { date: jour(c.date), rang: 3, type: "comptage", restant: nombre(c.restant), canal: c.pointVente || CANAL_DEFAUT, prix: c.prix != null && c.prix !== "" ? nombre(c.prix) : null, ref: c.id });
@@ -141,7 +142,7 @@ function calculer(donnees) {
       if (e.type === "lot") { courant += e.qte; qteLots += e.qte; coutLots += e.qte * e.coutU; }
       else if (e.type === "vente") {
         courant -= e.qte; vendu += e.qte;
-        ventes.push({ date: e.date, produitId: id, nom: nomDe(id), qte: e.qte, montant: arrondi(e.montant), cout: arrondi(e.qte * coutMoyen()), canal: e.canal, source: e.source, ref: e.ref, vendeur: e.vendeur || "", paiement: e.paiement || "", recu: e.recu || "" });
+        ventes.push({ date: e.date, produitId: id, nom: nomDe(id), qte: e.qte, montant: arrondi(e.montant), cout: arrondi(e.qte * coutMoyen()), canal: e.canal, source: e.source, ref: e.ref, vendeur: e.vendeur || "", vid: e.vid || "", paiement: e.paiement || "", recu: e.recu || "" });
       } else if (e.type === "perte") {
         courant -= e.qte; perdu += e.qte;
         pertes.push({ date: e.date, produitId: id, nom: nomDe(id), qte: e.qte, type: e.sorte, cout: arrondi(e.qte * coutMoyen()), ref: e.ref });
@@ -158,9 +159,9 @@ function calculer(donnees) {
         courant = e.restant; dernier = { date: e.date, restant: e.restant };
       }
     }
-    stock[id] = { id, nom: nomDe(id), theorique: courant, vendu, perdu, produit: qteLots, coutMoyen: arrondi(coutMoyen()), valeur: arrondi(Math.max(0, courant) * coutMoyen()), dernierComptage: dernier };
+    stock[id] = { id, nom: nomDe(id), actif: !!(parId[id] && parId[id].actif !== false && !parId[id].inconnu), inconnu: !!(parId[id] && parId[id].inconnu), theorique: courant, vendu, perdu, produit: qteLots, coutMoyen: arrondi(coutMoyen()), valeur: arrondi(Math.max(0, courant) * coutMoyen()), dernierComptage: dernier };
   }
-  for (const p of suivis) if (!stock[p.id]) stock[p.id] = { id: p.id, nom: p.nom, theorique: 0, vendu: 0, perdu: 0, produit: 0, coutMoyen: arrondi(couts[p.id]), valeur: 0, dernierComptage: null };
+  for (const p of suivis) if (!stock[p.id]) stock[p.id] = { id: p.id, nom: p.nom, actif: p.actif !== false, inconnu: false, theorique: 0, vendu: 0, perdu: 0, produit: 0, coutMoyen: arrondi(couts[p.id]), valeur: 0, dernierComptage: null };
 
   for (const l of donnees.lots || []) {
     const total = (l.lignes || []).reduce((s, x) => s + nombre(x.qte), 0);
@@ -229,10 +230,15 @@ function bilan(donnees, du, au) {
   const cV = somme(r.ventes.filter((x) => apres(x.date)), (x) => x.montant);
   const cL = somme(r.lots.filter((x) => apres(jour(x.date)) && !x.depart), (x) => nombre(x.cout));
   const cD = r.depenses.filter((x) => apres(jour(x.date)));
-  const caisse = nombre(cfg.caisseDepart) + cV - cL
-    - somme(cD.filter((x) => x.classe === "charge" || x.classe === "achat"), (x) => nombre(x.montant))
-    + somme(cD.filter((x) => x.classe === "apport"), (x) => nombre(x.montant))
-    - somme(cD.filter((x) => x.classe === "remb"), (x) => nombre(x.montant));
+  const cCharges = somme(cD.filter((x) => x.classe === "charge"), (x) => nombre(x.montant));
+  const cAchats = somme(cD.filter((x) => x.classe === "achat"), (x) => nombre(x.montant));
+  const cApports = somme(cD.filter((x) => x.classe === "apport"), (x) => nombre(x.montant));
+  const cRembs = somme(cD.filter((x) => x.classe === "remb"), (x) => nombre(x.montant));
+  const caisse = nombre(cfg.caisseDepart) + cV - cL - cCharges - cAchats + cApports - cRembs;
+  const caisseDetail = { depart: arrondi(cfg.caisseDepart), depuis, ventes: arrondi(cV), production: arrondi(cL), depenses: arrondi(cCharges), achats: arrondi(cAchats), apports: arrondi(cApports), remboursements: arrondi(cRembs) };
+  // Sur la période choisie : l'argent entré (ventes) moins l'argent sorti (dépenses + production + achats)
+  const sortiesPeriode = charges + productionCout + achats;
+  const fluxPeriode = ca + apports - rembs - sortiesPeriode;
 
   const valeurStock = somme(Object.values(r.stock), (s) => s.valeur);
   const alertes = Object.values(r.stock).filter((s) => s.theorique < 0).map((s) => ({ nom: s.nom, theorique: s.theorique }));
@@ -243,7 +249,8 @@ function bilan(donnees, du, au) {
     quantite: qte, pertes: arrondi(pertesCout), charges: arrondi(charges), achats: arrondi(achats),
     resultat: arrondi(margeBrute - pertesCout - charges),
     apports: arrondi(apports), remboursements: arrondi(rembs), production: arrondi(productionCout),
-    caisse: arrondi(caisse), valeurStock: arrondi(valeurStock), alertes,
+    depensesTotales: arrondi(charges + productionCout), sortiesPeriode: arrondi(sortiesPeriode), fluxPeriode: arrondi(fluxPeriode),
+    caisse: arrondi(caisse), caisseDetail, valeurStock: arrondi(valeurStock), alertes,
     parProduit, parPoint, parVendeur, parPaiement, parCategorie, parJour
   };
 }

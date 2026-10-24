@@ -256,7 +256,7 @@
     <section id="p-catalogue">
       <div class="barre">
         <h2>Catalogue</h2>
-        <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-or" type="button" data-act="art-nouveau">+ Article</button><button class="btn btn-brun" type="button" data-act="art-pack">+ Pack promo</button></span>
+        <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-or" type="button" data-act="art-nouveau">+ Article</button><button class="btn btn-brun" type="button" data-act="art-pack">+ Pack promo</button><button class="btn btn-vert" type="button" data-act="packs-noogo">Mettre mes 16 packs</button></span>
       </div>
       <div class="msg msg-info" style="margin:0 0 6px">Modifiez vos prix, photos et disponibilités. Rien n'est visible sur le site tant que vous n'avez pas appuyé sur <b>Enregistrer le catalogue</b>.</div>
       <div id="msg-cat"></div>
@@ -419,6 +419,40 @@ function telNettoye(t){
   return n;
 }
 function valeurChamp(id){ var e = $(id); return e ? e.value : ""; }
+function ajouterPacksNoogo(){
+  var V = "vanille-p", B = "banane-p", O = "baobab-p";
+  var L = [
+    ["Pack Découverte", 4500, {V:1,B:1,O:1}, "1 vanille + 1 banane + 1 baobab", "nv-pack-mix-125.jpg", "NOUVEAU"],
+    ["Pack Vanille + Banane", 7000, {V:3,B:3}, "3 vanilles + 3 bananes", "nv-pack-van-125.jpg"],
+    ["Pack Vanille + Baobab", 7000, {V:3,O:3}, "3 vanilles + 3 baobabs", "nv-pack-bao-125.jpg"],
+    ["Pack Banane + Baobab", 7800, {B:3,O:3}, "3 bananes + 3 baobabs", "nv-pack-ban-125.jpg"],
+    ["Pack Trio Saveurs", 7200, {V:2,B:2,O:2}, "2 vanilles + 2 bananes + 2 baobabs", "nv-pack-mix-125.jpg"],
+    ["Pack Famille", 10000, {V:3,B:3,O:3}, "3 vanilles + 3 bananes + 3 baobabs", "nv-pack-mix-250.jpg"],
+    ["Pack Grand Format", 12600, {V:4,B:4,O:4}, "4 vanilles + 4 bananes + 4 baobabs", "nv-pack-mix-250.jpg"],
+    ["Pack Vanille x3", 3900, {V:3}, "3 vanilles", "nv-pack-van-125.jpg"],
+    ["Pack Banane x3", 4800, {B:3}, "3 bananes", "nv-pack-ban-125.jpg"],
+    ["Pack Baobab x3", 4800, {O:3}, "3 baobabs", "nv-pack-bao-125.jpg"],
+    ["Pack Vanille x6", 6000, {V:6}, "6 vanilles", "nv-pack-van-125.jpg"],
+    ["Pack Banane x6", 7800, {B:6}, "6 bananes", "nv-pack-ban-125.jpg"],
+    ["Pack Baobab x6", 7800, {O:6}, "6 baobabs", "nv-pack-bao-125.jpg"],
+    ["Pack Vanille x9", 8100, {V:9}, "9 vanilles", "nv-pack-van-125.jpg"],
+    ["Pack Banane x9", 10800, {B:9}, "9 bananes", "nv-pack-ban-125.jpg"],
+    ["Pack Baobab x9", 10800, {O:9}, "9 baobabs", "nv-pack-bao-125.jpg"]
+  ];
+  var ids = { V: V, B: B, O: O };
+  var anciens = S.produits.filter(function(p){ return p.type === "pack" && p.id !== "pk-ceremonie" && !/^pk-noogo-/.test(p.id); }).length;
+  if (!confirm("Ajouter vos 16 packs (livraison incluse) ?\nLes anciens packs (" + anciens + ") seront cachés du site. Rien n'est publié avant « Enregistrer le catalogue ».")) return;
+  S.produits.forEach(function(p){ if (p.type === "pack" && p.id !== "pk-ceremonie" && !/^pk-noogo-/.test(p.id)) p.actif = false; });
+  S.produits = S.produits.filter(function(p){ return !/^pk-noogo-/.test(p.id); });
+  L.slice().forEach(function(x, i){
+    var compo = {}, n = 0; Object.keys(x[2]).forEach(function(k){ compo[ids[k]] = x[2][k]; n += x[2][k]; });
+    var q = { id: "pk-noogo-" + (i + 1), cat: "cremes", gr: "petit", type: "pack", nom: x[0], info: x[3] + " · livraison incluse", prix: x[1], img: x[4], actif: true, packCount: n, packCompo: compo };
+    if (x[5]) q.badge = x[5];
+    S.produits.push(q);
+  });
+  rendreCatalogue(); majSauvegarde();
+  toast("16 packs ajoutés. Appuyez sur « Enregistrer le catalogue ».", "ok");
+}
 function nouvelId(){ return "art-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
 function imgSrc(i){
   i = String(i || "").trim();
@@ -1291,6 +1325,7 @@ document.addEventListener("click", function(ev){
       t.disabled = true;
       return api("vider_commandes").then(function(d){ toast(d.supprimees + " commande(s) supprimée(s)", "ok"); return chargerDonnees(true); }).catch(erreur).then(function(){ t.disabled = false; });
     case "fermer-modal": return fermerModal();
+    case "packs-noogo": if (S.produits) return ajouterPacksNoogo(); return toast("Le catalogue n'est pas encore chargé.", "err");
     case "art-pack": if (S.produits) return ouvrirEditeur(null, "pack"); return toast("Le catalogue n'est pas encore chargé.", "err");
     case "art-nouveau": if (S.produits) return ouvrirEditeur(null); return toast("Le catalogue n'est pas encore chargé.", "err");
     case "art-modifier": return ouvrirEditeur(id);

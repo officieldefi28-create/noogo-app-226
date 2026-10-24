@@ -8,7 +8,7 @@ const { chargerCatalogue } = require("./_catalogue");
 
 const NUMERO_RESPONSABLE = "22665120902";
 const DUREE_MS = 30 * 24 * 3600 * 1000;
-const MODES = { especes: "Espèces", orange: "Orange Money", wave: "Wave" };
+const MODES = { especes: "Espèces", orange: "Orange Money", wave: "Wave", resp: "Payé au responsable" };
 
 const txt = (s, max) => String(s == null ? "" : s).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max);
 const aujourdhui = () => new Date().toISOString().slice(0, 10);
@@ -107,7 +107,7 @@ module.exports = async (req, res) => {
         if (deja) return res.status(200).json({ recu: deja, deja: true });   // envoi répété (hors ligne) : on ne compte pas deux fois
         const mode = MODES[d.paiement] ? d.paiement : "especes";
         const num = txt(d.numPaiement, 20);
-        if (mode !== "especes" && num.replace(/\D/g, "").length < 8) throw new Error("Numéro Mobile Money invalide");
+        if (mode !== "especes" && mode !== "resp" && num.replace(/\D/g, "").length < 8) throw new Error("Numéro Mobile Money invalide");
         const art = await articles();
         const parId = {}; art.forEach((a) => (parId[a.id] = a));
         const lignes = (Array.isArray(d.lignes) ? d.lignes : []).slice(0, 40);
@@ -148,7 +148,7 @@ module.exports = async (req, res) => {
             recuLignes.push({ nom: a.nom, qte, total: montant, detail: "" });
           }
         }
-        const recu = { id: idRecu, date, heure: new Date().toISOString(), vendeur: m.nom, vid: m.id, point: m.point || "Local", lignes: recuLignes, total, paiement: MODES[mode], numPaiement: mode === "especes" ? "" : num, note: txt(d.note, 150), livraison: suppTot || undefined };
+        const recu = { id: idRecu, date, heure: new Date().toISOString(), vendeur: m.nom, vid: m.id, point: m.point || "Local", lignes: recuLignes, total, paiement: MODES[mode], numPaiement: mode === "especes" || mode === "resp" ? "" : num, verifie: mode === "resp" ? false : undefined, note: txt(d.note, 150), livraison: suppTot || undefined };
         // les lignes d'abord, le reçu à la fin : un reçu présent veut dire « tout est enregistré »
         for (const v of ventes) { v.id = idRecu + "-" + (++k); await S.suiviSet("ventes", v.id, v); }
         if (remiseTot > 0) await S.suiviSet("depenses", idRecu + "-rem", { id: idRecu + "-rem", date, categorie: "Remise sur packs", description: "Remise sur packs · reçu " + idRecu, montant: remiseTot, mode: "", vid: m.id, vendeur: m.nom, recuId: idRecu, auto: true, cree: new Date().toISOString() });
@@ -184,14 +184,15 @@ module.exports = async (req, res) => {
         if (!c) throw new Error("Commande invalide");
         if (c.statutLivraison === "livree") return res.status(200).json({ commande: resumeLivraison(c), deja: true });
         if (c.statutLivraison !== "en_attente") throw new Error("Commande invalide : annulée");
-        const mode = MODES[d.paiement] ? d.paiement : "especes";
-        const num = txt(d.numPaiement, 20);
-        if (mode !== "especes" && num.replace(/\D/g, "").length < 8) throw new Error("Numéro Mobile Money invalide");
+        const resp = d.paiement === "resp";   // le client a payé sur le numéro du responsable : à confirmer par lui
+        const mode = resp ? "especes" : MODES[d.paiement] ? d.paiement : "especes";
+        const num = resp ? "" : txt(d.numPaiement, 20);
+        if (!resp && mode !== "especes" && num.replace(/\D/g, "").length < 8) throw new Error("Numéro Mobile Money invalide");
         const montant = c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal;
         const maintenant = new Date().toISOString();
         c.statutLivraison = "livree"; c.dateLivraison = maintenant; c.etape = "livree";
         c.livreur = m.nom; c.livreurId = m.id;
-        c.encaisse = { mode: MODES[mode], numPaiement: mode === "especes" ? "" : num, montant, le: maintenant, par: m.nom, parId: m.id, note: txt(d.note, 150) };
+        c.encaisse = { mode: resp ? "Payé au responsable" : MODES[mode], verifie: resp ? false : undefined, numPaiement: mode === "especes" ? "" : num, montant, le: maintenant, par: m.nom, parId: m.id, note: txt(d.note, 150) };
         await S.setCommande(c);
         return res.status(200).json({ commande: resumeLivraison(c) });
       }

@@ -175,7 +175,7 @@ function vue(donnees, d) {
     depenses: decorerDepenses(calc.depenses, donnees.demandes).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     archives: { recus: (donnees.archives.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 400), depenses: decorerDepenses(donnees.archives.depenses, donnees.demandes).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 400) },
     postes: POSTES,
-    livraisons: (donnees.commandes || []).filter((c) => c && c.statutLivraison === "livree" && c.livreurId).map((c) => ({ id: c.id, date: String(c.dateLivraison || c.date || "").slice(0, 10), heure: c.dateLivraison, livreurId: c.livreurId, livreur: c.livreur, client: c.nomClient, total: Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0, mode: (c.encaisse && c.encaisse.mode) || "" })).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 500),
+    livraisons: (donnees.commandes || []).filter((c) => c && c.statutLivraison === "livree" && c.livreurId).map((c) => ({ id: c.id, date: String(c.dateLivraison || c.date || "").slice(0, 10), heure: c.dateLivraison, livreurId: c.livreurId, livreur: c.livreur, client: c.nomClient, total: Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0, mode: (c.encaisse && c.encaisse.mode) || "", aConfirmer: !!(c.encaisse && c.encaisse.verifie === false) })).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 500),
     comptages: donnees.comptages.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     equipe: donnees.equipe, motCaisse: donnees.motCaisse, recus: (donnees.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 800),
     demandes: (donnees.demandes || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 200),
@@ -304,6 +304,30 @@ module.exports = async (req, res) => {
         dem.decideLe = new Date().toISOString();
         await S.suiviSet("demandes", dem.id, dem);
         trace = ["Demande de dépense " + (dem.statut === "accepte" ? "acceptée" : "refusée"), dem.vendeur + " · " + fr(dem.montant) + " · " + dem.motif];
+        break;
+      }
+      case "paiement_decider": {
+        // Le vendeur ou livreur dit « le client a payé le responsable » : le responsable confirme (argent bien reçu) ou refuse (espèces à remettre)
+        if (d.decision !== "recu" && d.decision !== "non") throw new Error("Décision invalide");
+        const idp = txt(d.id, 60);
+        const c = await S.getCommande(idp);
+        if (c) {
+          if (!c.encaisse || c.encaisse.verifie !== false) throw new Error("Paiement invalide : déjà traité");
+          if (d.decision === "recu") c.encaisse.verifie = true;
+          else { c.encaisse.mode = "Espèces"; c.encaisse.verifie = true; c.encaisse.note = "Le responsable n'a rien reçu : espèces à remettre"; }
+          await S.setCommande(c);
+          trace = ["Paiement au responsable " + (d.decision === "recu" ? "confirmé" : "refusé (espèces à remettre)"), (c.livreur || "") + " · " + fr(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) + " · " + (c.nomClient || "")];
+          break;
+        }
+        const rc = (await S.suiviListe("recus")).find((x) => x && x.id === idp);
+        if (!rc || rc.verifie !== false) throw new Error("Paiement invalide : déjà traité");
+        rc.verifie = true;
+        if (d.decision === "non") {
+          rc.paiement = "Espèces";
+          for (const v of (await S.suiviListe("ventes")).filter((x) => x && x.recuId === idp)) { v.paiement = "Espèces"; await S.suiviSet("ventes", v.id, v); }
+        }
+        await S.suiviSet("recus", rc.id, rc);
+        trace = ["Paiement au responsable " + (d.decision === "recu" ? "confirmé" : "refusé (espèces à remettre)"), (rc.vendeur || "") + " · " + fr(rc.total) + " · reçu " + rc.id];
         break;
       }
       case "archiver": {

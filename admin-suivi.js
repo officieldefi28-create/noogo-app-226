@@ -235,6 +235,15 @@ function statsMembre(v, id, du, au) {
   livs.forEach(function (l) { var k = l.mode || "Espèces"; parMode[k] = (parMode[k] || 0) + l.total; total += l.total; });
   return { recus: recus, deps: deps, livs: livs, parMode: parMode, total: total, depTotal: deps.reduce(function (s, d) { return s + (Number(d.montant) || 0); }, 0), nb: recus.length + livs.length };
 }
+function blocPaiements(v, vid) {
+  var att = (v.livraisons || []).filter(function (l) { return l.aConfirmer && (!vid || l.livreurId === vid); })
+    .concat((v.recus || []).filter(function (r) { return r.verifie === false && (!vid || r.vid === vid); }).map(function (r) { return { id: r.id, total: r.total, livreur: r.vendeur, client: "Vente en caisse", date: r.date }; }));
+  if (!att.length) return "";
+  return '<div class="carte"><h3>Paiements à confirmer <span class="badge badge-rouge">' + att.length + '</span></h3><p class="astuce">Le vendeur ou livreur dit que le client vous a payé directement. Vérifiez sur votre téléphone, puis confirmez.</p>' + att.map(function (l) {
+    return '<div class="formulaire" style="margin:8px 0"><b>' + fcfa(l.total) + '</b> · ' + esc(l.livreur || "") + '<br><span class="gris">' + esc(l.client || "") + ' · ' + esc(dateFr(l.date)) + '</span>' +
+      '<div class="grille2" style="margin-top:8px"><button class="btn btn-brun btn-petit" type="button" data-s="pai-ok" data-id="' + esc(l.id) + '">Bien reçu</button><button class="btn btn-clair btn-petit" type="button" data-s="pai-non" data-id="' + esc(l.id) + '">Pas reçu</button></div></div>';
+  }).join("") + '</div>';
+}
 function blocDemandes(v, vid) {
   var tout = (v.demandes || []).filter(function (d) { return !vid || d.vid === vid; });
   var att = tout.filter(function (d) { return d.statut === "attente"; }), faites = tout.filter(function (d) { return d.statut !== "attente"; }).slice(0, 8);
@@ -297,7 +306,7 @@ function vEquipe(v) {
   if (!E.eq) E.eq = JSON.parse(JSON.stringify(v.equipe || []));
   if (E.fiche) { var mm = E.eq.filter(function (x) { return x.id === E.fiche; })[0]; if (mm) return vFiche(v, mm); E.fiche = null; }
   var auj = jourJ(0);
-  var h = blocDemandes(v);
+  var h = blocPaiements(v) + blocDemandes(v);
   h += '<div class="carte"><h3>Équipe</h3><p class="astuce">Chaque personne a <b>sa propre caisse</b> et ne voit que <b>ses</b> ventes et <b>ses</b> dépenses. Touchez « Envoyer son lien » : elle l\'ouvre sur son téléphone et sa caisse s\'ouvre toute seule.</p>';
   h += E.eq.length ? E.eq.map(function (m, i) { return carteMembre(v, m, i, auj); }).join("") : '<p class="gris">Aucune personne pour le moment. Touchez « + Ajouter une personne ».</p>';
   h += '<div class="grille2" style="margin-top:6px"><button class="btn btn-clair" type="button" data-s="eq-ajouter">+ Ajouter une personne</button><button class="btn btn-or" type="button" data-s="eq-enregistrer">Enregistrer l\'équipe</button></div></div>';
@@ -320,7 +329,7 @@ function vFiche(v, m) {
   var modes = Object.keys(st.parMode);
   if (modes.length) h += modes.map(function (k) { return '<div class="rang"><span>' + esc(k) + '</span><b>' + fcfa(st.parMode[k]) + '</b></div>'; }).join("");
   h += '</div>';
-  h += blocDemandes(v, m.id);
+  h += blocPaiements(v, m.id) + blocDemandes(v, m.id);
   h += '<div class="carte"><h3>Ses ventes</h3>' + (st.recus.length ? st.recus.slice(0, 150).map(function (r) { return ligneRecu(r, false); }).join("") : '<p class="gris">Aucune vente sur cette période.</p>') +
     (st.livs.length ? '<h4 style="margin:14px 0 4px">Livraisons encaissées</h4>' + st.livs.map(function (l) { return '<div class="rang"><div class="g"><b>' + esc(dateFr(l.date)) + ' · ' + esc(l.client || "") + '</b><small>' + esc(l.mode || "Espèces") + ' · modifiable dans l\'onglet Commandes</small></div><b>' + fcfa(l.total) + '</b></div>'; }).join("") : "") + '</div>';
   h += '<div class="carte"><h3>Ses dépenses</h3>' + (st.deps.length ? st.deps.map(function (d) { return ligneDepense(d, false); }).join("") : '<p class="gris">Aucune dépense sur cette période.</p>') + '</div>';
@@ -784,6 +793,8 @@ function clic(ev) {
       if (!confirm("Supprimer POUR TOUJOURS ces archives ? Impossible de les récupérer.")) return;
       return envoyer("archives_vider", { vid: t.getAttribute("data-id") }, "Archives supprimées");
     case "dem-ok": return envoyer("demande_decider", { id: t.getAttribute("data-id"), decision: "accepter", categorie: val("dc-" + t.getAttribute("data-id")) }, "Dépense acceptée et notée");
+    case "pai-ok": return envoyer("paiement_decider", { id: t.getAttribute("data-id"), decision: "recu" }, "Paiement confirmé");
+    case "pai-non": return envoyer("paiement_decider", { id: t.getAttribute("data-id"), decision: "non" }, "Noté : le livreur doit remettre les espèces");
     case "dem-non": return envoyer("demande_decider", { id: t.getAttribute("data-id"), decision: "refuser" }, "Demande refusée");
     case "supprimer-recu":
       if (!confirm("Supprimer ce reçu et toutes ses ventes ? Les chiffres et le stock seront recalculés.")) return;

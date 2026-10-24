@@ -148,7 +148,7 @@ module.exports = async (req, res) => {
             recuLignes.push({ nom: a.nom, qte, total: montant, detail: "" });
           }
         }
-        const recu = { id: idRecu, date, heure: new Date().toISOString(), vendeur: m.nom, vid: m.id, point: m.point || "Local", lignes: recuLignes, total, paiement: MODES[mode], numPaiement: mode === "especes" || mode === "resp" ? "" : num, verifie: mode === "resp" ? false : undefined, note: txt(d.note, 150), livraison: suppTot || undefined };
+        const recu = { id: idRecu, date, heure: new Date().toISOString(), vendeur: m.nom, vid: m.id, point: m.point || "Local", lignes: recuLignes, total, paiement: MODES[mode], numPaiement: mode === "especes" || mode === "resp" ? "" : num, verifie: mode !== "especes" ? false : undefined, note: txt(d.note, 150), livraison: suppTot || undefined };
         // les lignes d'abord, le reçu à la fin : un reçu présent veut dire « tout est enregistré »
         for (const v of ventes) { v.id = idRecu + "-" + (++k); await S.suiviSet("ventes", v.id, v); }
         if (remiseTot > 0) await S.suiviSet("depenses", idRecu + "-rem", { id: idRecu + "-rem", date, categorie: "Remise sur packs", description: "Remise sur packs · reçu " + idRecu, montant: remiseTot, mode: "", vid: m.id, vendeur: m.nom, recuId: idRecu, auto: true, cree: new Date().toISOString() });
@@ -192,7 +192,7 @@ module.exports = async (req, res) => {
         const maintenant = new Date().toISOString();
         c.statutLivraison = "livree"; c.dateLivraison = maintenant; c.etape = "livree";
         c.livreur = m.nom; c.livreurId = m.id;
-        c.encaisse = { mode: resp ? "Payé au responsable" : MODES[mode], verifie: resp ? false : undefined, numPaiement: mode === "especes" ? "" : num, montant, le: maintenant, par: m.nom, parId: m.id, note: txt(d.note, 150) };
+        c.encaisse = { mode: resp ? "Payé au responsable" : MODES[mode], verifie: mode !== "especes" || resp ? false : undefined,   /* tout paiement non espèces est à confirmer par le responsable */ numPaiement: mode === "especes" ? "" : num, montant, le: maintenant, par: m.nom, parId: m.id, note: txt(d.note, 150) };
         await S.setCommande(c);
         return res.status(200).json({ commande: resumeLivraison(c) });
       }

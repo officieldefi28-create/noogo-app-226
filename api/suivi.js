@@ -110,6 +110,8 @@ async function noter(libelle, detail) {
     await S.setDoc("journal", j.slice(-400));
   } catch (e) { /* le journal ne doit jamais bloquer une saisie */ }
 }
+// Un paiement non espèces doit être confirmé par le responsable (règle en vigueur depuis le 24/10/2026 ; avant : considéré confirmé)
+const aConfirmer = (mode, verifie, date) => !!mode && mode !== "Espèces" && verifie !== true && (verifie === false || String(date || "").slice(0, 10) >= "2026-10-24");
 const fr = (n) => String(Math.round(Number(n) || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " F";
 const jour = (x) => String(x || "").slice(0, 10);
 const jjmm = (d) => String(d || "").slice(8, 10) + "/" + String(d || "").slice(5, 7);
@@ -175,7 +177,7 @@ function vue(donnees, d) {
     depenses: decorerDepenses(calc.depenses, donnees.demandes).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     archives: { recus: (donnees.archives.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 400), depenses: decorerDepenses(donnees.archives.depenses, donnees.demandes).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 400) },
     postes: POSTES,
-    livraisons: (donnees.commandes || []).filter((c) => c && c.statutLivraison === "livree" && c.livreurId).map((c) => ({ id: c.id, date: String(c.dateLivraison || c.date || "").slice(0, 10), heure: c.dateLivraison, livreurId: c.livreurId, livreur: c.livreur, client: c.nomClient, total: Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0, mode: (c.encaisse && c.encaisse.mode) || "", aConfirmer: !!(c.encaisse && c.encaisse.verifie === false) })).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 500),
+    livraisons: (donnees.commandes || []).filter((c) => c && c.statutLivraison === "livree" && c.livreurId).map((c) => ({ id: c.id, date: String(c.dateLivraison || c.date || "").slice(0, 10), heure: c.dateLivraison, livreurId: c.livreurId, livreur: c.livreur, client: c.nomClient, total: Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0, mode: (c.encaisse && c.encaisse.mode) || "", aConfirmer: aConfirmer(c.encaisse && c.encaisse.mode, c.encaisse && c.encaisse.verifie, c.dateLivraison || c.date) })).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 500),
     comptages: donnees.comptages.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     equipe: donnees.equipe, motCaisse: donnees.motCaisse, recus: (donnees.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 800),
     demandes: (donnees.demandes || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 200),
@@ -312,7 +314,7 @@ module.exports = async (req, res) => {
         const idp = txt(d.id, 60);
         const c = await S.getCommande(idp);
         if (c) {
-          if (!c.encaisse || c.encaisse.verifie !== false) throw new Error("Paiement invalide : déjà traité");
+          if (!c.encaisse || !aConfirmer(c.encaisse.mode, c.encaisse.verifie, c.dateLivraison || c.date)) throw new Error("Paiement invalide : déjà traité");
           if (d.decision === "recu") c.encaisse.verifie = true;
           else { c.encaisse.mode = "Espèces"; c.encaisse.verifie = true; c.encaisse.note = "Le responsable n'a rien reçu : espèces à remettre"; }
           await S.setCommande(c);
@@ -320,7 +322,7 @@ module.exports = async (req, res) => {
           break;
         }
         const rc = (await S.suiviListe("recus")).find((x) => x && x.id === idp);
-        if (!rc || rc.verifie !== false) throw new Error("Paiement invalide : déjà traité");
+        if (!rc || !aConfirmer(rc.paiement, rc.verifie, rc.date)) throw new Error("Paiement invalide : déjà traité");
         rc.verifie = true;
         if (d.decision === "non") {
           rc.paiement = "Espèces";

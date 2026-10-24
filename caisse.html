@@ -386,9 +386,9 @@ function ouvrirPaiement() {
     const num = ($("#c-num") || {}).value || "";
     $("#feuille").innerHTML = `<h2>Encaisser ${fmt(totalTicket())}</h2>
       <p class="aide-t"><b>Étape 3 :</b> comment le client paie-t-il ?</p>
-      <div class="modes">${[["especes", "Espèces"], ["orange", "Orange Money"], ["wave", "Wave"], ["resp", "Payé au responsable"]].map(([k, n]) => `<button type="button" data-m="${k}" aria-pressed="${mode === k}">${n}</button>`).join("")}</div>
-      ${mode === "resp" ? `<p class="aide-t">Le client a payé sur le numéro du responsable. Vous ne remettez rien : le responsable confirmera qu'il a bien reçu l'argent.</p>` : ""}
-      ${mode !== "especes" && mode !== "resp" ? `<label for="c-num">Numéro ${mode === "orange" ? "Orange" : "Wave"} qui a payé (le client, le vôtre ou celui du responsable)</label><input id="c-num" type="tel" inputmode="tel" placeholder="Ex : 70 12 34 56" value="${esc(num)}">` : ""}
+      <div class="modes">${[["especes", "Espèces"], ["orange", "Orange Money"], ["wave", "Wave"]].map(([k, n]) => `<button type="button" data-m="${k}" aria-pressed="${mode === k}">${n}</button>`).join("")}</div>
+      ${mode !== "especes" ? `<p class="aide-t"><b>Le dépôt doit être fait sur le 65 12 09 02 (numéro du responsable).</b> Le responsable doit confirmer qu'il l'a bien reçu. S'il ne l'a pas reçu, c'est à vous de remettre l'argent.</p>` : ""}
+      ${mode !== "especes" ? `<label for="c-num">Numéro ${mode === "orange" ? "Orange" : "Wave"} qui a fait le dépôt</label><input id="c-num" type="tel" inputmode="tel" placeholder="Ex : 70 12 34 56" value="${esc(num)}">` : ""}
       ${mode === "especes" ? chipsMonnaie() : ""}
       <label for="c-note">Remarque (facultatif)</label><input id="c-note" type="text" maxlength="150" placeholder="Ex : client fidèle">
       <div id="err-p" class="erreur"></div>
@@ -514,9 +514,9 @@ function ouvrirLivraison(id) {
   const dessiner = () => {
     const num = ($("#c-num") || {}).value || "";
     $("#feuille").innerHTML = `<h2>Livrée à ${esc(l.nomClient)}</h2><p style="margin:0 0 4px"><b>À encaisser : ${fmt(l.total)}</b></p><p class="aide-t">Comment le client a-t-il payé ?</p>
-      <div class="modes">${[["especes", "Espèces"], ["orange", "Orange Money"], ["wave", "Wave"], ["resp", "Payé au responsable"]].map(([k, n]) => `<button type="button" data-m="${k}" aria-pressed="${m === k}">${n}</button>`).join("")}</div>
-      ${m === "resp" ? `<p class="aide-t">Le client a payé sur le numéro du responsable. Vous ne remettez rien : le responsable confirmera qu'il a bien reçu l'argent.</p>` : ""}
-      ${m !== "especes" && m !== "resp" ? `<label for="c-num">Numéro ${m === "orange" ? "Orange" : "Wave"} qui a payé</label><input id="c-num" type="tel" inputmode="tel" placeholder="Ex : 70 12 34 56" value="${esc(num)}">` : ""}
+      <div class="modes">${[["especes", "Espèces"], ["orange", "Orange Money"], ["wave", "Wave"]].map(([k, n]) => `<button type="button" data-m="${k}" aria-pressed="${m === k}">${n}</button>`).join("")}</div>
+      ${m !== "especes" ? `<p class="aide-t"><b>Le dépôt doit être fait sur le 65 12 09 02 (numéro du responsable).</b> Le responsable doit confirmer qu'il l'a bien reçu. S'il ne l'a pas reçu, c'est à vous de remettre l'argent.</p>` : ""}
+      ${m !== "especes" ? `<label for="c-num">Numéro ${m === "orange" ? "Orange" : "Wave"} qui a payé</label><input id="c-num" type="tel" inputmode="tel" placeholder="Ex : 70 12 34 56" value="${esc(num)}">` : ""}
       <label for="c-note">Remarque (facultatif)</label><input id="c-note" type="text" maxlength="150" placeholder="Ex : client absent, laissé au voisin">
       <div id="err-p" class="erreur"></div>
       <button class="btn or" id="ok-liv" type="button" style="width:100%;margin-top:6px">Confirmer la livraison</button>

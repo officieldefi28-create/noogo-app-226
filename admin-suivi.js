@@ -123,7 +123,10 @@ function rendre() {
   c.innerHTML = nav + (E.message ? '<div class="msg msg-ok">' + esc(E.message) + '</div>' : "") + corps;
   if (sel && $(sel)) { try { $(sel).focus(); } catch (e) {} }
 }
-function nbDemandes(v) { return (v.demandes || []).filter(function (d) { return d.statut === "attente"; }).length; }
+var DEPUIS_CONFIRM = "2026-10-24";
+function recuAConfirmer(r) { return r.paiement && r.paiement !== "Espèces" && r.verifie !== true && (r.verifie === false || String(r.date || "").slice(0, 10) >= DEPUIS_CONFIRM); }
+function nbPaiements(v) { return (v.livraisons || []).filter(function (l) { return l.aConfirmer; }).length + (v.recus || []).filter(recuAConfirmer).length; }
+function nbDemandes(v) { return (v.demandes || []).filter(function (d) { return d.statut === "attente"; }).length + nbPaiements(v); }
 /* Bloc repliable : l'état ouvert/fermé est retenu même quand la page se met à jour */
 function repliable(titre, corps, ouvert) {
   var o = E.ouv[titre] != null ? E.ouv[titre] : !!ouvert;
@@ -164,6 +167,7 @@ function vResume(v) {
 
   /* À surveiller : deux alertes visibles, le reste se déplie */
   var al = [];
+  if (nbPaiements(v)) al.push('<div class="alerte rouge"><b>' + nbPaiements(v) + ' paiement' + (nbPaiements(v) > 1 ? 's' : '') + ' à confirmer :</b> vérifiez votre téléphone (65 12 09 02) puis allez dans Équipe › la personne.</div>');
   var nomsOk = function (l) { return l.map(function (x) { return esc(x.nom) + " (" + x.theorique + ")"; }).join(", "); };
   if (b.alertes.length) al.push('<div class="alerte rouge"><b>Stock négatif :</b> ' + nomsOk(b.alertes) + '. Il manque une production ou un comptage.</div>');
   var bas = (v.stock || []).filter(function (x) { return x.actif && x.produit > 0 && x.theorique >= 0 && x.theorique <= 5; });
@@ -237,9 +241,9 @@ function statsMembre(v, id, du, au) {
 }
 function blocPaiements(v, vid) {
   var att = (v.livraisons || []).filter(function (l) { return l.aConfirmer && (!vid || l.livreurId === vid); })
-    .concat((v.recus || []).filter(function (r) { return r.verifie === false && (!vid || r.vid === vid); }).map(function (r) { return { id: r.id, total: r.total, livreur: r.vendeur, client: "Vente en caisse", date: r.date }; }));
+    .concat((v.recus || []).filter(function (r) { return recuAConfirmer(r) && (!vid || r.vid === vid); }).map(function (r) { return { id: r.id, total: r.total, livreur: r.vendeur, client: "Vente en caisse", date: r.date }; }));
   if (!att.length) return "";
-  return '<div class="carte"><h3>Paiements à confirmer <span class="badge badge-rouge">' + att.length + '</span></h3><p class="astuce">Le vendeur ou livreur dit que le client vous a payé directement. Vérifiez sur votre téléphone, puis confirmez.</p>' + att.map(function (l) {
+  return '<div class="carte"><h3>Paiements à confirmer <span class="badge badge-rouge">' + att.length + '</span></h3><p class="astuce">Orange Money, Wave ou payé au responsable : à confirmer. Vérifiez sur votre téléphone (65 12 09 02) : si l\'argent n\'y est pas, appuyez sur « Pas reçu », la personne devra vous le remettre en espèces.</p>' + att.map(function (l) {
     return '<div class="formulaire" style="margin:8px 0"><b>' + fcfa(l.total) + '</b> · ' + esc(l.livreur || "") + '<br><span class="gris">' + esc(l.client || "") + ' · ' + esc(dateFr(l.date)) + '</span>' +
       '<div class="grille2" style="margin-top:8px"><button class="btn btn-brun btn-petit" type="button" data-s="pai-ok" data-id="' + esc(l.id) + '">Bien reçu</button><button class="btn btn-clair btn-petit" type="button" data-s="pai-non" data-id="' + esc(l.id) + '">Pas reçu</button></div></div>';
   }).join("") + '</div>';

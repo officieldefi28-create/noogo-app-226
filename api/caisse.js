@@ -39,7 +39,8 @@ async function articles() {
     liste.push({
       id: p.id, nom: p.nom, prix: Number(p.prix) || 0, type: pack ? "pack" : "produit", cat: p.cat || "", gr: p.gr || "",
       pots: pack ? Math.max(1, parseInt(p.packCount, 10) || 1) : 1,
-      choix: pack && !(base && base.id !== p.id),            // pack dont le client choisit les saveurs
+      choix: pack && !p.packCompo && !(base && base.id !== p.id),            // pack dont le client choisit les saveurs
+      fixe: pack && p.packCompo ? p.packCompo : null,        // pack à contenu fixe (ex : 3 vanille + 3 banane)
       base: pack && base && base.id !== p.id ? base.id : null,
       statut: p.statut || (p.dispo === "rupture" ? "rupture" : "aujourdhui")
     });
@@ -113,7 +114,7 @@ module.exports = async (req, res) => {
         if (!lignes.length) throw new Error("Ticket vide invalide");
         const date = /^\d{4}-\d{2}-\d{2}$/.test(String(d.date || "")) && Math.abs(Date.parse(d.date) - Date.now()) < 3 * 86400000 ? d.date : aujourdhui();
         const ventes = [], recuLignes = [];
-        let total = 0, k = 0, remiseTot = 0;
+        let total = 0, k = 0, remiseTot = 0, suppTot = 0;
         for (const l of lignes) {
           const a = parId[String(l.id)];
           if (!a) throw new Error("Article invalide : " + txt(l.id, 30));
@@ -127,15 +128,18 @@ module.exports = async (req, res) => {
               // pots au prix normal > prix du pack : la différence est une remise, notée toute seule en dépense
               const plein = (parId[a.base] ? parId[a.base].prix : 0) * pots, remise = plein > montant ? plein - montant : 0;
               remiseTot += remise;
-              ventes.push({ ...base, produitId: a.base, qte: pots, montant: remise ? plein : montant });
+              const supp = plein > 0 && montant > plein ? montant - plein : 0;   // pack plus cher que les pots : surplus (livraison incluse) hors caisse
+              suppTot += supp;
+              ventes.push({ ...base, produitId: a.base, qte: pots, montant: remise ? plein : supp ? plein : montant, supp });
               recuLignes.push({ nom: a.nom, qte, total: montant, detail: pots + " pots" });
             } else {
-              const compo = l.compo && typeof l.compo === "object" ? l.compo : {};
+              const compo = a.fixe ? Object.fromEntries(Object.keys(a.fixe).map((k) => [k, a.fixe[k] * qte])) : (l.compo && typeof l.compo === "object" ? l.compo : {});
               const ids = Object.keys(compo).filter((i) => (parId[i] && parId[i].type === "produit" && Math.round(Number(compo[i])) > 0));
               const qtes = ids.map((i) => Math.round(Number(compo[i])));
               if (qtes.reduce((x, y) => x + y, 0) !== pots) throw new Error("Choisissez les " + pots + " saveurs du pack");
               const plein = ids.reduce((s, i, j) => s + parId[i].prix * qtes[j], 0);
               if (plein > montant) { remiseTot += plein - montant; ids.forEach((i, j) => ventes.push({ ...base, produitId: i, qte: qtes[j], montant: parId[i].prix * qtes[j] })); }
+              else if (plein > 0 && montant > plein) { suppTot += montant - plein; ids.forEach((i, j) => ventes.push({ ...base, produitId: i, qte: qtes[j], montant: parId[i].prix * qtes[j], supp: j === 0 ? montant - plein : 0 })); }
               else { const parts = repartir(montant, qtes); ids.forEach((i, j) => ventes.push({ ...base, produitId: i, qte: qtes[j], montant: parts[j] })); }
               recuLignes.push({ nom: a.nom, qte, total: montant, detail: ids.map((i, j) => qtes[j] + " × " + parId[i].nom.replace(/^Crème glacée /, "")).join(", ") });
             }
@@ -144,7 +148,7 @@ module.exports = async (req, res) => {
             recuLignes.push({ nom: a.nom, qte, total: montant, detail: "" });
           }
         }
-        const recu = { id: idRecu, date, heure: new Date().toISOString(), vendeur: m.nom, vid: m.id, point: m.point || "Local", lignes: recuLignes, total, paiement: MODES[mode], numPaiement: mode === "especes" ? "" : num, note: txt(d.note, 150) };
+        const recu = { id: idRecu, date, heure: new Date().toISOString(), vendeur: m.nom, vid: m.id, point: m.point || "Local", lignes: recuLignes, total, paiement: MODES[mode], numPaiement: mode === "especes" ? "" : num, note: txt(d.note, 150), livraison: suppTot || undefined };
         // les lignes d'abord, le reçu à la fin : un reçu présent veut dire « tout est enregistré »
         for (const v of ventes) { v.id = idRecu + "-" + (++k); await S.suiviSet("ventes", v.id, v); }
         if (remiseTot > 0) await S.suiviSet("depenses", idRecu + "-rem", { id: idRecu + "-rem", date, categorie: "Remise sur packs", description: "Remise sur packs · reçu " + idRecu, montant: remiseTot, mode: "", vid: m.id, vendeur: m.nom, recuId: idRecu, auto: true, cree: new Date().toISOString() });

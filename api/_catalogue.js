@@ -44,6 +44,11 @@ function calculerPanier(articles, catalogue) {
       }
       if (compo.length) ligne.compo = compo;
     }
+    if (p.type === "pack" && p.packCompo && typeof p.packCompo === "object") {   // pack à contenu fixe : le serveur impose la composition
+      const compo = [];
+      for (const k of Object.keys(p.packCompo)) { const base = catalogue.find((x) => x.id === k && x.type !== "pack"); if (base) compo.push({ id: base.id, nom: base.nom, qte: (parseInt(p.packCompo[k], 10) || 0) * qte }); }
+      if (compo.length) ligne.compo = compo;
+    }
     lignes.push(ligne);
     if (p.type === "pack" && p.packLiv !== "sans") packs += total;
     else { if (p.type === "pack") packsSans += total; produits += total; }

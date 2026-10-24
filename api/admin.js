@@ -48,6 +48,15 @@ function validerCatalogue(liste) {
       o.packLabel = txt(p.packLabel, 60);
       if (p.packLiv === "sans") o.packLiv = "sans";   // pack promo sans livraison incluse
       if (p.packChoix) o.packChoix = true;             // le client choisit ses saveurs
+      // Contenu fixe (ex : 3 vanille + 3 banane) : les pots sont retirés du stock à chaque vente
+      if (!p.packChoix && p.packCompo && typeof p.packCompo === "object") {
+        const c = {}; let tot = 0;
+        for (const k of Object.keys(p.packCompo).slice(0, 20)) {
+          const q = Math.max(0, Math.min(50, parseInt(p.packCompo[k], 10) || 0));
+          if (q > 0 && /^[A-Za-z0-9_-]{1,40}$/.test(k)) { c[k] = q; tot += q; }
+        }
+        if (tot > 0) { o.packCompo = c; o.packCount = Math.min(50, tot); }
+      }
     }
     return o;
   });

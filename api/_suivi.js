@@ -123,6 +123,12 @@ function calculer(donnees) {
           remisesSite.push({ date: d, ref: c.id, montant: (plein - nombre(a.total)) * ratio });
           continue;
         }
+        // pack plus cher que les pots : les pots restent au prix normal, le surplus (livraison incluse) est compté à part, hors ventes et hors caisse
+        const surp = plein > 0 ? Math.max(0, nombre(a.total) - plein) * ratio : 0;
+        if (surp > 0) {
+          a.compo.forEach((x, i) => pousse(x.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(x.qte), montant: prixDe(x.id) * nombre(x.qte) * ratio, supp: i === 0 ? surp : 0, ref: c.id }));
+          continue;
+        }
         for (const x of a.compo) pousse(x.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(x.qte), montant: (nombre(a.total) * ratio * nombre(x.qte)) / tot, ref: c.id });
         continue;
       }
@@ -134,12 +140,16 @@ function calculer(donnees) {
         remisesSite.push({ date: d, ref: c.id, montant: (plein - nombre(a.total)) * ratio });
         continue;
       }
+      if (plein > 0 && nombre(a.total) > plein) {   // pack plus cher que les pots : surplus (livraison incluse) compté à part
+        pousse(b.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(a.qte) * b.n, montant: plein * ratio, supp: (nombre(a.total) - plein) * ratio, ref: c.id });
+        continue;
+      }
       pousse(b.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(a.qte) * b.n, montant: nombre(a.total) * ratio, ref: c.id });
     }
   }
   for (const v of donnees.ventes || []) {
     const prix = v.prix != null && v.prix !== "" ? nombre(v.prix) : prixDe(v.produitId);
-    pousse(v.produitId, { date: jour(v.date), rang: 1, type: "vente", source: "manuel", canal: v.pointVente || CANAL_DEFAUT, qte: nombre(v.qte), montant: v.montant != null && v.montant !== "" ? Math.max(0, nombre(v.montant)) : Math.max(0, nombre(v.qte) * prix - nombre(v.remise)), ref: v.id, vendeur: v.vendeur || "", vid: v.vid || "", paiement: v.paiement || "", recu: v.recuId || "" });
+    pousse(v.produitId, { date: jour(v.date), rang: 1, type: "vente", source: "manuel", canal: v.pointVente || CANAL_DEFAUT, qte: nombre(v.qte), montant: v.montant != null && v.montant !== "" ? Math.max(0, nombre(v.montant)) : Math.max(0, nombre(v.qte) * prix - nombre(v.remise)), ref: v.id, vendeur: v.vendeur || "", vid: v.vid || "", paiement: v.paiement || "", recu: v.recuId || "", supp: nombre(v.supp) });
   }
   for (const p of donnees.pertes || []) pousse(p.produitId, { date: jour(p.date), rang: 2, type: "perte", sorte: p.type, qte: nombre(p.qte), ref: p.id });
   for (const c of donnees.comptages || []) pousse(c.produitId, { date: jour(c.date), rang: 3, type: "comptage", restant: nombre(c.restant), canal: c.pointVente || CANAL_DEFAUT, prix: c.prix != null && c.prix !== "" ? nombre(c.prix) : null, ref: c.id });
@@ -156,7 +166,7 @@ function calculer(donnees) {
       if (e.type === "lot") { courant += e.qte; qteLots += e.qte; coutLots += e.qte * e.coutU; }
       else if (e.type === "vente") {
         courant -= e.qte; vendu += e.qte;
-        ventes.push({ date: e.date, produitId: id, nom: nomDe(id), qte: e.qte, montant: arrondi(e.montant), cout: arrondi(e.qte * coutMoyen()), canal: e.canal, source: e.source, ref: e.ref, vendeur: e.vendeur || "", vid: e.vid || "", paiement: e.paiement || "", recu: e.recu || "" });
+        ventes.push({ date: e.date, produitId: id, nom: nomDe(id), qte: e.qte, montant: arrondi(e.montant), cout: arrondi(e.qte * coutMoyen()), canal: e.canal, source: e.source, ref: e.ref, vendeur: e.vendeur || "", vid: e.vid || "", paiement: e.paiement || "", recu: e.recu || "", supp: arrondi(e.supp || 0) });
       } else if (e.type === "perte") {
         courant -= e.qte; perdu += e.qte;
         pertes.push({ date: e.date, produitId: id, nom: nomDe(id), qte: e.qte, type: e.sorte, cout: arrondi(e.qte * coutMoyen()), ref: e.ref });
@@ -252,6 +262,7 @@ function bilan(donnees, du, au) {
   const caisse = nombre(cfg.caisseDepart) + cV - cL - cCharges - cAchats + cApports - cRembs;
   const caisseDetail = { depart: arrondi(cfg.caisseDepart), depuis, ventes: arrondi(cV), production: arrondi(cL), depenses: arrondi(cCharges), achats: arrondi(cAchats), apports: arrondi(cApports), remboursements: arrondi(cRembs) };
   // Sur la période choisie : l'argent entré (ventes) moins l'argent sorti (dépenses + production + achats)
+  const livraisonPacks = somme(V, (x) => nombre(x.supp));   // surplus des packs (livraison incluse) : hors ventes, hors caisse
   const sortiesPeriode = charges + productionCout + achats;
   const fluxPeriode = ca + apports - rembs - sortiesPeriode;
 
@@ -264,7 +275,7 @@ function bilan(donnees, du, au) {
     quantite: qte, pertes: arrondi(pertesCout), charges: arrondi(charges), achats: arrondi(achats),
     resultat: arrondi(margeBrute - pertesCout - charges),
     apports: arrondi(apports), remboursements: arrondi(rembs), production: arrondi(productionCout),
-    depensesTotales: arrondi(charges + productionCout), sortiesPeriode: arrondi(sortiesPeriode), fluxPeriode: arrondi(fluxPeriode),
+    livraisonPacks: arrondi(livraisonPacks), depensesTotales: arrondi(charges + productionCout), sortiesPeriode: arrondi(sortiesPeriode), fluxPeriode: arrondi(fluxPeriode),
     caisse: arrondi(caisse), caisseDetail, valeurStock: arrondi(valeurStock), alertes,
     parProduit, parPoint, parVendeur, parPaiement, parCategorie, parJour
   };

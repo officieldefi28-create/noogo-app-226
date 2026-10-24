@@ -808,6 +808,7 @@ function ouvrirEditeur(id, modele){
     '<div><label for="ed-pl">Texte du pack</label><input id="ed-pl" type="text" maxlength="60" value="' + esc(p.packLabel || "") + '" placeholder="Ex : 6 boîtes · saveurs au choix"></div>' +
     '<div><label for="ed-liv">Livraison</label><select id="ed-liv">' + optionsSelect([["incluse","Livraison incluse"],["sans","Livraison non incluse"]], p.packLiv === "sans" ? "sans" : "incluse") + '</select></div>' +
     '<div><label for="ed-choix">Saveurs</label><select id="ed-choix">' + optionsSelect([["non","Saveurs fixes"],["oui","Le client choisit ses saveurs"]], p.packChoix ? "oui" : "non") + '</select></div></div>' +
+    '<div id="bloc-compo-fixe" class="garde' + (p.type === "pack" ? "" : " cachee") + '"><label>Contenu fixe du pack (facultatif)</label><p class="aide" style="margin:0 0 6px">Ex : 3 Vanille + 3 Banane. Mettez le nombre de pots de chaque saveur. À chaque vente, ces pots sortent du stock et la remise éventuelle est notée toute seule en dépense. Laissez vide pour un pack simple, et choisissez « Saveurs fixes ».</p><div class="rang2">' + (S.produits || []).filter(function(x){ return x.type !== "pack"; }).map(function(x){ return '<div><label style="font-size:13px">' + esc(x.nom) + '</label><input type="number" inputmode="numeric" min="0" max="50" data-pcompo="' + esc(x.id) + '" value="' + esc((p.packCompo && p.packCompo[x.id]) || "") + '"></div>'; }).join("") + '</div></div>' +
     '<label for="ed-desc">Description courte (facultatif)</label><textarea id="ed-desc" maxlength="160">' + esc(p.desc || "") + '</textarea>' +
     '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:6px"><label class="sw"><input type="checkbox" id="ed-actif"' + (p.actif !== false ? " checked" : "") + '><i></i>Visible sur le site</label>' +
     '<label class="sw or"><input type="checkbox" id="ed-vedette"' + (p.vedette ? " checked" : "") + '><i></i>Vedette (en avant sur l\'accueil)</label></div>' +
@@ -856,7 +857,10 @@ function lireEditeur(){
     o.packCount = n; o.packLabel = valeurChamp("ed-pl").trim();
     if (valeurChamp("ed-liv") === "sans") o.packLiv = "sans"; else delete o.packLiv;
     if (valeurChamp("ed-choix") === "oui") o.packChoix = true; else delete o.packChoix;
-  } else { delete o.packCount; delete o.packLabel; delete o.packLiv; delete o.packChoix; }
+    var pcompo = {}, ptot = 0;
+    document.querySelectorAll("[data-pcompo]").forEach(function(e){ var q = parseInt(e.value, 10) || 0; if (q > 0) { pcompo[e.getAttribute("data-pcompo")] = q; ptot += q; } });
+    if (ptot > 0 && !o.packChoix) { o.packCompo = pcompo; o.packCount = ptot; } else delete o.packCompo;
+  } else { delete o.packCount; delete o.packLabel; delete o.packLiv; delete o.packChoix; delete o.packCompo; }
   return o;
 }
 function validerEditeur(){
@@ -1334,7 +1338,7 @@ document.addEventListener("change", function(ev){
   if (t.getAttribute && t.getAttribute("data-tu-img") != null && t.getAttribute("data-tu-img") !== "") { var ti = +t.getAttribute("data-tu-img"), f2 = t.files && t.files[0]; t.value = ""; if (!f2 || !S.site) return; lireChampsSite(); toast("Envoi de l'image…", "ok"); return redimensionner(f2).then(function(b){ return envoyerPhoto(b, function(){}); }).then(function(u){ S.site.tuiles[ti].image = u; rendreSite(); toast("Photo envoyée : pensez à « Enregistrer le site »", "ok"); }).catch(erreur); }
   if (t.id === "gal-fichier" || t.id === "gal-camera") { var fs = Array.prototype.slice.call(t.files || []); t.value = ""; return ajouterPhotosGalerie(fs); }
   if (t.id === "ed-fichier" || t.id === "ed-camera") { var f = t.files && t.files[0]; t.value = ""; return traiterPhoto(f); }
-  if (t.id === "ed-type") $("bloc-pack").classList.toggle("cachee", t.value !== "pack");
+  if (t.id === "ed-type") $("bloc-pack").classList.toggle("cachee", t.value !== "pack"); if (t.id === "ed-type" && $("bloc-compo-fixe")) $("bloc-compo-fixe").classList.toggle("cachee", t.value !== "pack");
   if (t.id === "chk-archives") { S.archPart = t.checked; rendrePartenaires(); }
 });
 document.addEventListener("input", function(ev){

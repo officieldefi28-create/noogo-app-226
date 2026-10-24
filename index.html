@@ -91,6 +91,21 @@ main{flex:1;min-height:0;position:relative}
 .pas{display:flex;align-items:center;gap:2px;background:var(--creme-2);border-radius:12px}
 .pas button{width:38px;height:42px;font-size:22px;font-weight:700;color:var(--vert)}
 .pas b{min-width:22px;text-align:center}
+/* Liste en 2 colonnes : moins de défilement (comme la caisse) */
+.liste{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start}
+.liste>.groupe-t,.liste>.vide-box{grid-column:1/-1;margin-bottom:0}
+.liste .carte{flex-direction:column;align-items:stretch;gap:6px;margin:0;padding:8px;position:relative}
+.liste .carte img{width:100%;height:70px;border-radius:10px}
+.liste .infos h3{font-size:14px;line-height:1.2}
+.liste .det{font-size:11.5px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.liste .prix{font-weight:800}
+.liste .act{margin-top:auto}
+.liste .ajout{width:100%;min-height:36px}
+.liste .puce{margin-top:3px}
+.liste .infos h3{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.liste .pas{width:100%;justify-content:space-between}
+.liste .fini-txt{display:block;text-align:center;font-weight:700;color:var(--gris);padding:10px 0}
+
 .fini-txt{font-size:12.5px;font-weight:800;color:var(--gris)}
 .vide-box{margin:30px 6px;text-align:center;color:var(--gris);display:flex;flex-direction:column;gap:12px;align-items:center}
 
@@ -334,13 +349,14 @@ const commandable = (p) => statut(p) !== "rupture";
 const aAttendre = (p) => statut(p) === "surcommande" || statut(p) === "date";
 
 /* Packs */
-const estMix = (p) => !!p && p.type === "pack" && (/^pk-mix-/.test(p.id) || /d[ée]couverte/i.test(p.nom || "") || !!p.packChoix);
+const estMix = (p) => !!p && p.type === "pack" && !p.packCompo && (/^pk-mix-/.test(p.id) || /d[ée]couverte/i.test(p.nom || "") || !!p.packChoix);
 const nbPots = (p) => Math.max(1, parseInt(p.packCount, 10) || 5);
 const PACKBASE = { van: "vanille", bao: "baobab", ban: "banane", cho: "choco", fra: "fraise" };
 const courtNom = (n) => String(n || "").replace(/^Crème glacée /, "").replace(/ — Grand pot$/, "").replace(/ — Pain de singe$/, "");
 function contenuPack(p) {
   if (!p || p.type !== "pack") return "";
   const n = nbPots(p);
+  if (p.packCompo) return Object.keys(p.packCompo).map((k) => p.packCompo[k] + " " + courtNom((produit(k) || { nom: k }).nom)).join(" + ");
   if (estMix(p)) return `${n} pots au choix : vous choisissez vos saveurs`;
   const m = /^pk-(van|bao|ban|cho|fra)-(p|g)$/.exec(p.id);
   const b = m && produit(PACKBASE[m[1]] + "-" + m[2]);

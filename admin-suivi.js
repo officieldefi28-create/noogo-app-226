@@ -188,6 +188,7 @@ function vResume(v) {
     '<p class="astuce" style="margin-top:10px">Sur la période affichée : ventes ' + fcfa(b.ca) + ' − argent sorti ' + fcfa(b.sortiesPeriode) + ' (dépenses ' + fcfa(b.charges) + ' + production ' + fcfa(b.production) + (b.achats ? ' + achats ' + fcfa(b.achats) : "") + ') = <b class="' + (b.fluxPeriode >= 0 ? "pos" : "neg") + '">' + signe(b.fluxPeriode) + '</b>.</p>' +
     '<p class="astuce">La caisse monte quand vous vendez et descend quand vous produisez ou dépensez. Pour le <b>résultat net</b>, la production ne compte qu\'au fur et à mesure que les glaces se vendent (coût des produits vendus : ' + fcfa(b.cout) + ') : sinon vous seriez « en perte » le jour où vous produisez, alors que le stock vaut de l\'argent.</p>';
   h += repliable("Détail de la caisse", det);
+  if (b.livraisonPacks > 0) h += '<div class="carte"><h3>Livraison incluse dans les packs</h3><div class="rang"><span>Surplus encaissé en plus des pots</span><b>' + fcfa(b.livraisonPacks) + '</b></div><p class="astuce">Les livreurs remettent le prix complet du pack. Les pots comptent au prix normal (ventes, stock, caisse) ; ce surplus est à part. Notez la part du livreur dans Ajouter › Dépense si vous voulez la suivre.</p></div>';
 
   var jours = b.parJour.slice(-14), max = Math.max.apply(null, [1].concat(jours.map(function (j) { return j.ca; })));
   h += repliable("Ventes par jour", jours.length ? jours.map(function (j) {

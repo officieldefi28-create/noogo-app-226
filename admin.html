@@ -664,7 +664,8 @@ function carteCommande(c){
     '<div class="liens">' + (tel ? '<a class="btn btn-petit btn-clair" href="tel:' + esc(tel.replace(/[^\d+]/g, "")) + '">Appeler ' + esc(tel) + '</a>' : '') +
     (wa ? '<a class="btn btn-petit btn-vert" href="https://wa.me/' + esc(wa) + '" target="_blank" rel="noopener">WhatsApp</a>' +
       '<button class="btn btn-petit btn-clair" type="button" data-act="cmd-relance" data-id="' + id + '">Relancer</button>' : '') +
-    '<button class="btn btn-petit btn-clair" type="button" data-act="cmd-contact" data-id="' + id + '">' + (tel ? "Modifier le numéro" : "Ajouter le numéro") + '</button></div>' +
+    '<button class="btn btn-petit btn-clair" type="button" data-act="cmd-contact" data-id="' + id + '">' + (tel ? "Modifier le numéro" : "Ajouter le numéro") + '</button>' +
+    '<button class="btn btn-petit btn-vert" type="button" data-act="cmd-groupe" data-id="' + id + '">Envoyer au groupe</button></div>' +
     (tel ? "" : '<p class="gris petit" style="margin:4px 0 0">Pas de numéro : le client vous a écrit sur WhatsApp. Touchez son numéro dans la conversation, copiez-le, puis « Ajouter le numéro » ici.</p>') +
     '<div class="info-l"><b>' + (c.modeReception === "retrait" ? "Retrait" : "Livraison") + ' :</b> ' + esc(c.localisation).replace(/(https:\/\/maps\.google\.com\/\?q=[-0-9.,]+)/g, '<a href="$1" target="_blank" rel="noopener" class="btn btn-petit btn-or" style="margin-left:4px">Ouvrir la position</a>') + '</div>' + (c.note ? '<div class="info-l"><b>Précisions :</b> ' + esc(c.note) + '</div>' : '') +
     '<div class="info-l"><b>Paiement :</b> ' + esc(PAIEMENTS[c.modePaiement] || c.modePaiement) + '</div>' +
@@ -714,6 +715,12 @@ async function actionCommande(act, id, btn){
     if (saisie === null) return;
     try { var r = await api("modifier_contact", { commandeId: id, telClient: saisie.trim() }); c.telClient = r.telClient; toast("Numéro enregistré", "ok"); } catch(e){ erreur(e); }
     return rendreCommandes();
+  }
+  if (act === "groupe") {
+    var tot = c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal;
+    var art = (c.articles || []).map(function(a){ return "• " + a.qte + " × " + a.nom + (Array.isArray(a.compo) && a.compo.length ? " (" + a.compo.map(function(x){ return x.qte + " × " + (x.nom || x.id); }).join(", ") + ")" : ""); }).join("\n");
+    var tg = ["🛵 *COMMANDE À LIVRER* — Noogó", "", "👤 " + (c.nomClient || "Client") + (c.telClient ? " · " + c.telClient : ""), (c.modeReception === "retrait" ? "🏪 Retrait au local" : "📍 " + (c.localisation || "Adresse à confirmer")), "", art, "", "💰 Total : " + fcfa(tot), "💳 Paiement prévu : " + (PAIEMENTS[c.modePaiement] || c.modePaiement || "Espèces"), c.note ? "📝 " + c.note : "", "", "Réf : " + c.id].filter(function(x, i, a){ return x !== "" || (a[i - 1] !== ""); }).join("\n");
+    window.open("https://wa.me/?text=" + encodeURIComponent(tg), "_blank", "noopener"); return;
   }
   if (act === "relance") {
     var wn = telNettoye(c.telClient || ""); if (!wn) return toast("Ajoutez d'abord le numéro du client.", "err");

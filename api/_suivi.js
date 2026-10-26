@@ -149,13 +149,13 @@ function calculer(donnees) {
   }
   for (const v of donnees.ventes || []) {
     const prix = v.prix != null && v.prix !== "" ? nombre(v.prix) : prixDe(v.produitId);
-    pousse(v.produitId, { date: jour(v.date), rang: 1, type: "vente", source: "manuel", canal: v.pointVente || CANAL_DEFAUT, qte: nombre(v.qte), montant: v.montant != null && v.montant !== "" ? Math.max(0, nombre(v.montant)) : Math.max(0, nombre(v.qte) * prix - nombre(v.remise)), ref: v.id, vendeur: v.vendeur || "", vid: v.vid || "", paiement: v.paiement || "", recu: v.recuId || "", supp: nombre(v.supp) });
+    pousse(v.produitId, { date: jour(v.date), rang: 1, type: "vente", source: "manuel", canal: v.pointVente || CANAL_DEFAUT, qte: nombre(v.qte), montant: v.montant != null && v.montant !== "" ? Math.max(0, nombre(v.montant)) : Math.max(0, nombre(v.qte) * prix - nombre(v.remise)), ref: v.id, vendeur: v.vendeur || "", vid: v.vid || "", paiement: v.paiement || "", recu: v.recuId || "", supp: nombre(v.supp), attente: !!v.attente, du: v.du || null });
   }
   for (const p of donnees.pertes || []) pousse(p.produitId, { date: jour(p.date), rang: 2, type: "perte", sorte: p.type, qte: nombre(p.qte), ref: p.id });
   for (const c of donnees.comptages || []) pousse(c.produitId, { date: jour(c.date), rang: 3, type: "comptage", restant: nombre(c.restant), canal: c.pointVente || CANAL_DEFAUT, prix: c.prix != null && c.prix !== "" ? nombre(c.prix) : null, ref: c.id });
 
   // 2) on rejoue
-  const ventes = [], pertes = [], ajustements = [], lots = [], histo = {};
+  const ventes = [], ventesAttente = [], pertes = [], ajustements = [], lots = [], histo = {};
   const stock = {};
   for (const id of Object.keys(ev)) {
     const liste = ev[id].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.rang - b.rang));
@@ -166,7 +166,7 @@ function calculer(donnees) {
       if (e.type === "lot") { courant += e.qte; qteLots += e.qte; coutLots += e.qte * e.coutU; }
       else if (e.type === "vente") {
         courant -= e.qte; vendu += e.qte;
-        ventes.push({ date: e.date, produitId: id, nom: nomDe(id), qte: e.qte, montant: arrondi(e.montant), cout: arrondi(e.qte * coutMoyen()), canal: e.canal, source: e.source, ref: e.ref, vendeur: e.vendeur || "", vid: e.vid || "", paiement: e.paiement || "", recu: e.recu || "", supp: arrondi(e.supp || 0) });
+        (e.attente ? ventesAttente : ventes).push({ date: e.date, produitId: id, nom: nomDe(id), qte: e.qte, montant: arrondi(e.montant), cout: arrondi(e.qte * coutMoyen()), canal: e.canal, source: e.source, ref: e.ref, vendeur: e.vendeur || "", vid: e.vid || "", paiement: e.paiement || "", recu: e.recu || "", supp: arrondi(e.supp || 0), du: e.du || null });
       } else if (e.type === "perte") {
         courant -= e.qte; perdu += e.qte;
         pertes.push({ date: e.date, produitId: id, nom: nomDe(id), qte: e.qte, type: e.sorte, cout: arrondi(e.qte * coutMoyen()), ref: e.ref });
@@ -197,7 +197,7 @@ function calculer(donnees) {
   ventes.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
   pertes.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
-  return { suivis: Object.values(parId).filter((p) => !p.inconnu || stock[p.id]), stock, ventes, pertes, ajustements, lots, depenses, histo };
+  return { suivis: Object.values(parId).filter((p) => !p.inconnu || stock[p.id]), stock, ventes, ventesAttente, pertes, ajustements, lots, depenses, histo };
 }
 
 // Stock attendu pour chaque produit à la fin d'une journée, SANS tenir compte du comptage de ce jour-là
@@ -252,7 +252,10 @@ function bilan(donnees, du, au) {
   const cfg = donnees.config || {};
   const depuis = cfg.depuis || "";
   const apres = (d) => !depuis || d >= depuis;
-  const cV = somme(r.ventes.filter((x) => apres(x.date)), (x) => x.montant);
+  const cV0 = somme(r.ventes.filter((x) => apres(x.date)), (x) => x.montant);
+  const cDu = somme(r.ventes.filter((x) => apres(x.date) && x.du), (x) => x.montant);   // vendu mais pas encore payé (crédit client, livreur) : pas dans la caisse
+  const cEnc = somme((donnees.encaissements || []).filter((x) => x && !x.archive && apres(jour(x.date))), (x) => nombre(x.montant));   // argent rendu plus tard par un livreur ou un client
+  const cV = cV0 - cDu + cEnc;
   const cL = somme(r.lots.filter((x) => apres(jour(x.date)) && !x.depart), (x) => nombre(x.cout));
   const cD = r.depenses.filter((x) => apres(jour(x.date)));
   const cCharges = somme(cD.filter((x) => x.classe === "charge"), (x) => nombre(x.montant));
@@ -260,12 +263,18 @@ function bilan(donnees, du, au) {
   const cApports = somme(cD.filter((x) => x.classe === "apport"), (x) => nombre(x.montant));
   const cRembs = somme(cD.filter((x) => x.classe === "remb"), (x) => nombre(x.montant));
   const caisse = nombre(cfg.caisseDepart) + cV - cL - cCharges - cAchats + cApports - cRembs;
-  const caisseDetail = { depart: arrondi(cfg.caisseDepart), depuis, ventes: arrondi(cV), production: arrondi(cL), depenses: arrondi(cCharges), achats: arrondi(cAchats), apports: arrondi(cApports), remboursements: arrondi(cRembs) };
+  const caisseDetail = { depart: arrondi(cfg.caisseDepart), depuis, ventes: arrondi(cV0 - cDu), rendu: arrondi(cEnc), nonEncaisse: arrondi(cDu), production: arrondi(cL), depenses: arrondi(cCharges), achats: arrondi(cAchats), apports: arrondi(cApports), remboursements: arrondi(cRembs) };
   // Sur la période choisie : l'argent entré (ventes) moins l'argent sorti (dépenses + production + achats)
   const livraisonPacks = somme(V, (x) => nombre(x.supp));   // surplus des packs (livraison incluse) : hors ventes, hors caisse
   const sortiesPeriode = charges + productionCout + achats;
   const fluxPeriode = ca + apports - rembs - sortiesPeriode;
 
+  // Argent à récupérer : ce que chaque livreur ou client doit encore (toutes dates)
+  const cr = {};
+  const cle = (t, id, nom) => t + "|" + (id || nom);
+  for (const x of r.ventes) if (x.du) { const k = cle(x.du.type, x.du.id, x.du.nom); const o = (cr[k] = cr[k] || { type: x.du.type, id: x.du.id || "", nom: x.du.nom || "", du: 0, paye: 0, echeance: "", premier: x.date }); o.du += x.montant; if (x.du.echeance && (!o.echeance || x.du.echeance < o.echeance)) o.echeance = x.du.echeance; if (x.date < o.premier) o.premier = x.date; }
+  for (const e of donnees.encaissements || []) if (e && !e.archive) { const k = cle(e.deType, e.deId, e.deNom); const o = (cr[k] = cr[k] || { type: e.deType, id: e.deId || "", nom: e.deNom || "", du: 0, paye: 0, echeance: "", premier: jour(e.date) }); o.paye += nombre(e.montant); }
+  const creances = Object.values(cr).map((o) => ({ ...o, du: arrondi(o.du), paye: arrondi(o.paye), reste: arrondi(o.du - o.paye) })).filter((o) => o.du > 0 || o.paye > 0).sort((a, b) => b.reste - a.reste);
   const valeurStock = somme(Object.values(r.stock), (s) => s.valeur);
   const alertes = Object.values(r.stock).filter((s) => s.theorique < 0).map((s) => ({ nom: s.nom, theorique: s.theorique }));
 
@@ -275,7 +284,7 @@ function bilan(donnees, du, au) {
     quantite: qte, pertes: arrondi(pertesCout), charges: arrondi(charges), achats: arrondi(achats),
     resultat: arrondi(margeBrute - pertesCout - charges),
     apports: arrondi(apports), remboursements: arrondi(rembs), production: arrondi(productionCout),
-    livraisonPacks: arrondi(livraisonPacks), depensesTotales: arrondi(charges + productionCout), sortiesPeriode: arrondi(sortiesPeriode), fluxPeriode: arrondi(fluxPeriode),
+    livraisonPacks: arrondi(livraisonPacks), creances, resteADuTotal: arrondi(creances.reduce((m, o) => m + Math.max(0, o.reste), 0)), depensesTotales: arrondi(charges + productionCout), sortiesPeriode: arrondi(sortiesPeriode), fluxPeriode: arrondi(fluxPeriode),
     caisse: arrondi(caisse), caisseDetail, valeurStock: arrondi(valeurStock), alertes,
     parProduit, parPoint, parVendeur, parPaiement, parCategorie, parJour
   };
@@ -359,7 +368,7 @@ function journee(donnees, date) {
   const espVentes = somme(V.filter((v) => v.paiement === "Espèces" || (!v.paiement && v.source !== "site")), (v) => v.montant);
   const especeDep = (x) => !x.mode || eEsp.test(x.mode);
   const sorties = somme(D.filter((x) => (x.classe === "charge" || x.classe === "achat" || x.classe === "remb") && especeDep(x)), (x) => nombre(x.montant));
-  const entrees = somme(D.filter((x) => x.classe === "apport" && especeDep(x)), (x) => nombre(x.montant));
+  const entrees = somme(D.filter((x) => x.classe === "apport" && especeDep(x)), (x) => nombre(x.montant)) + somme((donnees.encaissements || []).filter((x) => x && !x.archive && jour(x.date) === date), (x) => nombre(x.montant));
   return {
     date, ca: arrondi(somme(V, (v) => v.montant)), qte: somme(V, (v) => v.qte),
     parPaiement: Object.keys(modes).map((k) => ({ nom: k, total: arrondi(modes[k]) })).sort((a, b) => b.total - a.total),

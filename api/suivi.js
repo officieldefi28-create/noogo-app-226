@@ -12,10 +12,11 @@ const idPropre = (s) => { const v = txt(s, 60); if (!/^[A-Za-z0-9_-]+$/.test(v))
 const nouvelId = (p) => p + "-" + Date.now().toString(36) + crypto.randomBytes(3).toString("hex");
 
 async function charger() {
-  const [catalogue, config, lots, ventes, pertes, depenses, comptages, commandes, equipe, recus, demandes, journal, clotures] = await Promise.all([
+  const [catalogue, config, lots, ventes, pertes, depenses, comptages, commandes, equipe, recus, demandes, journal, clotures, encaissements, propositions, comptesEsp, lotsProp] = await Promise.all([
     chargerCatalogue(), S.getSuiviConfig(), S.suiviListe("lots"), S.suiviListe("ventes"), S.suiviListe("pertes"),
     S.suiviListe("depenses"), S.suiviListe("comptages"), S.getCommandes(),
-    lireEquipe(), S.suiviListe("recus"), S.suiviListe("demandes"), S.getDoc("journal"), S.getDoc("clotures")
+    lireEquipe(), S.suiviListe("recus"), S.suiviListe("demandes"), S.getDoc("journal"), S.getDoc("clotures"),
+    S.suiviListe("encaissements"), S.suiviListe("comptes_prop"), S.suiviListe("comptes_esp"), S.suiviListe("lots_prop")
   ]);
   const motCaisse = (await S.getDoc("caisse-mot")) || "bingo";
   const cfg = configPropre(config);
@@ -23,7 +24,7 @@ async function charger() {
   const archivesDonnees = { recus: archives(recus), depenses: archives(depenses) };
   // « Nouveau départ » : les commandes du site livrées avant ce moment ne comptent plus dans le suivi
   const cmds = cfg.debutHeure ? commandes.filter((c) => String(c.dateLivraison || c.date || "") >= cfg.debutHeure) : commandes;
-  return { catalogue, config: cfg, lots, ventes: actifs(ventes), pertes, depenses: actifs(depenses), comptages, commandes: cmds, equipe, recus: actifs(recus), archives: archivesDonnees, demandes, motCaisse, journal: Array.isArray(journal) ? journal : [], clotures: Array.isArray(clotures) ? clotures : [] };
+  return { catalogue, config: cfg, lots, ventes: actifs(ventes), pertes, depenses: actifs(depenses).filter((x) => !x.attente), encaissements: actifs(encaissements), propositions: propositions || [], comptesEsp: comptesEsp || [], lotsProp: lotsProp || [], comptages, commandes: cmds, equipe, recus: actifs(recus), archives: archivesDonnees, demandes, motCaisse, journal: Array.isArray(journal) ? journal : [], clotures: Array.isArray(clotures) ? clotures : [] };
 }
 
 function configPropre(c) {
@@ -177,6 +178,10 @@ function vue(donnees, d) {
     depenses: decorerDepenses(calc.depenses, donnees.demandes).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     archives: { recus: (donnees.archives.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 400), depenses: decorerDepenses(donnees.archives.depenses, donnees.demandes).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 400) },
     postes: POSTES,
+    encaissements: (donnees.encaissements || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 200),
+    propositions: (donnees.propositions || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 40),
+    lotsProp: (donnees.lotsProp || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 40),
+    comptesEsp: (donnees.comptesEsp || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 120),
     livraisons: (donnees.commandes || []).filter((c) => c && c.statutLivraison === "livree" && c.livreurId).map((c) => ({ id: c.id, date: String(c.dateLivraison || c.date || "").slice(0, 10), heure: c.dateLivraison, livreurId: c.livreurId, livreur: c.livreur, client: c.nomClient, total: Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0, mode: (c.encaisse && c.encaisse.mode) || "", aConfirmer: aConfirmer(c.encaisse && c.encaisse.mode, c.encaisse && c.encaisse.verifie, c.dateLivraison || c.date) })).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 500),
     comptages: donnees.comptages.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     equipe: donnees.equipe, motCaisse: donnees.motCaisse, recus: (donnees.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 800),
@@ -308,6 +313,92 @@ module.exports = async (req, res) => {
         trace = ["Demande de dépense " + (dem.statut === "accepte" ? "acceptée" : "refusée"), dem.vendeur + " · " + fr(dem.montant) + " · " + dem.motif];
         break;
       }
+      case "valider_production": {
+        const idp = txt(d.id, 80);
+        const pr = (await S.suiviListe("lots_prop")).find((x) => x && x.id === idp);
+        if (!pr) throw new Error("Production invalide : déjà traitée");
+        const lignes = (Array.isArray(d.lignes) ? d.lignes : pr.lignes).slice(0, 20).map((x) => ({ produitId: idPropre(x.produitId), qte: entier(x.qte, 0, 100000, "Quantité") })).filter((x) => x.qte > 0);
+        if (!lignes.length) throw new Error("Ajoutez au moins un produit avec une quantité");
+        await verifierProduits(lignes.map((x) => x.produitId));
+        const lot = { id: nouvelId("lot"), date: pr.date, nom: "Production · " + (pr.vendeur || ""), cout: entier(d.cout != null && d.cout !== "" ? d.cout : pr.cout, 0, 100000000, "Coût"), lignes, note: pr.note || "", cree: new Date().toISOString() };
+        if (d.moment === "avant" || d.moment === "apres") lot.moment = d.moment;
+        await S.suiviSet("lots", lot.id, lot);
+        await S.suiviDel("lots_prop", idp);
+        trace = ["Production validée", decrire("lots", lot, noms)];
+        break;
+      }
+      case "production_refuser": {
+        const idp = txt(d.id, 80);
+        const pr = (await S.suiviListe("lots_prop")).find((x) => x && x.id === idp);
+        if (!pr) throw new Error("Production invalide");
+        await S.suiviDel("lots_prop", idp);
+        trace = ["Production refusée", pr.date + " · " + (pr.vendeur || "")];
+        break;
+      }
+      case "valider_jour": {
+        // Le responsable valide ce qu'une personne a envoyé : seulement alors, ça entre dans la caisse de l'entreprise
+        const vid = txt(d.vid, 60), jr = d.date ? date(d.date) : "";
+        const rs = (await S.suiviListe("recus")).filter((r) => r && r.attente && r.vid === vid && (!jr || r.date === jr));
+        if (!rs.length) throw new Error("Rien à valider");
+        const ids = new Set(rs.map((r) => r.id));
+        for (const v of await S.suiviListe("ventes")) if (v && ids.has(v.recuId)) { v.attente = false; await S.suiviSet("ventes", v.id, v); }
+        for (const x of await S.suiviListe("depenses")) if (x && x.recuId && ids.has(x.recuId)) { x.attente = false; await S.suiviSet("depenses", x.id, x); }
+        for (const r of rs) { r.attente = false; r.valideLe = new Date().toISOString(); await S.suiviSet("recus", r.id, r); }
+        trace = ["Journée validée", (rs[0].vendeur || "") + " · " + rs.length + " reçu(s) · " + fr(rs.reduce((m, r) => m + (Number(r.total) || 0), 0))];
+        break;
+      }
+      case "recu_payer": {
+        // Un reçu « à payer plus tard » a finalement été payé : on le passe en paiement normal
+        const idr = txt(d.id, 60), mode = ["Espèces", "Orange Money", "Wave"].includes(d.mode) ? d.mode : "Espèces";
+        const rc = (await S.suiviListe("recus")).find((x) => x && x.id === idr);
+        if (!rc || !rc.du) throw new Error("Reçu invalide : rien à payer");
+        for (const v of await S.suiviListe("ventes")) if (v && v.recuId === idr) { v.du = null; v.paiement = mode; await S.suiviSet("ventes", v.id, v); }
+        rc.du = null; rc.paiement = mode; await S.suiviSet("recus", rc.id, rc);
+        trace = ["Reçu marqué payé", idr + " · " + mode + " · " + fr(rc.total)];
+        break;
+      }
+      case "encaisser": {
+        const montant = entier(d.montant, 1, 1000000000, "Montant");
+        const type = d.deType === "livreur" ? "livreur" : "client";
+        const e = { id: nouvelId("enc"), date: date(d.date || new Date().toISOString().slice(0, 10)), montant, deType: type, deId: txt(d.deId, 60), deNom: txt(d.deNom, 60), note: txt(d.note, 120), cree: new Date().toISOString() };
+        if (!e.deNom && !e.deId) throw new Error("Personne invalide");
+        await S.suiviSet("encaissements", e.id, e);
+        trace = ["Argent récupéré", (e.deNom || e.deId) + " m'a remis " + fr(montant)];
+        break;
+      }
+      case "encaissement_supprimer": {
+        const ide = txt(d.id, 60);
+        const e = (await S.suiviListe("encaissements")).find((x) => x && x.id === ide);
+        if (!e) throw new Error("Encaissement invalide");
+        await S.suiviDel("encaissements", ide);
+        trace = ["Encaissement supprimé", (e.deNom || e.deId) + " · " + fr(e.montant)];
+        break;
+      }
+      case "valider_comptage": {
+        // Comptage du soir envoyé par la caissière : vous pouvez changer les chiffres avant de valider
+        const idp = txt(d.id, 80);
+        const pr = (await S.suiviListe("comptes_prop")).find((x) => x && x.id === idp);
+        if (!pr) throw new Error("Comptage invalide : déjà traité");
+        const pm = await prixActuels();
+        let nbC = 0;
+        for (const it of (Array.isArray(d.items) ? d.items : []).slice(0, 300)) {
+          const pid = idPropre(it.produitId), id = pr.date + "_" + pid;
+          if (it.restant === "" || it.restant === null || it.restant === undefined) { await S.suiviDel("comptages", id); continue; }
+          await S.suiviSet("comptages", id, { id, date: pr.date, produitId: pid, restant: entier(it.restant, 0, 100000, "Reste"), pointVente: pr.point || "", cree: new Date().toISOString(), prix: pm[pid] != null ? pm[pid] : null });
+          nbC++;
+        }
+        await S.suiviDel("comptes_prop", idp);
+        trace = ["Comptage du soir validé", pr.date + " · " + (pr.vendeur || "") + " · " + nbC + " produit(s)"];
+        break;
+      }
+      case "proposition_supprimer": {
+        const idp = txt(d.id, 80);
+        const pr = (await S.suiviListe("comptes_prop")).find((x) => x && x.id === idp);
+        if (!pr) throw new Error("Comptage invalide");
+        await S.suiviDel("comptes_prop", idp);
+        trace = ["Comptage refusé", pr.date + " · " + (pr.vendeur || "")];
+        break;
+      }
       case "paiement_decider": {
         // Le vendeur ou livreur dit « le client a payé le responsable » : le responsable confirme (argent bien reçu) ou refuse (espèces à remettre)
         if (d.decision !== "recu" && d.decision !== "non") throw new Error("Décision invalide");
@@ -322,7 +413,7 @@ module.exports = async (req, res) => {
           break;
         }
         const rc = (await S.suiviListe("recus")).find((x) => x && x.id === idp);
-        if (!rc || !aConfirmer(rc.paiement, rc.verifie, rc.date)) throw new Error("Paiement invalide : déjà traité");
+        if (!rc || rc.du || !aConfirmer(rc.paiement, rc.verifie, rc.date)) throw new Error("Paiement invalide : déjà traité");
         rc.verifie = true;
         if (d.decision === "non") {
           rc.paiement = "Espèces";
@@ -418,7 +509,7 @@ module.exports = async (req, res) => {
           .map((x) => ({ produitId: idPropre(x.produitId), qte: entier(x.qte || 0, 0, 100000, "Stock"), cu: entier(x.coutUnitaire || 0, 0, 10000000, "Coût") }))
           .filter((x) => x.qte > 0);
         // 1) tout effacer (la sauvegarde a été téléchargée avant par l'admin)
-        for (const t of ["lots", "ventes", "pertes", "depenses", "comptages", "recus", "demandes"]) {
+        for (const t of ["lots", "ventes", "pertes", "depenses", "comptages", "recus", "demandes", "encaissements", "comptes_prop", "comptes_esp", "lots_prop"]) {
           for (const x of await S.suiviListe(t)) if (x && x.id) await S.suiviDel(t, String(x.id));
         }
         trace = ["Nouveau départ", jr + " · caisse de départ " + fr(caisse)];

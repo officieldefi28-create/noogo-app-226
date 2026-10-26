@@ -98,16 +98,29 @@ module.exports = async (req, res) => {
     if (!m) return res.status(401).json({ erreur: "Session terminée : entrez votre code", session: false });
 
     switch (d.action) {
-      case "catalogue": return res.status(200).json({ articles: await articles(), membre: sansCode(m), numero: NUMERO_RESPONSABLE });
+      case "catalogue": return res.status(200).json({ articles: await articles(), membre: sansCode(m), numero: NUMERO_RESPONSABLE, livreurs: liste.filter((x) => x.actif !== false && x.poste === "livreur").map((x) => ({ id: x.id, nom: x.nom })) });
 
       case "vendre": {
         const idRecu = txt(d.id, 40);
         if (!/^R[0-9A-Za-z-]{6,36}$/.test(idRecu)) throw new Error("Reçu invalide");
         const deja = (await S.suiviListe("recus")).find((r) => r && r.id === idRecu);
         if (deja) return res.status(200).json({ recu: deja, deja: true });   // envoi répété (hors ligne) : on ne compte pas deux fois
-        const mode = MODES[d.paiement] ? d.paiement : "especes";
-        const num = txt(d.numPaiement, 20);
-        if (mode !== "especes" && mode !== "resp" && num.replace(/\D/g, "").length < 8) throw new Error("Numéro Mobile Money invalide");
+        // « Pas encore payé » : crédit d'un client, ou produits remis à un livreur qui devra rendre l'argent
+        let du = null;
+        if (d.du && typeof d.du === "object") {
+          if (d.du.type === "livreur") {
+            const lv = liste.find((x) => x.id === String(d.du.id) && x.poste === "livreur" && x.actif !== false);
+            if (!lv) throw new Error("Livreur invalide");
+            du = { type: "livreur", id: lv.id, nom: lv.nom };
+          } else {
+            const nomC = txt(d.du.nom, 60); if (nomC.length < 2) throw new Error("Nom du client invalide");
+            du = { type: "client", id: "", nom: nomC };
+          }
+          if (d.du.echeance && /^\d{4}-\d{2}-\d{2}$/.test(String(d.du.echeance))) du.echeance = d.du.echeance;
+        }
+        const mode = du ? "especes" : MODES[d.paiement] ? d.paiement : "especes";
+        const num = du ? "" : txt(d.numPaiement, 20);
+        if (!du && mode !== "especes" && mode !== "resp" && num.replace(/\D/g, "").length < 8) throw new Error("Numéro Mobile Money invalide");
         const art = await articles();
         const parId = {}; art.forEach((a) => (parId[a.id] = a));
         const lignes = (Array.isArray(d.lignes) ? d.lignes : []).slice(0, 40);
@@ -121,7 +134,7 @@ module.exports = async (req, res) => {
           const qte = entier(l.qte, 1, 200, "Quantité");
           const montant = a.prix * qte; total += montant;
           const pointVente = m.point || "Local";
-          const base = { date, pointVente, vendeur: m.nom, vid: m.id, paiement: MODES[mode], recuId: idRecu };
+          const base = { date, pointVente, vendeur: m.nom, vid: m.id, paiement: du ? (du.type === "livreur" ? "Dû par le livreur" : "Crédit client") : MODES[mode], recuId: idRecu, attente: true, du };
           if (a.type === "pack") {
             const pots = a.pots * qte;
             if (a.base) {
@@ -148,10 +161,10 @@ module.exports = async (req, res) => {
             recuLignes.push({ nom: a.nom, qte, total: montant, detail: "" });
           }
         }
-        const recu = { id: idRecu, date, heure: new Date().toISOString(), vendeur: m.nom, vid: m.id, point: m.point || "Local", lignes: recuLignes, total, paiement: MODES[mode], numPaiement: mode === "especes" || mode === "resp" ? "" : num, verifie: mode !== "especes" ? false : undefined, note: txt(d.note, 150), livraison: suppTot || undefined };
+        const recu = { id: idRecu, date, heure: new Date().toISOString(), vendeur: m.nom, vid: m.id, point: m.point || "Local", lignes: recuLignes, total, paiement: du ? (du.type === "livreur" ? "Dû par le livreur" : "Crédit client") : MODES[mode], du, attente: true, numPaiement: mode === "especes" || mode === "resp" ? "" : num, verifie: !du && mode !== "especes" ? false : undefined, note: txt(d.note, 150), livraison: suppTot || undefined };
         // les lignes d'abord, le reçu à la fin : un reçu présent veut dire « tout est enregistré »
         for (const v of ventes) { v.id = idRecu + "-" + (++k); await S.suiviSet("ventes", v.id, v); }
-        if (remiseTot > 0) await S.suiviSet("depenses", idRecu + "-rem", { id: idRecu + "-rem", date, categorie: "Remise sur packs", description: "Remise sur packs · reçu " + idRecu, montant: remiseTot, mode: "", vid: m.id, vendeur: m.nom, recuId: idRecu, auto: true, cree: new Date().toISOString() });
+        if (remiseTot > 0) await S.suiviSet("depenses", idRecu + "-rem", { id: idRecu + "-rem", date, categorie: "Remise sur packs", description: "Remise sur packs · reçu " + idRecu, montant: remiseTot, mode: "", vid: m.id, vendeur: m.nom, recuId: idRecu, auto: true, attente: true, cree: new Date().toISOString() });
         await S.suiviSet("recus", idRecu, recu);
         return res.status(200).json({ recu });
       }
@@ -195,6 +208,55 @@ module.exports = async (req, res) => {
         c.encaisse = { mode: resp ? "Payé au responsable" : MODES[mode], verifie: mode !== "especes" || resp ? false : undefined,   /* tout paiement non espèces est à confirmer par le responsable */ numPaiement: mode === "especes" ? "" : num, montant, le: maintenant, par: m.nom, parId: m.id, note: txt(d.note, 150) };
         await S.setCommande(c);
         return res.status(200).json({ commande: resumeLivraison(c) });
+      }
+
+      case "ma_dette": {
+        // Ce que je dois au responsable (produits remis par la caissière, moins ce que j'ai déjà rendu)
+        const ventes = (await S.suiviListe("ventes")).filter((v) => v && !v.archive && v.du && v.du.type === "livreur" && v.du.id === m.id);
+        const rendu = (await S.suiviListe("encaissements")).filter((e) => e && !e.archive && e.deType === "livreur" && e.deId === m.id);
+        const somme = (a, f) => a.reduce((t, x) => t + (Number(f(x)) || 0), 0);
+        const confirme = somme(ventes.filter((v) => !v.attente), (v) => v.montant), attente = somme(ventes.filter((v) => v.attente), (v) => v.montant), paye = somme(rendu, (e) => e.montant);
+        const recus = (await S.suiviListe("recus")).filter((r) => r && !r.archive && r.du && r.du.type === "livreur" && r.du.id === m.id).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 30)
+          .map((r) => ({ id: r.id, date: r.date, total: r.total, attente: !!r.attente, lignes: (r.lignes || []).map((l) => l.qte + " × " + l.nom) }));
+        return res.status(200).json({ du: confirme, paye, reste: Math.max(0, confirme - paye), enAttente: attente, recus, paiements: rendu.sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 20).map((e) => ({ date: e.date, montant: e.montant })) });
+      }
+      case "proposer_production": {
+        // La caissière note ce qui a été produit ; le responsable corrige (coût) puis valide
+        const lignes = (Array.isArray(d.lignes) ? d.lignes : []).slice(0, 20).map((x) => ({ produitId: txt(x && x.produitId, 60), qte: Math.round(Number(x && x.qte) || 0) })).filter((x) => x.qte > 0 && x.qte <= 100000 && /^[A-Za-z0-9_-]+$/.test(x.produitId));
+        if (!lignes.length) throw new Error("Ajoutez au moins un produit avec une quantité");
+        const art = await articles(); const ids = new Set(art.map((a) => a.id));
+        const sans = lignes.find((x) => !ids.has(x.produitId)); if (sans) throw new Error("Produit invalide : " + sans.produitId);
+        const idP = "pp-" + Date.now().toString(36) + crypto.randomBytes(2).toString("hex");
+        const prop = { id: idP, date: /^\d{4}-\d{2}-\d{2}$/.test(String(d.date || "")) ? d.date : aujourdhui(), vid: m.id, vendeur: m.nom, point: m.point || "", lignes, cout: Math.max(0, Math.min(100000000, Math.round(Number(d.cout) || 0))), note: txt(d.note, 150), cree: new Date().toISOString() };
+        await S.suiviSet("lots_prop", idP, prop);
+        return res.status(200).json({ ok: true, id: idP });
+      }
+      case "compter_stock": {
+        // Reste du soir compté par la caissière : le responsable vérifie et valide
+        const jr = /^\d{4}-\d{2}-\d{2}$/.test(String(d.date || "")) ? d.date : aujourdhui();
+        const items = (Array.isArray(d.items) ? d.items : []).slice(0, 300).filter((x) => x && /^[A-Za-z0-9_-]+$/.test(String(x.produitId || "")) && x.restant !== "" && x.restant !== null && x.restant !== undefined)
+          .map((x) => ({ produitId: String(x.produitId), restant: Math.max(0, Math.min(100000, Math.round(Number(x.restant) || 0))) }));
+        if (!items.length) throw new Error("Comptez au moins un produit");
+        const idC = m.id + "_" + jr;
+        await S.suiviSet("comptes_prop", idC, { id: idC, date: jr, vid: m.id, vendeur: m.nom, point: m.point || "", items, cree: new Date().toISOString() });
+        return res.status(200).json({ ok: true });
+      }
+      case "cloturer_caisse": {
+        // Espèces comptées le soir : comparées à ce qui devrait y être
+        const jr = /^\d{4}-\d{2}-\d{2}$/.test(String(d.date || "")) ? d.date : aujourdhui();
+        const compte = entier(d.compte, 0, 1000000000, "Espèces comptées");
+        const recus = (await S.suiviListe("recus")).filter((r) => r && !r.archive && r.vid === m.id && r.date === jr && r.paiement === "Espèces");
+        const liv = estLivreur(m) ? (await S.getCommandes()).filter((c) => c && c.livreurId === m.id && c.statutLivraison === "livree" && String(c.dateLivraison || "").slice(0, 10) === jr && c.encaisse && c.encaisse.mode === "Espèces") : [];
+        const attendu = recus.reduce((t, r) => t + (Number(r.total) || 0), 0) + liv.reduce((t, c) => t + (Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0), 0);
+        const idE = m.id + "_" + jr;
+        const cl = { id: idE, date: jr, vid: m.id, vendeur: m.nom, attendu, compte, ecart: compte - attendu, cree: new Date().toISOString() };
+        await S.suiviSet("comptes_esp", idE, cl);
+        return res.status(200).json({ cloture: cl });
+      }
+      case "etat_jour": {
+        const jr = /^\d{4}-\d{2}-\d{2}$/.test(String(d.date || "")) ? d.date : aujourdhui();
+        const [cp, ce, pp] = await Promise.all([S.suiviListe("comptes_prop"), S.suiviListe("comptes_esp"), S.suiviListe("lots_prop")]);
+        return res.status(200).json({ date: jr, stockEnvoye: cp.some((x) => x && x.vid === m.id && x.date === jr), cloture: ce.find((x) => x && x.vid === m.id && x.date === jr) || null, productions: pp.filter((x) => x && x.vid === m.id && x.date === jr).map((x) => ({ id: x.id, lignes: x.lignes })) });
       }
 
       case "demander_depense": {

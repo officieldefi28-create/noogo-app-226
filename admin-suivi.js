@@ -43,6 +43,7 @@ css.textContent = [
   "#p-suivi .astuce{font-size:13px;color:var(--gris);margin:0 0 10px}",
   "#p-suivi .sous.principal{gap:4px;overflow:visible;position:sticky;top:52px;z-index:20;background:var(--creme,#fbf6e9);padding:8px 0}",
   "#p-suivi .sous.principal button{flex:1 1 0;padding:9px 4px;border-radius:12px;font-size:14px;text-align:center}",
+  "#p-suivi .ligne-edit{display:flex;gap:8px;align-items:center;margin:6px 0}#p-suivi .ligne-edit span{flex:1}#p-suivi .ligne-edit input{width:90px;text-align:right}",
   "#p-suivi .pastille{display:inline-block;background:#c62828;color:#fff;border-radius:999px;font-size:11px;min-width:18px;padding:1px 5px;margin-left:2px}",
   "#p-suivi details.rep{background:#fff;border:1px solid var(--bord);border-radius:14px;margin:8px 0;padding:0 14px}",
   "#p-suivi details.rep summary{cursor:pointer;font-weight:700;color:var(--brun-3);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:44px}",
@@ -124,9 +125,9 @@ function rendre() {
   if (sel && $(sel)) { try { $(sel).focus(); } catch (e) {} }
 }
 var DEPUIS_CONFIRM = "2026-10-24";
-function recuAConfirmer(r) { return r.paiement && r.paiement !== "Espèces" && r.verifie !== true && (r.verifie === false || String(r.date || "").slice(0, 10) >= DEPUIS_CONFIRM); }
+function recuAConfirmer(r) { return !r.du && r.paiement && r.paiement !== "Espèces" && r.verifie !== true && (r.verifie === false || String(r.date || "").slice(0, 10) >= DEPUIS_CONFIRM); }
 function nbPaiements(v) { return (v.livraisons || []).filter(function (l) { return l.aConfirmer; }).length + (v.recus || []).filter(recuAConfirmer).length; }
-function nbDemandes(v) { return (v.demandes || []).filter(function (d) { return d.statut === "attente"; }).length + nbPaiements(v); }
+function nbDemandes(v) { return (v.demandes || []).filter(function (d) { return d.statut === "attente"; }).length + nbPaiements(v) + nbAValider(v); }
 /* Bloc repliable : l'état ouvert/fermé est retenu même quand la page se met à jour */
 function repliable(titre, corps, ouvert) {
   var o = E.ouv[titre] != null ? E.ouv[titre] : !!ouvert;
@@ -167,6 +168,8 @@ function vResume(v) {
 
   /* À surveiller : deux alertes visibles, le reste se déplie */
   var al = [];
+  if (nbAValider(v)) al.push('<div class="alerte rouge"><b>' + nbAValider(v) + ' chose' + (nbAValider(v) > 1 ? 's' : '') + ' à valider :</b> ventes, production ou comptage envoyés par l\'équipe. Allez dans Équipe.</div>');
+  (v.comptesEsp || []).filter(function (x) { return x.date >= jourJ(-2) && x.ecart < 0; }).forEach(function (x) { al.push('<div class="alerte rouge"><b>Manque dans la caisse de ' + esc(x.vendeur) + ' :</b> ' + fcfa(-x.ecart) + ' le ' + esc(dateFr(x.date)) + '. Prévenez-la avant de valider.</div>'); });
   if (nbPaiements(v)) al.push('<div class="alerte rouge"><b>' + nbPaiements(v) + ' paiement' + (nbPaiements(v) > 1 ? 's' : '') + ' à confirmer :</b> vérifiez votre téléphone (65 12 09 02) puis allez dans Équipe › la personne.</div>');
   var nomsOk = function (l) { return l.map(function (x) { return esc(x.nom) + " (" + x.theorique + ")"; }).join(", "); };
   if (b.alertes.length) al.push('<div class="alerte rouge"><b>Stock négatif :</b> ' + nomsOk(b.alertes) + '. Il manque une production ou un comptage.</div>');
@@ -186,12 +189,13 @@ function vResume(v) {
   var cd = b.caisseDetail || {};
   var lc = function (t, val, cls) { return '<div class="rang"><span>' + t + '</span><b class="' + (cls || "") + '">' + val + '</b></div>'; };
   var det = '<p class="astuce">Voici d\'où vient le chiffre « Caisse actuelle » (depuis ' + (cd.depuis ? dateFr(cd.depuis) : "le début") + ').</p>' +
-    lc("Caisse de départ", fcfa(cd.depart)) + lc("+ Ventes encaissées", fcfa(cd.ventes), "pos") + lc("− Production (coût des lots)", fcfa(cd.production), "neg") + lc("− Dépenses", fcfa(cd.depenses), "neg") +
+    lc("Caisse de départ", fcfa(cd.depart)) + lc("+ Ventes encaissées", fcfa(cd.ventes), "pos") + (cd.rendu ? lc("+ Argent rendu (livreurs, clients)", fcfa(cd.rendu), "pos") : "") + (cd.nonEncaisse ? lc("(Vendu mais pas encore payé : " + fcfa(cd.nonEncaisse) + ", non compté)", "") : "") + lc("− Production (coût des lots)", fcfa(cd.production), "neg") + lc("− Dépenses", fcfa(cd.depenses), "neg") +
     (cd.achats ? lc("− Achats de marchandises", fcfa(cd.achats), "neg") : "") + (cd.apports ? lc("+ Apports d'argent", fcfa(cd.apports), "pos") : "") + (cd.remboursements ? lc("− Remboursements d'apport", fcfa(cd.remboursements), "neg") : "") +
     '<div class="rang" style="font-weight:800"><span>= Caisse actuelle</span><b>' + fcfa(b.caisse) + '</b></div>' +
     '<p class="astuce" style="margin-top:10px">Sur la période affichée : ventes ' + fcfa(b.ca) + ' − argent sorti ' + fcfa(b.sortiesPeriode) + ' (dépenses ' + fcfa(b.charges) + ' + production ' + fcfa(b.production) + (b.achats ? ' + achats ' + fcfa(b.achats) : "") + ') = <b class="' + (b.fluxPeriode >= 0 ? "pos" : "neg") + '">' + signe(b.fluxPeriode) + '</b>.</p>' +
     '<p class="astuce">La caisse monte quand vous vendez et descend quand vous produisez ou dépensez. Pour le <b>résultat net</b>, la production ne compte qu\'au fur et à mesure que les glaces se vendent (coût des produits vendus : ' + fcfa(b.cout) + ') : sinon vous seriez « en perte » le jour où vous produisez, alors que le stock vaut de l\'argent.</p>';
   h += repliable("Détail de la caisse", det);
+  if (b.resteADuTotal > 0) h += repliable("Argent à récupérer : " + fcfa(b.resteADuTotal), blocDettes(v, ""));
   if (b.livraisonPacks > 0) h += '<div class="carte"><h3>Livraison incluse dans les packs</h3><div class="rang"><span>Surplus encaissé en plus des pots</span><b>' + fcfa(b.livraisonPacks) + '</b></div><p class="astuce">Les livreurs remettent le prix complet du pack. Les pots comptent au prix normal (ventes, stock, caisse) ; ce surplus est à part. Notez la part du livreur dans Ajouter › Dépense si vous voulez la suivre.</p></div>';
 
   var jours = b.parJour.slice(-14), max = Math.max.apply(null, [1].concat(jours.map(function (j) { return j.ca; })));
@@ -238,6 +242,63 @@ function statsMembre(v, id, du, au) {
   recus.forEach(function (r) { parMode[r.paiement] = (parMode[r.paiement] || 0) + r.total; total += r.total; });
   livs.forEach(function (l) { var k = l.mode || "Espèces"; parMode[k] = (parMode[k] || 0) + l.total; total += l.total; });
   return { recus: recus, deps: deps, livs: livs, parMode: parMode, total: total, depTotal: deps.reduce(function (s, d) { return s + (Number(d.montant) || 0); }, 0), nb: recus.length + livs.length };
+}
+/* ----- À valider : ce que la caissière envoie (ventes, production, comptage du soir) ----- */
+function groupesAttente(v, vid) {
+  var g = {};
+  (v.recus || []).filter(function (r) { return r.attente && (!vid || r.vid === vid); }).forEach(function (r) { var k = r.vid + "|" + r.date; (g[k] = g[k] || { vid: r.vid, date: r.date, vendeur: r.vendeur, recus: [] }).recus.push(r); });
+  return Object.keys(g).map(function (k) { return g[k]; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+}
+function nbAValider(v) { return groupesAttente(v).length + (v.lotsProp || []).length + (v.propositions || []).length; }
+function ligneRecuAttente(r) {
+  return '<div class="rang"><div class="g"><b>' + heureFr(r.heure) + ' · ' + fcfa(r.total) + '</b><small>' + r.lignes.map(function (l) { return l.qte + " × " + esc(l.nom); }).join(", ") + '<br>' + esc(r.paiement) +
+    (r.du ? ' · <b>à rendre' + (r.du.echeance ? " avant le " + esc(dateFr(r.du.echeance)) : "") + '</b>' : "") + '</small></div><div style="text-align:right">' +
+    (r.du ? '<button class="btn btn-brun btn-petit" type="button" data-s="recu-paye" data-id="' + esc(r.id) + '">Payé en espèces</button><br>' : "") +
+    '<button class="btn btn-clair btn-petit" type="button" data-s="supprimer-recu" data-id="' + esc(r.id) + '">Supprimer</button></div></div>';
+}
+function blocAValider(v, vid) {
+  var gs = groupesAttente(v, vid), lp = (v.lotsProp || []).filter(function (x) { return !vid || x.vid === vid; }), pr = (v.propositions || []).filter(function (x) { return !vid || x.vid === vid; });
+  if (!gs.length && !lp.length && !pr.length) return "";
+  var noms = {}; v.produits.forEach(function (x) { noms[x.id] = x.nom; });
+  var theo = {}; v.stock.forEach(function (x) { theo[x.id] = x.theorique; });
+  var h = '<div class="carte"><h3>À valider <span class="badge badge-rouge">' + (gs.length + lp.length + pr.length) + '</span></h3><p class="astuce">Ce que la caissière a envoyé. <b>Rien de tout ça n\'est encore compté dans la caisse ni dans les chiffres.</b> Vérifiez, corrigez (supprimez ou changez), puis validez.</p>';
+  gs.forEach(function (g) {
+    var tot = g.recus.reduce(function (m, r) { return m + (Number(r.total) || 0); }, 0), du = g.recus.reduce(function (m, r) { return m + (r.du ? Number(r.total) || 0 : 0); }, 0);
+    h += '<div class="formulaire" style="margin:8px 0"><b>Ventes de ' + esc(g.vendeur) + ' · ' + esc(dateFr(g.date)) + '</b><br><span class="gris">' + g.recus.length + ' reçu' + (g.recus.length > 1 ? "s" : "") + ' · total ' + fcfa(tot) + (du ? ' · dont à rendre plus tard ' + fcfa(du) : "") + '</span>' + g.recus.map(ligneRecuAttente).join("") +
+      '<button class="btn btn-vert btn-petit btn-bloc" type="button" style="margin-top:8px" data-s="valider-jour" data-vid="' + esc(g.vid) + '" data-date="' + esc(g.date) + '">Valider cette journée</button></div>';
+  });
+  lp.forEach(function (p) {
+    h += '<div class="formulaire" style="margin:8px 0"><b>Production notée par ' + esc(p.vendeur) + ' · ' + esc(dateFr(p.date)) + '</b>' + p.lignes.map(function (l) { return '<div class="ligne-edit"><span>' + esc(noms[l.produitId] || l.produitId) + '</span><input type="number" inputmode="numeric" min="0" data-pl="' + esc(p.id) + '" data-pid="' + esc(l.produitId) + '" value="' + l.qte + '"></div>'; }).join("") +
+      '<label for="pc-' + esc(p.id) + '">Coût de la production (F)</label><input type="number" inputmode="numeric" min="0" id="pc-' + esc(p.id) + '" value="' + (p.cout || "") + '" placeholder="À compléter">' +
+      '<div class="grille2" style="margin-top:8px"><button class="btn btn-vert btn-petit" type="button" data-s="prod-ok" data-id="' + esc(p.id) + '">Valider</button><button class="btn btn-clair btn-petit" type="button" data-s="prod-non" data-id="' + esc(p.id) + '">Refuser</button></div></div>';
+  });
+  pr.forEach(function (p) {
+    h += '<div class="formulaire" style="margin:8px 0"><b>Reste en stock compté par ' + esc(p.vendeur) + ' · ' + esc(dateFr(p.date)) + '</b><p class="astuce">À droite : ce que l\'application attendait. Changez un chiffre si besoin.</p>' + p.items.map(function (l) {
+      var t = theo[l.produitId], diff = t != null && t !== l.restant;
+      return '<div class="ligne-edit"><span>' + esc(noms[l.produitId] || l.produitId) + '<small class="gris"> attendu ' + (t != null ? t : "?") + '</small></span><input type="number" inputmode="numeric" min="0" data-cl="' + esc(p.id) + '" data-pid="' + esc(l.produitId) + '" value="' + l.restant + '" style="' + (diff ? "border-color:#c62828" : "") + '"></div>';
+    }).join("") +
+      '<div class="grille2" style="margin-top:8px"><button class="btn btn-vert btn-petit" type="button" data-s="compt-ok" data-id="' + esc(p.id) + '">Valider le comptage</button><button class="btn btn-clair btn-petit" type="button" data-s="compt-non" data-id="' + esc(p.id) + '">Refuser</button></div></div>';
+  });
+  return h + '</div>';
+}
+/* ----- Argent à récupérer : livreurs et clients qui doivent encore de l'argent ----- */
+function blocDettes(v, vid) {
+  var cr = ((v.bilan && v.bilan.creances) || []).filter(function (c) { return c.reste > 0 && (!vid || c.id === vid); });
+  var encs = (v.encaissements || []).filter(function (e) { return !vid || e.deId === vid; }).slice(0, 6);
+  if (!cr.length && !encs.length) return "";
+  var h = '<p class="astuce">Produits remis aux livreurs ou vendus à crédit, validés par vous. Quand quelqu\'un vous rend de l\'argent, notez-le ici : la caisse monte et ce qu\'il doit baisse. Le livreur voit lui-même ce qu\'il doit.</p>';
+  h += cr.map(function (c, i) {
+    var retard = c.echeance && c.echeance < jourJ(0);
+    return '<div class="rang" style="align-items:flex-start"><div class="g"><b>' + esc(c.nom || "?") + '</b><small>' + (c.type === "livreur" ? "Livreur" : "Client à crédit") + ' · doit ' + fcfa(c.du) + (c.paye ? ", rendu " + fcfa(c.paye) : "") + (c.echeance ? ' · pour le ' + esc(dateFr(c.echeance)) : "") + (retard ? ' <span class="badge badge-rouge">En retard</span>' : "") + '</small>' +
+      '<div style="display:flex;gap:6px;margin-top:6px"><input type="number" inputmode="numeric" min="1" id="enc-' + i + '" placeholder="Montant rendu" style="flex:1"><button class="btn btn-vert btn-petit" type="button" data-s="encaisse" data-i="' + i + '" data-vid="' + (vid ? "1" : "") + '">Il m\'a remis</button></div></div><b class="neg">' + fcfa(c.reste) + '</b></div>';
+  }).join("");
+  if (encs.length) h += '<p class="astuce" style="margin-top:8px">Derniers paiements reçus :</p>' + encs.map(function (e) { return '<div class="rang"><span>' + esc(dateFr(e.date)) + ' · ' + esc(e.deNom || e.deId) + '</span><span><b class="pos">+' + fcfa(e.montant) + '</b> <button class="btn btn-clair btn-petit" type="button" data-s="enc-sup" data-id="' + esc(e.id) + '">Annuler</button></span></div>'; }).join("");
+  return h;
+}
+function blocComptesEsp(v, vid) {
+  var l = (v.comptesEsp || []).filter(function (x) { return (!vid || x.vid === vid) && x.date >= jourJ(-3); });
+  if (!l.length) return "";
+  return '<div class="carte"><h3>Argent compté par l\'équipe</h3>' + l.map(function (x) { return '<div class="rang"><span>' + esc(x.vendeur) + ' · ' + esc(dateFr(x.date)) + '<br><small class="gris">attendu ' + fcfa(x.attendu) + ' · compté ' + fcfa(x.compte) + '</small></span><b class="' + (x.ecart < 0 ? "neg" : x.ecart > 0 ? "pos" : "") + '">' + (x.ecart === 0 ? "Juste ✓" : (x.ecart < 0 ? "Manque " : "+") + fcfa(Math.abs(x.ecart))) + '</b></div>'; }).join("") + '</div>';
 }
 function blocPaiements(v, vid) {
   var att = (v.livraisons || []).filter(function (l) { return l.aConfirmer && (!vid || l.livreurId === vid); })
@@ -310,7 +371,7 @@ function vEquipe(v) {
   if (!E.eq) E.eq = JSON.parse(JSON.stringify(v.equipe || []));
   if (E.fiche) { var mm = E.eq.filter(function (x) { return x.id === E.fiche; })[0]; if (mm) return vFiche(v, mm); E.fiche = null; }
   var auj = jourJ(0);
-  var h = blocPaiements(v) + blocDemandes(v);
+  var h = blocAValider(v) + blocPaiements(v) + blocDemandes(v) + blocComptesEsp(v);
   h += '<div class="carte"><h3>Équipe</h3><p class="astuce">Chaque personne a <b>sa propre caisse</b> et ne voit que <b>ses</b> ventes et <b>ses</b> dépenses. Touchez « Envoyer son lien » : elle l\'ouvre sur son téléphone et sa caisse s\'ouvre toute seule.</p>';
   h += E.eq.length ? E.eq.map(function (m, i) { return carteMembre(v, m, i, auj); }).join("") : '<p class="gris">Aucune personne pour le moment. Touchez « + Ajouter une personne ».</p>';
   h += '<div class="grille2" style="margin-top:6px"><button class="btn btn-clair" type="button" data-s="eq-ajouter">+ Ajouter une personne</button><button class="btn btn-or" type="button" data-s="eq-enregistrer">Enregistrer l\'équipe</button></div></div>';
@@ -333,7 +394,8 @@ function vFiche(v, m) {
   var modes = Object.keys(st.parMode);
   if (modes.length) h += modes.map(function (k) { return '<div class="rang"><span>' + esc(k) + '</span><b>' + fcfa(st.parMode[k]) + '</b></div>'; }).join("");
   h += '</div>';
-  h += blocPaiements(v, m.id) + blocDemandes(v, m.id);
+  h += blocAValider(v, m.id) + blocPaiements(v, m.id) + blocDemandes(v, m.id) + blocComptesEsp(v, m.id);
+  var dm = blocDettes(v, m.id); if (dm) h += '<div class="carte"><h3>Ce qu\'il me doit</h3>' + dm + '</div>';
   h += '<div class="carte"><h3>Ses ventes</h3>' + (st.recus.length ? st.recus.slice(0, 150).map(function (r) { return ligneRecu(r, false); }).join("") : '<p class="gris">Aucune vente sur cette période.</p>') +
     (st.livs.length ? '<h4 style="margin:14px 0 4px">Livraisons encaissées</h4>' + st.livs.map(function (l) { return '<div class="rang"><div class="g"><b>' + esc(dateFr(l.date)) + ' · ' + esc(l.client || "") + '</b><small>' + esc(l.mode || "Espèces") + ' · modifiable dans l\'onglet Commandes</small></div><b>' + fcfa(l.total) + '</b></div>'; }).join("") : "") + '</div>';
   h += '<div class="carte"><h3>Ses dépenses</h3>' + (st.deps.length ? st.deps.map(function (d) { return ligneDepense(d, false); }).join("") : '<p class="gris">Aucune dépense sur cette période.</p>') + '</div>';
@@ -797,6 +859,14 @@ function clic(ev) {
       if (!confirm("Supprimer POUR TOUJOURS ces archives ? Impossible de les récupérer.")) return;
       return envoyer("archives_vider", { vid: t.getAttribute("data-id") }, "Archives supprimées");
     case "dem-ok": return envoyer("demande_decider", { id: t.getAttribute("data-id"), decision: "accepter", categorie: val("dc-" + t.getAttribute("data-id")) }, "Dépense acceptée et notée");
+    case "valider-jour": return envoyer("valider_jour", { vid: t.getAttribute("data-vid"), date: t.getAttribute("data-date") }, "Journée validée : elle compte maintenant dans la caisse");
+    case "recu-paye": return envoyer("recu_payer", { id: t.getAttribute("data-id"), mode: "Espèces" }, "Marqué payé en espèces");
+    case "prod-ok": { var pid0 = t.getAttribute("data-id"), lg = []; document.querySelectorAll('[data-pl]').forEach(function (e) { if (e.getAttribute("data-pl") === pid0) lg.push({ produitId: e.getAttribute("data-pid"), qte: Number(e.value) || 0 }); }); return envoyer("valider_production", { id: pid0, lignes: lg, cout: val("pc-" + pid0) }, "Production validée : le stock est mis à jour"); }
+    case "prod-non": return envoyer("production_refuser", { id: t.getAttribute("data-id") }, "Production refusée");
+    case "compt-ok": { var cid0 = t.getAttribute("data-id"), its = []; document.querySelectorAll('[data-cl]').forEach(function (e) { if (e.getAttribute("data-cl") === cid0) its.push({ produitId: e.getAttribute("data-pid"), restant: e.value }); }); return envoyer("valider_comptage", { id: cid0, items: its }, "Comptage validé"); }
+    case "compt-non": return envoyer("proposition_supprimer", { id: t.getAttribute("data-id") }, "Comptage refusé");
+    case "encaisse": { var ci = +t.getAttribute("data-i"), lst = (E.vue.bilan.creances || []).filter(function (c) { return c.reste > 0 && (!t.getAttribute("data-vid") || c.id === E.fiche); }), cc = lst[ci]; if (!cc) return; var mt = Number(val("enc-" + ci)) || 0; if (mt < 1) return alert("Entrez le montant rendu."); return envoyer("encaisser", { deType: cc.type, deId: cc.id, deNom: cc.nom, montant: mt, date: jourJ(0) }, "Argent noté : la caisse monte"); }
+    case "enc-sup": return envoyer("encaissement_supprimer", { id: t.getAttribute("data-id") }, "Paiement annulé");
     case "pai-ok": return envoyer("paiement_decider", { id: t.getAttribute("data-id"), decision: "recu" }, "Paiement confirmé");
     case "pai-non": return envoyer("paiement_decider", { id: t.getAttribute("data-id"), decision: "non" }, "Noté : le livreur doit remettre les espèces");
     case "dem-non": return envoyer("demande_decider", { id: t.getAttribute("data-id"), decision: "refuser" }, "Demande refusée");

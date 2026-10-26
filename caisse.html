@@ -86,6 +86,13 @@ main{flex:1;min-height:0;display:flex;flex-direction:column}
 .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
 .modes button{padding:14px 4px;border-radius:14px;background:#fff;border:2px solid var(--ligne);font-weight:800;color:var(--vert)}
 .modes button[aria-pressed=true]{border-color:var(--vert);background:#e8f3ea}
+.modes .pas{grid-column:1/-1;border-style:dashed}
+.sec{margin:12px 0;padding:14px;border-radius:16px;background:#fff;border:1px solid var(--ligne)}
+.sec h3{margin:0 0 6px;font-size:16px}
+.sec .ligne-in{display:flex;gap:8px;align-items:center;margin:6px 0}
+.sec .ligne-in span{flex:1;font-size:14px}
+.sec .ligne-in input{width:84px;padding:10px;border-radius:12px;border:2px solid var(--ligne);font-size:16px;text-align:right}
+.tagv{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:#fff3d6;color:#8a5a00;margin-left:6px}
 label{display:block;font-weight:700;font-size:14px;margin:12px 0 5px;color:var(--gris)}
 input[type=tel],input[type=number],input[type=text],textarea{width:100%;padding:13px 14px;border:2px solid var(--ligne);border-radius:12px;background:#fff;font-size:17px;outline:none}
 input:focus,textarea:focus{border-color:var(--or)}
@@ -166,6 +173,7 @@ details.q p{margin:0 0 12px;font-size:15.5px;line-height:1.4}
       <button type="button" data-v="vente" aria-selected="true">Vendre</button>
       <button type="button" data-v="mes" aria-selected="false">Mes ventes</button>
       <button type="button" data-v="dep" aria-selected="false">Dépenses</button>
+      <button type="button" data-v="fin" aria-selected="false">Fin de journée</button>
     </nav>
     <main>
       <div class="vue" id="v-vente">
@@ -181,6 +189,7 @@ details.q p{margin:0 0 12px;font-size:15.5px;line-height:1.4}
       <div class="vue cachee" id="v-liv"><div class="liste" id="liste-liv"></div></div>
       <div class="vue cachee" id="v-mes"><div class="liste" id="liste-mes"></div></div>
       <div class="vue cachee" id="v-dep"><div class="liste" id="liste-dep"></div></div>
+      <div class="vue cachee" id="v-fin"><div class="liste" id="liste-fin"></div></div>
     </main>
   </section>
   <div id="voile" class="voile cachee"><div class="feuille" id="feuille"></div></div>
@@ -198,6 +207,8 @@ const NUM_DEFAUT = "22665120902";
 
 let jeton = lire("caisse_jeton", ""), membre = lire("caisse_membre", null), articles = lire("caisse_articles", []);
 let numero = lire("caisse_numero", NUM_DEFAUT);
+let livreurs = lire("caisse_livreurs", []);
+let duCh = { type: "livreur", id: "", nom: "", echeance: "" };
 let ticket = [], sel = -1, frais = false, filtre = "glaces", vue = "vente";
 let file = lire("caisse_file", []);          // ventes faites hors ligne, en attente d'envoi
 let locaux = lire("caisse_recus", []);       // reçus du jour gardés sur ce téléphone
@@ -248,7 +259,7 @@ async function ouvrirCaisse(frais1) {
   locaux = locaux.filter((r) => r.date === jourJ()); ecrire("caisse_recus", locaux);
   rendreFiltres(); rendreGrille(); rendreTicket(); montrerVue(estLivreur() ? "liv" : "vente"); etat();
   if (!lire("caisse_tuto", 0)) lancerTuto(0);
-  try { const j = await api("catalogue"); articles = j.articles; membre = j.membre; entete(); numero = j.numero || numero; ecrire("caisse_articles", articles); ecrire("caisse_membre", membre); ecrire("caisse_numero", numero); rendreFiltres(); rendreGrille(); }
+  try { const j = await api("catalogue"); articles = j.articles; membre = j.membre; entete(); numero = j.numero || numero; livreurs = j.livreurs || []; ecrire("caisse_livreurs", livreurs); ecrire("caisse_articles", articles); ecrire("caisse_membre", membre); ecrire("caisse_numero", numero); rendreFiltres(); rendreGrille(); }
   catch (e) { if (e.session) { sessionFinie(); return; } }
   synchroniser();
 }
@@ -381,20 +392,27 @@ function majRendu() {
   r.textContent = d >= t ? (d === t ? "Compte juste : rien à rendre ✓" : "Monnaie à rendre : " + fmt(d - t)) : "Il manque " + fmt(t - d);
 }
 function ouvrirPaiement() {
-  mode = "especes";
+  mode = "especes"; duCh = { type: "livreur", id: "", nom: "", echeance: "" };
   const dessiner = () => {
     const num = ($("#c-num") || {}).value || "";
     $("#feuille").innerHTML = `<h2>Encaisser ${fmt(totalTicket())}</h2>
       <p class="aide-t"><b>Étape 3 :</b> comment le client paie-t-il ?</p>
-      <div class="modes">${[["especes", "Espèces"], ["orange", "Orange Money"], ["wave", "Wave"]].map(([k, n]) => `<button type="button" data-m="${k}" aria-pressed="${mode === k}">${n}</button>`).join("")}</div>
-      ${mode !== "especes" ? `<p class="aide-t"><b>Le dépôt doit être fait sur le 65 12 09 02 (numéro du responsable).</b> Le responsable doit confirmer qu'il l'a bien reçu. S'il ne l'a pas reçu, c'est à vous de remettre l'argent.</p>` : ""}
-      ${mode !== "especes" ? `<label for="c-num">Numéro ${mode === "orange" ? "Orange" : "Wave"} qui a fait le dépôt</label><input id="c-num" type="tel" inputmode="tel" placeholder="Ex : 70 12 34 56" value="${esc(num)}">` : ""}
+      <div class="modes">${[["especes", "Espèces"], ["orange", "Orange Money"], ["wave", "Wave"]].map(([k, n]) => `<button type="button" data-m="${k}" aria-pressed="${mode === k}">${n}</button>`).join("")}<button type="button" class="pas" data-m="du" aria-pressed="${mode === "du"}">Pas encore payé (crédit ou remis à un livreur)</button></div>
+      ${mode === "du" ? `<div class="info"><b>Rien n'entre en caisse tout de suite.</b> Cette somme sera à rendre plus tard : le responsable la suivra.</div>
+        <div class="modes" style="grid-template-columns:1fr 1fr"><button type="button" data-dt="livreur" aria-pressed="${duCh.type === "livreur"}">Remis à un livreur</button><button type="button" data-dt="client" aria-pressed="${duCh.type === "client"}">Crédit client</button></div>
+        ${duCh.type === "livreur" ? (livreurs.length ? `<label for="c-liv">Quel livreur ?</label><select id="c-liv"><option value="">— choisir —</option>${livreurs.map((l) => `<option value="${esc(l.id)}"${duCh.id === l.id ? " selected" : ""}>${esc(l.nom)}</option>`).join("")}</select>` : `<div class="info">Aucun livreur dans l'équipe. Demandez au responsable de l'ajouter.</div>`) : `<label for="c-cli">Nom du client</label><input id="c-cli" type="text" maxlength="60" value="${esc(duCh.nom)}" placeholder="Ex : Mme Koné"><label for="c-ech">Date à laquelle il doit payer</label><input id="c-ech" type="date" value="${esc(duCh.echeance)}">`}` : ""}
+      ${mode !== "especes" && mode !== "du" ? `<p class="aide-t"><b>Le dépôt doit être fait sur le 65 12 09 02 (numéro du responsable).</b> Le responsable doit confirmer qu'il l'a bien reçu. S'il ne l'a pas reçu, c'est à vous de remettre l'argent.</p>` : ""}
+      ${mode !== "especes" && mode !== "du" ? `<label for="c-num">Numéro ${mode === "orange" ? "Orange" : "Wave"} qui a fait le dépôt</label><input id="c-num" type="tel" inputmode="tel" placeholder="Ex : 70 12 34 56" value="${esc(num)}">` : ""}
       ${mode === "especes" ? chipsMonnaie() : ""}
       <label for="c-note">Remarque (facultatif)</label><input id="c-note" type="text" maxlength="150" placeholder="Ex : client fidèle">
       <div id="err-p" class="erreur"></div>
       <button class="btn or" id="ok-pay" type="button" style="width:100%;margin-top:6px">Valider la vente</button>
       <button class="btn clair" id="non-pay" type="button" style="width:100%;margin-top:8px">Retour</button>`;
     $("#feuille").querySelectorAll("[data-m]").forEach((b) => (b.onclick = () => { mode = b.dataset.m; dessiner(); }));
+    $("#feuille").querySelectorAll("[data-dt]").forEach((b) => (b.onclick = () => { duCh.type = b.dataset.dt; dessiner(); }));
+    const cl = $("#c-liv"); if (cl) cl.onchange = () => (duCh.id = cl.value);
+    const cc = $("#c-cli"); if (cc) cc.oninput = () => (duCh.nom = cc.value);
+    const ce = $("#c-ech"); if (ce) ce.onchange = () => (duCh.echeance = ce.value);
     $("#feuille").querySelectorAll("[data-donne]").forEach((b) => (b.onclick = () => { $("#c-donne").value = b.dataset.donne; majRendu(); }));
     const cd = $("#c-donne"); if (cd) cd.oninput = majRendu;
     $("#non-pay").onclick = fermer; $("#ok-pay").onclick = validerVente;
@@ -404,11 +422,16 @@ function ouvrirPaiement() {
 function idRecu() { const d = new Date(); const p = (n) => String(n).padStart(2, "0"); return "R" + String(d.getUTCFullYear()).slice(2) + p(d.getUTCMonth() + 1) + p(d.getUTCDate()) + "-" + Math.random().toString(36).slice(2, 7).toUpperCase() + Date.now().toString(36).slice(-3).toUpperCase(); }
 function validerVente() {
   const num = (($("#c-num") || {}).value || "").trim(), note = ($("#c-note").value || "").trim(), err = $("#err-p");
-  if (mode !== "especes" && mode !== "resp" && num.replace(/\D/g, "").length < 8) { err.textContent = "Entrez le numéro Mobile Money (8 chiffres au moins)."; return; }
+  let du = null;
+  if (mode === "du") {
+    if (duCh.type === "livreur") { if (!duCh.id) { err.textContent = "Choisissez le livreur."; return; } const lv = livreurs.find((l) => l.id === duCh.id); du = { type: "livreur", id: duCh.id, nom: lv ? lv.nom : "" }; }
+    else { if ((duCh.nom || "").trim().length < 2) { err.textContent = "Entrez le nom du client."; return; } du = { type: "client", id: "", nom: duCh.nom.trim() }; }
+    if (duCh.echeance) du.echeance = duCh.echeance;
+  } else if (mode !== "especes" && mode !== "resp" && num.replace(/\D/g, "").length < 8) { err.textContent = "Entrez le numéro Mobile Money (8 chiffres au moins)."; return; }
   const lignes = ticket.map((l) => ({ id: l.id, qte: l.qte, compo: l.compo }));
-  const modeNom = { especes: "Espèces", orange: "Orange Money", wave: "Wave", resp: "Payé au responsable" }[mode];
-  const recu = { id: idRecu(), date: jourJ(), heure: new Date().toISOString(), vendeur: membre.nom, vid: membre.id, point: membre.point, paiement: modeNom, numPaiement: mode === "especes" || mode === "resp" ? "" : num, note, total: totalTicket(), lignes: ticket.map((l) => { const a = art(l.id); return { nom: a.nom, qte: l.qte, total: a.prix * l.qte, detail: a.type === "pack" ? (a.fixe ? Object.keys(a.fixe).map((k) => a.fixe[k] * l.qte + " × " + (art(k) ? art(k).nom.replace(/^Crème glacée /, "") : k)).join(", ") : a.choix ? Object.keys(l.compo || {}).map((k) => l.compo[k] + " × " + (art(k) ? art(k).nom.replace(/^Crème glacée /, "") : k)).join(", ") : pots(l) + " pots") : "" }; }), etat: "attente" };
-  file.push({ id: recu.id, vid: membre.id, date: recu.date, lignes, paiement: mode, numPaiement: recu.numPaiement, note });
+  const modeNom = du ? (du.type === "livreur" ? "Dû par le livreur " + du.nom : "Crédit " + du.nom) : { especes: "Espèces", orange: "Orange Money", wave: "Wave", resp: "Payé au responsable" }[mode];
+  const recu = { id: idRecu(), date: jourJ(), heure: new Date().toISOString(), vendeur: membre.nom, vid: membre.id, point: membre.point, paiement: modeNom, du, attente: true, numPaiement: mode === "especes" || mode === "resp" || mode === "du" ? "" : num, note, total: totalTicket(), lignes: ticket.map((l) => { const a = art(l.id); return { nom: a.nom, qte: l.qte, total: a.prix * l.qte, detail: a.type === "pack" ? (a.fixe ? Object.keys(a.fixe).map((k) => a.fixe[k] * l.qte + " × " + (art(k) ? art(k).nom.replace(/^Crème glacée /, "") : k)).join(", ") : a.choix ? Object.keys(l.compo || {}).map((k) => l.compo[k] + " × " + (art(k) ? art(k).nom.replace(/^Crème glacée /, "") : k)).join(", ") : pots(l) + " pots") : "" }; }), etat: "attente" };
+  file.push({ id: recu.id, vid: membre.id, date: recu.date, lignes, paiement: mode === "du" ? "especes" : mode, du, numPaiement: recu.numPaiement, note });
   locaux.unshift(recu); ecrire("caisse_file", file); ecrire("caisse_recus", locaux);
   ticket = []; sel = -1; rendre(); etat();
   montrerRecu(recu);
@@ -482,9 +505,72 @@ async function chargerMes() {
     (estLivreur() && especes ? `<div class="info"><b>Espèces à remettre au responsable : ${fmt(especes)}</b></div>` : "") +
     livraisons.map((l) => { const h = new Date(l.heure); return `<div class="carte"><div class="h"><span>${h.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · Livraison · ${esc(l.paiement || "Espèces")}</span><span>${fmt(l.total)}</span></div><small>${esc(l.nomClient)} — ${l.articles.map((a) => a.qte + " × " + esc(a.nom.replace(/^Crème glacée /, ""))).join(", ")}</small></div>`; }).join("") +
     tous.map((r) => { const h = new Date(r.heure); const att = mesFile().some((x) => x.id === r.id);
-      return `<div class="carte" data-r="${esc(r.id)}"><div class="h"><span>${h.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · ${esc(r.paiement)}</span><span>${fmt(r.total)}</span></div><small>${r.lignes.map((l) => l.qte + " × " + esc(l.nom.replace(/^Crème glacée /, ""))).join(", ")}${r.livraison ? " · dont livraison incluse " + fmt(r.livraison) : ""}</small><div style="margin-top:4px"><span class="tag ${att ? "att" : "ok"}">${att ? "En attente d'envoi" : "Envoyée"}</span></div></div>`; }).join("") +
+      return `<div class="carte" data-r="${esc(r.id)}"><div class="h"><span>${h.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })} · ${esc(r.paiement)}${r.attente ? '<span class="tagv">À valider</span>' : ""}</span><span>${fmt(r.total)}</span></div><small>${r.lignes.map((l) => l.qte + " × " + esc(l.nom.replace(/^Crème glacée /, ""))).join(", ")}${r.livraison ? " · dont livraison incluse " + fmt(r.livraison) : ""}</small><div style="margin-top:4px"><span class="tag ${att ? "att" : "ok"}">${att ? "En attente d'envoi" : "Envoyée"}</span></div></div>`; }).join("") +
     `<p class="vide-t">Une vente notée ne peut plus être modifiée ni supprimée ici. En cas d'erreur, appelez le responsable.</p>`;
   c._tous = tous;
+}
+
+
+/* ───── Fin de journée : dette du livreur, production, reste en stock, argent compté ───── */
+const produitsComptables = () => articles.filter((a) => a.type === "produit");
+async function chargerFin() {
+  const c = $("#liste-fin"); const jr = jourJ();
+  c.innerHTML = `<div class="info">Chargement…</div>`;
+  let etatJ = null, dette = null;
+  try { etatJ = await api("etat_jour", { date: jr }); if (estLivreur()) dette = await api("ma_dette"); } catch (e) { if (e.session) return sessionFinie(); c.innerHTML = `<div class="info">Il faut du réseau pour cette page.</div>`; return; }
+  let h = `<p class="vide-t" style="margin:4px 0 8px">Tout ce que vous envoyez ici est vérifié par le responsable avant d'être compté.</p>`;
+  if (dette) {
+    h += `<div class="sec"><h3>Ce que je dois au responsable</h3><div class="somme"><small>Reste à rendre</small><b>${fmt(dette.reste)}</b>${dette.enAttente ? `<small>+ ${fmt(dette.enAttente)} en attente de validation</small>` : ""}</div>` +
+      (dette.recus.length ? dette.recus.map((r) => `<div class="carte"><div class="h"><span>${esc(r.date)}${r.attente ? '<span class="tagv">À valider</span>' : ""}</span><span>${fmt(r.total)}</span></div><small>${r.lignes.map(esc).join(", ")}</small></div>`).join("") : `<p class="vide-t">Aucun produit remis pour le moment.</p>`) +
+      (dette.paiements.length ? `<p class="aide-t">Déjà rendu : ${dette.paiements.map((p) => fmt(p.montant) + " (" + esc(p.date) + ")").join(", ")}</p>` : "") + `</div>`;
+  }
+  h += `<div class="sec"><h3>1. Production du jour</h3><p class="aide-t">${etatJ.productions.length ? "Envoyée ✓ (" + etatJ.productions.length + "). Vous pouvez en ajouter une autre." : "Notez ce qui a été produit."}</p><button class="btn clair" id="b-prod" type="button" style="width:100%">Noter une production</button></div>`;
+  h += `<div class="sec"><h3>2. Reste en stock</h3><p class="aide-t">${etatJ.stockEnvoye ? "Envoyé ✓ — vous pouvez le renvoyer pour corriger." : "Comptez ce qui reste dans le congélateur ce soir."}</p><button class="btn clair" id="b-stock" type="button" style="width:100%">Compter le reste</button></div>`;
+  const cl = etatJ.cloture;
+  h += `<div class="sec"><h3>3. Argent en espèces</h3>${cl ? `<div class="${cl.ecart < 0 ? "info" : "info"}"><b>${cl.ecart === 0 ? "Compte juste ✓" : cl.ecart < 0 ? "Il manque " + fmt(-cl.ecart) : "Il y a " + fmt(cl.ecart) + " de plus"}</b><br>Attendu ${fmt(cl.attendu)} · compté ${fmt(cl.compte)}</div>` : `<p class="aide-t">Comptez les espèces que vous avez en main.</p>`}<button class="btn or" id="b-esp" type="button" style="width:100%">${cl ? "Recompter" : "Compter l'argent"}</button></div>`;
+  c.innerHTML = h;
+  $("#b-prod").onclick = ouvrirProduction; $("#b-stock").onclick = ouvrirStock; $("#b-esp").onclick = ouvrirEspeces;
+}
+function ouvrirProduction() {
+  const l = produitsComptables();
+  $("#feuille").innerHTML = `<h2>Production du jour</h2><p class="aide-t">Quantité produite pour chaque produit (laissez vide si aucune).</p>` +
+    l.map((a) => `<div class="ligne-in"><span>${esc(a.nom.replace(/^Crème glacée /, ""))}</span><input type="number" inputmode="numeric" min="0" data-pq="${esc(a.id)}"></div>`).join("") +
+    `<label for="p-cout">Argent dépensé pour cette production (F, facultatif)</label><input id="p-cout" type="number" inputmode="numeric" min="0" placeholder="Le responsable pourra le corriger">
+    <div id="err-p" class="erreur"></div><button class="btn or" id="ok-p" type="button" style="width:100%;margin-top:6px">Envoyer</button><button class="btn clair" id="non-p" type="button" style="width:100%;margin-top:8px">Retour</button>`;
+  $("#non-p").onclick = fermer;
+  $("#ok-p").onclick = async () => {
+    const lignes = [...document.querySelectorAll("[data-pq]")].map((i) => ({ produitId: i.dataset.pq, qte: Number(i.value) || 0 })).filter((x) => x.qte > 0);
+    if (!lignes.length) { $("#err-p").textContent = "Entrez au moins une quantité."; return; }
+    try { await api("proposer_production", { date: jourJ(), lignes, cout: Number($("#p-cout").value) || 0 }); fermer(); toast("Production envoyée au responsable ✓"); chargerFin(); }
+    catch (e) { if (e.session) return sessionFinie(); $("#err-p").textContent = e.message; }
+  };
+  ouvrir();
+}
+function ouvrirStock() {
+  const l = produitsComptables();
+  $("#feuille").innerHTML = `<h2>Reste en stock ce soir</h2><p class="aide-t">Combien de pots restent pour chaque produit ? Mettez 0 s'il n'en reste plus. Laissez vide si vous ne comptez pas ce produit.</p>` +
+    l.map((a) => `<div class="ligne-in"><span>${esc(a.nom.replace(/^Crème glacée /, ""))}</span><input type="number" inputmode="numeric" min="0" data-sq="${esc(a.id)}"></div>`).join("") +
+    `<div id="err-s" class="erreur"></div><button class="btn or" id="ok-s" type="button" style="width:100%;margin-top:6px">Envoyer le comptage</button><button class="btn clair" id="non-s" type="button" style="width:100%;margin-top:8px">Retour</button>`;
+  $("#non-s").onclick = fermer;
+  $("#ok-s").onclick = async () => {
+    const items = [...document.querySelectorAll("[data-sq]")].filter((i) => i.value !== "").map((i) => ({ produitId: i.dataset.sq, restant: Number(i.value) || 0 }));
+    if (!items.length) { $("#err-s").textContent = "Comptez au moins un produit."; return; }
+    try { await api("compter_stock", { date: jourJ(), items }); fermer(); toast("Comptage envoyé au responsable ✓"); chargerFin(); }
+    catch (e) { if (e.session) return sessionFinie(); $("#err-s").textContent = e.message; }
+  };
+  ouvrir();
+}
+function ouvrirEspeces() {
+  $("#feuille").innerHTML = `<h2>Argent en espèces</h2><p class="aide-t">Comptez tous les billets et pièces que vous avez en main (vos ventes d'aujourd'hui en espèces).</p>
+    <label for="e-c">Espèces comptées (F)</label><input id="e-c" type="number" inputmode="numeric" min="0">
+    <div id="err-e" class="erreur"></div><button class="btn or" id="ok-e" type="button" style="width:100%;margin-top:6px">Valider</button><button class="btn clair" id="non-e" type="button" style="width:100%;margin-top:8px">Retour</button>`;
+  $("#non-e").onclick = fermer;
+  $("#ok-e").onclick = async () => {
+    const v = $("#e-c").value; if (v === "") { $("#err-e").textContent = "Entrez le montant."; return; }
+    try { await api("cloturer_caisse", { date: jourJ(), compte: Number(v) }); fermer(); chargerFin(); }
+    catch (e) { if (e.session) return sessionFinie(); $("#err-e").textContent = e.message; }
+  };
+  ouvrir();
 }
 
 /* ───── Livraisons (poste « livreur ») ───── */
@@ -611,8 +697,8 @@ $("#btn-aide").onclick = ouvrirAide;
 function montrerVue(v) {
   vue = v;
   document.querySelectorAll("nav button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.v === v)));
-  ["vente", "mes", "dep", "liv"].forEach((k) => $("#v-" + k).classList.toggle("cachee", k !== v));
-  if (v === "mes") chargerMes(); if (v === "dep") chargerDep(); if (v === "liv") chargerLiv();
+  ["vente", "mes", "dep", "liv", "fin"].forEach((k) => $("#v-" + k).classList.toggle("cachee", k !== v));
+  if (v === "mes") chargerMes(); if (v === "dep") chargerDep(); if (v === "liv") chargerLiv(); if (v === "fin") chargerFin();
 }
 document.addEventListener("click", (e) => {
   const t = e.target.closest("button, .l, .carte"); if (!t) return;

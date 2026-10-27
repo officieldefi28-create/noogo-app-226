@@ -205,7 +205,7 @@ module.exports = async (req, res) => {
         const maintenant = new Date().toISOString();
         c.statutLivraison = "livree"; c.dateLivraison = maintenant; c.etape = "livree";
         c.livreur = m.nom; c.livreurId = m.id;
-        c.encaisse = { mode: resp ? "Payé au responsable" : MODES[mode], verifie: mode !== "especes" || resp ? false : undefined,   /* tout paiement non espèces est à confirmer par le responsable */ numPaiement: mode === "especes" ? "" : num, montant, le: maintenant, par: m.nom, parId: m.id, note: txt(d.note, 150) };
+        c.encaisse = { mode: resp ? "Payé au responsable" : MODES[mode], attente: true, verifie: mode !== "especes" || resp ? false : undefined,   /* tout paiement non espèces est à confirmer par le responsable */ numPaiement: mode === "especes" ? "" : num, montant, le: maintenant, par: m.nom, parId: m.id, note: txt(d.note, 150) };
         await S.setCommande(c);
         return res.status(200).json({ commande: resumeLivraison(c) });
       }
@@ -215,9 +215,12 @@ module.exports = async (req, res) => {
         const ventes = (await S.suiviListe("ventes")).filter((v) => v && !v.archive && v.du && v.du.type === "livreur" && v.du.id === m.id);
         const rendu = (await S.suiviListe("encaissements")).filter((e) => e && !e.archive && e.deType === "livreur" && e.deId === m.id);
         const somme = (a, f) => a.reduce((t, x) => t + (Number(f(x)) || 0), 0);
-        const confirme = somme(ventes.filter((v) => !v.attente), (v) => v.montant), attente = somme(ventes.filter((v) => v.attente), (v) => v.montant), paye = somme(rendu, (e) => e.montant);
+        const cmdsDues = (await S.getCommandes()).filter((c) => c && c.encaisse && c.encaisse.du && c.encaisse.du.id === m.id);
+        const dueCmd = somme(cmdsDues, (c) => c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal);
+        const confirme = somme(ventes.filter((v) => !v.attente), (v) => v.montant) + dueCmd, attente = somme(ventes.filter((v) => v.attente), (v) => v.montant), paye = somme(rendu, (e) => e.montant);
         const recus = (await S.suiviListe("recus")).filter((r) => r && !r.archive && r.du && r.du.type === "livreur" && r.du.id === m.id).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 30)
-          .map((r) => ({ id: r.id, date: r.date, total: r.total, attente: !!r.attente, lignes: (r.lignes || []).map((l) => l.qte + " × " + l.nom) }));
+          .map((r) => ({ id: r.id, date: r.date, total: r.total, attente: !!r.attente, lignes: (r.lignes || []).map((l) => l.qte + " × " + l.nom) }))
+          .concat(cmdsDues.map((c) => ({ id: c.id, date: String(c.dateLivraison || c.date || "").slice(0, 10), total: Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0, attente: false, lignes: ["Livraison " + (c.nomClient || "")] })));
         return res.status(200).json({ du: confirme, paye, reste: Math.max(0, confirme - paye), enAttente: attente, recus, paiements: rendu.sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 20).map((e) => ({ date: e.date, montant: e.montant })) });
       }
       case "proposer_production": {

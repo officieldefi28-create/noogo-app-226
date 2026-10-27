@@ -182,7 +182,7 @@ function vue(donnees, d) {
     propositions: (donnees.propositions || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 40),
     lotsProp: (donnees.lotsProp || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 40),
     comptesEsp: (donnees.comptesEsp || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 120),
-    livraisons: (donnees.commandes || []).filter((c) => c && c.statutLivraison === "livree" && c.livreurId).map((c) => ({ id: c.id, date: String(c.dateLivraison || c.date || "").slice(0, 10), heure: c.dateLivraison, livreurId: c.livreurId, livreur: c.livreur, client: c.nomClient, total: Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0, mode: (c.encaisse && c.encaisse.mode) || "", aConfirmer: aConfirmer(c.encaisse && c.encaisse.mode, c.encaisse && c.encaisse.verifie, c.dateLivraison || c.date) })).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 500),
+    livraisons: (donnees.commandes || []).filter((c) => c && c.statutLivraison === "livree" && c.livreurId).map((c) => ({ id: c.id, date: String(c.dateLivraison || c.date || "").slice(0, 10), heure: c.dateLivraison, livreurId: c.livreurId, livreur: c.livreur, client: c.nomClient, total: Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0, mode: (c.encaisse && c.encaisse.mode) || "", aConfirmer: !(c.encaisse && c.encaisse.attente) && aConfirmer(c.encaisse && c.encaisse.mode, c.encaisse && c.encaisse.verifie, c.dateLivraison || c.date), attente: !!(c.encaisse && c.encaisse.attente), du: !!(c.encaisse && c.encaisse.du), resume: (c.articles || []).map((a) => a.qte + " × " + a.nom).join(", ") })).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 500),
     comptages: donnees.comptages.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     equipe: donnees.equipe, motCaisse: donnees.motCaisse, recus: (donnees.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 800),
     demandes: (donnees.demandes || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 200),
@@ -397,6 +397,26 @@ module.exports = async (req, res) => {
         if (!pr) throw new Error("Comptage invalide");
         await S.suiviDel("comptes_prop", idp);
         trace = ["Comptage refusé", pr.date + " · " + (pr.vendeur || "")];
+        break;
+      }
+      case "livraison_decider": {
+        // Une livraison enregistrée par un livreur n'est comptée qu'après votre décision
+        const c = await S.getCommande(txt(d.id, 60));
+        if (!c || !c.encaisse || !c.encaisse.attente) throw new Error("Livraison invalide : déjà traitée");
+        const total = c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal;
+        const qui = (c.livreur || "") + " · " + (c.nomClient || "") + " · " + fr(total);
+        if (d.decision === "valider") {
+          c.encaisse.attente = false; c.encaisse.verifie = true; c.encaisse.valideLe = new Date().toISOString();
+          if (["Espèces", "Orange Money", "Wave"].includes(d.mode)) c.encaisse.mode = d.mode;
+          trace = ["Livraison validée", qui + " · " + c.encaisse.mode];
+        } else if (d.decision === "du") {
+          c.encaisse.attente = false; c.encaisse.verifie = true; c.encaisse.mode = "Dû par le livreur"; c.encaisse.du = { type: "livreur", id: c.livreurId, nom: c.livreur || "" };
+          trace = ["Livraison : argent pas reçu, noté comme dû par le livreur", qui];
+        } else if (d.decision === "refuser") {
+          c.statutLivraison = "en_attente"; c.etape = "recue"; delete c.encaisse; delete c.dateLivraison; delete c.livreur; delete c.livreurId;
+          trace = ["Livraison refusée (remise à livrer)", qui];
+        } else throw new Error("Décision invalide");
+        await S.setCommande(c);
         break;
       }
       case "paiement_decider": {

@@ -113,38 +113,39 @@ function calculer(donnees) {
     const base = nombre(c.montantTotal);
     const ratio = base > 0 ? nombre(c.montantApresRemise != null ? c.montantApresRemise : base) / base : 1;
     const d = jour(c.dateLivraison || c.date);
+    const att = !!(c.encaisse && c.encaisse.attente), duC = c.encaisse && c.encaisse.du ? { ...c.encaisse.du } : null;   // livraison pas encore validée par le responsable / argent dû par le livreur
     for (const a of c.articles || []) {
       if (Array.isArray(a.compo) && a.compo.length) {
         // Pack au choix : chaque saveur choisie sort du stock de son propre produit
         const tot = a.compo.reduce((s, x) => s + nombre(x.qte), 0) || 1;
         const plein = a.compo.reduce((s, x) => s + prixDe(x.id) * nombre(x.qte), 0);
         if (plein > nombre(a.total) && nombre(a.total) > 0) {   // les pots au prix normal valent plus que le pack : la différence est une remise
-          for (const x of a.compo) pousse(x.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(x.qte), montant: prixDe(x.id) * nombre(x.qte) * ratio, ref: c.id });
-          remisesSite.push({ date: d, ref: c.id, montant: (plein - nombre(a.total)) * ratio });
+          for (const x of a.compo) pousse(x.id, { date: d, rang: 1, type: "vente", source: "site", attente: att, du: duC, canal: CANAL_SITE, qte: nombre(x.qte), montant: prixDe(x.id) * nombre(x.qte) * ratio, ref: c.id });
+          if (!att) remisesSite.push({ date: d, ref: c.id, montant: (plein - nombre(a.total)) * ratio });
           continue;
         }
         // pack plus cher que les pots : les pots restent au prix normal, le surplus (livraison incluse) est compté à part, hors ventes et hors caisse
         const surp = plein > 0 ? Math.max(0, nombre(a.total) - plein) * ratio : 0;
         if (surp > 0) {
-          a.compo.forEach((x, i) => pousse(x.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(x.qte), montant: prixDe(x.id) * nombre(x.qte) * ratio, supp: i === 0 ? surp : 0, ref: c.id }));
+          a.compo.forEach((x, i) => pousse(x.id, { date: d, rang: 1, type: "vente", source: "site", attente: att, du: duC, canal: CANAL_SITE, qte: nombre(x.qte), montant: prixDe(x.id) * nombre(x.qte) * ratio, supp: i === 0 ? surp : 0, ref: c.id }));
           continue;
         }
-        for (const x of a.compo) pousse(x.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(x.qte), montant: (nombre(a.total) * ratio * nombre(x.qte)) / tot, ref: c.id });
+        for (const x of a.compo) pousse(x.id, { date: d, rang: 1, type: "vente", source: "site", attente: att, du: duC, canal: CANAL_SITE, qte: nombre(x.qte), montant: (nombre(a.total) * ratio * nombre(x.qte)) / tot, ref: c.id });
         continue;
       }
       const p = catParId[a.id] || { id: a.id, type: a.type };
       const b = baseDe(p) || { id: a.id, n: 1 };
       const plein = p.type === "pack" ? prixDe(b.id) * nombre(a.qte) * b.n : 0;
       if (plein > nombre(a.total) && nombre(a.total) > 0) {
-        pousse(b.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(a.qte) * b.n, montant: plein * ratio, ref: c.id });
-        remisesSite.push({ date: d, ref: c.id, montant: (plein - nombre(a.total)) * ratio });
+        pousse(b.id, { date: d, rang: 1, type: "vente", source: "site", attente: att, du: duC, canal: CANAL_SITE, qte: nombre(a.qte) * b.n, montant: plein * ratio, ref: c.id });
+        if (!att) remisesSite.push({ date: d, ref: c.id, montant: (plein - nombre(a.total)) * ratio });
         continue;
       }
       if (plein > 0 && nombre(a.total) > plein) {   // pack plus cher que les pots : surplus (livraison incluse) compté à part
-        pousse(b.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(a.qte) * b.n, montant: plein * ratio, supp: (nombre(a.total) - plein) * ratio, ref: c.id });
+        pousse(b.id, { date: d, rang: 1, type: "vente", source: "site", attente: att, du: duC, canal: CANAL_SITE, qte: nombre(a.qte) * b.n, montant: plein * ratio, supp: (nombre(a.total) - plein) * ratio, ref: c.id });
         continue;
       }
-      pousse(b.id, { date: d, rang: 1, type: "vente", source: "site", canal: CANAL_SITE, qte: nombre(a.qte) * b.n, montant: nombre(a.total) * ratio, ref: c.id });
+      pousse(b.id, { date: d, rang: 1, type: "vente", source: "site", attente: att, du: duC, canal: CANAL_SITE, qte: nombre(a.qte) * b.n, montant: nombre(a.total) * ratio, ref: c.id });
     }
   }
   for (const v of donnees.ventes || []) {

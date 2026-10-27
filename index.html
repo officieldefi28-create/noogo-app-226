@@ -376,6 +376,9 @@ function appliquerReglages() {
   if (CONFIG.logo) $("#logo-hero").src = CONFIG.logo;
   if (CONFIG.logoRond) $("#logo-rond").src = CONFIG.logoRond;
   $("#pied-adresse").textContent = CONFIG.adresse;
+  let bf = $("#bandeau-ferme");
+  if (CONFIG.ferme === "oui") { if (!bf) { bf = document.createElement("div"); bf.id = "bandeau-ferme"; bf.setAttribute("role", "status"); bf.style.cssText = "position:sticky;top:0;z-index:60;background:#9b2c1d;color:#fff;text-align:center;padding:9px 14px;font-weight:700;font-size:14px"; document.body.insertBefore(bf, document.body.firstChild); } bf.textContent = CONFIG.messageFerme || "Commandes fermées pour le moment."; }
+  else if (bf) bf.remove();
 }
 async function chargerReglages() {
   const c = lire("noogo_reglages"); if (c && c.reglages) { Object.assign(CONFIG, c.reglages); FAQ = c.faq || []; appliquerReglages(); }
@@ -510,7 +513,7 @@ function fermerTout() { document.querySelectorAll(".voile").forEach((v) => v.cla
 function ouvrirPanier() { suivre("panier_ouvert"); rendrePanier(); ouvrirVoile("voile-panier"); if (!promo && lire("noogo_code_lien") && lignes().length) verifierCode(true); }
 function rendrePanier() {
   const L = lignes(), corps = $("#panier-corps"), pied = $("#panier-pied");
-  if (!L.length) { corps.innerHTML = `<div class="vide-box"><p><b>Votre panier est vide</b></p><p>Ajoutez une crème glacée pour commencer.</p></div>`; pied.innerHTML = `<button class="btn or" type="button" data-fermer="voile-panier">Voir la carte</button>`; return; }
+  if (!L.length) { const dern = lire("noogo_dernier_panier"); const aDern = dern && dern.panier && Object.keys(dern.panier).some((id) => produit(id)); corps.innerHTML = `<div class="vide-box"><p><b>Votre panier est vide</b></p><p>Ajoutez une crème glacée pour commencer.</p>${aDern ? `<button class="btn or" type="button" data-recom="1" style="margin-top:10px">↻ Recommander ma dernière commande</button>` : ""}</div>`; pied.innerHTML = `<button class="btn or" type="button" data-fermer="voile-panier">Voir la carte</button>`; return; }
   const val = (id) => { const e = $("#" + id); return e ? e.value : null; };
   const sauv = { nom: val("f-nom"), tel: val("f-tel"), lieu: val("f-lieu"), code: val("f-code"), note: val("f-note") };
   const mem = lire("noogo_client") || {};
@@ -536,7 +539,7 @@ function rendrePanier() {
 
     <label class="l" for="f-nom">Nom <span class="opt">(facultatif)</span></label>
     <input type="text" id="f-nom" autocomplete="name" placeholder="Votre nom" value="${esc(sauv.nom != null ? sauv.nom : mem.nom || "")}">
-    <label class="l" for="f-tel">Téléphone <span class="opt">(recommandé)</span></label>
+    <label class="l" for="f-tel">Téléphone <b style="color:var(--rouge)">*</b></label>
     <input type="tel" id="f-tel" inputmode="tel" autocomplete="tel" placeholder="Ex : 70 12 34 56" value="${esc(sauv.tel != null ? sauv.tel : mem.tel || "")}">
     <div id="bloc-lieu" ${reception === "retrait" ? 'class="cachee"' : ""}>
       <label class="l">Lieu de livraison</label>
@@ -569,6 +572,7 @@ function rendrePanier() {
       <div><span>Livraison</span><span>${esc(liv.v)}</span></div>
       <div class="total"><span>Total des articles</span><b>${fmt(t.apres)}</b></div>
       ${liv.note ? `<span class="note">${esc(liv.note)}</span>` : ""}
+      ${(parseInt(CONFIG.commandeMin, 10) || 0) ? `<span class="note" style="${t.apres < parseInt(CONFIG.commandeMin, 10) ? "color:var(--rouge);font-weight:700" : ""}">Commande minimale : ${fmt(parseInt(CONFIG.commandeMin, 10))}${t.apres < parseInt(CONFIG.commandeMin, 10) ? " — il vous manque " + fmt(parseInt(CONFIG.commandeMin, 10) - t.apres) : " ✓"}</span>` : ""}
       ${att.length ? `<span class="note">À confirmer sur WhatsApp : ${esc(att.join(", "))}.</span>` : ""}
     </div>
     <div id="erreur-cmd" class="err cachee" role="alert"></div>`;
@@ -668,8 +672,11 @@ function envoyer() {
   const tel = ($("#f-tel").value || "").trim(), nom = ($("#f-nom").value || "").trim(), lieu = ($("#f-lieu") ? $("#f-lieu").value : "").trim();
   const err = $("#erreur-cmd");
   const montrer = (m) => { err.textContent = m; err.classList.remove("cachee"); err.scrollIntoView({ block: "center", behavior: "smooth" }); };
-  if (tel && tel.replace(/\D/g, "").length < 8) { montrer("Ce numéro de téléphone n'a pas l'air complet. Corrigez-le ou laissez la case vide."); $("#f-tel").focus(); return; }
+  if (CONFIG.ferme === "oui") { montrer(CONFIG.messageFerme || "Les commandes sont fermées pour le moment."); return; }
+  if (tel.replace(/\D/g, "").length < 8) { montrer("Entrez votre numéro de téléphone (8 chiffres) : le livreur en a besoin pour vous joindre."); $("#f-tel").focus(); return; }
   const L = lignes(), t = totaux(), liv = texteLivraison(t);
+  const mini = parseInt(CONFIG.commandeMin, 10) || 0;
+  if (mini && t.apres < mini) { montrer("Commande minimale : " + fmt(mini) + ". Il vous manque " + fmt(mini - t.apres) + ", ajoutez un article."); return; }
   const incomplet = L.filter((l) => estMix(l.p) && !compoComplete(l.p));
   if (incomplet.length) { montrer("Choisissez les saveurs de : " + incomplet.map((l) => l.p.nom.replace(/ — .*/, "")).join(", ") + "."); return; }
   // Rappel doux (une seule fois) : un numéro et un lieu aident le livreur
@@ -694,6 +701,7 @@ function envoyer() {
   try { fetch("/api/commander", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), keepalive: true }).then((r) => r.json()).then((j) => { if (j && j.commandeId) { ecrire("noogo_derniere", j.commandeId); toast("Code de suivi : " + j.commandeId); suivre("commande_envoyee"); } else toast("Commande non enregistrée sur le site : envoyez bien le message WhatsApp."); }).catch(() => toast("Commande non enregistrée sur le site : envoyez bien le message WhatsApp.")); } catch (e) {}
   const url = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(m.join("\n"));
   const w = window.open(url, "_blank", "noopener"); if (!w) location.href = url;
+  ecrire("noogo_dernier_panier", { panier: JSON.parse(JSON.stringify(panier)), compo: JSON.parse(JSON.stringify(compo)) });
   panier = {}; compo = {}; ecrire("noogo_panier", panier); ecrire("noogo_compo", compo); promo = null; position = ""; avertiInfos = false;
   fermerVoile("voile-panier"); rendreTout();
   toast("Commande prête : envoyez le message sur WhatsApp");
@@ -816,6 +824,7 @@ function demanderInstall() { if (invite && !modalOuverte) { lancerInvite(); retu
 /* ───────── Clics ───────── */
 document.addEventListener("click", (e) => {
   const c = e.target.closest("button,a,[data-zoom]"); if (!c) return;
+  if (c.dataset.recom) { const dern = lire("noogo_dernier_panier"); if (dern && dern.panier) { panier = {}; Object.keys(dern.panier).forEach((id) => { if (produit(id)) panier[id] = dern.panier[id]; }); compo = dern.compo || {}; ecrire("noogo_panier", panier); ecrire("noogo_compo", compo); rendreTout(); rendrePanier(); } return; }
   if (c.dataset.inst) return demanderInstall();
   if (c.dataset.vue) return ouvrirVue(c.dataset.vue);
   if (c.dataset.plus) return ouvrirPlus(c.dataset.plus);

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Noogó · Tableau du patron</title>
+<style>
+:root{--vert:#14451f;--or:#c9982b;--creme:#fcf8ea;--ligne:#e8dfc4;--rouge:#9b2c1d;--gris:#6b6b5f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--creme);color:#1d1d17;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px}
+header{background:var(--vert);color:#fff;padding:14px 16px;border-bottom:4px solid var(--or)}
+header h1{margin:0;font-size:19px}
+header small{opacity:.8}
+main{padding:12px 14px 40px;max-width:640px;margin:0 auto}
+.onglets{display:flex;gap:8px;margin:6px 0 12px;overflow-x:auto}
+.onglets button{flex:none;padding:9px 16px;border-radius:999px;border:2px solid var(--ligne);background:#fff;font-weight:700;color:var(--vert)}
+.onglets button[aria-pressed=true]{background:var(--vert);color:#fff;border-color:var(--vert)}
+.grille{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{background:#fff;border:1px solid var(--ligne);border-radius:16px;padding:12px}
+.kpi small{display:block;color:var(--gris);font-size:12.5px}
+.kpi b{font-size:21px;display:block;margin-top:2px}
+.kpi.gros{grid-column:1/-1;background:var(--vert);color:#fff;border:0}
+.kpi.gros small{color:#e9e2bf}
+.kpi.gros b{font-size:28px}
+.pos{color:#1f7a37}.neg{color:var(--rouge)}
+.carte{background:#fff;border:1px solid var(--ligne);border-radius:16px;padding:14px;margin-top:12px}
+.carte h2{margin:0 0 8px;font-size:16px}
+.rang{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid #f0e9d2}
+.rang:last-child{border:0}
+.rang small{display:block;color:var(--gris)}
+.alerte{background:#fde8e4;color:var(--rouge);border-radius:12px;padding:10px 12px;margin-top:10px;font-weight:600}
+.alerte.or{background:#fff3d6;color:#8a5a00}
+.gris{color:var(--gris)}
+#erreur{margin:30px 16px;text-align:center;color:var(--rouge);font-weight:700}
+.barre{height:10px;border-radius:6px;background:#eee6d2;margin-top:5px;overflow:hidden}
+.barre i{display:block;height:100%;background:linear-gradient(90deg,#1f5a2e,#c9982b)}
+</style>
+</head>
+<body>
+<header><h1>Noogó · Tableau du patron</h1><small id="maj">Lecture seule : rien ne peut être modifié ici.</small></header>
+<main>
+  <div id="erreur" hidden></div>
+  <div id="corps" hidden>
+    <div class="onglets" role="tablist">
+      <button type="button" data-p="jour" aria-pressed="true">Aujourd'hui</button>
+      <button type="button" data-p="hier" aria-pressed="false">Hier</button>
+      <button type="button" data-p="semaine" aria-pressed="false">7 jours</button>
+      <button type="button" data-p="mois" aria-pressed="false">Ce mois</button>
+    </div>
+    <div id="vue"></div>
+  </div>
+</main>
+<script>
+(function () {
+  var cle = new URLSearchParams(location.search).get("k") || "";
+  var F = function (n) { return Math.round(Number(n) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " F"; };
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+  var jr = function (n) { var d = new Date(); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  var dateFr = function (d) { var p = String(d || "").slice(0, 10).split("-"); return p.length === 3 ? p[2] + "/" + p[1] : ""; };
+  var periodes = { jour: function () { return [jr(0), jr(0)]; }, hier: function () { return [jr(-1), jr(-1)]; }, semaine: function () { return [jr(-6), jr(0)]; }, mois: function () { return [jr(0).slice(0, 8) + "01", jr(0)]; } };
+  var courant = "jour";
+  function erreur(m) { document.getElementById("corps").hidden = true; var e = document.getElementById("erreur"); e.hidden = false; e.textContent = m; }
+  function charger() {
+    var p = periodes[courant]();
+    fetch("/api/caisse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "patron", cle: cle, du: p[0], au: p[1] }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.erreur || "Erreur"); return j; }); })
+      .then(rendre).catch(function (e) { erreur(e.message || "Impossible de charger"); });
+  }
+  function rendre(j) {
+    document.getElementById("erreur").hidden = true; document.getElementById("corps").hidden = false;
+    document.getElementById("maj").textContent = "Mis à jour à " + new Date(j.genereLe).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }) + " · lecture seule";
+    var b = j.bilan, h = "";
+    if (j.aValider) h += '<div class="alerte or">' + j.aValider + ' reçu(s) de caisse attendent la validation du responsable.</div>';
+    (j.manques || []).forEach(function (m) { h += '<div class="alerte">Manque en caisse : ' + esc(m.vendeur) + ' le ' + dateFr(m.date) + ' : ' + F(-m.ecart) + '</div>'; });
+    (j.alertes || []).forEach(function (a) { h += '<div class="alerte">Stock négatif : ' + esc(a.nom) + ' (' + a.theorique + ')</div>'; });
+    h += '<div class="grille" style="margin-top:10px"><div class="kpi gros"><small>Chiffre d\'affaires</small><b>' + F(b.ca) + '</b><small>' + b.quantite + ' pots vendus</small></div>' +
+      '<div class="kpi"><small>Résultat net</small><b class="' + (b.resultat >= 0 ? "pos" : "neg") + '">' + F(b.resultat) + '</b></div>' +
+      '<div class="kpi"><small>Marge brute</small><b>' + F(b.margeBrute) + '</b><small>' + b.margePct + ' %</small></div>' +
+      '<div class="kpi"><small>Caisse actuelle</small><b>' + F(b.caisse) + '</b></div>' +
+      '<div class="kpi"><small>Dépenses (production incluse)</small><b>' + F(b.depensesTotales) + '</b></div></div>';
+    if (b.resteADuTotal > 0) h += '<div class="carte"><h2>Argent à récupérer : ' + F(b.resteADuTotal) + '</h2>' + b.creances.filter(function (c) { return c.reste > 0; }).map(function (c) { return '<div class="rang"><span>' + esc(c.nom) + '<small>' + (c.type === "livreur" ? "Livreur" : "Client à crédit") + (c.echeance ? " · avant le " + dateFr(c.echeance) : "") + '</small></span><b class="neg">' + F(c.reste) + '</b></div>'; }).join("") + '</div>';
+    if (b.parProduit.length) { var mx = Math.max.apply(null, b.parProduit.map(function (p) { return p.ca; }).concat([1])); h += '<div class="carte"><h2>Ventes par produit</h2>' + b.parProduit.map(function (p) { return '<div><div class="rang" style="border:0;padding-bottom:0"><span>' + esc(p.nom) + '<small>' + p.qte + ' vendus</small></span><b>' + F(p.ca) + '</b></div><div class="barre"><i style="width:' + Math.max(3, p.ca / mx * 100) + '%"></i></div></div>'; }).join("") + '</div>'; }
+    if (b.parVendeur.length) h += '<div class="carte"><h2>Ventes par personne</h2>' + b.parVendeur.map(function (p) { return '<div class="rang"><span>' + esc(p.nom) + '</span><b>' + F(p.ca) + '</b></div>'; }).join("") + '</div>';
+    if (j.stock.length) h += '<div class="carte"><h2>Stock en ce moment</h2>' + j.stock.map(function (s) { return '<div class="rang"><span>' + esc(s.nom) + '</span><b class="' + (s.stock < 0 ? "neg" : "") + '">' + s.stock + '</b></div>'; }).join("") + '<p class="gris" style="margin:8px 0 0">Valeur du stock : ' + F(b.valeurStock) + '</p></div>';
+    if (b.parJour.length > 1) h += '<div class="carte"><h2>Jour par jour</h2>' + b.parJour.slice(-10).reverse().map(function (d) { return '<div class="rang"><span>' + dateFr(d.date) + '<small>' + d.qte + ' pots</small></span><b>' + F(d.ca) + '</b></div>'; }).join("") + '</div>';
+    document.getElementById("vue").innerHTML = h;
+  }
+  document.querySelector(".onglets").addEventListener("click", function (e) { var t = e.target.closest("button"); if (!t) return; courant = t.dataset.p; document.querySelectorAll(".onglets button").forEach(function (b) { b.setAttribute("aria-pressed", String(b === t)); }); charger(); });
+  if (!cle) erreur("Lien incomplet. Demandez le lien complet au responsable."); else { charger(); setInterval(charger, 120000); }
+})();
+</script>
+</body>
+</html>

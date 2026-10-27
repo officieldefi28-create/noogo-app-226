@@ -516,10 +516,10 @@ function vObjectifs(v) {
 /* ----- Plus : les outils rangés ----- */
 function vPlus(v) {
   if (!E.plus) {
-    var M = [["relances", "Clients à relancer", "Anciens clients, avec un message prêt à envoyer sur WhatsApp"], ["cloture", "Clôture de la journée", "Compter la caisse du soir, voir s'il manque de l'argent"], ["objectifs", "Objectifs et seuil de rentabilité", "Où j'en suis ce jour et ce mois"], ["envoi", "Envoyer et exporter", "Rapport WhatsApp, Excel, Google Sheets, Drive"], ["journal", "Journal des modifications", "Qui a changé quoi, et quand"], ["params", "Réglages du suivi", "Caisse de départ, coûts, points de vente"]];
+    var M = [["patron", "Accès patron (lecture seule)", "Un lien pour que le patron voie les chiffres, sans rien modifier"], ["relances", "Clients à relancer", "Anciens clients, avec un message prêt à envoyer sur WhatsApp"], ["cloture", "Clôture de la journée", "Compter la caisse du soir, voir s'il manque de l'argent"], ["objectifs", "Objectifs et seuil de rentabilité", "Où j'en suis ce jour et ce mois"], ["envoi", "Envoyer et exporter", "Rapport WhatsApp, Excel, Google Sheets, Drive"], ["journal", "Journal des modifications", "Qui a changé quoi, et quand"], ["params", "Réglages du suivi", "Caisse de départ, coûts, points de vente"]];
     return '<div class="carte"><h3>Plus</h3>' + M.map(function (m) { return '<button class="menu-plus" type="button" data-s="vers" data-v="' + m[0] + '"><span><b>' + m[1] + '</b><small>' + m[2] + '</small></span><span>›</span></button>'; }).join("") + '</div>';
   }
-  var corps = { relances: vRelances, cloture: vCloture, objectifs: vObjectifs, envoi: vEnvoi, journal: vJournal, params: vParams }[E.plus](v);
+  var corps = { patron: vPatron, relances: vRelances, cloture: vCloture, objectifs: vObjectifs, envoi: vEnvoi, journal: vJournal, params: vParams }[E.plus](v);
   return retour("Plus", "vers", "") + corps;
 }
 /* ----- Clients à relancer : les gens qui ont déjà commandé, avec un message gentil prêt à envoyer ----- */
@@ -555,6 +555,20 @@ function vRelances() {
       return '<div class="rang"><div class="g"><b>' + esc(o.nom || "Client") + '</b><small>' + o.n + ' commande' + (o.n > 1 ? 's' : '') + ' · ' + fcfa(o.total) + ' · dernière le ' + esc(dateFr(o.dernier)) + (o.fav ? ' · aime : ' + esc(o.fav) : "") + '</small></div><a class="btn btn-vert btn-petit" target="_blank" rel="noopener" href="https://wa.me/' + esc(o.tel) + '?text=' + encodeURIComponent(messageRelance(o)) + '">WhatsApp</a></div>';
     }).join("");
   });
+  return h + '</div>';
+}
+/* ----- Accès patron : un lien secret, lecture seule ----- */
+function lienPatron(v) { return v.patron && v.patron.cle ? location.origin + "/patron.html?k=" + v.patron.cle : ""; }
+function vPatron(v) {
+  var p = v.patron, lien = lienPatron(v);
+  var h = '<div class="carte"><h3>Accès patron</h3><p class="astuce">Le patron ouvre un lien sur son téléphone et voit les chiffres (ventes, résultat, caisse, stock, argent à récupérer, manques). <b>Il ne peut rien modifier</b> et ne voit ni les codes ni les liens de l\'équipe. Le lien se met à jour tout seul.</p>';
+  if (!p || !p.cle) h += '<button class="btn btn-or btn-bloc" type="button" data-s="patron-creer">Créer le lien du patron</button>';
+  else {
+    h += '<div class="rang"><span>État</span><b class="' + (p.actif ? "pos" : "neg") + '">' + (p.actif ? "Actif" : "Désactivé") + '</b></div>';
+    if (p.actif) h += '<input type="text" readonly value="' + esc(lien) + '" onclick="this.select()"><div class="grille2" style="margin-top:8px"><button class="btn btn-vert btn-petit" type="button" data-s="patron-wa">Envoyer par WhatsApp</button><button class="btn btn-brun btn-petit" type="button" data-s="patron-copier">Copier le lien</button></div>' +
+      '<div class="grille2" style="margin-top:8px"><button class="btn btn-clair btn-petit" type="button" data-s="patron-off">Désactiver</button><button class="btn btn-clair btn-petit" type="button" data-s="patron-creer">Nouveau lien</button></div><p class="astuce">« Nouveau lien » : l\'ancien lien ne marchera plus (si quelqu\'un d\'autre l\'a eu).</p>';
+    else h += '<button class="btn btn-or btn-bloc" type="button" data-s="patron-on">Réactiver</button>';
+  }
   return h + '</div>';
 }
 function vEnvoi(v) {
@@ -907,6 +921,11 @@ function clic(ev) {
     case "liv-ok": return envoyer("livraison_decider", { id: t.getAttribute("data-id"), decision: "valider", mode: val("lm-" + t.getAttribute("data-id")) }, "Livraison validée : elle compte maintenant");
     case "liv-du": return envoyer("livraison_decider", { id: t.getAttribute("data-id"), decision: "du" }, "Noté : le livreur doit cet argent");
     case "liv-non": if (!confirm("Refuser cette livraison ? La commande repart dans « à livrer ».")) return; return envoyer("livraison_decider", { id: t.getAttribute("data-id"), decision: "refuser" }, "Livraison refusée");
+    case "patron-creer": if (E.vue.patron && E.vue.patron.cle && !confirm("Créer un nouveau lien ? L'ancien ne marchera plus.")) return; return envoyer("patron_lien", { operation: "creer" }, "Lien créé");
+    case "patron-off": return envoyer("patron_lien", { operation: "desactiver" }, "Lien désactivé : le patron ne voit plus rien");
+    case "patron-on": return envoyer("patron_lien", { operation: "activer" }, "Lien réactivé");
+    case "patron-copier": var lp = lienPatron(E.vue); try { navigator.clipboard.writeText(lp); A.toast("Lien copié", "ok"); } catch (e) { window.prompt("Copiez ce lien :", lp); } return;
+    case "patron-wa": window.open("https://wa.me/?text=" + encodeURIComponent("Bonjour 👋\nVoici le tableau Noogó (lecture seule) : tous les chiffres à jour, sur ton téléphone.\n" + lienPatron(E.vue) + "\n\nOuvre le lien avec Chrome. Tu peux l'ajouter à l'écran d'accueil."), "_blank", "noopener"); return;
     case "valider-jour": return envoyer("valider_jour", { vid: t.getAttribute("data-vid"), date: t.getAttribute("data-date") }, "Journée validée : elle compte maintenant dans la caisse");
     case "recu-paye": return envoyer("recu_payer", { id: t.getAttribute("data-id"), mode: "Espèces" }, "Marqué payé en espèces");
     case "prod-ok": { var pid0 = t.getAttribute("data-id"), lg = []; document.querySelectorAll('[data-pl]').forEach(function (e) { if (e.getAttribute("data-pl") === pid0) lg.push({ produitId: e.getAttribute("data-pid"), qte: Number(e.value) || 0 }); }); return envoyer("valider_production", { id: pid0, lignes: lg, cout: val("pc-" + pid0) }, "Production validée : le stock est mis à jour"); }

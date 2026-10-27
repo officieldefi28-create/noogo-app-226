@@ -225,6 +225,7 @@
   <main class="page">
     <!-- Commandes -->
     <section id="p-commandes" class="actif">
+      <div style="margin:0 0 10px"><button type="button" class="btn btn-bloc" id="btn-ferme" data-act="ferme-bascule" style="background:#e8f3ea;color:#14451f;font-weight:800;min-height:48px">Commandes : … (touchez pour changer)</button></div>
       <div class="stats" id="stats-cmd"></div>
       <div class="filtres" id="filtres-cmd"></div>
       <div class="outils">
@@ -453,6 +454,23 @@ function ajouterPacksNoogo(){
   rendreCatalogue(); majSauvegarde();
   toast("16 packs ajoutés. Appuyez sur « Enregistrer le catalogue ».", "ok");
 }
+function majBoutonFerme(site){
+  var b = $("btn-ferme"); if (!b) return;
+  var f = site && site.reglages && site.reglages.ferme === "oui";
+  b.textContent = f ? "🔴 Commandes FERMÉES — touchez pour ouvrir" : "🟢 Commandes OUVERTES — touchez pour fermer";
+  b.style.background = f ? "#fde8e4" : "#e8f3ea"; b.style.color = f ? "#9b2c1d" : "#14451f";
+}
+async function basculerFerme(btn){
+  btn.disabled = true;
+  try {
+    var d = await api("site_get"), ferme = d.reglages.ferme === "oui";
+    if (!ferme && !confirm("Fermer les commandes ? Les clients ne pourront plus commander (un bandeau s'affichera sur le site).")) { btn.disabled = false; return; }
+    d.reglages.ferme = ferme ? "" : "oui";
+    var r = await api("site_save", { reglages: d.reglages, galerie: d.galerie, faq: d.faq, tuiles: d.tuiles });
+    majBoutonFerme(r); toast(ferme ? "Commandes ouvertes" : "Commandes fermées", "ok");
+  } catch(e){ erreur(e); }
+  btn.disabled = false;
+}
 function nouvelId(){ return "art-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
 function imgSrc(i){
   i = String(i || "").trim();
@@ -569,7 +587,7 @@ window.majPastillePlus = majPastillePlus;
 async function chargerDonnees(silencieux){
   try {
     var d = await api("tout_voir");
-    S.partenaires = d.partenaires || []; S.commandes = d.commandes || []; S.chargeOk = true;
+    S.partenaires = d.partenaires || []; S.commandes = d.commandes || []; S.chargeOk = true; api("site_get").then(majBoutonFerme).catch(function(){});
     bandeauDb(false);
     rendreTout();
   } catch(e){
@@ -1183,6 +1201,9 @@ var CHAMPS_SITE = [
   ["intro","Texte d'introduction de l'accueil","area"],
   ["slogan","Phrase en bas de page","text"],
   ["whatsapp","Numéro WhatsApp des commandes (avec l'indicatif, ex : 22661682706)","text"],
+  ["ferme","Fermer les commandes ? Écrivez oui pour fermer (le site affiche un bandeau et refuse les commandes). Laissez vide pour ouvrir.","text"],
+  ["messageFerme","Message affiché quand c'est fermé","text"],
+  ["commandeMin","Commande minimale en FCFA (laissez vide si aucun minimum)","text"],
   ["annonce","Bandeau tout en haut du site","text"],
   ["delai","Délai de livraison (affiché dans le panier)","text"],
   ["livraisonTarifs","Tarifs de livraison par distance (une ligne par tranche, ex : 0 à 15 km : 1 000 FCFA). Indicatifs : le prix final reste confirmé sur WhatsApp. Laissez vide pour masquer.","area"],
@@ -1333,6 +1354,7 @@ document.addEventListener("click", function(ev){
       return api("vider_commandes").then(function(d){ toast(d.supprimees + " commande(s) supprimée(s)", "ok"); return chargerDonnees(true); }).catch(erreur).then(function(){ t.disabled = false; });
     case "fermer-modal": return fermerModal();
     case "packs-noogo": if (S.produits) return ajouterPacksNoogo(); return toast("Le catalogue n'est pas encore chargé.", "err");
+    case "ferme-bascule": return basculerFerme(t);
     case "art-pack": if (S.produits) return ouvrirEditeur(null, "pack"); return toast("Le catalogue n'est pas encore chargé.", "err");
     case "art-nouveau": if (S.produits) return ouvrirEditeur(null); return toast("Le catalogue n'est pas encore chargé.", "err");
     case "art-modifier": return ouvrirEditeur(id);

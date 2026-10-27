@@ -1399,7 +1399,7 @@ setInterval(function(){
 }, 60000);
 
 // Passerelle pour les modules séparés (admin-suivi.js)
-window.NOOGO_ADMIN = { jeton: function(){ return S.jeton; }, toast: toast, esc: esc, deconnecter: function(m){ deconnecter(m); }, redimensionner: redimensionner, envoyerPhoto: envoyerPhoto, imgSrc: imgSrc };
+window.NOOGO_ADMIN = { jeton: function(){ return S.jeton; }, commandes: function(){ return S.commandes || []; }, toast: toast, esc: esc, deconnecter: function(m){ deconnecter(m); }, redimensionner: redimensionner, envoyerPhoto: envoyerPhoto, imgSrc: imgSrc };
 
 /* ---------- Démarrage ---------- */
 S.jeton = lireJeton();

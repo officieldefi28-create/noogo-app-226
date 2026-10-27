@@ -249,7 +249,8 @@ function groupesAttente(v, vid) {
   (v.recus || []).filter(function (r) { return r.attente && (!vid || r.vid === vid); }).forEach(function (r) { var k = r.vid + "|" + r.date; (g[k] = g[k] || { vid: r.vid, date: r.date, vendeur: r.vendeur, recus: [] }).recus.push(r); });
   return Object.keys(g).map(function (k) { return g[k]; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
 }
-function nbAValider(v) { return groupesAttente(v).length + (v.lotsProp || []).length + (v.propositions || []).length; }
+function livAttente(v, vid) { return (v.livraisons || []).filter(function (l) { return l.attente && (!vid || l.livreurId === vid); }); }
+function nbAValider(v) { return groupesAttente(v).length + (v.lotsProp || []).length + (v.propositions || []).length + livAttente(v).length; }
 function ligneRecuAttente(r) {
   return '<div class="rang"><div class="g"><b>' + heureFr(r.heure) + ' · ' + fcfa(r.total) + '</b><small>' + r.lignes.map(function (l) { return l.qte + " × " + esc(l.nom); }).join(", ") + '<br>' + esc(r.paiement) +
     (r.du ? ' · <b>à rendre' + (r.du.echeance ? " avant le " + esc(dateFr(r.du.echeance)) : "") + '</b>' : "") + '</small></div><div style="text-align:right">' +
@@ -258,10 +259,19 @@ function ligneRecuAttente(r) {
 }
 function blocAValider(v, vid) {
   var gs = groupesAttente(v, vid), lp = (v.lotsProp || []).filter(function (x) { return !vid || x.vid === vid; }), pr = (v.propositions || []).filter(function (x) { return !vid || x.vid === vid; });
-  if (!gs.length && !lp.length && !pr.length) return "";
+  var lv = livAttente(v, vid);
+  if (!gs.length && !lp.length && !pr.length && !lv.length) return "";
   var noms = {}; v.produits.forEach(function (x) { noms[x.id] = x.nom; });
   var theo = {}; v.stock.forEach(function (x) { theo[x.id] = x.theorique; });
-  var h = '<div class="carte"><h3>À valider <span class="badge badge-rouge">' + (gs.length + lp.length + pr.length) + '</span></h3><p class="astuce">Ce que la caissière a envoyé. <b>Rien de tout ça n\'est encore compté dans la caisse ni dans les chiffres.</b> Vérifiez, corrigez (supprimez ou changez), puis validez.</p>';
+  var h = '<div class="carte"><h3>À valider <span class="badge badge-rouge">' + (gs.length + lp.length + pr.length + lv.length) + '</span></h3><p class="astuce">Ce que la caissière a envoyé. <b>Rien de tout ça n\'est encore compté dans la caisse ni dans les chiffres.</b> Vérifiez, corrigez (supprimez ou changez), puis validez.</p>';
+  lv.forEach(function (l) {
+    var opt = function (m) { return '<option' + (l.mode === m ? " selected" : "") + '>' + m + '</option>'; };
+    h += '<div class="formulaire" style="margin:8px 0"><b>Livraison de ' + esc(l.livreur || "") + ' · ' + fcfa(l.total) + '</b><br><span class="gris">' + esc(l.client || "") + ' · ' + esc(dateFr(l.date)) + '<br>' + esc(l.resume || "") + '<br>Il dit avoir été payé : <b>' + esc(l.mode || "Espèces") + '</b></span>' +
+      '<label for="lm-' + esc(l.id) + '">Paiement à retenir</label><select id="lm-' + esc(l.id) + '">' + opt("Espèces") + opt("Orange Money") + opt("Wave") + '</select>' +
+      '<p class="astuce">Validez seulement si vous avez bien reçu l\'argent (en main, ou sur le 65 12 09 02 pour Orange Money / Wave).</p>' +
+      '<div class="grille2"><button class="btn btn-vert btn-petit" type="button" data-s="liv-ok" data-id="' + esc(l.id) + '">Argent reçu</button><button class="btn btn-brun btn-petit" type="button" data-s="liv-du" data-id="' + esc(l.id) + '">Pas reçu : il me doit</button></div>' +
+      '<button class="btn btn-clair btn-petit btn-bloc" type="button" style="margin-top:6px" data-s="liv-non" data-id="' + esc(l.id) + '">Refuser cette livraison</button></div>';
+  });
   gs.forEach(function (g) {
     var tot = g.recus.reduce(function (m, r) { return m + (Number(r.total) || 0); }, 0), du = g.recus.reduce(function (m, r) { return m + (r.du ? Number(r.total) || 0 : 0); }, 0);
     h += '<div class="formulaire" style="margin:8px 0"><b>Ventes de ' + esc(g.vendeur) + ' · ' + esc(dateFr(g.date)) + '</b><br><span class="gris">' + g.recus.length + ' reçu' + (g.recus.length > 1 ? "s" : "") + ' · total ' + fcfa(tot) + (du ? ' · dont à rendre plus tard ' + fcfa(du) : "") + '</span>' + g.recus.map(ligneRecuAttente).join("") +
@@ -506,11 +516,46 @@ function vObjectifs(v) {
 /* ----- Plus : les outils rangés ----- */
 function vPlus(v) {
   if (!E.plus) {
-    var M = [["cloture", "Clôture de la journée", "Compter la caisse du soir, voir s'il manque de l'argent"], ["objectifs", "Objectifs et seuil de rentabilité", "Où j'en suis ce jour et ce mois"], ["envoi", "Envoyer et exporter", "Rapport WhatsApp, Excel, Google Sheets, Drive"], ["journal", "Journal des modifications", "Qui a changé quoi, et quand"], ["params", "Réglages du suivi", "Caisse de départ, coûts, points de vente"]];
+    var M = [["relances", "Clients à relancer", "Anciens clients, avec un message prêt à envoyer sur WhatsApp"], ["cloture", "Clôture de la journée", "Compter la caisse du soir, voir s'il manque de l'argent"], ["objectifs", "Objectifs et seuil de rentabilité", "Où j'en suis ce jour et ce mois"], ["envoi", "Envoyer et exporter", "Rapport WhatsApp, Excel, Google Sheets, Drive"], ["journal", "Journal des modifications", "Qui a changé quoi, et quand"], ["params", "Réglages du suivi", "Caisse de départ, coûts, points de vente"]];
     return '<div class="carte"><h3>Plus</h3>' + M.map(function (m) { return '<button class="menu-plus" type="button" data-s="vers" data-v="' + m[0] + '"><span><b>' + m[1] + '</b><small>' + m[2] + '</small></span><span>›</span></button>'; }).join("") + '</div>';
   }
-  var corps = { cloture: vCloture, objectifs: vObjectifs, envoi: vEnvoi, journal: vJournal, params: vParams }[E.plus](v);
+  var corps = { relances: vRelances, cloture: vCloture, objectifs: vObjectifs, envoi: vEnvoi, journal: vJournal, params: vParams }[E.plus](v);
   return retour("Plus", "vers", "") + corps;
+}
+/* ----- Clients à relancer : les gens qui ont déjà commandé, avec un message gentil prêt à envoyer ----- */
+function clientsDe() {
+  var cm = (A && A.commandes ? A.commandes() : []), m = {};
+  cm.forEach(function (c) {
+    if (!c || c.statutLivraison === "annulee" || c.archive) return;
+    var tel = String(c.telClient || "").replace(/\D/g, ""); if (tel.length < 8) return;
+    if (tel.length === 8) tel = "226" + tel;
+    var o = (m[tel] = m[tel] || { tel: tel, nom: "", n: 0, total: 0, dernier: "", art: {} });
+    if (c.nomClient && c.nomClient !== "Non renseigné") o.nom = c.nomClient;
+    o.n++; o.total += Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0;
+    var d = String(c.date || "").slice(0, 10); if (d > o.dernier) o.dernier = d;
+    (c.articles || []).forEach(function (a) { o.art[a.nom] = (o.art[a.nom] || 0) + (Number(a.qte) || 1); });
+  });
+  return Object.keys(m).map(function (k) { var o = m[k]; var fav = Object.keys(o.art).sort(function (a, b) { return o.art[b] - o.art[a]; })[0] || ""; o.fav = fav; return o; });
+}
+function joursDepuis(d) { return d ? Math.floor((Date.now() - Date.parse(d + "T00:00:00Z")) / 86400000) : 999; }
+function messageRelance(o) {
+  var pren = (o.nom || "").split(" ")[0];
+  var fav = (o.fav || "").replace(/^Crème glacée /, "").replace(/^Pack /, "pack ");
+  if (o.n >= 3) return "Bonjour " + pren + " 😊 Merci d'être une cliente aussi fidèle chez Noogó 🍦 Pour vous remercier, votre prochaine commande a une petite attention de notre part. Vos glaces " + (fav ? "(" + fav + ") " : "") + "vous attendent : " + location.origin;
+  return "Bonjour " + pren + " 😊 C'est Noogó 🍦 Nous espérons que vous avez bien aimé vos glaces " + (fav ? "(" + fav + ") " : "") + "! Elles sont de nouveau prêtes aujourd'hui, 100 % naturelles. Commandez en 2 minutes, livraison à Karpala : " + location.origin;
+}
+function vRelances() {
+  var l = clientsDe();
+  var h = '<div class="carte"><h3>Clients à relancer</h3><p class="astuce">Les personnes qui ont déjà commandé, avec un message gentil déjà écrit. Appuyez sur WhatsApp, relisez, envoyez. Ne relancez pas la même personne tous les jours : une fois par semaine suffit.</p>';
+  if (!l.length) return h + '<p class="gris">Pas encore de client avec un numéro. Les numéros viennent des commandes du site.</p></div>';
+  var groupes = [["Fidèles (3 commandes ou plus)", l.filter(function (o) { return o.n >= 3; })], ["À relancer (plus de 7 jours sans commande)", l.filter(function (o) { return o.n < 3 && joursDepuis(o.dernier) > 7; })], ["Récents (commande dans les 7 derniers jours)", l.filter(function (o) { return o.n < 3 && joursDepuis(o.dernier) <= 7; })]];
+  groupes.forEach(function (g) {
+    if (!g[1].length) return;
+    h += '<h4 style="margin:14px 0 4px">' + g[0] + ' · ' + g[1].length + '</h4>' + g[1].sort(function (a, b) { return a.dernier < b.dernier ? 1 : -1; }).slice(0, 30).map(function (o) {
+      return '<div class="rang"><div class="g"><b>' + esc(o.nom || "Client") + '</b><small>' + o.n + ' commande' + (o.n > 1 ? 's' : '') + ' · ' + fcfa(o.total) + ' · dernière le ' + esc(dateFr(o.dernier)) + (o.fav ? ' · aime : ' + esc(o.fav) : "") + '</small></div><a class="btn btn-vert btn-petit" target="_blank" rel="noopener" href="https://wa.me/' + esc(o.tel) + '?text=' + encodeURIComponent(messageRelance(o)) + '">WhatsApp</a></div>';
+    }).join("");
+  });
+  return h + '</div>';
 }
 function vEnvoi(v) {
   return '<div class="carte"><h3>Envoyer et exporter</h3><p class="astuce">Ces boutons ouvrent le menu d\'envoi de votre téléphone : choisissez WhatsApp, Google Drive, Gmail, Sheets… Sur ordinateur, le fichier se télécharge. Les chiffres suivent la période choisie dans le Résumé (' + esc(nomPeriode()) + ').</p>' +
@@ -859,6 +904,9 @@ function clic(ev) {
       if (!confirm("Supprimer POUR TOUJOURS ces archives ? Impossible de les récupérer.")) return;
       return envoyer("archives_vider", { vid: t.getAttribute("data-id") }, "Archives supprimées");
     case "dem-ok": return envoyer("demande_decider", { id: t.getAttribute("data-id"), decision: "accepter", categorie: val("dc-" + t.getAttribute("data-id")) }, "Dépense acceptée et notée");
+    case "liv-ok": return envoyer("livraison_decider", { id: t.getAttribute("data-id"), decision: "valider", mode: val("lm-" + t.getAttribute("data-id")) }, "Livraison validée : elle compte maintenant");
+    case "liv-du": return envoyer("livraison_decider", { id: t.getAttribute("data-id"), decision: "du" }, "Noté : le livreur doit cet argent");
+    case "liv-non": if (!confirm("Refuser cette livraison ? La commande repart dans « à livrer ».")) return; return envoyer("livraison_decider", { id: t.getAttribute("data-id"), decision: "refuser" }, "Livraison refusée");
     case "valider-jour": return envoyer("valider_jour", { vid: t.getAttribute("data-vid"), date: t.getAttribute("data-date") }, "Journée validée : elle compte maintenant dans la caisse");
     case "recu-paye": return envoyer("recu_payer", { id: t.getAttribute("data-id"), mode: "Espèces" }, "Marqué payé en espèces");
     case "prod-ok": { var pid0 = t.getAttribute("data-id"), lg = []; document.querySelectorAll('[data-pl]').forEach(function (e) { if (e.getAttribute("data-pl") === pid0) lg.push({ produitId: e.getAttribute("data-pid"), qte: Number(e.value) || 0 }); }); return envoyer("valider_production", { id: pid0, lignes: lg, cout: val("pc-" + pid0) }, "Production validée : le stock est mis à jour"); }

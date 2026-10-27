@@ -12,11 +12,11 @@ const idPropre = (s) => { const v = txt(s, 60); if (!/^[A-Za-z0-9_-]+$/.test(v))
 const nouvelId = (p) => p + "-" + Date.now().toString(36) + crypto.randomBytes(3).toString("hex");
 
 async function charger() {
-  const [catalogue, config, lots, ventes, pertes, depenses, comptages, commandes, equipe, recus, demandes, journal, clotures, encaissements, propositions, comptesEsp, lotsProp] = await Promise.all([
+  const [catalogue, config, lots, ventes, pertes, depenses, comptages, commandes, equipe, recus, demandes, journal, clotures, encaissements, propositions, comptesEsp, lotsProp, patron] = await Promise.all([
     chargerCatalogue(), S.getSuiviConfig(), S.suiviListe("lots"), S.suiviListe("ventes"), S.suiviListe("pertes"),
     S.suiviListe("depenses"), S.suiviListe("comptages"), S.getCommandes(),
     lireEquipe(), S.suiviListe("recus"), S.suiviListe("demandes"), S.getDoc("journal"), S.getDoc("clotures"),
-    S.suiviListe("encaissements"), S.suiviListe("comptes_prop"), S.suiviListe("comptes_esp"), S.suiviListe("lots_prop")
+    S.suiviListe("encaissements"), S.suiviListe("comptes_prop"), S.suiviListe("comptes_esp"), S.suiviListe("lots_prop"), S.getDoc("patron")
   ]);
   const motCaisse = (await S.getDoc("caisse-mot")) || "bingo";
   const cfg = configPropre(config);
@@ -24,7 +24,7 @@ async function charger() {
   const archivesDonnees = { recus: archives(recus), depenses: archives(depenses) };
   // « Nouveau départ » : les commandes du site livrées avant ce moment ne comptent plus dans le suivi
   const cmds = cfg.debutHeure ? commandes.filter((c) => String(c.dateLivraison || c.date || "") >= cfg.debutHeure) : commandes;
-  return { catalogue, config: cfg, lots, ventes: actifs(ventes), pertes, depenses: actifs(depenses).filter((x) => !x.attente), encaissements: actifs(encaissements), propositions: propositions || [], comptesEsp: comptesEsp || [], lotsProp: lotsProp || [], comptages, commandes: cmds, equipe, recus: actifs(recus), archives: archivesDonnees, demandes, motCaisse, journal: Array.isArray(journal) ? journal : [], clotures: Array.isArray(clotures) ? clotures : [] };
+  return { catalogue, config: cfg, lots, ventes: actifs(ventes), pertes, depenses: actifs(depenses).filter((x) => !x.attente), encaissements: actifs(encaissements), propositions: propositions || [], comptesEsp: comptesEsp || [], lotsProp: lotsProp || [], patron: patron || null, comptages, commandes: cmds, equipe, recus: actifs(recus), archives: archivesDonnees, demandes, motCaisse, journal: Array.isArray(journal) ? journal : [], clotures: Array.isArray(clotures) ? clotures : [] };
 }
 
 function configPropre(c) {
@@ -178,6 +178,7 @@ function vue(donnees, d) {
     depenses: decorerDepenses(calc.depenses, donnees.demandes).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     archives: { recus: (donnees.archives.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 400), depenses: decorerDepenses(donnees.archives.depenses, donnees.demandes).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 400) },
     postes: POSTES,
+    patron: donnees.patron || null,
     encaissements: (donnees.encaissements || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 200),
     propositions: (donnees.propositions || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 40),
     lotsProp: (donnees.lotsProp || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 40),
@@ -334,6 +335,14 @@ module.exports = async (req, res) => {
         await S.suiviDel("lots_prop", idp);
         trace = ["Production refusée", pr.date + " · " + (pr.vendeur || "")];
         break;
+      }
+      case "patron_lien": {
+        // Lien en lecture seule pour le patron : il voit les chiffres, sans rien pouvoir modifier
+        let p = (await S.getDoc("patron")) || null;
+        if (d.operation === "desactiver") { p = p ? { ...p, actif: false } : null; if (p) await S.setDoc("patron", p); trace = ["Lien patron désactivé", ""]; break; }
+        if (d.operation === "creer" || !p || !p.cle) { p = { cle: crypto.randomBytes(12).toString("hex"), actif: true, creeLe: new Date().toISOString() }; await S.setDoc("patron", p); trace = ["Lien patron créé", ""]; break; }
+        if (d.operation === "activer") { p = { ...p, actif: true }; await S.setDoc("patron", p); trace = ["Lien patron réactivé", ""]; break; }
+        return res.status(200).json({ patron: p });
       }
       case "valider_jour": {
         // Le responsable valide ce qu'une personne a envoyé : seulement alors, ça entre dans la caisse de l'entreprise
@@ -592,3 +601,5 @@ module.exports = async (req, res) => {
     return res.status(500).json({ erreur: "Erreur serveur" });
   }
 };
+module.exports.charger = charger;
+module.exports.vue = vue;

@@ -1,6 +1,8 @@
 const { getPartenaires, setCommande, limiter } = require("./_store");
 const { chargerCatalogue, calculerPanier, jourValide, calculerMontant } = require("./_catalogue");
 const { ipClient } = require("./_auth");
+const { getReglages } = require("./_store");
+const { fusionner } = require("./_site");
 
 const PAIEMENTS = ["especes", "orange", "wave"];
 const nettoyer = (s, max) => String(s == null ? "" : s).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max);
@@ -15,12 +17,16 @@ module.exports = async (req, res) => {
     }
 
     const tel = nettoyer(d.telClient, 30);
-    // Le téléphone est facultatif (le client écrit déjà depuis son WhatsApp) ; s'il est rempli, il doit être valide.
-    if (tel && tel.replace(/\D/g, "").length < 8) return res.status(400).json({ erreur: "Numéro de téléphone invalide" });
+    // Le téléphone est obligatoire : sans lui, le livreur ne peut pas joindre le client.
+    if (tel.replace(/\D/g, "").length < 8) return res.status(400).json({ erreur: "Numéro de téléphone obligatoire (8 chiffres au moins)" });
+    let rgl = {}; try { rgl = fusionner(await getReglages()).reglages; } catch (e) { rgl = {}; }
+    if (rgl.ferme === "oui") return res.status(403).json({ erreur: rgl.messageFerme || "Commandes fermées pour le moment" });
 
     const catalogue = await chargerCatalogue();
     const panier = calculerPanier(d.articles, catalogue);
     if (!panier.lignes.length) return res.status(400).json({ erreur: "Panier vide" });
+    const mini = parseInt(rgl.commandeMin, 10) || 0;
+    if (mini && panier.total < mini) return res.status(400).json({ erreur: "Commande minimale : " + mini + " FCFA" });
 
     // Code promo (revalidé ici, jamais fait confiance au navigateur)
     let remise = 0, commission = 0, partenaireId = null, codeFinal = "";

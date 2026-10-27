@@ -9,6 +9,9 @@ const DEFAUT_REGLAGES = {
   orangeMoney: "65 12 09 02",
   wave: "65 12 09 02",
   whatsapp: "22661682706",
+  ferme: "",
+  messageFerme: "Nous ne prenons plus de commandes pour le moment. Revenez bientôt 🍦",
+  commandeMin: "",
   surtitre: "Glaces naturelles · L'excellence africaine",
   titre: "La douceur naturelle,",
   titreAccent: "le goût d'ici",
@@ -30,10 +33,10 @@ const DEFAUT_REGLAGES = {
   chiffre4Valeur: "", chiffre4Texte: ""
 };
 // Champs que l'admin peut vider volontairement (pour masquer la section sur le site)
-const VIDABLES = ["livraisonTarifs", "histoireTitre", "histoireTexte", "fondateurNom", "fondateurPhoto", "chiffre1Valeur", "chiffre1Texte", "chiffre2Valeur", "chiffre2Texte", "chiffre3Valeur", "chiffre3Texte", "chiffre4Valeur", "chiffre4Texte"];
+const VIDABLES = ["ferme", "commandeMin", "livraisonTarifs", "histoireTitre", "histoireTexte", "fondateurNom", "fondateurPhoto", "chiffre1Valeur", "chiffre1Texte", "chiffre2Valeur", "chiffre2Texte", "chiffre3Valeur", "chiffre3Texte", "chiffre4Valeur", "chiffre4Texte"];
 
 const DEFAUT_FAQ = [
-  { q: "Comment passer commande ?", a: "Ajoutez vos articles au panier, puis envoyez la commande sur WhatsApp. Votre numéro est facultatif. Nous vous répondons pour confirmer." },
+  { q: "Comment passer commande ?", a: "Ajoutez vos articles au panier, puis envoyez la commande sur WhatsApp. Votre numéro de téléphone est obligatoire pour la livraison. Nous vous répondons pour confirmer." },
   { q: "Que veut dire « sur commande » ?", a: "L'article n'est pas toujours en stock. Il peut être disponible : nous le confirmons avec vous sur WhatsApp, avec le délai éventuel." },
   { q: "Combien coûte la livraison ?", a: "Elle est incluse pour les packs. Pour les articles à l'unité, elle est à la charge du client ; le tarif dépend de votre quartier et vous est annoncé sur WhatsApp." },
   { q: "Comment conserver mes glaces ?", a: "À −18 °C. Une fois décongelée, une crème glacée ne doit pas être recongelée. La date limite est indiquée sur chaque pot." },
@@ -107,6 +110,9 @@ function valider(d) {
   const maps = txt(d && d.reglages && d.reglages.lienMaps, 300);
   r.lienMaps = /^https:\/\/(www\.)?(maps\.google\.com|google\.com\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)([/?#]|$)/i.test(maps) ? maps : DEFAUT_REGLAGES.lienMaps;
   const rg = (d && d.reglages) || {};
+  r.ferme = /^(oui|1|true)$/i.test(txt(rg.ferme, 6)) ? "oui" : "";
+  r.messageFerme = txt(rg.messageFerme, 200) || DEFAUT_REGLAGES.messageFerme;
+  { const mn = parseInt(String(rg.commandeMin || "").replace(/\D/g, ""), 10); r.commandeMin = mn > 0 && mn <= 1000000 ? String(mn) : ""; }
   const wa = String(rg.whatsapp || "").replace(/\D/g, "");
   r.whatsapp = wa.length >= 8 && wa.length <= 15 ? wa : DEFAUT_REGLAGES.whatsapp;
   for (const k of ["couleurPrincipale", "couleurAccent", "couleurFond"]) r[k] = /^#[0-9a-f]{6}$/i.test(String(rg[k] || "")) ? rg[k] : DEFAUT_REGLAGES[k];

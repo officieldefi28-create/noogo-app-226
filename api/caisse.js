@@ -82,6 +82,27 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: txt(d.mot, 40).toLowerCase() === mot });
     }
 
+    // Vue « patron » : lecture seule, avec une clé secrète ; jamais de code, de lien ni de modification
+    if (d.action === "patron") {
+      if (!(await S.limiter("patron:" + ip, 40, 600))) return res.status(429).json({ erreur: "Trop d'essais" });
+      const pt = await S.getDoc("patron");
+      const cle = txt(d.cle, 40);
+      if (!pt || !pt.actif || !pt.cle || cle.length < 10 || cle !== pt.cle) return res.status(401).json({ erreur: "Lien invalide ou désactivé" });
+      const suivi = require("./suivi");
+      const dn = await suivi.charger();
+      const dd = (x) => (/^\d{4}-\d{2}-\d{2}$/.test(String(x || "")) ? x : "");
+      const v = suivi.vue(dn, { du: dd(d.du), au: dd(d.au) });
+      const b = v.bilan;
+      return res.status(200).json({
+        genereLe: new Date().toISOString(),
+        bilan: { ca: b.ca, resultat: b.resultat, margeBrute: b.margeBrute, margePct: b.margePct, charges: b.charges, production: b.production, depensesTotales: b.depensesTotales, caisse: b.caisse, valeurStock: b.valeurStock, quantite: b.quantite, parProduit: b.parProduit.slice(0, 12), parVendeur: b.parVendeur, parJour: b.parJour.slice(-31), creances: b.creances, resteADuTotal: b.resteADuTotal, livraisonPacks: b.livraisonPacks },
+        stock: v.stock.filter((x) => x.actif).map((x) => ({ nom: x.nom, stock: x.theorique, valeur: x.valeur })),
+        aValider: (dn.recus || []).filter((r) => r.attente).length,
+        manques: (v.comptesEsp || []).filter((x) => x.ecart < 0).slice(0, 10).map((x) => ({ date: x.date, vendeur: x.vendeur, ecart: x.ecart })),
+        alertes: b.alertes
+      });
+    }
+
     if (d.action === "connexion") {
       if (!(await S.limiter("clogin:" + ip, 12, 600))) return res.status(429).json({ erreur: "Trop d'essais. Réessayez dans 10 minutes." });
       const code = txt(d.code, 20).toLowerCase();

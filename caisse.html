@@ -527,9 +527,9 @@ async function chargerFin() {
   h += `<div class="sec"><h3>1. Production du jour</h3><p class="aide-t">${etatJ.productions.length ? "Envoyée ✓ (" + etatJ.productions.length + "). Vous pouvez en ajouter une autre." : "Notez ce qui a été produit."}</p><button class="btn clair" id="b-prod" type="button" style="width:100%">Noter une production</button></div>`;
   h += `<div class="sec"><h3>2. Reste en stock</h3><p class="aide-t">${etatJ.stockEnvoye ? "Envoyé ✓ — vous pouvez le renvoyer pour corriger." : "Comptez ce qui reste dans le congélateur ce soir."}</p><button class="btn clair" id="b-stock" type="button" style="width:100%">Compter le reste</button></div>`;
   const cl = etatJ.cloture;
-  h += `<div class="sec"><h3>3. Argent en espèces</h3>${cl ? `<div class="${cl.ecart < 0 ? "info" : "info"}"><b>${cl.ecart === 0 ? "Compte juste ✓" : cl.ecart < 0 ? "Il manque " + fmt(-cl.ecart) : "Il y a " + fmt(cl.ecart) + " de plus"}</b><br>Attendu ${fmt(cl.attendu)} · compté ${fmt(cl.compte)}</div>` : `<p class="aide-t">Comptez les espèces que vous avez en main.</p>`}<button class="btn or" id="b-esp" type="button" style="width:100%">${cl ? "Recompter" : "Compter l'argent"}</button></div>`;
+  h += `<div class="sec"><h3>3. Argent en espèces</h3>${cl ? `<div class="${cl.ecart < 0 ? "info" : "info"}"><b>${cl.ecart === 0 ? "Compte juste ✓" : cl.ecart < 0 ? "Il manque " + fmt(-cl.ecart) : "Il y a " + fmt(cl.ecart) + " de plus"}</b><br>Attendu ${fmt(cl.attendu)} · compté ${fmt(cl.compte)}</div>` : `<p class="aide-t">Comptez les espèces que vous avez en main.</p>`}<button class="btn clair" id="b-rem" type="button" style="width:100%;margin-bottom:8px">J'ai déjà remis de l'argent (Orange, Wave, main)</button><button class="btn or" id="b-esp" type="button" style="width:100%">${cl ? "Recompter" : "Compter l'argent"}</button></div>`;
   c.innerHTML = h;
-  $("#b-prod").onclick = ouvrirProduction; $("#b-stock").onclick = ouvrirStock; $("#b-esp").onclick = ouvrirEspeces;
+  $("#b-prod").onclick = ouvrirProduction; $("#b-stock").onclick = ouvrirStock; $("#b-esp").onclick = ouvrirEspeces; $("#b-rem").onclick = ouvrirRemise;
 }
 function ouvrirProduction() {
   const l = produitsComptables();
@@ -560,9 +560,26 @@ function ouvrirStock() {
   };
   ouvrir();
 }
-function ouvrirEspeces() {
-  $("#feuille").innerHTML = `<h2>Argent en espèces</h2><p class="aide-t">Comptez tous les billets et pièces que vous avez en main (vos ventes d'aujourd'hui en espèces).</p>
-    <label for="e-c">Espèces comptées (F)</label><input id="e-c" type="number" inputmode="numeric" min="0">
+function ouvrirRemise() {
+  $("#feuille").innerHTML = `<h2>Argent déjà remis</h2><p class="aide-t">Si vous avez donné de l'argent au responsable (en main ou par dépôt Orange / Wave), notez-le ici : ce ne sera pas compté comme un manque. Le responsable confirme.</p>
+    <label for="r-m">Montant remis (F)</label><input id="r-m" type="number" inputmode="numeric" min="1">
+    <label for="r-mode">Comment ?</label><select id="r-mode"><option>Main à main</option><option>Orange Money</option><option>Wave</option></select>
+    <label for="r-n">Précision (facultatif)</label><input id="r-n" maxlength="100" placeholder="Ex : dépôt de ce matin">
+    <div id="err-r" class="erreur"></div><button class="btn or" id="ok-r" type="button" style="width:100%;margin-top:6px">Envoyer</button><button class="btn clair" id="non-r" type="button" style="width:100%;margin-top:8px">Retour</button>`;
+  $("#non-r").onclick = fermer;
+  $("#ok-r").onclick = async () => {
+    const m = Number($("#r-m").value); if (!(m >= 1)) { $("#err-r").textContent = "Entrez le montant."; return; }
+    try { await api("remettre_argent", { date: jourJ(), montant: m, mode: $("#r-mode").value, note: $("#r-n").value }); fermer(); toast("Envoyé au responsable ✓"); chargerFin(); }
+    catch (e) { if (e.session) return sessionFinie(); $("#err-r").textContent = e.message; }
+  };
+  ouvrir();
+}
+async function ouvrirEspeces() {
+  let ap = null; try { ap = await api("apercu_especes", { date: jourJ() }); } catch (e) { if (e.session) return sessionFinie(); }
+  const k = ap && ap.calc;
+  $("#feuille").innerHTML = `<h2>Argent en espèces</h2><p class="aide-t">Comptez tous les billets et pièces que vous avez en main <b>maintenant</b>.</p>` +
+    (k ? `<div class="info">Vous devriez avoir : <b>${fmt(k.attendu)}</b><br><small>reste précédent ${fmt(k.report)} + espèces encaissées ${fmt(k.ventes + k.livraisons)} − argent déjà remis ${fmt(k.remises)}</small></div>` : "") +
+    `<label for="e-c">Espèces comptées (F)</label><input id="e-c" type="number" inputmode="numeric" min="0">
     <div id="err-e" class="erreur"></div><button class="btn or" id="ok-e" type="button" style="width:100%;margin-top:6px">Valider</button><button class="btn clair" id="non-e" type="button" style="width:100%;margin-top:8px">Retour</button>`;
   $("#non-e").onclick = fermer;
   $("#ok-e").onclick = async () => {

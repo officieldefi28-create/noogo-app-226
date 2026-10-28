@@ -169,7 +169,7 @@ function vResume(v) {
   /* À surveiller : deux alertes visibles, le reste se déplie */
   var al = [];
   if (nbAValider(v)) al.push('<div class="alerte rouge"><b>' + nbAValider(v) + ' chose' + (nbAValider(v) > 1 ? 's' : '') + ' à valider :</b> ventes, production ou comptage envoyés par l\'équipe. Allez dans Équipe.</div>');
-  (v.comptesEsp || []).filter(function (x) { return x.date >= jourJ(-2) && x.ecart < 0; }).forEach(function (x) { al.push('<div class="alerte rouge"><b>Manque dans la caisse de ' + esc(x.vendeur) + ' :</b> ' + fcfa(-x.ecart) + ' le ' + esc(dateFr(x.date)) + '. Prévenez-la avant de valider.</div>'); });
+  (v.comptesEsp || []).filter(function (x) { return x.date >= jourJ(-2) && x.ecart < 0 && x.statut !== "accepte"; }).forEach(function (x) { al.push('<div class="alerte rouge"><b>Manque dans la caisse de ' + esc(x.vendeur) + ' :</b> ' + fcfa(-x.ecart) + ' le ' + esc(dateFr(x.date)) + '. Prévenez-la avant de valider.</div>'); });
   if (nbPaiements(v)) al.push('<div class="alerte rouge"><b>' + nbPaiements(v) + ' paiement' + (nbPaiements(v) > 1 ? 's' : '') + ' à confirmer :</b> vérifiez votre téléphone (65 12 09 02) puis allez dans Équipe › la personne.</div>');
   var nomsOk = function (l) { return l.map(function (x) { return esc(x.nom) + " (" + x.theorique + ")"; }).join(", "); };
   if (b.alertes.length) al.push('<div class="alerte rouge"><b>Stock négatif :</b> ' + nomsOk(b.alertes) + '. Il manque une production ou un comptage.</div>');
@@ -306,9 +306,23 @@ function blocDettes(v, vid) {
   return h;
 }
 function blocComptesEsp(v, vid) {
-  var l = (v.comptesEsp || []).filter(function (x) { return (!vid || x.vid === vid) && x.date >= jourJ(-3); });
-  if (!l.length) return "";
-  return '<div class="carte"><h3>Argent compté par l\'équipe</h3>' + l.map(function (x) { return '<div class="rang"><span>' + esc(x.vendeur) + ' · ' + esc(dateFr(x.date)) + '<br><small class="gris">attendu ' + fcfa(x.attendu) + ' · compté ' + fcfa(x.compte) + '</small></span><b class="' + (x.ecart < 0 ? "neg" : x.ecart > 0 ? "pos" : "") + '">' + (x.ecart === 0 ? "Juste ✓" : (x.ecart < 0 ? "Manque " : "+") + fcfa(Math.abs(x.ecart))) + '</b></div>'; }).join("") + '</div>';
+  var l = (v.comptesEsp || []).filter(function (x) { return (!vid || x.vid === vid) && x.date >= jourJ(-7); });
+  var rem = (v.remises || []).filter(function (x) { return (!vid || x.vid === vid) && x.date >= jourJ(-7); }).sort(function (a, b) { return a.cree < b.cree ? 1 : -1; });
+  if (!l.length && !rem.length && !vid) return "";
+  var h = '<div class="carte"><h3>Argent liquide de l\'équipe</h3><p class="astuce">Attendu = ce qu\'il restait au dernier comptage + espèces encaissées − argent déjà remis (main, Orange, Wave).</p>';
+  h += l.map(function (x) {
+    var d = x.detail || {}, tranche = x.statut === "accepte" ? ' <span class="tag ok">Accepté</span>' : x.statut === "corrige" ? ' <span class="tag ok">Corrigé</span>' : "";
+    return '<div class="rang" style="flex-wrap:wrap"><span>' + esc(x.vendeur) + ' · ' + esc(dateFr(x.date)) + tranche + '<br><small class="gris">attendu ' + fcfa(x.attendu) + ' · compté ' + fcfa(x.compte) + (d.remises ? ' · déjà remis ' + fcfa(d.remises) : '') + '</small></span><b class="' + (x.ecart < 0 && x.statut !== "accepte" ? "neg" : x.ecart > 0 ? "pos" : "") + '">' + (x.ecart === 0 ? "Juste ✓" : (x.ecart < 0 ? "Manque " : "+") + fcfa(Math.abs(x.ecart))) + '</b>' +
+      '<div class="grille2" style="width:100%;margin-top:6px"><button class="btn btn-brun btn-petit" type="button" data-s="ec-ok" data-id="' + esc(x.id) + '">Accepter</button><button class="btn btn-clair btn-petit" type="button" data-s="ec-cor" data-id="' + esc(x.id) + '">Corriger</button></div>' +
+      '<button class="btn btn-contour btn-petit" type="button" data-s="ec-sup" data-id="' + esc(x.id) + '" style="width:100%;margin-top:6px">Supprimer ce comptage</button></div>';
+  }).join("");
+  if (rem.length) h += '<p class="astuce" style="margin-top:10px">Argent déjà remis au responsable :</p>' + rem.map(function (x) {
+    var tag = x.statut === "recu" ? '<span class="tag ok">Reçu</span>' : x.statut === "refuse" ? '<span class="tag ko">Refusé</span>' : '<span class="tag att">À confirmer</span>';
+    return '<div class="rang" style="flex-wrap:wrap"><span>' + esc(x.vendeur) + ' · ' + esc(dateFr(x.date)) + ' · ' + esc(x.mode) + ' ' + tag + (x.note ? '<br><small class="gris">' + esc(x.note) + '</small>' : '') + '</span><b>' + fcfa(x.montant) + '</b>' +
+      '<div class="grille2" style="width:100%;margin-top:6px">' + (x.statut !== "recu" ? '<button class="btn btn-brun btn-petit" type="button" data-s="rm-ok" data-id="' + esc(x.id) + '">Bien reçu</button>' : '') + (x.statut !== "refuse" ? '<button class="btn btn-clair btn-petit" type="button" data-s="rm-non" data-id="' + esc(x.id) + '">Pas reçu</button>' : '') + '<button class="btn btn-contour btn-petit" type="button" data-s="rm-sup" data-id="' + esc(x.id) + '">Supprimer</button></div></div>';
+  }).join("");
+  if (vid) h += '<p class="astuce" style="margin-top:10px">J\'ai déjà pris de l\'argent chez cette personne :</p><div class="grille2"><input id="rm-mt" type="number" inputmode="numeric" min="1" placeholder="Montant (F)"><select id="rm-mode"><option>Main à main</option><option>Orange Money</option><option>Wave</option></select></div><button class="btn btn-brun btn-petit" type="button" data-s="rm-add" data-vid="' + esc(vid) + '" style="width:100%;margin-top:6px">Noter cet argent pris</button>';
+  return h + '</div>';
 }
 function blocPaiements(v, vid) {
   var att = (v.livraisons || []).filter(function (l) { return l.aConfirmer && (!vid || l.livreurId === vid); })
@@ -933,6 +947,13 @@ function clic(ev) {
     case "compt-ok": { var cid0 = t.getAttribute("data-id"), its = []; document.querySelectorAll('[data-cl]').forEach(function (e) { if (e.getAttribute("data-cl") === cid0) its.push({ produitId: e.getAttribute("data-pid"), restant: e.value }); }); return envoyer("valider_comptage", { id: cid0, items: its }, "Comptage validé"); }
     case "compt-non": return envoyer("proposition_supprimer", { id: t.getAttribute("data-id") }, "Comptage refusé");
     case "encaisse": { var ci = +t.getAttribute("data-i"), lst = (E.vue.bilan.creances || []).filter(function (c) { return c.reste > 0 && (!t.getAttribute("data-vid") || c.id === E.fiche); }), cc = lst[ci]; if (!cc) return; var mt = Number(val("enc-" + ci)) || 0; if (mt < 1) return alert("Entrez le montant rendu."); return envoyer("encaisser", { deType: cc.type, deId: cc.id, deNom: cc.nom, montant: mt, date: jourJ(0) }, "Argent noté : la caisse monte"); }
+    case "ec-ok": return envoyer("ecart_decider", { id: t.getAttribute("data-id"), decision: "accepter" }, "Écart accepté");
+    case "ec-cor": { var cm = prompt("Argent réellement compté (F) :"); if (cm === null) return; var cmn = Number(String(cm).replace(/\s/g, "")); if (!(cmn >= 0)) return alert("Montant invalide."); return envoyer("ecart_decider", { id: t.getAttribute("data-id"), decision: "corriger", compte: cmn }, "Comptage corrigé"); }
+    case "ec-sup": if (!confirm("Supprimer ce comptage d'espèces ?")) return; return envoyer("ecart_decider", { id: t.getAttribute("data-id"), decision: "supprimer" }, "Comptage supprimé");
+    case "rm-ok": return envoyer("remise_decider", { id: t.getAttribute("data-id"), decision: "recu" }, "Argent confirmé");
+    case "rm-non": return envoyer("remise_decider", { id: t.getAttribute("data-id"), decision: "refuse" }, "Marqué : pas reçu");
+    case "rm-sup": if (!confirm("Supprimer cette remise ?")) return; return envoyer("remise_decider", { id: t.getAttribute("data-id"), decision: "supprimer" }, "Remise supprimée");
+    case "rm-add": { var rmt = Number(val("rm-mt")) || 0; if (rmt < 1) return alert("Entrez le montant."); return envoyer("remise_ajouter", { vid: t.getAttribute("data-vid"), montant: rmt, mode: val("rm-mode"), date: jourJ(0) }, "Argent noté"); }
     case "enc-sup": return envoyer("encaissement_supprimer", { id: t.getAttribute("data-id") }, "Paiement annulé");
     case "pai-ok": return envoyer("paiement_decider", { id: t.getAttribute("data-id"), decision: "recu" }, "Paiement confirmé");
     case "pai-non": return envoyer("paiement_decider", { id: t.getAttribute("data-id"), decision: "non" }, "Noté : le livreur doit remettre les espèces");

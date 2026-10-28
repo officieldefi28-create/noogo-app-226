@@ -803,8 +803,8 @@ function rendreInstall() {
   const co = $("#inst-compris"); if (co) co.addEventListener("click", fermerInstall);
   const cp = $("#inst-copier"); if (cp) cp.addEventListener("click", () => { const u = location.origin + "/"; (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => toast("Lien copié : collez-le dans votre navigateur"), () => toast(u)); });
 }
-function proposerInstall() { if (!installable() || modalOuverte) return; modalVueCeTour = true; modalOuverte = true; rendreInstall(); ouvrirVoile("voile-inst"); }
-function fermerInstall() { modalOuverte = false; fermerVoile("voile-inst"); }
+function proposerInstall() { if (!installable() || modalOuverte) return; const vu = Number(lire("noogo_inst_vu")) || 0; if (vu && Date.now() - vu < 3 * 86400000) return; /* déjà proposé récemment : on ne gêne pas la commande */ modalVueCeTour = true; modalOuverte = true; rendreInstall(); ouvrirVoile("voile-inst"); }
+function fermerInstall() { modalOuverte = false; ecrire("noogo_inst_vu", Date.now()); fermerVoile("voile-inst"); }
 async function lancerInvite() {
   if (!invite) return rendreInstall();
   const i = invite; invite = null;
@@ -858,6 +858,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && e.target.id === "f-code") { e.preventDefault(); verifierCode(false); }
 });
 ["voile-panier", "voile-plus", "voile-compo", "voile-zoom", "voile-coord"].forEach((id) => $("#" + id).addEventListener("click", (e) => { if (e.target.id === id) fermerVoile(id); }));
+$("#voile-inst").addEventListener("click", (e) => { if (e.target.id === "voile-inst") fermerInstall(); });
 $("#voile-inst").addEventListener("click", (e) => { if (e.target.id === "voile-inst") fermerInstall(); });
 
 /* ───────── Démarrage ───────── */

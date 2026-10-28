@@ -148,6 +148,21 @@ function optionsPoints(v, vide) {
 }
 function retour(texte, action, valeur) { return '<button class="retour-plus" type="button" data-s="' + action + '"' + (valeur != null ? ' data-v="' + valeur + '"' : "") + '>← ' + texte + '</button>'; }
 
+/* Produits qui restent longtemps au congélateur : on suppose que les plus anciens sont vendus en premier */
+var DLC_JOURS = 60;
+function vieuxStock(v) {
+  var out = [], lots = (v.lots || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+  (v.stock || []).forEach(function (x) {
+    var reste = Math.max(0, x.theorique || 0); if (!reste) return;
+    var plusVieux = null;
+    lots.forEach(function (l) { (l.lignes || []).forEach(function (g) { if (g.produitId !== x.id || reste <= 0) return; var q = Math.min(reste, Number(g.qte) || 0); if (q > 0) { reste -= q; plusVieux = { date: l.date, qte: q }; } }); });
+    if (!plusVieux) return;
+    var age = Math.floor((Date.parse(jourJ(0)) - Date.parse(plusVieux.date)) / 86400000);
+    if (age >= DLC_JOURS) out.push({ nom: x.nom, age: age, qte: plusVieux.qte });
+  });
+  return out;
+}
+
 /* ----- Résumé : l'essentiel d'abord, le détail se déplie ----- */
 function vResume(v) {
   var b = v.bilan;
@@ -171,6 +186,7 @@ function vResume(v) {
   if (nbAValider(v)) al.push('<div class="alerte rouge"><b>' + nbAValider(v) + ' chose' + (nbAValider(v) > 1 ? 's' : '') + ' à valider :</b> ventes, production ou comptage envoyés par l\'équipe. Allez dans Équipe.</div>');
   (v.comptesEsp || []).filter(function (x) { return x.date >= jourJ(-2) && x.ecart < 0 && x.statut !== "accepte"; }).forEach(function (x) { al.push('<div class="alerte rouge"><b>Manque dans la caisse de ' + esc(x.vendeur) + ' :</b> ' + fcfa(-x.ecart) + ' le ' + esc(dateFr(x.date)) + '. Prévenez-la avant de valider.</div>'); });
   if (nbPaiements(v)) al.push('<div class="alerte rouge"><b>' + nbPaiements(v) + ' paiement' + (nbPaiements(v) > 1 ? 's' : '') + ' à confirmer :</b> vérifiez votre téléphone (65 12 09 02) puis allez dans Équipe › la personne.</div>');
+  vieuxStock(v).forEach(function (x) { al.push('<div class="alerte rouge"><b>Produit gardé longtemps :</b> ' + esc(x.nom) + ' (' + x.qte + ' pots produits il y a ' + x.age + ' jours). Vérifiez la qualité et vendez-les en premier.</div>'); });
   var nomsOk = function (l) { return l.map(function (x) { return esc(x.nom) + " (" + x.theorique + ")"; }).join(", "); };
   if (b.alertes.length) al.push('<div class="alerte rouge"><b>Stock négatif :</b> ' + nomsOk(b.alertes) + '. Il manque une production ou un comptage.</div>');
   var bas = (v.stock || []).filter(function (x) { return x.actif && x.produit > 0 && x.theorique >= 0 && x.theorique <= 5; });

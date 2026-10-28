@@ -1,0 +1,160 @@
+// Stockage Noogo : Redis (Upstash, via Vercel Storage). En test local : mémoire.
+// Les listes sont stockées en "hash" (une entrée par commande / partenaire) pour éviter
+// que deux commandes simultanées ne s'écrasent entre elles.
+
+const MEMOIRE = process.env.NOOGO_MEMORY_STORE === "1";
+const mem = { hash: {}, kv: {}, compteurs: {} };
+
+let redis = null;
+function db() {
+  if (redis) return redis;
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
+    const e = new Error("Base de données non connectée");
+    e.code = "DB_NON_CONFIGUREE";
+    throw e;
+  }
+  const { Redis } = require("@upstash/redis");
+  redis = new Redis({ url, token });
+  return redis;
+}
+
+async function hgetall(nom) {
+  if (MEMOIRE) return { ...(mem.hash[nom] || {}) };
+  return (await db().hgetall(nom)) || {};
+}
+async function hset(nom, champ, valeur) {
+  if (MEMOIRE) { (mem.hash[nom] = mem.hash[nom] || {})[champ] = JSON.parse(JSON.stringify(valeur)); return; }
+  await db().hset(nom, { [champ]: valeur });
+}
+async function hincr(nom, champ, n = 1) {
+  if (MEMOIRE) { const h = (mem.hash[nom] = mem.hash[nom] || {}); h[champ] = (Number(h[champ]) || 0) + n; return h[champ]; }
+  return db().hincrby(nom, champ, n);
+}
+async function hdel(nom, champ) {
+  if (MEMOIRE) { if (mem.hash[nom]) delete mem.hash[nom][champ]; return; }
+  await db().hdel(nom, champ);
+}
+async function hget(nom, champ) {
+  if (MEMOIRE) return (mem.hash[nom] || {})[champ] || null;
+  return (await db().hget(nom, champ)) || null;
+}
+
+const valeurs = (o) => Object.values(o || {});
+
+async function getPartenaires() { return valeurs(await hgetall("noogo:partenaires")); }
+async function getPartenaire(id) { return hget("noogo:partenaires", id); }
+async function setPartenaire(p) { await hset("noogo:partenaires", p.id, p); }
+async function deletePartenaire(id) { await hdel("noogo:partenaires", id); }
+
+async function getCommandes() { return valeurs(await hgetall("noogo:commandes")); }
+async function getCommande(id) { return hget("noogo:commandes", id); }
+async function setCommande(c) { await hset("noogo:commandes", c.id, c); }
+async function deleteCommande(id) { await hdel("noogo:commandes", id); }
+
+async function getCatalogue() {
+  if (MEMOIRE) return mem.kv["noogo:catalogue"] || null;
+  return (await db().get("noogo:catalogue")) || null;
+}
+async function setCatalogue(liste) {
+  if (MEMOIRE) { mem.kv["noogo:catalogue"] = liste; return; }
+  if (liste === null) await db().del("noogo:catalogue");
+  else await db().set("noogo:catalogue", liste);
+}
+
+// Photos envoyées depuis l'admin : stockées en base (texte base64), servies par /api/photo
+async function setPhoto(id, b64) {
+  if (MEMOIRE) { mem.kv["noogo:photo:" + id] = b64; return; }
+  await db().set("noogo:photo:" + id, b64);
+}
+async function getPhoto(id) {
+  if (MEMOIRE) return mem.kv["noogo:photo:" + id] || null;
+  return (await db().get("noogo:photo:" + id)) || null;
+}
+
+// Limite de requêtes : renvoie true si autorisé.
+async function limiter(cle, max, secondes) {
+  try {
+    if (MEMOIRE) {
+      const now = Date.now();
+      const c = mem.compteurs[cle];
+      if (!c || now > c.fin) { mem.compteurs[cle] = { n: 1, fin: now + secondes * 1000 }; return true; }
+      c.n += 1; return c.n <= max;
+    }
+    const k = "noogo:rl:" + cle;
+    const n = await db().incr(k);
+    if (n === 1) await db().expire(k, secondes);
+    else if (n % 10 === 0 && (await db().ttl(k)) < 0) await db().expire(k, secondes);
+    return n <= max;
+  } catch (e) {
+    if (e.code === "DB_NON_CONFIGUREE") throw e;
+    return true; // en cas de souci Redis on ne bloque pas les clients
+  }
+}
+
+async function getReglages() {
+  if (MEMOIRE) return mem.kv["noogo:reglages"] || null;
+  return (await db().get("noogo:reglages")) || null;
+}
+async function setReglages(v) {
+  if (MEMOIRE) { mem.kv["noogo:reglages"] = v; return; }
+  await db().set("noogo:reglages", v);
+}
+
+// ── Suivi (lots, ventes, pertes, dépenses, comptages) : une entrée par enregistrement ──
+const SUIVI_TYPES = ["lots", "ventes", "pertes", "depenses", "comptages", "recus", "demandes", "encaissements", "comptes_prop", "comptes_esp", "lots_prop", "remises"];
+async function suiviListe(type) {
+  if (!SUIVI_TYPES.includes(type)) throw new Error("type de suivi inconnu");
+  return valeurs(await hgetall("noogo:suivi:" + type));
+}
+async function suiviSet(type, id, obj) {
+  if (!SUIVI_TYPES.includes(type)) throw new Error("type de suivi inconnu");
+  await hset("noogo:suivi:" + type, id, obj);
+}
+async function suiviDel(type, id) {
+  if (!SUIVI_TYPES.includes(type)) throw new Error("type de suivi inconnu");
+  await hdel("noogo:suivi:" + type, id);
+}
+async function getSuiviConfig() {
+  if (MEMOIRE) return mem.kv["noogo:suivi:config"] || null;
+  return (await db().get("noogo:suivi:config")) || null;
+}
+async function setSuiviConfig(v) {
+  if (MEMOIRE) { mem.kv["noogo:suivi:config"] = v; return; }
+  await db().set("noogo:suivi:config", v);
+}
+
+// Documents libres (actualités, pages légales…) : une valeur JSON par clé
+async function getDoc(cle) {
+  if (MEMOIRE) return mem.kv["noogo:doc:" + cle] || null;
+  return (await db().get("noogo:doc:" + cle)) || null;
+}
+async function setDoc(cle, v) {
+  if (MEMOIRE) { mem.kv["noogo:doc:" + cle] = v; return; }
+  await db().set("noogo:doc:" + cle, v);
+}
+
+// Gèle les prix dans l'historique : les comptages et ventes saisis « au prix du site » gardent le prix
+// qu'ils avaient au moment où le prix change (le chiffre d'affaires passé ne bouge plus jamais).
+async function figerPrix(prixAvant) {
+  let n = 0;
+  if (!prixAvant || typeof prixAvant !== "object") return n;
+  for (const c of await suiviListe("comptages")) {
+    if (c && c.id && (c.prix == null || c.prix === "") && prixAvant[c.produitId] != null) { await suiviSet("comptages", String(c.id), { ...c, prix: Math.round(Number(prixAvant[c.produitId]) || 0) }); n++; }
+  }
+  for (const v of await suiviListe("ventes")) {
+    if (v && v.id && (v.prix == null || v.prix === "") && (v.montant == null || v.montant === "") && prixAvant[v.produitId] != null) { await suiviSet("ventes", String(v.id), { ...v, prix: Math.round(Number(prixAvant[v.produitId]) || 0) }); n++; }
+  }
+  return n;
+}
+
+module.exports = {
+  figerPrix,
+  hgetall, hset, hdel, hget, hincr, getDoc, setDoc,
+  suiviListe, suiviSet, suiviDel, getSuiviConfig, setSuiviConfig,
+  getReglages, setReglages,
+  getPartenaires, getPartenaire, setPartenaire, deletePartenaire,
+  getCommandes, getCommande, setCommande, deleteCommande,
+  getCatalogue, setCatalogue, setPhoto, getPhoto, limiter
+};

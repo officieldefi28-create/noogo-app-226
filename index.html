@@ -756,7 +756,7 @@ async function suivreCommande() {
     if (j.etape === "annulee") res.innerHTML = `<p style="color:var(--rouge);font-weight:700">Cette commande a été annulée. Écrivez-nous sur WhatsApp si c'est une erreur.</p>`;
     else {
       const ordre = ["recue", "preparation", "en_route", "livree"], noms = ["Reçue", "En préparation", j.retrait ? "Prête à retirer" : "En route", j.retrait ? "Retirée" : "Livrée"], k = ordre.indexOf(j.etape);
-      res.innerHTML = `<div class="etapes">${noms.map((x, i) => `<div class="${i <= k ? "ok" : ""}"><i>${i <= k ? "✓" : i + 1}</i>${x}</div>`).join("")}</div><p><b>${j.articles.map((a) => a.qte + " × " + esc(a.nom)).join(", ")}</b></p><p>Total : <b>${fmt(j.total)}</b></p>`;
+      res.innerHTML = `<div class="etapes">${noms.map((x, i) => `<div class="${i <= k ? "ok" : ""}"><i>${i <= k ? "✓" : i + 1}</i>${x}</div>`).join("")}</div><p><b>${j.articles.map((a) => a.qte + " × " + esc(a.nom)).join(", ")}</b></p><p>Total : <b>${fmt(j.total)}</b></p>${j.fidelite ? `<p style="background:var(--creme-2,#f3ead0);border-radius:12px;padding:10px 12px;margin-top:10px">${j.fidelite.gagne ? "🎁 Bravo ! Vous avez gagné : <b>" + esc(j.fidelite.recompense) + "</b>. Dites-le-nous à votre prochaine commande." : "⭐ Fidélité : encore <b>" + j.fidelite.restant + " commande" + (j.fidelite.restant > 1 ? "s" : "") + "</b> livrée" + (j.fidelite.restant > 1 ? "s" : "") + " pour gagner : " + esc(j.fidelite.recompense)}</p>` : ""}`;
     }
   } catch (er) { res.innerHTML = `<p style="color:var(--rouge)">${esc(er.message)}</p>`; }
   btn.disabled = false;

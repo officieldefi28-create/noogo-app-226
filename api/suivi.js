@@ -2,6 +2,7 @@
 const crypto = require("crypto");
 const { adminValide } = require("./_auth");
 const S = require("./_store");
+const ESP = require("./_esp");
 const U = require("./_suivi");
 const { chargerCatalogue } = require("./_catalogue");
 
@@ -11,12 +12,23 @@ const entier = (n, min, max, nom) => { const v = Math.round(Number(n)); if (!Num
 const idPropre = (s) => { const v = txt(s, 60); if (!/^[A-Za-z0-9_-]+$/.test(v)) throw new Error("Produit invalide"); return v; };
 const nouvelId = (p) => p + "-" + Date.now().toString(36) + crypto.randomBytes(3).toString("hex");
 
+// Après un changement d'argent remis : recalcule les écarts non encore tranchés par le responsable
+async function recalculerEcarts(mb, depuisDate) {
+  const liste = (await S.suiviListe("comptes_esp")).filter((c) => c && c.vid === mb.id && c.statut !== "supprime").sort((a, b) => (a.date < b.date ? -1 : 1));
+  for (const c of liste) {
+    if (c.statut || (depuisDate && c.date < String(depuisDate).slice(0, 10))) continue;
+    const k = await ESP.calculer(mb, c.date, mb.poste === "livreur");
+    c.attendu = k.attendu; c.ecart = c.compte - k.attendu; c.detail = { report: k.report, ventes: k.ventes + k.livraisons, remises: k.remises, depuis: k.depuis };
+    await S.suiviSet("comptes_esp", c.id, c);
+  }
+}
+
 async function charger() {
-  const [catalogue, config, lots, ventes, pertes, depenses, comptages, commandes, equipe, recus, demandes, journal, clotures, encaissements, propositions, comptesEsp, lotsProp, patron] = await Promise.all([
+  const [catalogue, config, lots, ventes, pertes, depenses, comptages, commandes, equipe, recus, demandes, journal, clotures, encaissements, propositions, comptesEsp, lotsProp, patron, remisesL] = await Promise.all([
     chargerCatalogue(), S.getSuiviConfig(), S.suiviListe("lots"), S.suiviListe("ventes"), S.suiviListe("pertes"),
     S.suiviListe("depenses"), S.suiviListe("comptages"), S.getCommandes(),
     lireEquipe(), S.suiviListe("recus"), S.suiviListe("demandes"), S.getDoc("journal"), S.getDoc("clotures"),
-    S.suiviListe("encaissements"), S.suiviListe("comptes_prop"), S.suiviListe("comptes_esp"), S.suiviListe("lots_prop"), S.getDoc("patron")
+    S.suiviListe("encaissements"), S.suiviListe("comptes_prop"), S.suiviListe("comptes_esp"), S.suiviListe("lots_prop"), S.getDoc("patron"), S.suiviListe("remises")
   ]);
   const motCaisse = (await S.getDoc("caisse-mot")) || "bingo";
   const cfg = configPropre(config);
@@ -24,7 +36,7 @@ async function charger() {
   const archivesDonnees = { recus: archives(recus), depenses: archives(depenses) };
   // « Nouveau départ » : les commandes du site livrées avant ce moment ne comptent plus dans le suivi
   const cmds = cfg.debutHeure ? commandes.filter((c) => String(c.dateLivraison || c.date || "") >= cfg.debutHeure) : commandes;
-  return { catalogue, config: cfg, lots, ventes: actifs(ventes), pertes, depenses: actifs(depenses).filter((x) => !x.attente), encaissements: actifs(encaissements), propositions: propositions || [], comptesEsp: comptesEsp || [], lotsProp: lotsProp || [], patron: patron || null, comptages, commandes: cmds, equipe, recus: actifs(recus), archives: archivesDonnees, demandes, motCaisse, journal: Array.isArray(journal) ? journal : [], clotures: Array.isArray(clotures) ? clotures : [] };
+  return { catalogue, config: cfg, lots, ventes: actifs(ventes), pertes, depenses: actifs(depenses).filter((x) => !x.attente), encaissements: actifs(encaissements), propositions: propositions || [], comptesEsp: (comptesEsp || []).filter((x) => x && x.statut !== "supprime"), remises: (remisesL || []).filter((x) => x && !x.archive), lotsProp: lotsProp || [], patron: patron || null, comptages, commandes: cmds, equipe, recus: actifs(recus), archives: archivesDonnees, demandes, motCaisse, journal: Array.isArray(journal) ? journal : [], clotures: Array.isArray(clotures) ? clotures : [] };
 }
 
 function configPropre(c) {
@@ -183,6 +195,7 @@ function vue(donnees, d) {
     propositions: (donnees.propositions || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 40),
     lotsProp: (donnees.lotsProp || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 40),
     comptesEsp: (donnees.comptesEsp || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 120),
+    remises: (donnees.remises || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 120),
     livraisons: (donnees.commandes || []).filter((c) => c && c.statutLivraison === "livree" && c.livreurId).map((c) => ({ id: c.id, date: String(c.dateLivraison || c.date || "").slice(0, 10), heure: c.dateLivraison, livreurId: c.livreurId, livreur: c.livreur, client: c.nomClient, total: Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0, mode: (c.encaisse && c.encaisse.mode) || "", aConfirmer: !(c.encaisse && c.encaisse.attente) && aConfirmer(c.encaisse && c.encaisse.mode, c.encaisse && c.encaisse.verifie, c.dateLivraison || c.date), attente: !!(c.encaisse && c.encaisse.attente), du: !!(c.encaisse && c.encaisse.du), resume: (c.articles || []).map((a) => a.qte + " × " + a.nom).join(", ") })).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 500),
     comptages: donnees.comptages.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
     equipe: donnees.equipe, motCaisse: donnees.motCaisse, recus: (donnees.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 800),
@@ -426,6 +439,43 @@ module.exports = async (req, res) => {
           trace = ["Livraison refusée (remise à livrer)", qui];
         } else throw new Error("Décision invalide");
         await S.setCommande(c);
+        break;
+      }
+      case "ecart_decider": {
+        // Écart d'espèces : accepter tel quel, corriger l'argent compté, ou supprimer le comptage
+        const cl = (await S.suiviListe("comptes_esp")).find((x) => x && x.id === txt(d.id, 80));
+        if (!cl) throw new Error("Comptage introuvable");
+        if (d.decision === "accepter") { cl.statut = "accepte"; trace = ["Écart accepté", cl.vendeur + " · " + cl.date + " · " + fr(cl.ecart)]; }
+        else if (d.decision === "corriger") {
+          cl.compte = entier(d.compte, 0, 1000000000, "Montant compté"); cl.ecart = cl.compte - cl.attendu; cl.statut = "corrige"; cl.corrigeLe = new Date().toISOString();
+          trace = ["Comptage corrigé", cl.vendeur + " · " + cl.date + " · compté " + fr(cl.compte)];
+        } else if (d.decision === "supprimer") { cl.statut = "supprime"; trace = ["Comptage supprimé", cl.vendeur + " · " + cl.date]; }
+        else throw new Error("Décision invalide");
+        await S.suiviSet("comptes_esp", cl.id, cl);
+        break;
+      }
+      case "remise_ajouter": {
+        // Le responsable note lui-même l'argent déjà pris chez une personne (liquide, Orange, Wave)
+        const vid = txt(d.vid, 60), mb = (await lireEquipe()).find((x) => x && x.id === vid);
+        if (!mb) throw new Error("Personne invalide");
+        const idR = nouvelId("RM"), montant = entier(d.montant, 1, 1000000000, "Montant");
+        const mode = ["Main à main", "Orange Money", "Wave"].includes(d.mode) ? d.mode : "Main à main";
+        await S.suiviSet("remises", idR, { id: idR, date: date(d.date || new Date().toISOString().slice(0, 10)), vid, vendeur: mb.nom, montant, mode, note: txt(d.note, 120), statut: "recu", par: "admin", cree: new Date().toISOString() });
+        await recalculerEcarts(mb, d.date);
+        trace = ["Argent pris chez " + mb.nom, fr(montant) + " · " + mode];
+        break;
+      }
+      case "remise_decider": {
+        const r = (await S.suiviListe("remises")).find((x) => x && x.id === txt(d.id, 80));
+        if (!r) throw new Error("Remise introuvable");
+        if (d.decision === "recu") r.statut = "recu";
+        else if (d.decision === "refuse") r.statut = "refuse";
+        else if (d.decision === "supprimer") r.archive = new Date().toISOString();
+        else throw new Error("Décision invalide");
+        await S.suiviSet("remises", r.id, r);
+        const mb = (await lireEquipe()).find((x) => x && x.id === r.vid) || { id: r.vid, nom: r.vendeur, poste: "" };
+        await recalculerEcarts(mb, r.date);
+        trace = ["Argent remis : " + ({ recu: "reçu", refuse: "refusé", supprimer: "supprimé" })[d.decision], r.vendeur + " · " + fr(r.montant) + " · " + r.mode];
         break;
       }
       case "paiement_decider": {

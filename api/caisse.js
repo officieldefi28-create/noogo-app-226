@@ -3,6 +3,7 @@
 const crypto = require("crypto");
 const { signerJeton, verifierJeton } = require("./_auth");
 const S = require("./_store");
+const ESP = require("./_esp");
 const U = require("./_suivi");
 const { chargerCatalogue } = require("./_catalogue");
 
@@ -98,7 +99,7 @@ module.exports = async (req, res) => {
         bilan: { ca: b.ca, resultat: b.resultat, margeBrute: b.margeBrute, margePct: b.margePct, charges: b.charges, production: b.production, depensesTotales: b.depensesTotales, caisse: b.caisse, valeurStock: b.valeurStock, quantite: b.quantite, parProduit: b.parProduit.slice(0, 12), parVendeur: b.parVendeur, parJour: b.parJour.slice(-31), creances: b.creances, resteADuTotal: b.resteADuTotal, livraisonPacks: b.livraisonPacks },
         stock: v.stock.filter((x) => x.actif).map((x) => ({ nom: x.nom, stock: x.theorique, valeur: x.valeur })),
         aValider: (dn.recus || []).filter((r) => r.attente).length,
-        manques: (v.comptesEsp || []).filter((x) => x.ecart < 0).slice(0, 10).map((x) => ({ date: x.date, vendeur: x.vendeur, ecart: x.ecart })),
+        manques: (v.comptesEsp || []).filter((x) => x.ecart < 0 && x.statut !== "accepte").slice(0, 10).map((x) => ({ date: x.date, vendeur: x.vendeur, ecart: x.ecart })),
         alertes: b.alertes
       });
     }
@@ -266,16 +267,29 @@ module.exports = async (req, res) => {
         return res.status(200).json({ ok: true });
       }
       case "cloturer_caisse": {
-        // Espèces comptées le soir : comparées à ce qui devrait y être
+        // Espèces comptées le soir : comparées à ce qui devrait y être (reste de la veille + ventes − argent déjà remis)
         const jr = /^\d{4}-\d{2}-\d{2}$/.test(String(d.date || "")) ? d.date : aujourdhui();
         const compte = entier(d.compte, 0, 1000000000, "Espèces comptées");
-        const recus = (await S.suiviListe("recus")).filter((r) => r && !r.archive && r.vid === m.id && r.date === jr && r.paiement === "Espèces");
-        const liv = estLivreur(m) ? (await S.getCommandes()).filter((c) => c && c.livreurId === m.id && c.statutLivraison === "livree" && String(c.dateLivraison || "").slice(0, 10) === jr && c.encaisse && c.encaisse.mode === "Espèces") : [];
-        const attendu = recus.reduce((t, r) => t + (Number(r.total) || 0), 0) + liv.reduce((t, c) => t + (Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0), 0);
+        const calc = await ESP.calculer(m, jr, estLivreur(m));
         const idE = m.id + "_" + jr;
-        const cl = { id: idE, date: jr, vid: m.id, vendeur: m.nom, attendu, compte, ecart: compte - attendu, cree: new Date().toISOString() };
+        const cl = { id: idE, date: jr, vid: m.id, vendeur: m.nom, attendu: calc.attendu, compte, ecart: compte - calc.attendu, detail: { report: calc.report, ventes: calc.ventes + calc.livraisons, remises: calc.remises, depuis: calc.depuis }, cree: new Date().toISOString() };
         await S.suiviSet("comptes_esp", idE, cl);
         return res.status(200).json({ cloture: cl });
+      }
+      case "remettre_argent": {
+        // La personne déclare avoir remis de l'argent au responsable (main, Orange Money, Wave) : le responsable confirme
+        const montant = entier(d.montant, 1, 1000000000, "Montant");
+        const mode = ["Main à main", "Orange Money", "Wave"].includes(d.mode) ? d.mode : "Main à main";
+        const jr = /^\d{4}-\d{2}-\d{2}$/.test(String(d.date || "")) ? d.date : aujourdhui();
+        const idR = "RM" + Date.now().toString(36) + crypto.randomBytes(2).toString("hex");
+        await S.suiviSet("remises", idR, { id: idR, date: jr, vid: m.id, vendeur: m.nom, montant, mode, note: txt(d.note, 120), statut: "attente", par: "equipe", cree: new Date().toISOString() });
+        return res.status(200).json({ ok: true, id: idR });
+      }
+      case "apercu_especes": {
+        const jr = /^\d{4}-\d{2}-\d{2}$/.test(String(d.date || "")) ? d.date : aujourdhui();
+        const calc = await ESP.calculer(m, jr, estLivreur(m));
+        const rem = (await S.suiviListe("remises")).filter((x) => x && !x.archive && x.vid === m.id).sort((a, b) => (a.cree < b.cree ? 1 : -1)).slice(0, 8);
+        return res.status(200).json({ calc, remises: rem });
       }
       case "etat_jour": {
         const jr = /^\d{4}-\d{2}-\d{2}$/.test(String(d.date || "")) ? d.date : aujourdhui();

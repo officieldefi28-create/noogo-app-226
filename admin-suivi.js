@@ -262,15 +262,15 @@ function statsMembre(v, id, du, au) {
 /* ----- À valider : ce que la caissière envoie (ventes, production, comptage du soir) ----- */
 function groupesAttente(v, vid) {
   var g = {};
-  (v.recus || []).filter(function (r) { return r.attente && (!vid || r.vid === vid); }).forEach(function (r) { var k = r.vid + "|" + r.date; (g[k] = g[k] || { vid: r.vid, date: r.date, vendeur: r.vendeur, recus: [] }).recus.push(r); });
+  (v.recus || []).filter(function (r) { return r.attente && (!vid || r.vid === vid); }).forEach(function (r) { var liv = r.du && r.du.type === "livreur" ? r.du : null, k = r.vid + "|" + r.date + "|" + (liv ? liv.id : ""); (g[k] = g[k] || { vid: r.vid, date: r.date, vendeur: r.vendeur, livreur: liv, recus: [] }).recus.push(r); });
   return Object.keys(g).map(function (k) { return g[k]; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
 }
 function livAttente(v, vid) { return (v.livraisons || []).filter(function (l) { return l.attente && (!vid || l.livreurId === vid); }); }
 function nbAValider(v) { return groupesAttente(v).length + (v.lotsProp || []).length + (v.propositions || []).length + livAttente(v).length; }
 function ligneRecuAttente(r) {
   return '<div class="rang"><div class="g"><b>' + heureFr(r.heure) + ' · ' + fcfa(r.total) + '</b><small>' + r.lignes.map(function (l) { return l.qte + " × " + esc(l.nom); }).join(", ") + '<br>' + esc(r.paiement) +
-    (r.du ? ' · <b>à rendre' + (r.du.echeance ? " avant le " + esc(dateFr(r.du.echeance)) : "") + '</b>' : "") + '</small></div><div style="text-align:right">' +
-    (r.du ? '<button class="btn btn-brun btn-petit" type="button" data-s="recu-paye" data-id="' + esc(r.id) + '">Payé en espèces</button><br>' : "") +
+    (r.du ? ' · <b>' + (r.du.type === "livreur" ? "dû par " + esc(r.du.nom || "le livreur") : "à rendre") + (r.du.echeance ? " avant le " + esc(dateFr(r.du.echeance)) : "") + '</b>' : "") + '</small></div><div style="text-align:right">' +
+    (r.du ? '<button class="btn btn-brun btn-petit" type="button" data-s="recu-paye" data-id="' + esc(r.id) + '">Payé en espèces</button><br><button class="btn btn-clair btn-petit" type="button" data-s="recu-paye-om" data-id="' + esc(r.id) + '">Payé Orange/Wave</button><br>' : "") +
     '<button class="btn btn-clair btn-petit" type="button" data-s="supprimer-recu" data-id="' + esc(r.id) + '">Supprimer</button></div></div>';
 }
 function blocAValider(v, vid) {
@@ -290,8 +290,8 @@ function blocAValider(v, vid) {
   });
   gs.forEach(function (g) {
     var tot = g.recus.reduce(function (m, r) { return m + (Number(r.total) || 0); }, 0), du = g.recus.reduce(function (m, r) { return m + (r.du ? Number(r.total) || 0 : 0); }, 0);
-    h += '<div class="formulaire" style="margin:8px 0"><b>Ventes de ' + esc(g.vendeur) + ' · ' + esc(dateFr(g.date)) + '</b><br><span class="gris">' + g.recus.length + ' reçu' + (g.recus.length > 1 ? "s" : "") + ' · total ' + fcfa(tot) + (du ? ' · dont à rendre plus tard ' + fcfa(du) : "") + '</span>' + g.recus.map(ligneRecuAttente).join("") +
-      '<button class="btn btn-vert btn-petit btn-bloc" type="button" style="margin-top:8px" data-s="valider-jour" data-vid="' + esc(g.vid) + '" data-date="' + esc(g.date) + '">Valider cette journée</button></div>';
+    h += '<div class="formulaire" style="margin:8px 0"><b>' + (g.livreur ? 'Produits remis à ' + esc(g.livreur.nom || "un livreur") + ' par ' + esc(g.vendeur) : 'Ventes de ' + esc(g.vendeur)) + ' · ' + esc(dateFr(g.date)) + '</b><br><span class="gris">' + g.recus.length + ' reçu' + (g.recus.length > 1 ? "s" : "") + ' · total ' + fcfa(tot) + (du ? ' · dont à rendre plus tard ' + fcfa(du) : "") + '</span>' + g.recus.map(ligneRecuAttente).join("") +
+      '<button class="btn btn-vert btn-petit btn-bloc" type="button" style="margin-top:8px" data-s="valider-jour" data-vid="' + esc(g.vid) + '" data-date="' + esc(g.date) + '" data-duid="' + esc(g.livreur ? g.livreur.id : "") + '">' + (g.livreur ? "Valider ce que " + esc(g.livreur.nom || "le livreur") + " a pris" : "Valider cette journée") + '</button></div>';
   });
   lp.forEach(function (p) {
     h += '<div class="formulaire" style="margin:8px 0"><b>Production notée par ' + esc(p.vendeur) + ' · ' + esc(dateFr(p.date)) + '</b>' + p.lignes.map(function (l) { return '<div class="ligne-edit"><span>' + esc(noms[l.produitId] || l.produitId) + '</span><input type="number" inputmode="numeric" min="0" data-pl="' + esc(p.id) + '" data-pid="' + esc(l.produitId) + '" value="' + l.qte + '"></div>'; }).join("") +
@@ -956,7 +956,8 @@ function clic(ev) {
     case "patron-on": return envoyer("patron_lien", { operation: "activer" }, "Lien réactivé");
     case "patron-copier": var lp = lienPatron(E.vue); try { navigator.clipboard.writeText(lp); A.toast("Lien copié", "ok"); } catch (e) { window.prompt("Copiez ce lien :", lp); } return;
     case "patron-wa": window.open("https://wa.me/?text=" + encodeURIComponent("Bonjour 👋\nVoici le tableau Noogó (lecture seule) : tous les chiffres à jour, sur ton téléphone.\n" + lienPatron(E.vue) + "\n\nOuvre le lien avec Chrome. Tu peux l'ajouter à l'écran d'accueil."), "_blank", "noopener"); return;
-    case "valider-jour": return envoyer("valider_jour", { vid: t.getAttribute("data-vid"), date: t.getAttribute("data-date") }, "Journée validée : elle compte maintenant dans la caisse");
+    case "valider-jour": return envoyer("valider_jour", { vid: t.getAttribute("data-vid"), date: t.getAttribute("data-date"), duId: t.getAttribute("data-duid") || "", solo: !t.getAttribute("data-duid") }, "Journée validée : elle compte maintenant dans la caisse");
+    case "recu-paye-om": return envoyer("recu_payer", { id: t.getAttribute("data-id"), mode: "Orange Money" }, "Marqué payé (Orange/Wave)");
     case "recu-paye": return envoyer("recu_payer", { id: t.getAttribute("data-id"), mode: "Espèces" }, "Marqué payé en espèces");
     case "prod-ok": { var pid0 = t.getAttribute("data-id"), lg = []; document.querySelectorAll('[data-pl]').forEach(function (e) { if (e.getAttribute("data-pl") === pid0) lg.push({ produitId: e.getAttribute("data-pid"), qte: Number(e.value) || 0 }); }); return envoyer("valider_production", { id: pid0, lignes: lg, cout: val("pc-" + pid0) }, "Production validée : le stock est mis à jour"); }
     case "prod-non": return envoyer("production_refuser", { id: t.getAttribute("data-id") }, "Production refusée");

@@ -3,6 +3,7 @@
 const crypto = require("crypto");
 const S = require("./_store");
 const { adminValide, ipClient } = require("./_auth");
+const SITE = require("./_site");
 
 const txt = (s, max) => String(s == null ? "" : s).replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
 const bloc = (s, max) => String(s == null ? "" : s).replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, " ").replace(/\r/g, "").trim().slice(0, max);
@@ -80,10 +81,21 @@ module.exports = async (req, res) => {
       const c = await S.getCommande(id);
       if (!c) return res.status(404).json({ erreur: "Commande introuvable. Vérifiez le code." });
       const etape = c.statutLivraison === "livree" ? "livree" : c.statutLivraison === "annulee" ? "annulee" : (c.etape || "recue");
+      // Fidélité : nombre de commandes déjà livrées avec ce même téléphone
+      let fidelite = null;
+      try {
+        let rg = SITE.DEFAUT_REGLAGES; try { rg = SITE.fusionner(await S.getReglages()).reglages || rg; } catch (e) {}
+        const seuil = parseInt(rg.fideliteSeuil, 10) || 0, tel = String(c.telClient || "").replace(/\D/g, "").slice(-8);
+        if (seuil > 0 && tel.length >= 8) {
+          const livrees = (await S.getCommandes()).filter((x) => x && x.statutLivraison === "livree" && String(x.telClient || "").replace(/\D/g, "").slice(-8) === tel).length;
+          const cycle = livrees % seuil;
+          fidelite = { seuil, livrees, restant: seuil - cycle, gagne: livrees > 0 && cycle === 0, recompense: rg.fideliteRecompense || "" };
+        }
+      } catch (e) { fidelite = null; }
       return res.status(200).json({
         id: c.id, date: c.date, etape, retrait: c.modeReception === "retrait",
         articles: (c.articles || []).map((a) => ({ nom: a.nom, qte: a.qte })),
-        total: c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal
+        total: c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal, fidelite
       });
     }
 

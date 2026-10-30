@@ -12,6 +12,8 @@ const DEFAUT_REGLAGES = {
   ferme: "",
   messageFerme: "Nous ne prenons plus de commandes pour le moment. Revenez bientôt 🍦",
   commandeMin: "",
+  fideliteSeuil: "5",
+  fideliteRecompense: "1 pot offert",
   surtitre: "Glaces naturelles · L'excellence africaine",
   titre: "La douceur naturelle,",
   titreAccent: "le goût d'ici",
@@ -113,6 +115,8 @@ function valider(d) {
   r.ferme = /^(oui|1|true)$/i.test(txt(rg.ferme, 6)) ? "oui" : "";
   r.messageFerme = txt(rg.messageFerme, 200) || DEFAUT_REGLAGES.messageFerme;
   { const mn = parseInt(String(rg.commandeMin || "").replace(/\D/g, ""), 10); r.commandeMin = mn > 0 && mn <= 1000000 ? String(mn) : ""; }
+  { const fs = parseInt(String(rg.fideliteSeuil == null ? DEFAUT_REGLAGES.fideliteSeuil : rg.fideliteSeuil).replace(/\D/g, ""), 10); r.fideliteSeuil = String(fs >= 0 && fs <= 50 ? fs : 5); }
+  r.fideliteRecompense = txt(rg.fideliteRecompense, 80) || DEFAUT_REGLAGES.fideliteRecompense;
   const wa = String(rg.whatsapp || "").replace(/\D/g, "");
   r.whatsapp = wa.length >= 8 && wa.length <= 15 ? wa : DEFAUT_REGLAGES.whatsapp;
   for (const k of ["couleurPrincipale", "couleurAccent", "couleurFond"]) r[k] = /^#[0-9a-f]{6}$/i.test(String(rg[k] || "")) ? rg[k] : DEFAUT_REGLAGES[k];

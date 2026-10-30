@@ -360,7 +360,9 @@ module.exports = async (req, res) => {
       case "valider_jour": {
         // Le responsable valide ce qu'une personne a envoyé : seulement alors, ça entre dans la caisse de l'entreprise
         const vid = txt(d.vid, 60), jr = d.date ? date(d.date) : "";
-        const rs = (await S.suiviListe("recus")).filter((r) => r && r.attente && r.vid === vid && (!jr || r.date === jr));
+        const duId = txt(d.duId, 60), solo = d.solo === true;
+        const rs = (await S.suiviListe("recus")).filter((r) => r && r.attente && r.vid === vid && (!jr || r.date === jr)
+          && (duId ? (r.du && r.du.type === "livreur" && r.du.id === duId) : solo ? !(r.du && r.du.type === "livreur") : true));
         if (!rs.length) throw new Error("Rien à valider");
         const ids = new Set(rs.map((r) => r.id));
         for (const v of await S.suiviListe("ventes")) if (v && ids.has(v.recuId)) { v.attente = false; await S.suiviSet("ventes", v.id, v); }
@@ -374,8 +376,17 @@ module.exports = async (req, res) => {
         const idr = txt(d.id, 60), mode = ["Espèces", "Orange Money", "Wave"].includes(d.mode) ? d.mode : "Espèces";
         const rc = (await S.suiviListe("recus")).find((x) => x && x.id === idr);
         if (!rc || !rc.du) throw new Error("Reçu invalide : rien à payer");
-        for (const v of await S.suiviListe("ventes")) if (v && v.recuId === idr) { v.du = null; v.paiement = mode; await S.suiviSet("ventes", v.id, v); }
-        rc.du = null; rc.paiement = mode; await S.suiviSet("recus", rc.id, rc);
+        const qui = rc.du;
+        for (const v of await S.suiviListe("ventes")) if (v && v.recuId === idr) { v.du = null; v.paiement = mode; v.attente = false; await S.suiviSet("ventes", v.id, v); }
+        for (const x of await S.suiviListe("depenses")) if (x && x.recuId === idr && x.attente) { x.attente = false; await S.suiviSet("depenses", x.id, x); }
+        rc.du = null; rc.paiement = mode; rc.verifie = true; rc.attente = false; rc.valideLe = new Date().toISOString(); rc.payePar = qui ? (qui.nom || qui.id || "") : ""; await S.suiviSet("recus", rc.id, rc);
+        if (mode === "Espèces" && qui) {
+          // L'argent est venu directement chez le responsable : il ne doit pas compter comme espèces restées chez la caissière
+          const idR = nouvelId("RM");
+          await S.suiviSet("remises", idR, { id: idR, date: rc.date, vid: rc.vid, vendeur: rc.vendeur, montant: Number(rc.total) || 0, mode: "Main à main", note: "Payé directement au responsable par " + (rc.payePar || "le client"), statut: "recu", par: "admin", recuId: rc.id, cree: new Date().toISOString() });
+          const mb = (await lireEquipe()).find((x) => x && x.id === rc.vid);
+          if (mb) await recalculerEcarts(mb, rc.date);
+        }
         trace = ["Reçu marqué payé", idr + " · " + mode + " · " + fr(rc.total)];
         break;
       }

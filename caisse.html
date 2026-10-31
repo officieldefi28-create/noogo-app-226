@@ -521,7 +521,8 @@ async function chargerFin() {
   let h = `<p class="vide-t" style="margin:4px 0 8px">Tout ce que vous envoyez ici est vérifié par le responsable avant d'être compté.</p>`;
   if (dette) {
     h += `<div class="sec"><h3>Ce que je dois au responsable</h3><div class="somme"><small>Reste à rendre</small><b>${fmt(dette.reste)}</b>${dette.enAttente ? `<small>+ ${fmt(dette.enAttente)} en attente de validation</small>` : ""}</div>` +
-      (dette.recus.length ? dette.recus.map((r) => `<div class="carte"><div class="h"><span>${esc(r.date)}${r.attente ? '<span class="tagv">À valider</span>' : ""}</span><span>${fmt(r.total)}</span></div><small>${r.lignes.map(esc).join(", ")}</small></div>`).join("") : `<p class="vide-t">Aucun produit remis pour le moment.</p>`) +
+      (dette.recus.length ? dette.recus.map((r) => `<div class="carte"><div class="h"><span>${esc(r.date)}${r.attente ? '<span class="tagv">À valider</span>' : ""}</span><span>${fmt(r.total)}</span></div><small>${r.lignes.map(esc).join(", ")}</small>${String(r.id).startsWith("CMD-") ? "" : `<div style="display:flex;gap:6px;margin-top:6px;align-items:center"><button class="btn clair" type="button" data-av="ok" data-id="${esc(r.id)}" style="flex:1">${r.avis === "ok" ? "✓ " : ""}C'est bon</button><button class="btn clair" type="button" data-av="pas_ok" data-id="${esc(r.id)}" style="flex:1">${r.avis === "pas_ok" ? "✗ " : ""}Pas correct</button></div>`}</div>`).join("") : `<p class="vide-t">Aucun produit remis pour le moment.</p>`) +
+      `<button class="btn or" id="b-paydette" type="button" style="width:100%;margin-top:8px">Je rends de l'argent</button><button class="btn clair" id="b-notedette" type="button" style="width:100%;margin-top:8px">J'ai pris autre chose (non noté)</button><p class="aide-t">Si vous ne rendez rien aujourd'hui, ça reste dû. Le responsable confirme chaque paiement.</p>` +
       (dette.paiements.length ? `<p class="aide-t">Déjà rendu : ${dette.paiements.map((p) => fmt(p.montant) + " (" + esc(p.date) + ")").join(", ")}</p>` : "") + `</div>`;
   }
   h += `<div class="sec"><h3>1. Production du jour</h3><p class="aide-t">${etatJ.productions.length ? "Envoyée ✓ (" + etatJ.productions.length + "). Vous pouvez en ajouter une autre." : "Notez ce qui a été produit."}</p><button class="btn clair" id="b-prod" type="button" style="width:100%">Noter une production</button></div>`;
@@ -529,6 +530,9 @@ async function chargerFin() {
   const cl = etatJ.cloture;
   h += `<div class="sec"><h3>3. Argent en espèces</h3>${cl ? `<div class="${cl.ecart < 0 ? "info" : "info"}"><b>${cl.ecart === 0 ? "Compte juste ✓" : cl.ecart < 0 ? "Il manque " + fmt(-cl.ecart) : "Il y a " + fmt(cl.ecart) + " de plus"}</b><br>Attendu ${fmt(cl.attendu)} · compté ${fmt(cl.compte)}</div>` : `<p class="aide-t">Comptez les espèces que vous avez en main.</p>`}<button class="btn clair" id="b-rem" type="button" style="width:100%;margin-bottom:8px">J'ai déjà remis de l'argent (Orange, Wave, main)</button><button class="btn or" id="b-esp" type="button" style="width:100%">${cl ? "Recompter" : "Compter l'argent"}</button></div>`;
   c.innerHTML = h;
+  document.querySelectorAll("[data-av]").forEach((b) => { b.onclick = async () => { let note = ""; if (b.dataset.av === "pas_ok") { note = prompt("Qu'est-ce qui n'est pas correct ? (ex : j'ai pris 2 pots, pas 3)") || ""; if (!note) return; } try { await api("dette_avis", { id: b.dataset.id, avis: b.dataset.av, note }); toast("Envoyé ✓"); chargerFin(); } catch (e) { if (e.session) return sessionFinie(); toast(e.message); } }; });
+  if ($("#b-paydette")) $("#b-paydette").onclick = () => ouvrirPayerDette(dette.reste);
+  if ($("#b-notedette")) $("#b-notedette").onclick = async () => { const t = prompt("Qu'avez-vous pris qui n'a pas été noté ?"); if (!t) return; try { await api("dette_note", { texte: t }); toast("Envoyé au responsable ✓"); } catch (e) { if (e.session) return sessionFinie(); toast(e.message); } };
   $("#b-prod").onclick = ouvrirProduction; $("#b-stock").onclick = ouvrirStock; $("#b-esp").onclick = ouvrirEspeces; $("#b-rem").onclick = ouvrirRemise;
 }
 function ouvrirProduction() {
@@ -557,6 +561,19 @@ function ouvrirStock() {
     if (!items.length) { $("#err-s").textContent = "Comptez au moins un produit."; return; }
     try { await api("compter_stock", { date: jourJ(), items }); fermer(); toast("Comptage envoyé au responsable ✓"); chargerFin(); }
     catch (e) { if (e.session) return sessionFinie(); $("#err-s").textContent = e.message; }
+  };
+  ouvrir();
+}
+function ouvrirPayerDette(reste) {
+  $("#feuille").innerHTML = `<h2>Je rends de l'argent</h2><p class="aide-t">Dites ce que vous avez rendu au responsable. Il vérifie (en main, ou sur le 65 12 09 02 pour Orange Money / Wave) puis confirme.</p>
+    <label for="pd-m">Montant rendu (F)</label><input id="pd-m" type="number" inputmode="numeric" min="1" value="${reste > 0 ? reste : ""}">
+    <label for="pd-mode">Comment ?</label><select id="pd-mode"><option>Main à main</option><option>Orange Money</option><option>Wave</option></select>
+    <div id="err-pd" class="erreur"></div><button class="btn or" id="ok-pd" type="button" style="width:100%;margin-top:6px">Envoyer</button><button class="btn clair" id="non-pd" type="button" style="width:100%;margin-top:8px">Retour</button>`;
+  $("#non-pd").onclick = fermer;
+  $("#ok-pd").onclick = async () => {
+    const m = Number($("#pd-m").value); if (!(m >= 1)) { $("#err-pd").textContent = "Entrez le montant."; return; }
+    try { await api("payer_dette", { montant: m, mode: $("#pd-mode").value }); fermer(); toast("Envoyé au responsable ✓"); chargerFin(); }
+    catch (e) { if (e.session) return sessionFinie(); $("#err-pd").textContent = e.message; }
   };
   ouvrir();
 }

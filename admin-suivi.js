@@ -266,10 +266,10 @@ function groupesAttente(v, vid) {
   return Object.keys(g).map(function (k) { return g[k]; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
 }
 function livAttente(v, vid) { return (v.livraisons || []).filter(function (l) { return l.attente && (!vid || l.livreurId === vid); }); }
-function nbAValider(v) { return groupesAttente(v).length + (v.lotsProp || []).length + (v.propositions || []).length + livAttente(v).length; }
+function nbAValider(v) { return (v.remises || []).filter(function (x) { return x.statut === "attente"; }).length + groupesAttente(v).length + (v.lotsProp || []).length + (v.propositions || []).length + livAttente(v).length; }
 function ligneRecuAttente(r) {
   return '<div class="rang"><div class="g"><b>' + heureFr(r.heure) + ' · ' + fcfa(r.total) + '</b><small>' + r.lignes.map(function (l) { return l.qte + " × " + esc(l.nom); }).join(", ") + '<br>' + esc(r.paiement) +
-    (r.du ? ' · <b>' + (r.du.type === "livreur" ? "dû par " + esc(r.du.nom || "le livreur") : "à rendre") + (r.du.echeance ? " avant le " + esc(dateFr(r.du.echeance)) : "") + '</b>' : "") + '</small></div><div style="text-align:right">' +
+    (r.du ? ' · <b>' + (r.du.type === "livreur" ? "dû par " + esc(r.du.nom || "le livreur") : "à rendre") + (r.du.echeance ? " avant le " + esc(dateFr(r.du.echeance)) : "") + '</b>' : "") + (r.avisLivreur ? '<br><b class="' + (r.avisLivreur.avis === 'ok' ? 'pos' : 'neg') + '">' + (r.avisLivreur.avis === 'ok' ? 'Le livreur confirme ✓' : 'Le livreur conteste : ' + esc(r.avisLivreur.note || '')) + '</b>' : '') + '</small></div><div style="text-align:right">' +
     (r.du ? '<button class="btn btn-brun btn-petit" type="button" data-s="recu-paye" data-id="' + esc(r.id) + '">Payé en espèces</button><br><button class="btn btn-clair btn-petit" type="button" data-s="recu-paye-om" data-id="' + esc(r.id) + '">Payé Orange/Wave</button><br>' : "") +
     '<button class="btn btn-clair btn-petit" type="button" data-s="supprimer-recu" data-id="' + esc(r.id) + '">Supprimer</button></div></div>';
 }
@@ -333,8 +333,9 @@ function blocComptesEsp(v, vid) {
       '<button class="btn btn-contour btn-petit" type="button" data-s="ec-sup" data-id="' + esc(x.id) + '" style="width:100%;margin-top:6px">Supprimer ce comptage</button></div>';
   }).join("");
   if (rem.length) h += '<p class="astuce" style="margin-top:10px">Argent déjà remis au responsable :</p>' + rem.map(function (x) {
+    var kindLbl = x.kind === "dette" ? "Paiement de sa dette · " : x.kind === "note" ? "Remarque · " : "";
     var tag = x.statut === "recu" ? '<span class="tag ok">Reçu</span>' : x.statut === "refuse" ? '<span class="tag ko">Refusé</span>' : '<span class="tag att">À confirmer</span>';
-    return '<div class="rang" style="flex-wrap:wrap"><span>' + esc(x.vendeur) + ' · ' + esc(dateFr(x.date)) + ' · ' + esc(x.mode) + ' ' + tag + (x.note ? '<br><small class="gris">' + esc(x.note) + '</small>' : '') + '</span><b>' + fcfa(x.montant) + '</b>' +
+    return '<div class="rang" style="flex-wrap:wrap"><span>' + esc(x.vendeur) + ' · ' + esc(dateFr(x.date)) + ' · ' + kindLbl + esc(x.mode) + ' ' + tag + (x.note ? '<br><small class="gris">' + esc(x.note) + '</small>' : '') + '</span><b>' + (x.kind === "note" ? "" : fcfa(x.montant)) + '</b>' +
       '<div class="grille2" style="width:100%;margin-top:6px">' + (x.statut !== "recu" ? '<button class="btn btn-brun btn-petit" type="button" data-s="rm-ok" data-id="' + esc(x.id) + '">Bien reçu</button>' : '') + (x.statut !== "refuse" ? '<button class="btn btn-clair btn-petit" type="button" data-s="rm-non" data-id="' + esc(x.id) + '">Pas reçu</button>' : '') + '<button class="btn btn-contour btn-petit" type="button" data-s="rm-sup" data-id="' + esc(x.id) + '">Supprimer</button></div></div>';
   }).join("");
   if (vid) h += '<p class="astuce" style="margin-top:10px">J\'ai déjà pris de l\'argent chez cette personne :</p><div class="grille2"><input id="rm-mt" type="number" inputmode="numeric" min="1" placeholder="Montant (F)"><select id="rm-mode"><option>Main à main</option><option>Orange Money</option><option>Wave</option></select></div><button class="btn btn-brun btn-petit" type="button" data-s="rm-add" data-vid="' + esc(vid) + '" style="width:100%;margin-top:6px">Noter cet argent pris</button>';

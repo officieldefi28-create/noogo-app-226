@@ -181,6 +181,7 @@ function vResume(v) {
     kpi("Dépenses", fcfa(b.depensesTotales), "", b.production ? "dont production " + fcfa(b.production) : "frais, publicité, salaires…") +
     kpi("Marge brute", fcfa(b.margeBrute), b.margeBrute >= 0 ? "pos" : "neg", b.margePct + " % du CA") + '</div>';
 
+  h += blocBilanJour(v);
   /* À surveiller : deux alertes visibles, le reste se déplie */
   var al = [];
   if (nbAValider(v)) al.push('<div class="alerte rouge"><b>' + nbAValider(v) + ' chose' + (nbAValider(v) > 1 ? 's' : '') + ' à valider :</b> ventes, production ou comptage envoyés par l\'équipe. Allez dans Équipe.</div>');
@@ -259,6 +260,51 @@ function statsMembre(v, id, du, au) {
   livs.forEach(function (l) { var k = l.mode || "Espèces"; parMode[k] = (parMode[k] || 0) + l.total; total += l.total; });
   return { recus: recus, deps: deps, livs: livs, parMode: parMode, total: total, depTotal: deps.reduce(function (s, d) { return s + (Number(d.montant) || 0); }, 0), nb: recus.length + livs.length };
 }
+/* ----- Dépôts Orange Money / Wave reçus sur votre téléphone ----- */
+function blocDepots(v) {
+  var l = v.depots || [], att = l.filter(function (x) { return x.statut === "attente"; }), faits = l.filter(function (x) { return x.statut === "range"; }).slice(0, 5);
+  var membres = (v.equipe || []).filter(function (m) { return m.actif !== false; });
+  var h = '<div class="carte"><h3>Dépôts reçus sur votre téléphone' + (att.length ? ' <span class="badge badge-rouge">' + att.length + '</span>' : '') + '</h3><p class="astuce">Chaque dépôt (SMS Orange Money / Wave) attend votre décision : il ne compte nulle part avant. Le site propose à quoi il correspond ; vous validez ou changez.</p>';
+  if (!att.length) h += '<p class="gris">Aucun dépôt en attente.</p>';
+  h += att.map(function (x) {
+    var p = x.propose, opts = (p ? '<option value="' + esc(p.type + ":" + (p.id || "")) + '">Proposé : ' + esc(p.nom || p.type) + '</option>' : '<option value="">Choisir…</option>') +
+      membres.map(function (m) { return '<option value="livreur:' + esc(m.id) + '">Dette de ' + esc(m.nom) + '</option>'; }).join("") + '<option value="client:">Un client à crédit…</option><option value="autre:">Autre (sans lien)</option>';
+    return '<div class="formulaire" style="margin:8px 0"><b>' + fcfa(x.montant) + ' · ' + esc(x.mode) + '</b><br><span class="gris">' + esc(x.de || "Expéditeur inconnu") + (x.num ? ' · ' + esc(x.num) : '') + ' · ' + esc(dateFr(x.date)) + (x.source === "main" ? ' · noté à la main' : '') + '</span>' +
+      (p ? '<br><span class="pos"><b>Le site pense :</b> ' + esc(p.nom || p.type) + ' (' + esc(p.raison || "") + ')</span>' : '<br><span class="gris">Le site ne reconnaît pas ce dépôt.</span>') +
+      (x.alerteSolde ? '<div class="alerte rouge" style="margin-top:6px">Le solde du SMS ne colle pas (écart ' + fcfa(Math.abs(x.alerteSolde)) + '). Un SMS manque peut-être, ou un retrait a eu lieu.</div>' : '') +
+      '<select id="dp-' + esc(x.id) + '" style="margin-top:6px">' + opts + '</select>' +
+      '<div class="grille2" style="margin-top:6px"><button class="btn btn-vert btn-petit" type="button" data-s="dp-ranger" data-id="' + esc(x.id) + '">Valider</button><button class="btn btn-clair btn-petit" type="button" data-s="dp-rejeter" data-id="' + esc(x.id) + '">Mettre de côté</button></div>' +
+      '<button class="btn btn-contour btn-petit btn-bloc" type="button" style="margin-top:6px" data-s="dp-sup" data-id="' + esc(x.id) + '">Supprimer</button></div>';
+  }).join("");
+  if (faits.length) h += '<p class="astuce" style="margin-top:8px">Derniers dépôts rangés :</p>' + faits.map(function (x) { return '<div class="rang" style="flex-wrap:wrap"><span>' + fcfa(x.montant) + ' · ' + esc(x.de || x.mode) + '<br><small class="gris">→ ' + esc((x.cible && x.cible.nom) || "") + '</small></span><button class="btn btn-clair btn-petit" type="button" data-s="dp-annuler" data-id="' + esc(x.id) + '">Annuler</button></div>'; }).join("");
+  h += '<p class="astuce" style="margin-top:10px">Un dépôt n\'est pas arrivé tout seul ? Notez-le (ou collez le SMS) :</p><div class="grille2"><input id="dp-mt" type="number" inputmode="numeric" min="1" placeholder="Montant (F)"><select id="dp-mode"><option>Orange Money</option><option>Wave</option></select></div><input id="dp-de" type="text" maxlength="40" placeholder="Nom de celui qui a déposé (facultatif)" style="margin-top:6px"><button class="btn btn-brun btn-petit btn-bloc" type="button" style="margin-top:6px" data-s="dp-ajouter">Noter ce dépôt</button><textarea id="dp-sms" rows="2" placeholder="Ou collez ici le SMS reçu" style="margin-top:8px"></textarea><button class="btn btn-clair btn-petit btn-bloc" type="button" style="margin-top:6px" data-s="dp-coller">Lire ce SMS</button>';
+  var sm = v.sms, url = location.origin + "/api/caisse";
+  h += repliable("Réception automatique des SMS (Android)", '<p class="astuce">Une application sur votre téléphone envoie chaque SMS « Vous avez reçu… » au site. ' + (sm && sm.cle ? 'Clé créée : <b>' + (sm.actif ? "active" : "arrêtée") + '</b>.' : 'Pas encore activée.') + '</p>' +
+    (sm && sm.cle ? '<label>Adresse à donner à l\'application</label><input type="text" readonly value="' + esc(url) + '"><label>Modèle du message (JSON)</label><textarea readonly rows="3">{"action":"sms_recu","cle":"' + esc(sm.cle) + '","text":"%text%","from":"%from%"}</textarea><div class="grille2" style="margin-top:6px"><button class="btn btn-clair btn-petit" type="button" data-s="sms-copier">Copier le modèle</button><button class="btn btn-clair btn-petit" type="button" data-s="sms-' + (sm.actif ? "off" : "on") + '">' + (sm.actif ? "Arrêter" : "Reprendre") + '</button></div><button class="btn btn-contour btn-petit btn-bloc" type="button" style="margin-top:6px" data-s="sms-creer">Nouvelle clé (l\'ancienne s\'arrête)</button>' : '<button class="btn btn-brun btn-petit btn-bloc" type="button" data-s="sms-creer">Créer la clé</button>'));
+  return h + '</div>';
+}
+
+/* ----- Bilan du jour : ce que le site sait, sans rien inventer ----- */
+function blocBilanJour(v) {
+  var auj = jourJ(0), ventes = (v.ventes || []).filter(function (x) { return x.date === auj; });
+  var somme = function (a, f) { return a.reduce(function (t, x) { return t + (Number(f(x)) || 0); }, 0); };
+  var vus = ventes.filter(function (x) { return x.source === "comptage"; }), notes = ventes.filter(function (x) { return x.source !== "comptage"; });
+  var depR = (v.depots || []).filter(function (x) { return x.statut === "range" && x.date === auj; }), depA = (v.depots || []).filter(function (x) { return x.statut === "attente"; });
+  var remR = (v.remises || []).filter(function (x) { return x.statut === "recu" && x.date === auj && !x.kind; });
+  var encs = (v.encaissements || []).filter(function (x) { return x.date === auj; });
+  var l = function (t, val, cl, note) { return '<div class="rang"><span>' + t + (note ? '<small class="gris">' + note + '</small>' : '') + '</span><b class="' + (cl || "") + '">' + val + '</b></div>'; };
+  var h = '<div class="carte"><h3>Bilan du jour · ' + esc(dateFr(auj)) + '</h3>';
+  h += l("Ventes notées par l\'équipe", fcfa(somme(notes, function (x) { return x.montant; })), "", somme(notes, function (x) { return x.qte; }) + " pots");
+  h += l("Pots sans note, vus au comptage du stock", fcfa(somme(vus, function (x) { return x.montant; })), vus.length ? "neg" : "", somme(vus, function (x) { return x.qte; }) + " pots : à expliquer" );
+  h += '<p class="astuce" style="margin-top:8px">Argent reçu aujourd\'hui</p>';
+  h += l("Liquide remis par l\'équipe", fcfa(somme(remR, function (x) { return x.montant; })));
+  h += l("Dépôts Orange / Wave rangés", fcfa(somme(depR, function (x) { return x.montant; })), "pos", depR.length + " dépôt" + (depR.length > 1 ? "s" : ""));
+  if (depA.length) h += l("Dépôts à ranger", fcfa(somme(depA, function (x) { return x.montant; })), "neg", "voir « Dépôts » dans Équipe");
+  h += l("Rendu par livreurs et clients", fcfa(somme(encs, function (x) { return x.montant; })));
+  h += l("Encore dû (livreurs, clients)", fcfa(v.bilan.resteADuTotal || 0), (v.bilan.resteADuTotal || 0) > 0 ? "neg" : "");
+  return h + '<p class="astuce">Ces chiffres viennent de ce qui a été noté et validé. Ce qui reste « sans note » ou « à ranger » est ce qu\'il faut encore expliquer.</p></div>';
+}
+
 /* ----- À valider : ce que la caissière envoie (ventes, production, comptage du soir) ----- */
 function groupesAttente(v, vid) {
   var g = {};
@@ -266,7 +312,7 @@ function groupesAttente(v, vid) {
   return Object.keys(g).map(function (k) { return g[k]; }).sort(function (a, b) { return a.date < b.date ? 1 : -1; });
 }
 function livAttente(v, vid) { return (v.livraisons || []).filter(function (l) { return l.attente && (!vid || l.livreurId === vid); }); }
-function nbAValider(v) { return (v.remises || []).filter(function (x) { return x.statut === "attente"; }).length + groupesAttente(v).length + (v.lotsProp || []).length + (v.propositions || []).length + livAttente(v).length; }
+function nbAValider(v) { return (v.depots || []).filter(function (x) { return x.statut === "attente"; }).length +  (v.remises || []).filter(function (x) { return x.statut === "attente"; }).length + groupesAttente(v).length + (v.lotsProp || []).length + (v.propositions || []).length + livAttente(v).length; }
 function ligneRecuAttente(r) {
   return '<div class="rang"><div class="g"><b>' + heureFr(r.heure) + ' · ' + fcfa(r.total) + '</b><small>' + r.lignes.map(function (l) { return l.qte + " × " + esc(l.nom); }).join(", ") + '<br>' + esc(r.paiement) +
     (r.du ? ' · <b>' + (r.du.type === "livreur" ? "dû par " + esc(r.du.nom || "le livreur") : "à rendre") + (r.du.echeance ? " avant le " + esc(dateFr(r.du.echeance)) : "") + '</b>' : "") + (r.avisLivreur ? '<br><b class="' + (r.avisLivreur.avis === 'ok' ? 'pos' : 'neg') + '">' + (r.avisLivreur.avis === 'ok' ? 'Le livreur confirme ✓' : 'Le livreur conteste : ' + esc(r.avisLivreur.note || '')) + '</b>' : '') + '</small></div><div style="text-align:right">' +
@@ -394,7 +440,7 @@ function carteMembre(v, m, i, auj) {
       '<label>Poste</label><select data-eq-i="' + i + '" data-eq-k="poste"><option value="caissier"' + (m.poste !== "livreur" ? " selected" : "") + '>Caissier (vend au comptoir)</option><option value="livreur"' + (m.poste === "livreur" ? " selected" : "") + '>Livreur (livre les commandes du site)</option></select>' +
       '<label>Point de vente</label><select data-eq-i="' + i + '" data-eq-k="point">' + v.config.pointsVente.concat(v.config.pointsVente.indexOf(m.point) < 0 && m.point ? [m.point] : []).map(function (p) { return '<option' + (p === m.point ? " selected" : "") + '>' + esc(p) + '</option>'; }).join("") + '</select>' +
       '<label>Code personnel (4 à 12 lettres ou chiffres)</label><input type="text" maxlength="12" autocapitalize="none" autocomplete="off" data-eq-i="' + i + '" data-eq-k="code" value="' + esc(m.code || "") + '" placeholder="Laissez vide : un code est créé">' +
-      '<label>Son numéro WhatsApp (facultatif, pour lui envoyer le lien)</label><input type="tel" inputmode="tel" maxlength="20" data-eq-i="' + i + '" data-eq-k="tel" value="' + esc(m.tel || "") + '" placeholder="Ex : 70 12 34 56">' +
+      '<label>Son numéro de téléphone (WhatsApp et Orange Money : sert à lui envoyer le lien et à reconnaître ses dépôts)</label><input type="tel" inputmode="tel" maxlength="20" data-eq-i="' + i + '" data-eq-k="tel" value="' + esc(m.tel || "") + '" placeholder="Ex : 70 12 34 56">' +
       '<div class="rang" style="align-items:center"><label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" data-eq-i="' + i + '" data-eq-k="actif"' + (m.actif !== false ? " checked" : "") + '> Actif</label>' + (m.id ? '<label style="margin:0;display:flex;gap:6px;align-items:center"><input type="checkbox" style="width:auto" data-eq-i="' + i + '" data-eq-k="nouveauLien"' + (m.nouveauLien ? " checked" : "") + '> Nouveau lien</label>' : "") + '</div>' +
       '<p class="astuce">« Nouveau lien » : l\'ancien lien ne marchera plus (utile si un téléphone est perdu). Pensez à enregistrer.</p>' +
       '<div class="grille2"><button class="btn btn-clair btn-petit" type="button" data-s="eq-fermer">Fermer</button><button class="btn btn-clair btn-petit" type="button" data-s="eq-retirer" data-i="' + i + '">Retirer cette personne</button></div>';
@@ -413,7 +459,7 @@ function vEquipe(v) {
   if (!E.eq) E.eq = JSON.parse(JSON.stringify(v.equipe || []));
   if (E.fiche) { var mm = E.eq.filter(function (x) { return x.id === E.fiche; })[0]; if (mm) return vFiche(v, mm); E.fiche = null; }
   var auj = jourJ(0);
-  var h = blocAValider(v) + blocPaiements(v) + blocDemandes(v) + blocComptesEsp(v);
+  var h = blocDepots(v) + blocAValider(v) + blocPaiements(v) + blocDemandes(v) + blocComptesEsp(v);
   h += '<div class="carte"><h3>Équipe</h3><p class="astuce">Chaque personne a <b>sa propre caisse</b> et ne voit que <b>ses</b> ventes et <b>ses</b> dépenses. Touchez « Envoyer son lien » : elle l\'ouvre sur son téléphone et sa caisse s\'ouvre toute seule.</p>';
   h += E.eq.length ? E.eq.map(function (m, i) { return carteMembre(v, m, i, auj); }).join("") : '<p class="gris">Aucune personne pour le moment. Touchez « + Ajouter une personne ».</p>';
   h += '<div class="grille2" style="margin-top:6px"><button class="btn btn-clair" type="button" data-s="eq-ajouter">+ Ajouter une personne</button><button class="btn btn-or" type="button" data-s="eq-enregistrer">Enregistrer l\'équipe</button></div></div>';
@@ -959,6 +1005,16 @@ function clic(ev) {
     case "patron-copier": var lp = lienPatron(E.vue); try { navigator.clipboard.writeText(lp); A.toast("Lien copié", "ok"); } catch (e) { window.prompt("Copiez ce lien :", lp); } return;
     case "patron-wa": window.open("https://wa.me/?text=" + encodeURIComponent("Bonjour 👋\nVoici le tableau Noogó (lecture seule) : tous les chiffres à jour, sur ton téléphone.\n" + lienPatron(E.vue) + "\n\nOuvre le lien avec Chrome. Tu peux l'ajouter à l'écran d'accueil."), "_blank", "noopener"); return;
     case "valider-jour": return envoyer("valider_jour", { vid: t.getAttribute("data-vid"), date: t.getAttribute("data-date"), duId: t.getAttribute("data-duid") || "", solo: !t.getAttribute("data-duid") }, "Journée validée : elle compte maintenant dans la caisse");
+    case "dp-ranger": { var sel = val("dp-" + t.getAttribute("data-id")), pr = (sel || "").split(":"), cb = null; if (!sel) return alert("Choisissez à quoi correspond ce dépôt."); if (pr[0] === "client") { var nc = prompt("Nom du client à crédit :"); if (!nc) return; cb = { type: "client", nom: nc }; } else if (pr[0] === "autre") { cb = { type: "autre", nom: prompt("Précision (facultatif) :") || "" }; } else cb = { type: pr[0], id: pr.slice(1).join(":") }; return envoyer("depot_decider", { id: t.getAttribute("data-id"), decision: "ranger", cible: cb }, "Dépôt rangé"); }
+    case "dp-rejeter": return envoyer("depot_decider", { id: t.getAttribute("data-id"), decision: "rejeter" }, "Mis de côté");
+    case "dp-sup": if (!confirm("Supprimer ce dépôt ?")) return; return envoyer("depot_decider", { id: t.getAttribute("data-id"), decision: "supprimer" }, "Dépôt supprimé");
+    case "dp-annuler": return envoyer("depot_decider", { id: t.getAttribute("data-id"), decision: "annuler" }, "Dépôt remis en attente");
+    case "dp-ajouter": { var dm = Number(val("dp-mt")) || 0; if (dm < 1) return alert("Entrez le montant."); return envoyer("depot_ajouter", { montant: dm, mode: val("dp-mode"), de: val("dp-de") }, "Dépôt noté"); }
+    case "dp-coller": { var tx = val("dp-sms").trim(); if (tx.length < 10) return alert("Collez le SMS reçu."); return envoyer("depot_ajouter", { texte: tx }, "SMS lu"); }
+    case "sms-creer": if (E.vue.sms && E.vue.sms.cle && !confirm("Créer une nouvelle clé ? L'application actuelle ne marchera plus tant que vous ne l'aurez pas mise à jour.")) return; return envoyer("sms_cle", { operation: "creer" }, "Clé créée");
+    case "sms-off": return envoyer("sms_cle", { operation: "off" }, "Réception arrêtée");
+    case "sms-on": return envoyer("sms_cle", { operation: "on" }, "Réception reprise");
+    case "sms-copier": { var jt = '{"action":"sms_recu","cle":"' + ((E.vue.sms || {}).cle || "") + '","text":"%text%","from":"%from%"}'; try { navigator.clipboard.writeText(jt); A.toast("Modèle copié", "ok"); } catch (e) { alert(jt); } return; }
     case "cloturer-periode": { var cd = val("cl-date"); if (!cd) return alert("Choisissez une date."); if (!confirm("Cacher les reçus validés et payés jusqu'au " + cd + " ? Les chiffres ne changent pas.")) return; return envoyer("cloturer_periode", { date: cd }, "Écrans allégés"); }
     case "cloturer-annuler": return envoyer("cloturer_periode", { date: jourJ(-1), restaurer: true }, "Reçus remontrés");
     case "recu-paye-om": return envoyer("recu_payer", { id: t.getAttribute("data-id"), mode: "Orange Money" }, "Marqué payé (Orange/Wave)");

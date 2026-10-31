@@ -479,10 +479,21 @@ module.exports = async (req, res) => {
       case "remise_decider": {
         const r = (await S.suiviListe("remises")).find((x) => x && x.id === txt(d.id, 80));
         if (!r) throw new Error("Remise introuvable");
+        if (d.decision !== "recu" && d.decision !== "refuse" && d.decision !== "supprimer") throw new Error("Décision invalide");
+        if (r.kind === "dette") {
+          // Argent rendu par un livreur : il baisse sa dette seulement quand le responsable confirme
+          if (d.decision === "recu" && !r.encId) {
+            const e = { id: nouvelId("enc"), date: r.date, montant: Number(r.montant) || 0, deType: "livreur", deId: r.vid, deNom: r.vendeur, note: r.mode + (r.note ? " · " + r.note : ""), cree: new Date().toISOString() };
+            await S.suiviSet("encaissements", e.id, e); r.encId = e.id;
+          } else if (d.decision !== "recu" && r.encId) {
+            const e = (await S.suiviListe("encaissements")).find((x) => x && x.id === r.encId);
+            if (e) { e.archive = new Date().toISOString(); await S.suiviSet("encaissements", e.id, e); }
+            r.encId = "";
+          }
+        }
         if (d.decision === "recu") r.statut = "recu";
         else if (d.decision === "refuse") r.statut = "refuse";
-        else if (d.decision === "supprimer") r.archive = new Date().toISOString();
-        else throw new Error("Décision invalide");
+        else r.archive = new Date().toISOString();
         await S.suiviSet("remises", r.id, r);
         const mb = (await lireEquipe()).find((x) => x && x.id === r.vid) || { id: r.vid, nom: r.vendeur, poste: "" };
         await recalculerEcarts(mb, r.date);

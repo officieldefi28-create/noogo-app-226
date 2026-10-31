@@ -18,7 +18,7 @@ async function calculer(m, jr, estLivreur) {
     livraisons = (await S.getCommandes()).filter((c) => c && c.livreurId === m.id && c.statutLivraison === "livree" && c.encaisse && c.encaisse.mode === "Espèces" && dansPeriode(String(c.dateLivraison || "").slice(0, 10)))
       .reduce((t, c) => t + (Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0), 0);
   }
-  const remisesL = (await S.suiviListe("remises")).filter((x) => x && !x.archive && x.vid === m.id && x.statut !== "refuse" && dansPeriode(String(x.date || "")));
+  const remisesL = (await S.suiviListe("remises")).filter((x) => x && !x.archive && x.vid === m.id && x.statut !== "refuse" && x.kind !== "dette" && x.kind !== "note" && dansPeriode(String(x.date || "")));
   const remises = remisesL.reduce((t, x) => t + (Number(x.montant) || 0), 0);
   return { attendu: Math.max(0, report + ventes + livraisons - remises), report, ventes, livraisons, remises, depuis };
 }

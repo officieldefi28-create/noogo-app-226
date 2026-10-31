@@ -241,9 +241,36 @@ module.exports = async (req, res) => {
         const dueCmd = somme(cmdsDues, (c) => c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal);
         const confirme = somme(ventes.filter((v) => !v.attente), (v) => v.montant) + dueCmd, attente = somme(ventes.filter((v) => v.attente), (v) => v.montant), paye = somme(rendu, (e) => e.montant);
         const recus = (await S.suiviListe("recus")).filter((r) => r && !r.archive && r.du && r.du.type === "livreur" && r.du.id === m.id).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 30)
-          .map((r) => ({ id: r.id, date: r.date, total: r.total, attente: !!r.attente, lignes: (r.lignes || []).map((l) => l.qte + " × " + l.nom) }))
+          .map((r) => ({ id: r.id, date: r.date, total: r.total, attente: !!r.attente, avis: r.avisLivreur ? r.avisLivreur.avis : "", lignes: (r.lignes || []).map((l) => l.qte + " × " + l.nom) }))
           .concat(cmdsDues.map((c) => ({ id: c.id, date: String(c.dateLivraison || c.date || "").slice(0, 10), total: Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0, attente: false, lignes: ["Livraison " + (c.nomClient || "")] })));
         return res.status(200).json({ du: confirme, paye, reste: Math.max(0, confirme - paye), enAttente: attente, recus, paiements: rendu.sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 20).map((e) => ({ date: e.date, montant: e.montant })) });
+      }
+      case "dette_avis": {
+        // Le livreur dit si ce que la caissière a noté à son nom est correct
+        if (!estLivreur(m)) throw new Error("Réservé aux livreurs");
+        const rc = (await S.suiviListe("recus")).find((r) => r && r.id === txt(d.id, 60) && r.du && r.du.type === "livreur" && r.du.id === m.id);
+        if (!rc) throw new Error("Reçu introuvable");
+        const avis = d.avis === "pas_ok" ? "pas_ok" : "ok";
+        rc.avisLivreur = { avis, note: txt(d.note, 150), le: new Date().toISOString() };
+        await S.suiviSet("recus", rc.id, rc);
+        return res.status(200).json({ ok: true });
+      }
+      case "payer_dette": {
+        // Le livreur dit qu'il rend de l'argent au responsable : le responsable confirme avant que la dette baisse
+        if (!estLivreur(m)) throw new Error("Réservé aux livreurs");
+        const montant = entier(d.montant, 1, 1000000000, "Montant");
+        const mode = ["Main à main", "Orange Money", "Wave"].includes(d.mode) ? d.mode : "Main à main";
+        const idR = "RM" + Date.now().toString(36) + crypto.randomBytes(2).toString("hex");
+        await S.suiviSet("remises", idR, { id: idR, kind: "dette", date: aujourdhui(), vid: m.id, vendeur: m.nom, montant, mode, note: txt(d.note, 120), statut: "attente", par: "equipe", cree: new Date().toISOString() });
+        return res.status(200).json({ ok: true });
+      }
+      case "dette_note": {
+        // Le livreur signale un produit pris que la caissière n'a pas noté (ou toute autre remarque)
+        if (!estLivreur(m)) throw new Error("Réservé aux livreurs");
+        const texte = txt(d.texte, 200); if (texte.length < 3) throw new Error("Écrivez ce que vous avez pris");
+        const idR = "RM" + Date.now().toString(36) + crypto.randomBytes(2).toString("hex");
+        await S.suiviSet("remises", idR, { id: idR, kind: "note", date: aujourdhui(), vid: m.id, vendeur: m.nom, montant: 0, mode: "Remarque", note: texte, statut: "attente", par: "equipe", cree: new Date().toISOString() });
+        return res.status(200).json({ ok: true });
       }
       case "proposer_production": {
         // La caissière note ce qui a été produit ; le responsable corrige (coût) puis valide

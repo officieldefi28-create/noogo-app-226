@@ -198,7 +198,7 @@ function vue(donnees, d) {
     remises: (donnees.remises || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 120),
     livraisons: (donnees.commandes || []).filter((c) => c && c.statutLivraison === "livree" && c.livreurId).map((c) => ({ id: c.id, date: String(c.dateLivraison || c.date || "").slice(0, 10), heure: c.dateLivraison, livreurId: c.livreurId, livreur: c.livreur, client: c.nomClient, total: Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0, mode: (c.encaisse && c.encaisse.mode) || "", aConfirmer: !(c.encaisse && c.encaisse.attente) && aConfirmer(c.encaisse && c.encaisse.mode, c.encaisse && c.encaisse.verifie, c.dateLivraison || c.date), attente: !!(c.encaisse && c.encaisse.attente), du: !!(c.encaisse && c.encaisse.du), resume: (c.articles || []).map((a) => a.qte + " × " + a.nom).join(", ") })).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 500),
     comptages: donnees.comptages.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
-    equipe: donnees.equipe, motCaisse: donnees.motCaisse, recus: (donnees.recus || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 800),
+    equipe: donnees.equipe, motCaisse: donnees.motCaisse, recus: (donnees.recus || []).filter((x) => !x.clos).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 800),
     demandes: (donnees.demandes || []).sort((a, b) => ((a.heure || "") < (b.heure || "") ? 1 : -1)).slice(0, 200),
     analyse: U.analyse(donnees, new Date().toISOString().slice(0, 10)),
     journee: U.journee(donnees, /^\d{4}-\d{2}-\d{2}$/.test(String((d || {}).jourCloture || "")) ? d.jourCloture : new Date().toISOString().slice(0, 10)),
@@ -498,6 +498,22 @@ module.exports = async (req, res) => {
         const mb = (await lireEquipe()).find((x) => x && x.id === r.vid) || { id: r.vid, nom: r.vendeur, poste: "" };
         await recalculerEcarts(mb, r.date);
         trace = ["Argent remis : " + ({ recu: "reçu", refuse: "refusé", supprimer: "supprimé" })[d.decision], r.vendeur + " · " + fr(r.montant) + " · " + r.mode];
+        break;
+      }
+      case "cloturer_periode": {
+        // Allège les écrans : les reçus déjà validés et payés jusqu'à cette date sont masqués des listes. Les chiffres (CA, caisse, stock, dettes) ne changent pas.
+        const jr = date(d.date), auj = new Date().toISOString().slice(0, 10);
+        if (jr >= auj) throw new Error("Choisissez une date avant aujourd'hui");
+        const restaurer = d.restaurer === true;
+        let n = 0;
+        for (const r of await S.suiviListe("recus")) {
+          if (!r || r.archive) continue;
+          if (restaurer) { if (r.clos) { delete r.clos; await S.suiviSet("recus", r.id, r); n++; } continue; }
+          if (r.attente || r.du || r.clos || String(r.date || "") > jr) continue;
+          if (r.paiement !== "Espèces" && !r.verifie && String(r.date || "") >= "2026-10-24") continue;   // paiement à confirmer : on le laisse visible
+          r.clos = jr; await S.suiviSet("recus", r.id, r); n++;
+        }
+        trace = [restaurer ? "Reçus remontrés" : "Écrans allégés", (restaurer ? "" : "jusqu'au " + jr + " · ") + n + " reçu(s)"];
         break;
       }
       case "paiement_decider": {

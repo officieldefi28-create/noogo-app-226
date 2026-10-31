@@ -378,7 +378,8 @@ function ligneDepense(d, archive) {
 }
 function blocArchives(v, vid) {
   var ar = (v.archives || {}), rs = (ar.recus || []).filter(function (r) { return !vid || r.vid === vid; }), ds = (ar.depenses || []).filter(function (d) { return !vid || d.vid === vid; });
-  var h = '<p class="astuce">Les archives sont mises de côté : elles ne comptent plus dans aucun total. Vous pouvez les restaurer, ou les supprimer pour toujours.</p>';
+  var h = '<div class="formulaire" style="margin-bottom:12px"><b>Alléger les écrans</b><p class="astuce">Cache les anciens reçus déjà validés et payés. <b>Le chiffre d\'affaires, la caisse, le stock et les dettes ne changent pas.</b> Téléchargez d\'abord une sauvegarde (Plus → Sauvegarde).</p><label for="cl-date">Cacher jusqu\'au</label><input type="date" id="cl-date" value="' + jourJ(-7) + '"><div class="grille2" style="margin-top:8px"><button class="btn btn-brun btn-petit" type="button" data-s="cloturer-periode">Cacher ces reçus</button><button class="btn btn-clair btn-petit" type="button" data-s="cloturer-annuler">Tout remontrer</button></div></div>' +
+    '<p class="astuce">Les archives sont mises de côté : elles ne comptent plus dans aucun total. Vous pouvez les restaurer, ou les supprimer pour toujours.</p>';
   if (!rs.length && !ds.length) return h + '<p class="gris">Aucune archive.</p>';
   h += rs.map(function (r) { return ligneRecu(r, true); }).join("") + ds.map(function (d) { return ligneDepense(d, true); }).join("");
   h += '<button class="btn btn-clair btn-bloc" type="button" style="margin-top:10px" data-s="archives-vider" data-id="' + esc(vid || "") + '">Tout supprimer pour toujours (' + (rs.length + ds.length) + ')</button>';
@@ -958,6 +959,8 @@ function clic(ev) {
     case "patron-copier": var lp = lienPatron(E.vue); try { navigator.clipboard.writeText(lp); A.toast("Lien copié", "ok"); } catch (e) { window.prompt("Copiez ce lien :", lp); } return;
     case "patron-wa": window.open("https://wa.me/?text=" + encodeURIComponent("Bonjour 👋\nVoici le tableau Noogó (lecture seule) : tous les chiffres à jour, sur ton téléphone.\n" + lienPatron(E.vue) + "\n\nOuvre le lien avec Chrome. Tu peux l'ajouter à l'écran d'accueil."), "_blank", "noopener"); return;
     case "valider-jour": return envoyer("valider_jour", { vid: t.getAttribute("data-vid"), date: t.getAttribute("data-date"), duId: t.getAttribute("data-duid") || "", solo: !t.getAttribute("data-duid") }, "Journée validée : elle compte maintenant dans la caisse");
+    case "cloturer-periode": { var cd = val("cl-date"); if (!cd) return alert("Choisissez une date."); if (!confirm("Cacher les reçus validés et payés jusqu'au " + cd + " ? Les chiffres ne changent pas.")) return; return envoyer("cloturer_periode", { date: cd }, "Écrans allégés"); }
+    case "cloturer-annuler": return envoyer("cloturer_periode", { date: jourJ(-1), restaurer: true }, "Reçus remontrés");
     case "recu-paye-om": return envoyer("recu_payer", { id: t.getAttribute("data-id"), mode: "Orange Money" }, "Marqué payé (Orange/Wave)");
     case "recu-paye": return envoyer("recu_payer", { id: t.getAttribute("data-id"), mode: "Espèces" }, "Marqué payé en espèces");
     case "prod-ok": { var pid0 = t.getAttribute("data-id"), lg = []; document.querySelectorAll('[data-pl]').forEach(function (e) { if (e.getAttribute("data-pl") === pid0) lg.push({ produitId: e.getAttribute("data-pid"), qte: Number(e.value) || 0 }); }); return envoyer("valider_production", { id: pid0, lignes: lg, cout: val("pc-" + pid0) }, "Production validée : le stock est mis à jour"); }

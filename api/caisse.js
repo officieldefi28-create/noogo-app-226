@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const { signerJeton, verifierJeton } = require("./_auth");
 const S = require("./_store");
 const ESP = require("./_esp");
+const DEP = require("./_depots");
 const U = require("./_suivi");
 const { chargerCatalogue } = require("./_catalogue");
 
@@ -83,6 +84,18 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: txt(d.mot, 40).toLowerCase() === mot });
     }
 
+    // Réception automatique des SMS Orange Money / Wave (application sur le téléphone du responsable) : clé secrète obligatoire
+    if (d.action === "sms_recu") {
+      if (!(await S.limiter("sms:" + ip, 300, 3600))) return res.status(429).json({ erreur: "Trop de messages" });
+      const cfg = await S.getDoc("sms");
+      const cle = txt(d.cle || (req.query && req.query.k) || "", 60);
+      const ok = cfg && cfg.actif && cfg.cle && cle.length === cfg.cle.length && crypto.timingSafeEqual(Buffer.from(cle), Buffer.from(cfg.cle));
+      if (!ok) return res.status(401).json({ erreur: "Clé invalide" });
+      const eq = await S.getDoc("equipe");
+      const r = await DEP.enregistrer(String(d.text || d.texte || d.message || ""), Array.isArray(eq) ? eq : [], "sms");
+      return res.status(200).json({ ok: true, ignore: !!r.ignore, deja: !!r.deja });
+    }
+
     // Vue « patron » : lecture seule, avec une clé secrète ; jamais de code, de lien ni de modification
     if (d.action === "patron") {
       if (!(await S.limiter("patron:" + ip, 40, 600))) return res.status(429).json({ erreur: "Trop d'essais" });
@@ -96,11 +109,14 @@ module.exports = async (req, res) => {
       const b = v.bilan;
       return res.status(200).json({
         genereLe: new Date().toISOString(),
-        bilan: { ca: b.ca, resultat: b.resultat, margeBrute: b.margeBrute, margePct: b.margePct, charges: b.charges, production: b.production, depensesTotales: b.depensesTotales, caisse: b.caisse, valeurStock: b.valeurStock, quantite: b.quantite, parProduit: b.parProduit.slice(0, 12), parVendeur: b.parVendeur, parJour: b.parJour.slice(-31), creances: b.creances, resteADuTotal: b.resteADuTotal, livraisonPacks: b.livraisonPacks },
+        bilan: { ca: b.ca, resultat: b.resultat, margeBrute: b.margeBrute, margePct: b.margePct, charges: b.charges, production: b.production, depensesTotales: b.depensesTotales, caisse: b.caisse, valeurStock: b.valeurStock, quantite: b.quantite, parProduit: b.parProduit.slice(0, 12), parVendeur: b.parVendeur, parPoint: b.parPoint, parJour: b.parJour.slice(-31), creances: b.creances, resteADuTotal: b.resteADuTotal, livraisonPacks: b.livraisonPacks },
         stock: v.stock.filter((x) => x.actif).map((x) => ({ nom: x.nom, stock: x.theorique, valeur: x.valeur })),
         aValider: (dn.recus || []).filter((r) => r.attente).length,
         manques: (v.comptesEsp || []).filter((x) => x.ecart < 0 && x.statut !== "accepte").slice(0, 10).map((x) => ({ date: x.date, vendeur: x.vendeur, ecart: x.ecart })),
-        alertes: b.alertes
+        alertes: b.alertes,
+        packs: v.packs,
+        ventesDetail: (v.ventes || []).slice(0, 200).map((x) => ({ date: x.date, nom: x.nom, qte: x.qte, montant: x.montant, lieu: x.canal || "" })),
+        depensesDetail: (v.depenses || []).slice(0, 200).map((x) => ({ date: x.date, categorie: x.categorie, description: x.description || "", montant: x.montant }))
       });
     }
 

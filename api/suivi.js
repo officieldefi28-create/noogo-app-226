@@ -3,6 +3,8 @@ const crypto = require("crypto");
 const { adminValide } = require("./_auth");
 const S = require("./_store");
 const ESP = require("./_esp");
+const DEP = require("./_depots");
+const PK = require("./_packs");
 const U = require("./_suivi");
 const { chargerCatalogue } = require("./_catalogue");
 
@@ -23,12 +25,25 @@ async function recalculerEcarts(mb, depuisDate) {
   }
 }
 
+// Packs et unités vendus sur la période (reçus validés, commandes du site livrées, packs du comptage du soir)
+function statsPacks(donnees, du, au) {
+  const packs = {}; (donnees.catalogue || []).forEach((p) => { if (p && p.type === "pack") packs[p.id] = { nom: p.nom, pots: Math.max(1, parseInt(p.packCount, 10) || 1) }; });
+  const parNom = {}; Object.keys(packs).forEach((k) => (parNom[packs[k].nom] = k));
+  const dans = (dt) => { const x = String(dt || "").slice(0, 10); return (!du || x >= du) && (!au || x <= au); };
+  const cumul = {}; let pots = 0;
+  const ajoute = (id, nom, qte) => { const p = packs[id] || (parNom[nom] ? packs[parNom[nom]] : null); if (!p || !(qte > 0)) return; const k = nom || p.nom; cumul[k] = (cumul[k] || 0) + qte; pots += qte * p.pots; };
+  for (const r of donnees.recus || []) { if (!r || r.attente || r.archive || !dans(r.date)) continue; for (const l of r.lignes || []) ajoute("", l.nom, Number(l.qte) || 0); }
+  for (const c of donnees.commandes || []) { if (!c || c.statutLivraison !== "livree" || (c.encaisse && c.encaisse.attente) || !dans(c.dateLivraison || c.date)) continue; for (const a of c.articles || []) ajoute(a.id, a.nom, Number(a.qte) || 0); }
+  const ps = donnees.packsSoir || {}; Object.keys(ps).forEach((jr) => { if (dans(jr)) for (const p of ps[jr]) ajoute(p.id, p.nom, Number(p.qte) || 0); });
+  return { liste: Object.keys(cumul).map((nom) => ({ nom, qte: cumul[nom] })).sort((a, b) => b.qte - a.qte), pots };
+}
+
 async function charger() {
-  const [catalogue, config, lots, ventes, pertes, depenses, comptages, commandes, equipe, recus, demandes, journal, clotures, encaissements, propositions, comptesEsp, lotsProp, patron, remisesL] = await Promise.all([
+  const [catalogue, config, lots, ventes, pertes, depenses, comptages, commandes, equipe, recus, demandes, journal, clotures, encaissements, propositions, comptesEsp, lotsProp, patron, remisesL, depotsL, smsCfg, packsSoir] = await Promise.all([
     chargerCatalogue(), S.getSuiviConfig(), S.suiviListe("lots"), S.suiviListe("ventes"), S.suiviListe("pertes"),
     S.suiviListe("depenses"), S.suiviListe("comptages"), S.getCommandes(),
     lireEquipe(), S.suiviListe("recus"), S.suiviListe("demandes"), S.getDoc("journal"), S.getDoc("clotures"),
-    S.suiviListe("encaissements"), S.suiviListe("comptes_prop"), S.suiviListe("comptes_esp"), S.suiviListe("lots_prop"), S.getDoc("patron"), S.suiviListe("remises")
+    S.suiviListe("encaissements"), S.suiviListe("comptes_prop"), S.suiviListe("comptes_esp"), S.suiviListe("lots_prop"), S.getDoc("patron"), S.suiviListe("remises"), S.suiviListe("depots"), S.getDoc("sms"), S.getDoc("packs_soir")
   ]);
   const motCaisse = (await S.getDoc("caisse-mot")) || "bingo";
   const cfg = configPropre(config);
@@ -36,7 +51,7 @@ async function charger() {
   const archivesDonnees = { recus: archives(recus), depenses: archives(depenses) };
   // « Nouveau départ » : les commandes du site livrées avant ce moment ne comptent plus dans le suivi
   const cmds = cfg.debutHeure ? commandes.filter((c) => String(c.dateLivraison || c.date || "") >= cfg.debutHeure) : commandes;
-  return { catalogue, config: cfg, lots, ventes: actifs(ventes), pertes, depenses: actifs(depenses).filter((x) => !x.attente), encaissements: actifs(encaissements), propositions: propositions || [], comptesEsp: (comptesEsp || []).filter((x) => x && x.statut !== "supprime"), remises: (remisesL || []).filter((x) => x && !x.archive), lotsProp: lotsProp || [], patron: patron || null, comptages, commandes: cmds, equipe, recus: actifs(recus), archives: archivesDonnees, demandes, motCaisse, journal: Array.isArray(journal) ? journal : [], clotures: Array.isArray(clotures) ? clotures : [] };
+  return { catalogue, config: cfg, lots, ventes: actifs(ventes), pertes, depenses: actifs(depenses).filter((x) => !x.attente), encaissements: actifs(encaissements), propositions: propositions || [], comptesEsp: (comptesEsp || []).filter((x) => x && x.statut !== "supprime"), remises: (remisesL || []).filter((x) => x && !x.archive), depots: DEP.annoter(depotsL), packsSoir: packsSoir || {}, sms: smsCfg ? { actif: !!smsCfg.actif, cle: smsCfg.cle || "" } : null, lotsProp: lotsProp || [], patron: patron || null, comptages, commandes: cmds, equipe, recus: actifs(recus), archives: archivesDonnees, demandes, motCaisse, journal: Array.isArray(journal) ? journal : [], clotures: Array.isArray(clotures) ? clotures : [] };
 }
 
 function configPropre(c) {
@@ -182,6 +197,8 @@ function vue(donnees, d) {
     produits: calc.suivis,
     stock: Object.values(calc.stock),
     bilan: U.bilan(donnees, du, au),
+    packs: statsPacks(donnees, du, au),
+    packsListe: (donnees.catalogue || []).filter((p) => p && p.type === "pack" && p.actif !== false).map((p) => ({ id: p.id, nom: p.nom, pots: Math.max(1, parseInt(p.packCount, 10) || 1), prix: Number(p.prix) || 0 })),
     precedent: precedente(donnees, du, au),
     ventes: calc.ventes.filter((x) => (!du || x.date >= du) && (!au || x.date <= au)).slice(0, 3000),
     pertes: calc.pertes.filter((x) => (!du || x.date >= du) && (!au || x.date <= au)).slice(0, 1500),
@@ -195,6 +212,7 @@ function vue(donnees, d) {
     propositions: (donnees.propositions || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 40),
     lotsProp: (donnees.lotsProp || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 40),
     comptesEsp: (donnees.comptesEsp || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 120),
+    depots: (donnees.depots || []).slice(0, 200), sms: donnees.sms || null,
     remises: (donnees.remises || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 120),
     livraisons: (donnees.commandes || []).filter((c) => c && c.statutLivraison === "livree" && c.livreurId).map((c) => ({ id: c.id, date: String(c.dateLivraison || c.date || "").slice(0, 10), heure: c.dateLivraison, livreurId: c.livreurId, livreur: c.livreur, client: c.nomClient, total: Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0, mode: (c.encaisse && c.encaisse.mode) || "", aConfirmer: !(c.encaisse && c.encaisse.attente) && aConfirmer(c.encaisse && c.encaisse.mode, c.encaisse && c.encaisse.verifie, c.dateLivraison || c.date), attente: !!(c.encaisse && c.encaisse.attente), du: !!(c.encaisse && c.encaisse.du), resume: (c.articles || []).map((a) => a.qte + " × " + a.nom).join(", ") })).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 500),
     comptages: donnees.comptages.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 1500),
@@ -222,6 +240,11 @@ module.exports = async (req, res) => {
     switch (d.action) {
       case "lire": return res.status(200).json(vue(await charger(), d));
 
+      case "packs_apercu": {
+        const jr = date(d.date);
+        const apercu = await PK.calculer(await charger(), jr, (Array.isArray(d.items) ? d.items : []).slice(0, 300), d.packs);
+        return res.status(200).json({ apercu });
+      }
       case "stock_avant": {
         const donnees = await charger();
         const jr = date(d.date);
@@ -275,6 +298,7 @@ module.exports = async (req, res) => {
         const items = (Array.isArray(d.items) ? d.items : []).slice(0, 300);
         const pm = await prixActuels();
         let nbC = 0;
+        if (Array.isArray(d.packs)) { const rp = await PK.calculer(await charger(), jr, items, d.packs); await PK.ecrire(jr, rp, pv); }
         for (const it of items) {
           const pid = idPropre(it.produitId);
           const id = jr + "_" + pid;
@@ -414,6 +438,7 @@ module.exports = async (req, res) => {
         if (!pr) throw new Error("Comptage invalide : déjà traité");
         const pm = await prixActuels();
         let nbC = 0;
+        if (Array.isArray(d.packs)) { const rp = await PK.calculer(await charger(), pr.date, Array.isArray(d.items) ? d.items : [], d.packs); await PK.ecrire(pr.date, rp, pr.point || ""); }
         for (const it of (Array.isArray(d.items) ? d.items : []).slice(0, 300)) {
           const pid = idPropre(it.produitId), id = pr.date + "_" + pid;
           if (it.restant === "" || it.restant === null || it.restant === undefined) { await S.suiviDel("comptages", id); continue; }
@@ -514,6 +539,71 @@ module.exports = async (req, res) => {
           r.clos = jr; await S.suiviSet("recus", r.id, r); n++;
         }
         trace = [restaurer ? "Reçus remontrés" : "Écrans allégés", (restaurer ? "" : "jusqu'au " + jr + " · ") + n + " reçu(s)"];
+        break;
+      }
+      case "sms_cle": {
+        const cur = (await S.getDoc("sms")) || {};
+        if (d.operation === "creer") { cur.cle = crypto.randomBytes(16).toString("hex"); cur.actif = true; trace = ["Clé de réception des SMS créée", ""]; }
+        else if (d.operation === "off") { cur.actif = false; trace = ["Réception des SMS arrêtée", ""]; }
+        else if (d.operation === "on" && cur.cle) { cur.actif = true; trace = ["Réception des SMS reprise", ""]; }
+        else throw new Error("Opération invalide");
+        await S.setDoc("sms", cur);
+        break;
+      }
+      case "depot_ajouter": {
+        // Dépôt noté à la main (si le SMS n'est pas arrivé) ou copié-collé
+        let r;
+        if (txt(d.texte, 600).length > 10) r = await DEP.enregistrer(d.texte, await lireEquipe(), "main");
+        else {
+          const montant = entier(d.montant, 1, 100000000, "Montant");
+          const id = nouvelId("DP");
+          const dep = { id, date: new Date().toISOString().slice(0, 10), heure: new Date().toISOString(), montant, mode: ["Orange Money", "Wave"].includes(d.mode) ? d.mode : "Orange Money", de: txt(d.de, 40), num: String(d.num || "").replace(/\D/g, "").slice(0, 15), transId: "", solde: null, source: "main", statut: "attente", cible: null };
+          dep.propose = await DEP.proposer(dep, await lireEquipe());
+          await S.suiviSet("depots", id, dep); r = { depot: dep };
+        }
+        if (r.ignore) throw new Error("Ce texte n'est pas un SMS de dépôt");
+        if (r.deja) throw new Error("Ce dépôt est déjà enregistré");
+        trace = ["Dépôt noté", fr(r.depot.montant) + " · " + (r.depot.de || r.depot.mode)];
+        break;
+      }
+      case "depot_decider": {
+        const dep = (await S.suiviListe("depots")).find((x) => x && x.id === txt(d.id, 80));
+        if (!dep) throw new Error("Dépôt introuvable");
+        if (d.decision === "supprimer") { dep.archive = new Date().toISOString(); await S.suiviSet("depots", dep.id, dep); trace = ["Dépôt supprimé", fr(dep.montant)]; break; }
+        if (d.decision === "annuler") {
+          if (dep.encId) { const e = (await S.suiviListe("encaissements")).find((x) => x && x.id === dep.encId); if (e) { e.archive = new Date().toISOString(); await S.suiviSet("encaissements", e.id, e); } dep.encId = ""; }
+          if (dep.cible && dep.cible.type === "recu") { const rc = (await S.suiviListe("recus")).find((x) => x && x.id === dep.cible.id); if (rc && rc.depotId === dep.id) { rc.verifie = false; delete rc.depotId; await S.suiviSet("recus", rc.id, rc); } }
+          if (dep.cible && dep.cible.type === "commande") { const c = await S.getCommande(dep.cible.id); if (c && c.depotId === dep.id) { if (c.encaisse) c.encaisse.verifie = false; delete c.depotId; await S.setCommande(c); } }
+          dep.statut = "attente"; dep.cible = null; await S.suiviSet("depots", dep.id, dep);
+          trace = ["Dépôt remis en attente", fr(dep.montant)]; break;
+        }
+        if (dep.statut !== "attente") throw new Error("Dépôt déjà traité");
+        if (d.decision === "rejeter") { dep.statut = "rejete"; await S.suiviSet("depots", dep.id, dep); trace = ["Dépôt mis de côté", fr(dep.montant)]; break; }
+        if (d.decision !== "ranger") throw new Error("Décision invalide");
+        const c = d.cible && typeof d.cible === "object" ? d.cible : dep.propose;
+        if (!c || !c.type) throw new Error("Choisissez à quoi correspond ce dépôt");
+        const eqL = await lireEquipe();
+        if (c.type === "livreur" || c.type === "equipe") {
+          const mb = eqL.find((x) => x && x.id === txt(c.id, 60)); if (!mb) throw new Error("Personne invalide");
+          const e = { id: nouvelId("enc"), date: dep.date, montant: dep.montant, deType: "livreur", deId: mb.id, deNom: mb.nom, note: dep.mode + " · dépôt de " + (dep.de || dep.num || ""), cree: new Date().toISOString() };
+          await S.suiviSet("encaissements", e.id, e); dep.encId = e.id; dep.cible = { type: "livreur", id: mb.id, nom: mb.nom };
+        } else if (c.type === "client") {
+          const nom = txt(c.nom, 60); if (nom.length < 2) throw new Error("Nom du client invalide");
+          const e = { id: nouvelId("enc"), date: dep.date, montant: dep.montant, deType: "client", deId: "", deNom: nom, note: dep.mode + " · dépôt", cree: new Date().toISOString() };
+          await S.suiviSet("encaissements", e.id, e); dep.encId = e.id; dep.cible = { type: "client", id: "", nom };
+        } else if (c.type === "recu") {
+          const rc = (await S.suiviListe("recus")).find((x) => x && x.id === txt(c.id, 60)); if (!rc) throw new Error("Reçu introuvable");
+          rc.verifie = true; rc.depotId = dep.id; await S.suiviSet("recus", rc.id, rc); dep.cible = { type: "recu", id: rc.id, nom: (rc.vendeur || "") + " · " + rc.total + " F" };
+        } else if (c.type === "commande") {
+          const cm = await S.getCommande(txt(c.id, 60)); if (!cm) throw new Error("Commande introuvable");
+          if (cm.encaisse) cm.encaisse.verifie = true; cm.depotId = dep.id; await S.setCommande(cm); dep.cible = { type: "commande", id: cm.id, nom: (cm.nomClient || "Client") + " · " + cm.id };
+        } else if (c.type === "autre") { dep.cible = { type: "autre", nom: txt(c.nom, 60) || "Autre" }; }
+        else throw new Error("Type invalide");
+        dep.statut = "range"; dep.rangeLe = new Date().toISOString();
+        await S.suiviSet("depots", dep.id, dep);
+        const l8 = DEP.dernierChiffres(dep.num);
+        if (d.retenir !== false && l8.length >= 8 && (dep.cible.type === "livreur" || dep.cible.type === "client")) { const nm = (await S.getDoc("numeros")) || {}; nm[l8] = { type: dep.cible.type, id: dep.cible.id || "", nom: dep.cible.nom }; await S.setDoc("numeros", nm); }
+        trace = ["Dépôt rangé", fr(dep.montant) + " · " + dep.mode + " → " + (dep.cible.nom || dep.cible.type)];
         break;
       }
       case "paiement_decider": {

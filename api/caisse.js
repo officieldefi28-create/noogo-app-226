@@ -358,7 +358,7 @@ module.exports = async (req, res) => {
     }
   } catch (e) {
     if (e && e.code === "DB_NON_CONFIGUREE") return res.status(503).json({ erreur: "Base de données non connectée" });
-    if (e && /invalide|Choisissez|Ticket/.test(e.message || "")) return res.status(400).json({ erreur: e.message });
+    if (e && e.message && !(e instanceof TypeError || e instanceof ReferenceError || e instanceof RangeError || e instanceof SyntaxError || e.code)) return res.status(400).json({ erreur: e.message });
     console.error("caisse", e && e.message);
     return res.status(500).json({ erreur: "Erreur serveur" });
   }

@@ -774,7 +774,8 @@ module.exports = async (req, res) => {
     return res.status(200).json(vue(await charger(), d));
   } catch (e) {
     if (e && e.code === "DB_NON_CONFIGUREE") return res.status(503).json({ erreur: "Base de données non connectée", code: "DB" });
-    if (e && /invalide|Ajoutez/.test(e.message || "")) return res.status(400).json({ erreur: e.message });
+    // Les messages écrits pour l'utilisateur (« Pas assez de pots… », « Dépôt déjà traité »…) doivent s'afficher, pas « Erreur serveur »
+    if (e && e.message && !(e instanceof TypeError || e instanceof ReferenceError || e instanceof RangeError || e instanceof SyntaxError || e.code)) return res.status(400).json({ erreur: e.message });
     console.error("suivi", e && e.message);
     return res.status(500).json({ erreur: "Erreur serveur" });
   }

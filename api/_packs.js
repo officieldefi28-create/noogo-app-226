@@ -42,7 +42,8 @@ async function calculer(donnees, jr, items, packs) {
   }
   for (const k of Object.keys(besoin)) if (besoin[k] > (vendu[k] || 0)) {
     const nom = parId[k] ? parId[k].nom.replace(/^Crème glacée /, "") : k;
-    throw new Error("Pas assez de pots vendus pour ces packs : il faut " + besoin[k] + " « " + nom + " » et le comptage n'en montre que " + (vendu[k] || 0) + ".");
+    if (!(k in vendu)) throw new Error("Comptez d'abord le reste de « " + nom + " » (cases « Reste » plus haut) : le site en a besoin pour calculer les packs.");
+    throw new Error("Il faut " + besoin[k] + " pots « " + nom + " » vendus pour ces packs, mais le comptage n'en montre que " + vendu[k] + ". Vérifiez le reste compté ou le nombre de packs.");
   }
   for (const pp of parPack) if (!pp.v.a.base && !pp.v.a.fixe) {          // pack au choix : on prend les saveurs les plus vendues restantes
     for (let i = 0; i < pp.v.a.pots * pp.v.qte; i++) {

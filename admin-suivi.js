@@ -349,7 +349,7 @@ function blocAValider(v, vid) {
       var t = theo[l.produitId], diff = t != null && t !== l.restant;
       return '<div class="ligne-edit"><span>' + esc(noms[l.produitId] || l.produitId) + '<small class="gris"> attendu ' + (t != null ? t : "?") + '</small></span><input type="number" inputmode="numeric" min="0" data-cl="' + esc(p.id) + '" data-pid="' + esc(l.produitId) + '" value="' + l.restant + '" style="' + (diff ? "border-color:#c62828" : "") + '"></div>';
     }).join("") +
-      '<div class="grille2" style="margin-top:8px"><button class="btn btn-vert btn-petit" type="button" data-s="compt-ok" data-id="' + esc(p.id) + '">Valider le comptage</button><button class="btn btn-clair btn-petit" type="button" data-s="compt-non" data-id="' + esc(p.id) + '">Refuser</button></div></div>';
+      blocPacksSoir(v, p.id) + '<div class="grille2" style="margin-top:8px"><button class="btn btn-vert btn-petit" type="button" data-s="compt-ok" data-id="' + esc(p.id) + '">Valider le comptage</button><button class="btn btn-clair btn-petit" type="button" data-s="compt-non" data-id="' + esc(p.id) + '">Refuser</button></div></div>';
   });
   return h + '</div>';
 }
@@ -492,6 +492,31 @@ function vFiche(v, m) {
   return h;
 }
 
+/* ----- Packs vendus pendant la journée (saisis par vous au moment du comptage) ----- */
+function blocPacksSoir(v, ctx) {
+  var l = v.packsListe || [];
+  if (!l.length) return "";
+  return '<details style="margin-top:12px"><summary style="cursor:pointer;font-weight:700;color:var(--brun-3)">Packs vendus aujourd\'hui (facultatif)</summary>' +
+    '<p class="astuce">Avez-vous vendu des packs ? Notez combien : le site retire les pots correspondants des ventes du soir. Ce qui reste est compté à l\'unité.</p>' +
+    l.map(function (p) { return '<div class="ligne-edit"><span>' + esc(p.nom) + '<small class="gris"> ' + p.pots + ' pots · ' + fcfa(p.prix) + '</small></span><input type="number" inputmode="numeric" min="0" data-pk="' + esc(ctx) + '" data-pkid="' + esc(p.id) + '" placeholder="0"></div>'; }).join("") +
+    '<button class="btn btn-clair btn-petit btn-bloc" type="button" style="margin-top:8px" data-s="packs-calc" data-ctx="' + esc(ctx) + '">Voir le calcul</button><div id="pk-res-' + esc(ctx) + '" style="margin-top:8px"></div></details>';
+}
+function v0Compt(id) { return ((E.vue && E.vue.propositions) || []).filter(function (p) { return p.id === id; })[0]; }
+function packsDe(ctx) {
+  var out = []; document.querySelectorAll('[data-pk]').forEach(function (e) { if (e.getAttribute("data-pk") === ctx && Number(e.value) > 0) out.push({ id: e.getAttribute("data-pkid"), qte: Number(e.value) }); }); return out;
+}
+function restantsDe(ctx) {
+  var out = [];
+  if (ctx === "so") document.querySelectorAll("input.reste").forEach(function (e) { out.push({ produitId: e.getAttribute("data-pid"), restant: e.value }); });
+  else document.querySelectorAll("[data-cl]").forEach(function (e) { if (e.getAttribute("data-cl") === ctx) out.push({ produitId: e.getAttribute("data-pid"), restant: e.value }); });
+  return out;
+}
+function rendreApercuPacks(a) {
+  var h = '<div class="formulaire"><b>' + a.venduTotal + ' pots vendus d\'après le comptage</b>';
+  h += (a.packs || []).map(function (p) { return '<div class="rang"><span>' + p.qte + ' × ' + esc(p.nom) + '<small class="gris">' + p.lignes.map(function (x) { return x.qte + " " + esc(x.nom); }).join(", ") + (p.remise ? ' · remise ' + fcfa(p.remise) : '') + (p.supp ? ' · surplus ' + fcfa(p.supp) + ' hors caisse' : '') + '</small></span><b>' + fcfa(p.montant) + '</b></div>'; }).join("");
+  h += '<div class="rang"><span>Reste vendu à l\'unité<small class="gris">' + (a.unites || []).map(function (x) { return x.qte + " " + esc(x.nom); }).join(", ") + '</small></span><b>' + a.unitesTotal + ' pot' + (a.unitesTotal > 1 ? 's' : '') + '</b></div></div>';
+  return h;
+}
 /* ----- Ce soir (reste du jour) ----- */
 function vSoir(v) {
   var s = E.soir;
@@ -507,6 +532,7 @@ function vSoir(v) {
   var entete = '<tr><th>Produit</th><th class="n">Attendu</th><th class="n">Reste</th></tr>';
   h += '<table style="margin-top:12px">' + entete + (utiles.length ? utiles.map(ligne).join("") : '<tr><td colspan="3" class="gris">Aucun stock attendu : notez d\'abord une production.</td></tr>') + '</table>';
   if (autres.length) h += '<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:600;color:var(--brun-3)">Autres produits (' + autres.length + ')</summary><table>' + entete + autres.map(ligne).join("") + '</table></details>';
+  h += blocPacksSoir(v, "so");
   h += '<button class="btn btn-or btn-bloc" style="margin-top:14px" type="button" data-s="enregistrer-soir">Enregistrer le comptage</button>';
   var jour = (v.ventes || []).filter(function (x) { return x.date === E.soirDate; });
   if (jour.length && E.periode === "jour" || E.soirResume) {
@@ -1021,7 +1047,8 @@ function clic(ev) {
     case "recu-paye": return envoyer("recu_payer", { id: t.getAttribute("data-id"), mode: "Espèces" }, "Marqué payé en espèces");
     case "prod-ok": { var pid0 = t.getAttribute("data-id"), lg = []; document.querySelectorAll('[data-pl]').forEach(function (e) { if (e.getAttribute("data-pl") === pid0) lg.push({ produitId: e.getAttribute("data-pid"), qte: Number(e.value) || 0 }); }); return envoyer("valider_production", { id: pid0, lignes: lg, cout: val("pc-" + pid0) }, "Production validée : le stock est mis à jour"); }
     case "prod-non": return envoyer("production_refuser", { id: t.getAttribute("data-id") }, "Production refusée");
-    case "compt-ok": { var cid0 = t.getAttribute("data-id"), its = []; document.querySelectorAll('[data-cl]').forEach(function (e) { if (e.getAttribute("data-cl") === cid0) its.push({ produitId: e.getAttribute("data-pid"), restant: e.value }); }); return envoyer("valider_comptage", { id: cid0, items: its }, "Comptage validé"); }
+    case "packs-calc": { var cx = t.getAttribute("data-ctx"), zone = document.getElementById("pk-res-" + cx), pkl = packsDe(cx); if (!pkl.length) { zone.innerHTML = '<p class="gris">Entrez au moins un pack.</p>'; return; } var jrP = cx === "so" ? E.soirDate : ((v0Compt(cx) || {}).date || E.soirDate); zone.innerHTML = "<p>Calcul…</p>"; return appel("packs_apercu", { date: jrP, items: restantsDe(cx), packs: pkl }).then(function (d) { zone.innerHTML = rendreApercuPacks(d.apercu); }).catch(function (e) { zone.innerHTML = '<p class="neg">' + esc(e.message) + '</p>'; }); }
+    case "compt-ok": { var cid0 = t.getAttribute("data-id"), its = []; document.querySelectorAll('[data-cl]').forEach(function (e) { if (e.getAttribute("data-cl") === cid0) its.push({ produitId: e.getAttribute("data-pid"), restant: e.value }); }); return envoyer("valider_comptage", { id: cid0, items: its, packs: packsDe(cid0) }, "Comptage validé"); }
     case "compt-non": return envoyer("proposition_supprimer", { id: t.getAttribute("data-id") }, "Comptage refusé");
     case "encaisse": { var ci = +t.getAttribute("data-i"), lst = (E.vue.bilan.creances || []).filter(function (c) { return c.reste > 0 && (!t.getAttribute("data-vid") || c.id === E.fiche); }), cc = lst[ci]; if (!cc) return; var mt = Number(val("enc-" + ci)) || 0; if (mt < 1) return alert("Entrez le montant rendu."); return envoyer("encaisser", { deType: cc.type, deId: cc.id, deNom: cc.nom, montant: mt, date: jourJ(0) }, "Argent noté : la caisse monte"); }
     case "ec-ok": return envoyer("ecart_decider", { id: t.getAttribute("data-id"), decision: "accepter" }, "Écart accepté");
@@ -1058,7 +1085,7 @@ function clic(ev) {
     case "enregistrer-soir":
       var items = [].map.call(document.querySelectorAll("input.reste"), function (e) { return { produitId: e.getAttribute("data-pid"), restant: e.value }; });
       E.soirResume = true;
-      return charge("comptage", { date: E.soirDate, pointVente: val("so-pv"), items: items, du: E.soirDate, au: E.soirDate }).then(function () { E.soir = null; ok("Comptage enregistré"); chargerSoir(); }).catch(function () {});
+      return charge("comptage", { date: E.soirDate, pointVente: val("so-pv"), items: items, packs: packsDe("so"), du: E.soirDate, au: E.soirDate }).then(function () { E.soir = null; ok("Comptage enregistré"); chargerSoir(); }).catch(function () {});
     case "supprimer":
       if (!confirm("Supprimer cette ligne ? Les chiffres seront recalculés.")) return;
       return envoyer("supprimer", { type: t.getAttribute("data-t"), id: t.getAttribute("data-id") }, "Supprimé", function () { E.soir = null; });

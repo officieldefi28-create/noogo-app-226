@@ -678,6 +678,7 @@ function vPatron(v) {
 function vEnvoi(v) {
   return '<div class="carte"><h3>Envoyer et exporter</h3><p class="astuce">Ces boutons ouvrent le menu d\'envoi de votre téléphone : choisissez WhatsApp, Google Drive, Gmail, Sheets… Sur ordinateur, le fichier se télécharge. Les chiffres suivent la période choisie dans le Résumé (' + esc(nomPeriode()) + ').</p>' +
     '<button class="btn btn-vert btn-bloc" type="button" data-s="rapport-wa">Résumé détaillé sur WhatsApp</button>' +
+    '<button class="btn btn-brun btn-bloc" type="button" style="margin-top:8px" data-s="rapport-pdf">Rapport PDF (propre, à garder)</button>' +
     '<button class="btn btn-brun btn-bloc" type="button" style="margin-top:8px" data-s="rapport-complet">Rapport complet (document avec chaque vente et dépense)</button>' +
     '<button class="btn btn-or btn-bloc" type="button" style="margin-top:8px" data-s="classeur">Classeur Excel / Google Sheets (tout en un)</button>' +
     '<p class="astuce" style="margin-top:8px">Le classeur contient 7 feuilles : Ventes, Dépenses, Productions, Pertes, Stock, Rentabilité, Clôtures.</p>' +
@@ -930,49 +931,88 @@ function dansPeriode(d) { var p = periodeCourante(); return (!p.du || d >= p.du)
 function ligneTitre(t) { return "━━━━━━━━━━━━━━\n*" + t + "*"; }
 function construireRapport(complet) {
   var v = E.vue, b = v.bilan, pr = v.precedent, T = [];
-  var noms = {}; v.produits.forEach(function (p) { noms[p.id] = p.nom; });
+  var noms = {}; v.produits.forEach(function (p) { noms[p.id] = court(p.nom); });
+  var nTitre = 0, titre = function (t) { return ligneTitre(++nTitre + ". " + t); };
+  var pk = v.packs || { liste: [], pots: 0 }, pots = b.quantite;
   T.push("🍦 *NOOGÓ — RAPPORT DE GESTION*", nomPeriode() + " · édité le " + dateFr(jourJ(0)) + "/" + jourJ(0).slice(0, 4));
-  T.push("", ligneTitre("1. RÉSULTATS"));
-  T.push("Chiffre d'affaires : *" + fcfa(b.ca) + "* (" + b.quantite + " pièces)");
+  T.push("", titre("RÉSULTATS"));
+  T.push("Chiffre d'affaires : *" + fcfa(b.ca) + "* (" + pots + " pots vendus)");
   if (pr && pr.ca) T.push("   vs période d'avant : " + (b.ca >= pr.ca ? "▲ +" : "▼ ") + Math.round((b.ca - pr.ca) / pr.ca * 100) + " % (" + fcfa(pr.ca) + ")");
-  T.push("Coût des produits vendus : " + fcfa(b.cout), "Marge brute : " + fcfa(b.margeBrute) + " (" + b.margePct + " %)", "Pertes / offerts (au coût) : " + fcfa(b.pertes), "Dépenses (hors production) : " + fcfa(b.charges), "Production payée : " + fcfa(b.production), "Total sorti de la caisse : " + fcfa(b.charges + b.production), "*RÉSULTAT NET : " + signe(b.resultat) + "*");
-  T.push("", ligneTitre("2. TRÉSORERIE ET STOCK"), "Caisse théorique : *" + fcfa(b.caisse) + "*", "Valeur du stock (au coût) : " + fcfa(b.valeurStock), "Production sur la période : " + fcfa(b.production));
+  T.push("Coût des produits vendus : " + fcfa(b.cout), "Marge brute : " + fcfa(b.margeBrute) + " (" + b.margePct + " %)");
+  if (b.pertes) T.push("Pertes / offerts (au coût) : " + fcfa(b.pertes));
+  T.push("Dépenses (hors production) : " + fcfa(b.charges), "Production payée : " + fcfa(b.production), "*RÉSULTAT NET : " + signe(b.resultat) + "*");
+  T.push("", titre("TRÉSORERIE ET STOCK"), "Caisse théorique : *" + fcfa(b.caisse) + "*", "Valeur du stock (au coût) : " + fcfa(b.valeurStock));
+  var ob = v.analyse && v.analyse.objectifs;
+  if (ob && ob.jour > 0) T.push("Objectif du jour : " + fcfa(ob.caJour) + " / " + fcfa(ob.jour) + " (" + Math.round(ob.caJour / ob.jour * 100) + " %)");
+  if (ob && ob.mois > 0) T.push("Objectif du mois : " + fcfa(ob.caMois) + " / " + fcfa(ob.mois) + " (" + Math.round(ob.caMois / ob.mois * 100) + " %)");
+  var mq = (v.comptesEsp || []).filter(function (x) { return dansPeriode(x.date) && x.ecart < 0 && x.statut !== "accepte"; });
+  if (mq.length) { T.push("⚠ Manques de caisse : " + fcfa(-mq.reduce(function (a, x) { return a + x.ecart; }, 0))); mq.forEach(function (x) { T.push("   " + dateFr(x.date) + " · " + x.vendeur + " : " + fcfa(-x.ecart)); }); }
   if (b.achats) T.push("Achats de marchandises à revendre : " + fcfa(b.achats));
   if (b.apports || b.remboursements) T.push("Apports d'argent : " + fcfa(b.apports) + " · Remboursés : " + fcfa(b.remboursements));
-  T.push("", ligneTitre("3. VENTES PAR PRODUIT"));
-  if (b.parProduit.length) b.parProduit.forEach(function (p) { T.push("• " + p.nom + " : " + p.qte + " → " + fcfa(p.ca) + " (marge " + fcfa(p.marge) + ")"); }); else T.push("Aucune vente.");
-  T.push("", ligneTitre("4. VENTES PAR POINT DE VENTE"));
-  if (b.parPoint.length) b.parPoint.forEach(function (p) { T.push("• " + p.nom + " : " + p.qte + (p.qte > 1 ? " pièces → " : " pièce → ") + fcfa(p.ca)); }); else T.push("Aucune vente.");
-  if (b.parVendeur && b.parVendeur.length) { T.push("", ligneTitre("4b. VENTES PAR VENDEUR (CAISSE)")); b.parVendeur.forEach(function (p) { T.push("• " + p.nom + " : " + p.qte + " pièces → " + fcfa(p.ca)); }); }
-  if (b.parPaiement && b.parPaiement.length) { T.push("", ligneTitre("4c. MODES DE PAIEMENT (CAISSE)")); b.parPaiement.forEach(function (p) { T.push("• " + p.nom + " : " + fcfa(p.ca)); }); }
-  T.push("", ligneTitre("5. VENTES PAR JOUR"));
-  if (b.parJour.length) b.parJour.forEach(function (j) { T.push("• " + dateFr(j.date) + " : " + fcfa(j.ca) + " (" + j.qte + " pièces)" + (j.depenses ? " · dépenses " + fcfa(j.depenses) : "")); }); else T.push("Aucune vente.");
-  T.push("", ligneTitre("6. DÉPENSES"));
+  T.push("", titre("VENTES PAR PRODUIT"));
+  if (b.parProduit.length) b.parProduit.forEach(function (p) { T.push("• " + court(p.nom) + " : " + p.qte + " → " + fcfa(p.ca)); }); else T.push("Aucune vente.");
+  if (pk.liste.length) {
+    T.push("", titre("PACKS ET UNITÉS"));
+    pk.liste.forEach(function (x) { T.push("• " + court(x.nom) + " : " + x.qte); });
+    T.push("• Pots dans des packs : " + pk.pots, "• Pots à l'unité : " + Math.max(0, pots - pk.pots));
+  }
+  var lieux = b.parPoint.filter(function (p) { return p.nom && p.nom !== "Non précisé"; });
+  if (lieux.length) { T.push("", titre("LIEUX DE VENTE")); lieux.forEach(function (p) { T.push("• " + p.nom + " : " + p.qte + " pots → " + fcfa(p.ca)); }); }
+  var vend = (b.parVendeur || []).filter(function (p) { return p.nom && p.nom !== "Comptage du soir"; });
+  if (vend.length) { T.push("", titre("VENTES PAR PERSONNE")); vend.forEach(function (p) { T.push("• " + p.nom + " : " + p.qte + " pots → " + fcfa(p.ca)); }); }
+  var pai = (b.parPaiement || []).filter(function (p) { return p.nom && p.nom !== "Comptage du soir"; });
+  if (pai.length) { T.push("", titre("MODES DE PAIEMENT")); pai.forEach(function (p) { T.push("• " + p.nom + " : " + fcfa(p.ca)); }); }
+  T.push("", titre("VENTES PAR JOUR"));
+  if (b.parJour.length) b.parJour.forEach(function (j) { T.push("• " + dateFr(j.date) + " : " + fcfa(j.ca) + " (" + j.qte + " pots)" + (j.depenses ? " · dépenses " + fcfa(j.depenses) : "")); }); else T.push("Aucune vente.");
   var dep = v.depenses.filter(function (d) { return dansPeriode(d.date); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; });
-  if (b.parCategorie.length) { b.parCategorie.forEach(function (c) { T.push("• " + c.nom + " : " + fcfa(c.total)); }); T.push("Total dépenses (hors production) : " + fcfa(b.charges)); if (b.production) T.push("Production payée (voir § 10) : " + fcfa(b.production), "Total sorti de la caisse : " + fcfa(b.charges + b.production)); } else T.push("Aucune dépense.");
-  T.push("", ligneTitre("7. STOCK ACTUEL (théorique)"));
-  var st = v.stock.filter(function (x) { return x.produit || x.vendu || x.theorique; });
-  if (st.length) st.forEach(function (x) { T.push("• " + x.nom + " : *" + x.theorique + "*" + (x.theorique < 0 ? " ⚠" : x.theorique <= 5 && x.actif ? " (bas)" : "") + " — valeur " + fcfa(x.valeur)); }); else T.push("Aucun stock enregistré.");
+  T.push("", titre("DÉPENSES"));
+  if (b.parCategorie.length) b.parCategorie.forEach(function (c) { T.push("• " + c.nom + " : " + fcfa(c.total)); }); else T.push("Aucune dépense.");
+  T.push("", titre("STOCK ACTUEL"));
+  var st = v.stock.filter(function (x) { return x.theorique || x.vendu; });
+  if (st.length) st.forEach(function (x) { T.push("• " + noms[x.id] + (noms[x.id] ? "" : court(x.nom)) + " : *" + x.theorique + "*" + (x.theorique < 0 ? " ⚠" : x.theorique <= 5 && x.actif ? " (bas)" : "")); }); else T.push("Aucun stock.");
   var al = [];
-  if (b.alertes.length) al.push("⚠ Stock négatif : " + b.alertes.map(function (a) { return a.nom; }).join(", "));
-  var bas = v.stock.filter(function (x) { return x.actif && x.produit > 0 && x.theorique >= 0 && x.theorique <= 5; });
-  if (bas.length) al.push("⚠ Stock bas : " + bas.map(function (x) { return x.nom + " (" + x.theorique + ")"; }).join(", "));
+  if (b.alertes.length) al.push("⚠ Stock négatif : " + b.alertes.map(function (a) { return court(a.nom); }).join(", "));
   if (b.margeBrute < 0) al.push("⚠ Marge négative");
   if (al.length) T.push("", ligneTitre("ALERTES"), al.join("\n"));
   if (complet) {
-    T.push("", ligneTitre("8. DÉTAIL DE TOUTES LES VENTES"));
+    T.push("", ligneTitre("DÉTAIL DE TOUTES LES VENTES"));
     var ve = v.ventes.slice().sort(function (x, y) { return x.date < y.date ? -1 : 1; });
-    if (ve.length) ve.forEach(function (x) { T.push(dateFr(x.date) + " · " + x.nom + " ×" + x.qte + " = " + fcfa(x.montant) + " · " + x.canal + (x.vendeur ? " · " + x.vendeur : "") + (x.paiement ? " · " + x.paiement : "") + (x.source === "site" ? " (commande site " + (x.ref || "") + ")" : x.source === "comptage" ? " (reste du soir)" : "")); }); else T.push("Aucune vente.");
-    T.push("", ligneTitre("9. DÉTAIL DE TOUTES LES DÉPENSES"));
+    if (ve.length) ve.forEach(function (x) { T.push(dateFr(x.date) + " · " + court(x.nom) + " ×" + x.qte + " = " + fcfa(x.montant) + (x.vendeur && x.vendeur !== "Comptage du soir" ? " · " + x.vendeur : "") + (x.paiement && x.paiement !== "Comptage du soir" ? " · " + x.paiement : "") + (x.source === "site" ? " (commande site " + (x.ref || "") + ")" : x.source === "comptage" ? " (reste du soir)" : "")); }); else T.push("Aucune vente.");
+    T.push("", ligneTitre("DÉTAIL DE TOUTES LES DÉPENSES"));
     if (dep.length) dep.forEach(function (d) { T.push(dateFr(d.date) + " · " + d.categorie + (d.description ? " — " + d.description : "") + " = " + fcfa(d.montant)); }); else T.push("Aucune dépense.");
-    T.push("", ligneTitre("10. PRODUCTIONS"));
+    T.push("", ligneTitre("PRODUCTIONS"));
     var lo = v.lots.filter(function (l) { return dansPeriode(l.date) && !l.depart; });
-    if (lo.length) lo.forEach(function (l) { T.push(dateFr(l.date) + " · " + l.nom + " : " + l.lignes.map(function (x) { return x.qte + " × " + (noms[x.produitId] || x.produitId); }).join(", ") + " — coût " + fcfa(l.cout) + " (" + fcfa(l.coutUnitaire) + "/pièce)"); }); else T.push("Aucune production.");
-    T.push("", ligneTitre("11. PERTES, OFFERTS, DÉGUSTATIONS"));
-    if (v.pertes.length) v.pertes.forEach(function (x) { T.push(dateFr(x.date) + " · " + x.nom + " ×" + x.qte + " · " + (v.typesPerte[x.type] || x.type) + " · coût " + fcfa(x.cout)); }); else T.push("Aucune perte.");
+    if (lo.length) lo.forEach(function (l) { T.push(dateFr(l.date) + " · " + l.nom + " : " + l.lignes.map(function (x) { return x.qte + " × " + (noms[x.produitId] || x.produitId); }).join(", ") + " — coût " + fcfa(l.cout)); }); else T.push("Aucune production.");
+    if (v.pertes.length) { T.push("", ligneTitre("PERTES, OFFERTS, DÉGUSTATIONS")); v.pertes.forEach(function (x) { T.push(dateFr(x.date) + " · " + court(x.nom) + " ×" + x.qte + " · " + (v.typesPerte[x.type] || x.type) + " · coût " + fcfa(x.cout)); }); }
   }
   T.push("", "— Noogó · glaces naturelles, Karpala");
   return T.join("\n");
+}
+function court(n) { return String(n || "").replace(/^Crème glacée\s+/i, ""); }
+function rapportPdf() {
+  var v = E.vue, b = v.bilan, pk = v.packs || { liste: [], pots: 0 }, ob = (v.analyse && v.analyse.objectifs) || {};
+  var X = function (t) { return esc(String(t == null ? "" : t)); };
+  var kp = function (t, val, c) { return '<div class="k"><small>' + t + '</small><b style="color:' + (c || "#2b1b12") + '">' + val + '</b></div>'; };
+  var tab = function (tete, lignes) { var vide = !tete.join(""); return '<table>' + (vide ? '' : '<tr>') + (vide ? '' : tete.map(function (t, i) { return '<th' + (i && tete[i] !== "Raison" ? ' class="d"' : '') + '>' + t + '</th>'; }).join("") + '</tr>') + lignes.map(function (l) { return '<tr>' + l.map(function (c, i) { return '<td' + ((i > 0 && tete[i] !== "Raison") ? ' class="d"' : '') + '>' + X(c) + '</td>'; }).join("") + '</tr>'; }).join("") + '</table>'; };
+  var mq = (v.comptesEsp || []).filter(function (x) { return dansPeriode(x.date) && x.ecart < 0 && x.statut !== "accepte"; });
+  var dep = v.depenses.filter(function (d) { return dansPeriode(d.date); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; });
+  var st = v.stock.filter(function (x) { return x.theorique || x.vendu; });
+  var h = '<h1>🍦 Noogó — Rapport de gestion</h1><p class="sub">' + X(nomPeriode()) + ' · édité le ' + dateFr(jourJ(0)) + '/' + jourJ(0).slice(0, 4) + '</p>';
+  h += '<div class="grid">' + kp("Chiffre d\'affaires", fcfa(b.ca)) + kp("Dépenses", fcfa(b.charges + b.production)) + kp("Résultat net", signe(b.resultat), b.resultat < 0 ? "#b3261e" : "#1b7a3a") + kp("Marge", fcfa(b.margeBrute) + " (" + b.margePct + " %)") + '</div>';
+  h += '<h2>Caisse et objectifs</h2>' + tab(["", ""], [["Caisse théorique", fcfa(b.caisse)], ["Valeur du stock (au coût)", fcfa(b.valeurStock)], ["Pots vendus", b.quantite]].concat(mq.length ? [["Manques de caisse non réglés", fcfa(-mq.reduce(function (a, x) { return a + x.ecart; }, 0))]] : [], ob.jour > 0 ? [["Objectif du jour", fcfa(ob.caJour) + " / " + fcfa(ob.jour) + " (" + Math.round(ob.caJour / ob.jour * 100) + " %)"]] : [], ob.mois > 0 ? [["Objectif du mois", fcfa(ob.caMois) + " / " + fcfa(ob.mois) + " (" + Math.round(ob.caMois / ob.mois * 100) + " %)"]] : []));
+  h += '<h2>Ventes par produit</h2>' + (b.parProduit.length ? tab(["Produit", "Qté", "Montant"], b.parProduit.map(function (p) { return [court(p.nom), p.qte, fcfa(p.ca)]; })) : '<p>Aucune vente.</p>');
+  if (pk.liste.length) h += '<h2>Packs et unités</h2>' + tab(["", "Qté"], pk.liste.map(function (x) { return [court(x.nom), x.qte]; }).concat([["Pots dans des packs", pk.pots], ["Pots à l\'unité", Math.max(0, b.quantite - pk.pots)]]));
+  var lieux = b.parPoint.filter(function (p) { return p.nom && p.nom !== "Non précisé"; });
+  if (lieux.length) h += '<h2>Lieux de vente</h2>' + tab(["Lieu", "Pots", "Montant"], lieux.map(function (p) { return [p.nom, p.qte, fcfa(p.ca)]; }));
+  h += '<h2>Ventes par jour</h2>' + (b.parJour.length ? tab(["Jour", "Pots", "Montant"], b.parJour.map(function (j) { return [dateFr(j.date), j.qte, fcfa(j.ca)]; })) : '<p>Aucune vente.</p>');
+  h += '<h2>Dépenses</h2>' + (dep.length ? tab(["Date", "Raison", "Montant"], dep.map(function (d) { return [dateFr(d.date), (d.categorie || "") + (d.description ? " — " + d.description : ""), fcfa(d.montant)]; })) : '<p>Aucune dépense.</p>');
+  h += '<h2>Stock restant</h2>' + (st.length ? tab(["Produit", "Qté"], st.map(function (x) { return [court(x.nom), x.theorique]; })) : '<p>Aucun stock.</p>');
+  h += '<p class="pied">Noogó · glaces naturelles, Karpala</p>';
+  var css = 'body{font-family:Arial,sans-serif;color:#2b1b12;margin:0;padding:18px;font-size:13px}h1{font-size:20px;margin:0}.sub{color:#777;margin:2px 0 12px}h2{font-size:14px;margin:16px 0 6px;color:#7a3e12;border-bottom:2px solid #f0d9c0;padding-bottom:3px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.k{background:#fbf3ea;border-radius:8px;padding:8px 10px}.k small{display:block;color:#777}.k b{font-size:17px}table{width:100%;border-collapse:collapse}th{background:#f6e7d4;text-align:left;padding:5px 6px}td{padding:5px 6px;border-bottom:1px solid #eee}.d{text-align:right}th.d{text-align:right}tr{page-break-inside:avoid}.pied{color:#999;text-align:center;margin-top:18px}.bar{position:sticky;top:0;background:#7a3e12;color:#fff;padding:10px;margin:-18px -18px 14px;text-align:center}@media print{.bar{display:none}}';
+  var doc = '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rapport-Noogo-' + jourJ(0) + '</title><style>' + css + '</style></head><body><div class="bar"><button onclick="window.print()" style="font-size:15px;padding:8px 14px;border:0;border-radius:6px">Enregistrer en PDF</button><div style="font-size:12px;margin-top:4px">Dans la fenêtre qui s\'ouvre, choisissez « Enregistrer au format PDF ».</div></div>' + h + '</body></html>';
+  var w = window.open("", "_blank");
+  if (!w) return A.toast("Autorisez l'ouverture de fenêtre puis recommencez.", "err");
+  w.document.open(); w.document.write(doc); w.document.close();
 }
 function rapportWA() {
   var t = construireRapport(false);
@@ -1066,6 +1106,7 @@ function clic(ev) {
       if (!confirm("Supprimer ce reçu et toutes ses ventes ? Les chiffres et le stock seront recalculés.")) return;
       return envoyer("supprimer_recu", { id: t.getAttribute("data-id") }, "Reçu supprimé", function () { E.soir = null; });
     case "rapport-wa": return rapportWA();
+    case "rapport-pdf": return rapportPdf();
     case "classeur": return classeurComplet();
     case "rapport-cloture": return rapportCloture();
     case "cloturer": if (val("cl-c") === "") return A.toast("Écrivez les espèces comptées dans la caisse.", "err"); return envoyer("cloture", { date: val("cl-d"), compte: val("cl-c"), fond: val("cl-f"), note: val("cl-n") }, "Journée clôturée");

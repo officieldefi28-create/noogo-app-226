@@ -27,15 +27,15 @@ async function recalculerEcarts(mb, depuisDate) {
 
 // Packs et unités vendus sur la période (reçus validés, commandes du site livrées, packs du comptage du soir)
 function statsPacks(donnees, du, au) {
-  const packs = {}; (donnees.catalogue || []).forEach((p) => { if (p && p.type === "pack") packs[p.id] = { nom: p.nom, pots: Math.max(1, parseInt(p.packCount, 10) || 1) }; });
+  const packs = {}; (donnees.catalogue || []).forEach((p) => { if (p && p.type === "pack") { const base = U.baseDe(p), pots = Math.max(1, parseInt(p.packCount, 10) || 1); let compo = null; if (p.packCompo && typeof p.packCompo === "object") compo = Object.keys(p.packCompo).map((k) => ({ id: k, qte: Math.round(Number(p.packCompo[k]) || 0) })).filter((x) => x.qte > 0); else if (base && base.id !== p.id) compo = [{ id: base.id, qte: pots }]; packs[p.id] = { nom: p.nom, pots, prix: Number(p.prix) || 0, compo }; } });
   const parNom = {}; Object.keys(packs).forEach((k) => (parNom[packs[k].nom] = k));
   const dans = (dt) => { const x = String(dt || "").slice(0, 10); return (!du || x >= du) && (!au || x <= au); };
-  const cumul = {}; let pots = 0;
-  const ajoute = (id, nom, qte) => { const p = packs[id] || (parNom[nom] ? packs[parNom[nom]] : null); if (!p || !(qte > 0)) return; const k = nom || p.nom; cumul[k] = (cumul[k] || 0) + qte; pots += qte * p.pots; };
+  const cumul = {}, infos = {}; let pots = 0;
+  const ajoute = (id, nom, qte) => { const p = packs[id] || (parNom[nom] ? packs[parNom[nom]] : null); if (!p || !(qte > 0)) return; const k = nom || p.nom; cumul[k] = (cumul[k] || 0) + qte; pots += qte * p.pots; infos[k] = { prix: p.prix, pots: p.pots, compo: p.compo }; };
   for (const r of donnees.recus || []) { if (!r || r.attente || r.archive || !dans(r.date)) continue; for (const l of r.lignes || []) ajoute("", l.nom, Number(l.qte) || 0); }
   for (const c of donnees.commandes || []) { if (!c || c.statutLivraison !== "livree" || (c.encaisse && c.encaisse.attente) || !dans(c.dateLivraison || c.date)) continue; for (const a of c.articles || []) ajoute(a.id, a.nom, Number(a.qte) || 0); }
   const ps = donnees.packsSoir || {}; Object.keys(ps).forEach((jr) => { if (dans(jr)) for (const p of ps[jr]) ajoute(p.id, p.nom, Number(p.qte) || 0); });
-  return { liste: Object.keys(cumul).map((nom) => ({ nom, qte: cumul[nom] })).sort((a, b) => b.qte - a.qte), pots };
+  return { liste: Object.keys(cumul).map((nom) => ({ nom, qte: cumul[nom], prix: infos[nom].prix, pots: infos[nom].pots, compo: infos[nom].compo })).sort((a, b) => b.qte - a.qte), pots };
 }
 
 async function charger() {

@@ -953,7 +953,7 @@ function construireRapport(complet) {
   if (b.parProduit.length) b.parProduit.forEach(function (p) { T.push("• " + court(p.nom) + " : " + p.qte + " → " + fcfa(p.ca)); }); else T.push("Aucune vente.");
   if (pk.liste.length) {
     T.push("", titre("PACKS ET UNITÉS"));
-    pk.liste.forEach(function (x) { T.push("• " + court(x.nom) + " : " + x.qte); });
+    lignesPacks(v).forEach(function (x) { T.push("• " + x.nom + " × " + x.qte + " (" + fcfa(x.prix) + ") : " + x.contenu + " → " + (x.gain < 0 ? "PERTE " + fcfa(-x.gain) : "gain " + fcfa(x.gain)) + " par pack" + (x.choix ? " (estimé)" : "")); });
     T.push("• Pots dans des packs : " + pk.pots, "• Pots à l'unité : " + Math.max(0, pots - pk.pots));
   }
   var lieux = b.parPoint.filter(function (p) { return p.nom && p.nom !== "Non précisé"; });
@@ -988,6 +988,18 @@ function construireRapport(complet) {
   T.push("", "— Noogó · glaces naturelles, Karpala");
   return T.join("\n");
 }
+function nomPack(n) { return String(n || "").replace(/[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F\u274C\u2705]/gu, "").replace(/\s*livraison non incluse/i, "").replace(/\s+/g, " ").trim(); }
+function lignesPacks(v) {
+  var pk = v.packs || { liste: [] }, cout = {}, noms = {}, som = 0, nb = 0;
+  v.stock.forEach(function (x) { cout[x.id] = x.coutMoyen || 0; noms[x.id] = court(x.nom); if (x.coutMoyen > 0 && x.actif) { som += x.coutMoyen; nb++; } });
+  var moy = nb ? som / nb : 0;
+  return pk.liste.map(function (x) {
+    var contenu, c;
+    if (x.compo && x.compo.length) { contenu = x.compo.map(function (k) { return k.qte + " " + (noms[k.id] || k.id).replace(/ petit format| grand format/i, ""); }).join(" + "); c = x.compo.reduce(function (a, k) { return a + k.qte * (cout[k.id] || 0); }, 0); }
+    else { contenu = x.pots + " pots au choix"; c = x.pots * moy; }
+    return { nom: nomPack(x.nom), qte: x.qte, prix: x.prix, contenu: contenu, gain: Math.round(x.prix - c), choix: !(x.compo && x.compo.length) };
+  });
+}
 function court(n) { return String(n || "").replace(/^Crème glacée\s+/i, ""); }
 function rapportPdf() {
   var v = E.vue, b = v.bilan, pk = v.packs || { liste: [], pots: 0 }, ob = (v.analyse && v.analyse.objectifs) || {};
@@ -996,19 +1008,19 @@ function rapportPdf() {
   var tab = function (tete, lignes) { var vide = !tete.join(""); return '<table>' + (vide ? '' : '<tr>') + (vide ? '' : tete.map(function (t, i) { return '<th' + (i && tete[i] !== "Raison" ? ' class="d"' : '') + '>' + t + '</th>'; }).join("") + '</tr>') + lignes.map(function (l) { return '<tr>' + l.map(function (c, i) { return '<td' + ((i > 0 && tete[i] !== "Raison") ? ' class="d"' : '') + '>' + X(c) + '</td>'; }).join("") + '</tr>'; }).join("") + '</table>'; };
   var mq = (v.comptesEsp || []).filter(function (x) { return dansPeriode(x.date) && x.ecart < 0 && x.statut !== "accepte"; });
   var dep = v.depenses.filter(function (d) { return dansPeriode(d.date); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; });
-  var st = v.stock.filter(function (x) { return x.theorique || x.vendu; });
+  var st = v.stock.filter(function (x) { return (x.theorique || x.vendu) && !x.inconnu && !/^Ancien produit/i.test(x.nom); });
   var h = '<h1>🍦 Noogó — Rapport de gestion</h1><p class="sub">' + X(nomPeriode()) + ' · édité le ' + dateFr(jourJ(0)) + '/' + jourJ(0).slice(0, 4) + '</p>';
   h += '<div class="grid">' + kp("Chiffre d\'affaires", fcfa(b.ca)) + kp("Dépenses", fcfa(b.charges + b.production)) + kp("Résultat net", signe(b.resultat), b.resultat < 0 ? "#b3261e" : "#1b7a3a") + kp("Marge", fcfa(b.margeBrute) + " (" + b.margePct + " %)") + '</div>';
   h += '<h2>Caisse et objectifs</h2>' + tab(["", ""], [["Caisse théorique", fcfa(b.caisse)], ["Valeur du stock (au coût)", fcfa(b.valeurStock)], ["Pots vendus", b.quantite]].concat(mq.length ? [["Manques de caisse non réglés", fcfa(-mq.reduce(function (a, x) { return a + x.ecart; }, 0))]] : [], ob.jour > 0 ? [["Objectif du jour", fcfa(ob.caJour) + " / " + fcfa(ob.jour) + " (" + Math.round(ob.caJour / ob.jour * 100) + " %)"]] : [], ob.mois > 0 ? [["Objectif du mois", fcfa(ob.caMois) + " / " + fcfa(ob.mois) + " (" + Math.round(ob.caMois / ob.mois * 100) + " %)"]] : []));
   h += '<h2>Ventes par produit</h2>' + (b.parProduit.length ? tab(["Produit", "Qté", "Montant"], b.parProduit.map(function (p) { return [court(p.nom), p.qte, fcfa(p.ca)]; })) : '<p>Aucune vente.</p>');
-  if (pk.liste.length) h += '<h2>Packs et unités</h2>' + tab(["", "Qté"], pk.liste.map(function (x) { return [court(x.nom), x.qte]; }).concat([["Pots dans des packs", pk.pots], ["Pots à l\'unité", Math.max(0, b.quantite - pk.pots)]]));
+  if (pk.liste.length) { var LP = lignesPacks(v); h += '<h2>Packs vendus</h2><table><tr><th>Pack</th><th class="d">Vendus</th><th>Contient</th><th class="d">Prix</th><th class="d">Gain/pack</th></tr>' + LP.map(function (x) { return '<tr><td>' + X(x.nom) + '</td><td class="d">' + x.qte + '</td><td>' + X(x.contenu) + '</td><td class="d">' + fcfa(x.prix) + '</td><td class="d" style="color:' + (x.gain < 0 ? "#b3261e" : "#1b7a3a") + ';font-weight:bold">' + (x.gain < 0 ? "−" : "+") + fcfa(Math.abs(x.gain)) + (x.choix ? "*" : "") + '</td></tr>'; }).join("") + '</table><p style="margin:3px 0;color:#777;font-size:11px">Pots dans des packs : ' + pk.pots + ' · à l\'unité : ' + Math.max(0, b.quantite - pk.pots) + (LP.some(function (x) { return x.choix; }) ? ' · * estimé (pack au choix)' : '') + '</p>'; }
   var lieux = b.parPoint.filter(function (p) { return p.nom && p.nom !== "Non précisé"; });
   if (lieux.length) h += '<h2>Lieux de vente</h2>' + tab(["Lieu", "Pots", "Montant"], lieux.map(function (p) { return [p.nom, p.qte, fcfa(p.ca)]; }));
-  h += '<h2>Ventes par jour</h2>' + (b.parJour.length ? tab(["Jour", "Pots", "Montant"], b.parJour.map(function (j) { return [dateFr(j.date), j.qte, fcfa(j.ca)]; })) : '<p>Aucune vente.</p>');
+  if (b.parJour.length > 1) h += '<h2>Ventes par jour</h2>' + (b.parJour.length ? tab(["Jour", "Pots", "Montant"], b.parJour.map(function (j) { return [dateFr(j.date), j.qte, fcfa(j.ca)]; })) : '<p>Aucune vente.</p>');
   h += '<h2>Dépenses</h2>' + (dep.length ? tab(["Date", "Raison", "Montant"], dep.map(function (d) { return [dateFr(d.date), (d.categorie || "") + (d.description ? " — " + d.description : ""), fcfa(d.montant)]; })) : '<p>Aucune dépense.</p>');
-  h += '<h2>Stock restant</h2>' + (st.length ? tab(["Produit", "Qté"], st.map(function (x) { return [court(x.nom), x.theorique]; })) : '<p>Aucun stock.</p>');
+  h += '<h2>Stock restant</h2>' + (st.length ? '<div class="deux">' + st.map(function (x) { return '<div class="l"><span>' + X(court(x.nom)) + '</span><b>' + x.theorique + '</b></div>'; }).join("") + '</div>' : '<p>Aucun stock.</p>');
   h += '<p class="pied">Noogó · glaces naturelles, Karpala</p>';
-  var css = 'body{font-family:Arial,sans-serif;color:#2b1b12;margin:0;padding:18px;font-size:13px}h1{font-size:20px;margin:0}.sub{color:#777;margin:2px 0 12px}h2{font-size:14px;margin:16px 0 6px;color:#7a3e12;border-bottom:2px solid #f0d9c0;padding-bottom:3px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.k{background:#fbf3ea;border-radius:8px;padding:8px 10px}.k small{display:block;color:#777}.k b{font-size:17px}table{width:100%;border-collapse:collapse}th{background:#f6e7d4;text-align:left;padding:5px 6px}td{padding:5px 6px;border-bottom:1px solid #eee}.d{text-align:right}th.d{text-align:right}tr{page-break-inside:avoid}.pied{color:#999;text-align:center;margin-top:18px}.bar{position:sticky;top:0;background:#7a3e12;color:#fff;padding:10px;margin:-18px -18px 14px;text-align:center}@media print{.bar{display:none}}';
+  var css = '@page{size:A4;margin:8mm}body{font-family:Arial,sans-serif;color:#2b1b12;margin:0;padding:14px;font-size:11.5px}.deux{display:grid;grid-template-columns:1fr 1fr;column-gap:16px}.l{display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:3px 4px}h1{font-size:20px;margin:0}.sub{color:#777;margin:2px 0 12px}h2{font-size:13px;margin:10px 0 4px;color:#7a3e12;border-bottom:2px solid #f0d9c0;padding-bottom:3px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.k{background:#fbf3ea;border-radius:8px;padding:6px 9px}.k small{display:block;color:#777}.k b{font-size:15px}table{width:100%;border-collapse:collapse}th{background:#f6e7d4;text-align:left;padding:3px 5px}td{padding:3px 5px;border-bottom:1px solid #eee}.d{text-align:right}th.d{text-align:right}tr{page-break-inside:avoid}.pied{color:#999;text-align:center;margin-top:10px}.bar{position:sticky;top:0;background:#7a3e12;color:#fff;padding:10px;margin:-14px -14px 10px;text-align:center}@media print{.bar{display:none}}';
   var doc = '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rapport-Noogo-' + jourJ(0) + '</title><style>' + css + '</style></head><body><div class="bar"><button onclick="window.print()" style="font-size:15px;padding:8px 14px;border:0;border-radius:6px">Enregistrer en PDF</button><div style="font-size:12px;margin-top:4px">Dans la fenêtre qui s\'ouvre, choisissez « Enregistrer au format PDF ».</div></div>' + h + '</body></html>';
   var w = window.open("", "_blank");
   if (!w) return A.toast("Autorisez l'ouverture de fenêtre puis recommencez.", "err");

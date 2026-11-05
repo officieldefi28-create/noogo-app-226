@@ -73,7 +73,7 @@ async function ecrire(jr, res, pointVente) {
     for (const l of p.lignes) {
       const prix = (await articles()).find((a) => a.id === l.produitId);
       const id = prefixe(jr) + (++k);
-      await S.suiviSet("ventes", id, { id, date: jr, produitId: l.produitId, qte: l.qte, montant: (prix ? prix.prix : 0) * l.qte, supp: premier ? p.supp : 0, pointVente: pointVente || "", vendeur: "Comptage du soir", vid: "", paiement: "Comptage du soir", recuId: "", attente: false, packId: p.id, packNom: p.nom, packQte: p.qte, cree: new Date().toISOString() });
+      await S.suiviSet("ventes", id, { id, date: jr, produitId: l.produitId, qte: l.qte, montant: (prix ? prix.prix : 0) * l.qte, supp: premier ? p.supp : 0, pointVente: pointVente || "", vendeur: "", vid: "", paiement: "Comptage du soir", recuId: "", attente: false, packId: p.id, packNom: p.nom, packQte: p.qte, cree: new Date().toISOString() });
       premier = false;
     }
   }

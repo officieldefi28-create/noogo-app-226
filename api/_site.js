@@ -13,11 +13,14 @@ const DEFAUT_REGLAGES = {
   messageFerme: "Nous ne prenons plus de commandes pour le moment. Revenez bientôt 🍦",
   commandeMin: "",
   fideliteSeuil: "5",
+  videoAccueil: "",
+  accroche: "Glaces naturelles livrées à Karpala · Commandez en 2 minutes",
+  puces: "🚚 Livraison rapide · 📱 Orange Money / Wave · 🌿 100\u00a0% naturel",
   fideliteRecompense: "1 pot offert",
   surtitre: "Glaces naturelles · L'excellence africaine",
   titre: "La douceur naturelle,",
   titreAccent: "le goût d'ici",
-  intro: "Crèmes glacées 100 % naturelles, faites localement : vanille, baobab, banane… Sans colorant ni conservateur. Commandez en deux minutes, nous vous livrons ou vous passez les récupérer.",
+  intro: "Crèmes glacées 100\u00a0% naturelles, faites localement : vanille, baobab, banane… Sans colorant ni conservateur. Commandez en deux minutes, nous vous livrons ou vous passez les récupérer.",
   slogan: "Glaces naturelles — l'excellence africaine. Le goût d'ici, pour le monde.",
   couleurPrincipale: "#14451f",
   couleurAccent: "#c9982b",
@@ -117,6 +120,10 @@ function valider(d) {
   { const mn = parseInt(String(rg.commandeMin || "").replace(/\D/g, ""), 10); r.commandeMin = mn > 0 && mn <= 1000000 ? String(mn) : ""; }
   { const fs = parseInt(String(rg.fideliteSeuil == null ? DEFAUT_REGLAGES.fideliteSeuil : rg.fideliteSeuil).replace(/\D/g, ""), 10); r.fideliteSeuil = String(fs >= 0 && fs <= 50 ? fs : 5); }
   r.fideliteRecompense = txt(rg.fideliteRecompense, 80) || DEFAUT_REGLAGES.fideliteRecompense;
+  // Accueil : phrase d'accroche, rassurances, vidéo facultative (lien https vers un .mp4/.webm ou une vidéo YouTube)
+  r.accroche = typeof rg.accroche === "string" ? txt(rg.accroche, 120) : DEFAUT_REGLAGES.accroche;
+  r.puces = typeof rg.puces === "string" ? txt(rg.puces, 160) : DEFAUT_REGLAGES.puces;
+  { const v = txt(rg.videoAccueil, 300); r.videoAccueil = /^https:\/\/[^\s"'<>]+$/i.test(v) && (/\.(mp4|webm|mov)(\?[^\s]*)?$/i.test(v) || /^https:\/\/(www\.)?(youtube\.com\/(watch\?v=|shorts\/|embed\/)|youtu\.be\/)[\w-]{6,20}/i.test(v)) ? v : ""; }
   const wa = String(rg.whatsapp || "").replace(/\D/g, "");
   r.whatsapp = wa.length >= 8 && wa.length <= 15 ? wa : DEFAUT_REGLAGES.whatsapp;
   for (const k of ["couleurPrincipale", "couleurAccent", "couleurFond"]) r[k] = /^#[0-9a-f]{6}$/i.test(String(rg[k] || "")) ? rg[k] : DEFAUT_REGLAGES[k];

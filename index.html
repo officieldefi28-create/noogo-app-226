@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Noogó — Glaces naturelles à Karpala</title>
-<meta name="description" content="Crèmes glacées 100 % naturelles et locales à Karpala (Ouagadougou) : vanille, baobab, banane et packs. Commandez sur WhatsApp, livraison ou retrait.">
+<meta name="description" content="Crèmes glacées 100\u00a0% naturelles et locales à Karpala (Ouagadougou) : vanille, baobab, banane et packs. Commandez sur WhatsApp, livraison ou retrait.">
 <meta name="theme-color" content="#fcf8ea">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-title" content="Noogó">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Noogó — Glaces naturelles, l'excellence africaine">
-<meta property="og:description" content="Vanille, baobab, banane… 100 % naturel, 100 % local. Commandez sur WhatsApp.">
+<meta property="og:description" content="Vanille, baobab, banane… 100\u00a0% naturel, 100 % local. Commandez sur WhatsApp.">
 <meta property="og:image" content="https://noogo-app-226.vercel.app/assets/logo-noogo.jpg">
 <link rel="icon" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -48,8 +48,13 @@ main{flex:1;min-height:0;position:relative}
 
 /* accueil */
 #v-accueil{padding:6px 18px max(14px,env(safe-area-inset-bottom));gap:12px;justify-content:space-between}
-.logo-zone{flex:1 1 0;min-height:0;display:flex;align-items:center;justify-content:center}
-.logo-zone img{max-width:100%;max-height:100%;object-fit:contain;border-radius:18px}
+.logo-zone{flex:1 1 0;min-height:0;max-height:36vh;display:flex;align-items:center;justify-content:center;position:relative}
+.logo-zone img,.logo-zone video{max-width:100%;max-height:100%;object-fit:contain;border-radius:18px}
+.logo-zone video{width:100%;height:100%;object-fit:cover}
+.logo-zone iframe{width:100%;height:100%;border:0;border-radius:18px}
+.accroche{margin:0;text-align:center;font-weight:800;font-size:17px;line-height:1.25;color:var(--vert)}
+.puces{margin:0;text-align:center;font-size:12px;font-weight:700;color:var(--gris)}
+.gros.inst{background:#fff;color:var(--vert);border:2px solid var(--or);min-height:50px;font-size:16px}
 .actions{display:flex;flex-direction:column;gap:10px;flex:none}
 .gros{display:flex;align-items:center;justify-content:center;gap:10px;min-height:56px;border-radius:16px;font-weight:800;font-size:17px;width:100%}
 .gros.vert{background:var(--vert);color:#fff}
@@ -198,7 +203,8 @@ ol.pas-l li{margin:8px 0}
 <main>
   <!-- ACCUEIL : tout tient sur un seul écran -->
   <section class="vue on" id="v-accueil" aria-label="Accueil">
-    <div class="logo-zone"><img id="logo-hero" src="/assets/logo-noogo.jpg" alt="Noogó — Glaces naturelles, l'excellence africaine"></div>
+    <div class="logo-zone" id="zone-hero"><img id="logo-hero" src="/assets/logo-noogo.jpg" alt="Noogó — Glaces naturelles, l'excellence africaine"></div>
+    <p class="accroche" id="accroche"></p>
     <div class="actions">
       <button class="gros vert" type="button" data-vue="aujourdhui">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.7-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
@@ -214,6 +220,8 @@ ol.pas-l li{margin:8px 0}
       <button type="button" data-plus="infos"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>Livraison</button>
       <button type="button" data-plus="contact"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Nous trouver</button>
     </div>
+    <button class="gros inst cachee" id="btn-inst-accueil" type="button" data-inst="1">📲 Installer l'application</button>
+    <p class="puces" id="puces"></p>
     <div class="pied-ligne" id="pied-adresse">Karpala, derrière la mairie</div>
     <button class="etoile" type="button" data-equipe="1" aria-label="Espace équipe">✦</button>
   </section>
@@ -384,6 +392,8 @@ function appliquerReglages() {
   if (ok(CONFIG.couleurAccent)) { root.setProperty("--or", CONFIG.couleurAccent); root.setProperty("--or-fonce", mix(CONFIG.couleurAccent, "#000000", .35)); }
   if (ok(CONFIG.couleurFond)) { root.setProperty("--creme", CONFIG.couleurFond); root.setProperty("--creme-2", mix(CONFIG.couleurFond, "#000000", .06)); }
   if (CONFIG.logo) $("#logo-hero").src = CONFIG.logo;
+  { const a = $("#accroche"), pc = $("#puces"); a.textContent = CONFIG.accroche == null ? "Glaces naturelles livrées à Karpala · Commandez en 2 minutes" : CONFIG.accroche; a.style.display = a.textContent ? "" : "none"; pc.textContent = CONFIG.puces == null ? "🚚 Livraison rapide · 📱 Orange Money / Wave · 🌿 100\u00a0% naturel" : CONFIG.puces; pc.style.display = pc.textContent ? "" : "none"; }
+  posterVideoAccueil();
   if (CONFIG.logoRond) $("#logo-rond").src = CONFIG.logoRond;
   $("#pied-adresse").textContent = CONFIG.adresse;
   let bf = $("#bandeau-ferme");
@@ -784,7 +794,19 @@ const installable = () => !estInstallee();
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); invite = e; if (modalOuverte) rendreInstall(); else if (!modalVueCeTour) setTimeout(proposerInstall, 600); });
 window.addEventListener("appinstalled", () => { invite = null; ecrire("noogo_installee", true); fermerVoile("voile-inst"); majBoutonsInstall(); toast("Noogó est installée sur votre téléphone ✓"); });
 
-function majBoutonsInstall() { $("#btn-inst-haut").classList.toggle("cachee", !installable()); if (!installable()) $("#bandeau").classList.add("cachee"); }
+function posterVideoAccueil() {
+  const z = $("#zone-hero"), u = String(CONFIG.videoAccueil || ""); if (!z || z.dataset.v === u) return; z.dataset.v = u;
+  [...z.querySelectorAll("video,iframe")].forEach((n) => n.remove());
+  const img = $("#logo-hero"); if (img) img.style.display = "";
+  if (!/^https:\/\//i.test(u)) return;
+  if (img) img.style.display = "none";
+  const yt = /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{6,20})/i.exec(u);
+  if (yt) { const f = document.createElement("iframe"); f.src = "https://www.youtube-nocookie.com/embed/" + yt[1] + "?autoplay=1&mute=1&loop=1&playlist=" + yt[1] + "&controls=0&playsinline=1&rel=0"; f.allow = "autoplay; encrypted-media"; f.setAttribute("loading", "lazy"); f.title = "Noogó"; z.appendChild(f); return; }
+  const v = document.createElement("video"); v.muted = true; v.loop = true; v.playsInline = true; v.autoplay = true; v.setAttribute("muted", ""); v.setAttribute("playsinline", ""); v.preload = "metadata"; v.poster = CONFIG.logo || ""; v.src = u;
+  v.addEventListener("error", () => { v.remove(); if (img) img.style.display = ""; });
+  z.appendChild(v); const p = v.play(); if (p && p.catch) p.catch(() => {});
+}
+function majBoutonsInstall() { const ba = $("#btn-inst-accueil"); if (ba) ba.classList.toggle("cachee", !installable()); $("#btn-inst-haut").classList.toggle("cachee", !installable()); if (!installable()) $("#bandeau").classList.add("cachee"); }
 function lienChrome() { return "intent://" + location.host + location.pathname + "#Intent;scheme=https;package=com.android.chrome;end"; }
 function rendreInstall() {
   const corps = $("#inst-corps");

@@ -24,6 +24,17 @@ async function chargerCatalogue() {
 
 // Recalcule TOUT côté serveur à partir des identifiants et quantités :
 // les prix envoyés par le navigateur ne sont jamais utilisés.
+const BASES_PACK = { van: "vanille", bao: "baobab", ban: "banane", cho: "choco", fra: "fraise" };
+function enRupture(b) { return !!b && (b.actif === false || b.dispo === "rupture" || b.statut === "rupture"); }
+// Un pack est arrêté si un parfum qu'il contient est fini (ou, pour un pack au choix, si plus aucun parfum n'est disponible)
+function packBloque(p, catalogue) {
+  if (!p || p.type !== "pack") return false;
+  const m = /^pk-(van|bao|ban|cho|fra)-(p|g)$/.exec(p.id);
+  if (m) return enRupture(catalogue.find((x) => x.id === BASES_PACK[m[1]] + "-" + m[2]));
+  if (p.packCompo && typeof p.packCompo === "object") return Object.keys(p.packCompo).some((k) => enRupture(catalogue.find((x) => x.id === k)));
+  if (/^pk-mix-/.test(p.id) || p.packChoix) { const grand = p.gr === "grand" || /-g$/.test(p.id); return !catalogue.some((x) => x.cat === "cremes" && x.type === "produit" && !enRupture(x) && (x.gr === "grand") === grand); }
+  return false;
+}
 function calculerPanier(articles, catalogue) {
   const lignes = [];
   let produits = 0, packs = 0, packsSans = 0;
@@ -31,7 +42,7 @@ function calculerPanier(articles, catalogue) {
     if (!a || typeof a !== "object") continue;
     const p = catalogue.find((x) => x.id === a.id && x.actif !== false);
     const qte = Math.max(1, Math.min(50, parseInt(a.qte, 10) || 0));
-    if (!p || !a.qte || p.dispo === "rupture" || p.statut === "rupture") continue;
+    if (!p || !a.qte || p.dispo === "rupture" || p.statut === "rupture" || packBloque(p, catalogue)) continue;
     const total = Number(p.prix) * qte;
     const ligne = { id: p.id, nom: p.nom, type: p.type, qte, prix: Number(p.prix), total, surCommande: !!p.surCommande || p.statut === "surcommande" || p.statut === "date" };
     // Pack « au choix » : saveurs choisies par le client (validées contre le catalogue)
@@ -39,7 +50,7 @@ function calculerPanier(articles, catalogue) {
       const compo = [];
       for (const k of Object.keys(a.compo).slice(0, 20)) {
         const q = Math.max(0, Math.min(200, parseInt(a.compo[k], 10) || 0));
-        const base = catalogue.find((x) => x.id === k && x.type !== "pack");
+        const base = catalogue.find((x) => x.id === k && x.type !== "pack" && !enRupture(x));
         if (q > 0 && base) compo.push({ id: base.id, nom: base.nom, qte: q });
       }
       if (compo.length) ligne.compo = compo;

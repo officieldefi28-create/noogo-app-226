@@ -332,7 +332,17 @@ const produit = (id) => CATALOGUE.find((p) => p.id === id);
 
 /* Statut de disponibilité : aujourd'hui · sur commande · bientôt (date) · stock fini.
    Anciens articles sans statut : on le déduit des anciens réglages (sur commande / rupture). */
-function statut(p) {
+function packBloque(p) {
+  if (!p || p.type !== "pack") return false;
+  const rupt = (b) => !!b && (b.actif === false || statutBrut(b) === "rupture");
+  const m = /^pk-(van|bao|ban|cho|fra)-(p|g)$/.exec(p.id);
+  if (m) return rupt(produit(PACKBASE[m[1]] + "-" + m[2]));
+  if (p.packCompo) return Object.keys(p.packCompo).some((k) => rupt(produit(k)));
+  if (estMix(p)) { const grand = p.gr === "grand" || /-g$/.test(p.id); return !CATALOGUE.some((x) => x.cat === "cremes" && x.type === "produit" && !rupt(x) && (x.gr === "grand") === grand); }
+  return false;
+}
+function statut(p) { return packBloque(p) ? "rupture" : statutBrut(p); }
+function statutBrut(p) {
   if (p.statut === "aujourdhui" || p.statut === "surcommande" || p.statut === "date" || p.statut === "rupture") return p.statut;
   if (p.dispo === "rupture") return "rupture";
   if (p.surCommande) return "surcommande";

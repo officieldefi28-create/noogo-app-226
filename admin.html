@@ -775,7 +775,7 @@ function rendreCatalogue(){
   var zone = $("liste-cat");
   $("msg-cat").innerHTML = S.catErreur ? '<div class="msg msg-err">Impossible de lire le catalogue enregistré (' + esc(S.catErreur) + '). Voici le catalogue d\'origine : vous ne pourrez pas enregistrer tant que le problème n\'est pas réglé.</div>' : "";
   if (!S.produits) { zone.innerHTML = '<div class="vide"><div class="roue"></div>Chargement du catalogue…<br><button class="btn btn-clair btn-petit" type="button" data-act="cat-recharger" style="margin-top:10px">Réessayer</button></div>'; return; }
-  var html = "";
+  var html = panneauDispo();
   CATS.forEach(function(cat){
     var items = S.produits.filter(function(p){ return p.cat === cat[0]; });
     if (!items.length) return;
@@ -784,6 +784,30 @@ function rendreCatalogue(){
   var autres = S.produits.filter(function(p){ return !CATS.some(function(c){ return c[0] === p.cat; }); });
   if (autres.length) html += '<div class="groupe"><h3>Autres</h3>' + autres.map(ligneArticle).join("") + '</div>';
   zone.innerHTML = html || '<div class="vide">Le catalogue est vide. Ajoutez un article.</div>';
+}
+/* ----- Disponible aujourd'hui : un interrupteur par produit, les packs suivent tout seuls ----- */
+function estFini(b){ return !!b && (b.actif === false || statutAdmin(b) === "rupture"); }
+function packArrete(p){
+  if (!p || p.type !== "pack") return false;
+  var m = /^pk-(van|bao|ban|cho|fra)-(p|g)$/.exec(p.id), BP = { van: "vanille", bao: "baobab", ban: "banane", cho: "choco", fra: "fraise" };
+  var trouve = function(id){ return S.produits.find(function(x){ return x.id === id; }); };
+  if (m) return estFini(trouve(BP[m[1]] + "-" + m[2]));
+  if (p.packCompo && typeof p.packCompo === "object") return Object.keys(p.packCompo).some(function(k){ return estFini(trouve(k)); });
+  if (/^pk-mix-/.test(p.id) || p.packChoix) { var gr = p.gr === "grand" || /-g$/.test(p.id); return !S.produits.some(function(x){ return x.cat === "cremes" && x.type === "produit" && !estFini(x) && (x.gr === "grand") === gr; }); }
+  return false;
+}
+function panneauDispo(){
+  var vendus = S.produits.filter(function(p){ return p.type !== "pack" && p.actif !== false; });
+  var lignes = vendus.map(function(p){
+    var ok = statutAdmin(p) !== "rupture";
+    return '<label class="sw" style="display:flex;justify-content:space-between;align-items:center;padding:8px 2px;border-bottom:1px solid #eee"><span><b>' + esc(p.nom.replace(/^Crème glacée /, "")) + '</b> <small style="color:#888">' + (ok ? (statutAdmin(p) === "aujourdhui" ? "disponible" : esc(STATUTS.filter(function(x){ return x[0] === statutAdmin(p); })[0][1])) : "stock fini") + '</small></span><span><input type="checkbox" data-dispo="1" data-id="' + esc(p.id) + '"' + (ok ? " checked" : "") + '><i></i></span></label>';
+  }).join("");
+  var arretes = S.produits.filter(function(p){ return p.type === "pack" && p.actif !== false && packArrete(p); }).map(function(p){ return p.nom.replace(/^Pack /, "").replace(/ — /g, " "); });
+  return '<div class="carte" style="border:2px solid #2e7d32;margin-bottom:12px"><h3 style="margin:0 0 4px">Disponible aujourd\'hui</h3>' +
+    '<p class="astuce" style="margin:0 0 8px">Un interrupteur par produit. Le client voit « Stock fini » sur les produits arrêtés, et sur les packs qui les contiennent. Ça s\'enregistre tout de suite.</p>' +
+    '<div style="display:flex;gap:8px;margin-bottom:6px"><button class="btn btn-vert btn-petit" type="button" data-act="dispo-tout" data-v="1">Tout activer</button><button class="btn btn-clair btn-petit" type="button" data-act="dispo-tout" data-v="0">Tout désactiver</button></div>' +
+    '<details open><summary style="font-weight:700;cursor:pointer;padding:6px 0">Produits (' + vendus.length + ')</summary>' + lignes + '</details>' +
+    (arretes.length ? '<p class="astuce" style="margin:8px 0 0"><b>Packs arrêtés automatiquement (' + arretes.length + ') :</b> ' + esc(arretes.join(", ")) + '.</p>' : '<p class="astuce" style="margin:8px 0 0">Aucun pack arrêté.</p>') + '</div>';
 }
 function statutAdmin(p){
   if (p.statut === "aujourdhui" || p.statut === "surcommande" || p.statut === "date" || p.statut === "rupture") return p.statut;
@@ -1383,6 +1407,10 @@ document.addEventListener("click", function(ev){
     case "copier-msg-part": return copierAvecMessage(S.mdpMessage.message, "Message copié : collez-le dans WhatsApp");
     case "copier-lien-part": return copierAvecMessage(location.origin + "/partenaire.html", "Lien partenaire copié");
     case "copier-lien-site": return copierAvecMessage(location.origin + "/", "Lien du site copié");
+    case "dispo-tout":
+      if (!S.produits) return;
+      S.produits.forEach(function(q){ if (q.type === "pack" || q.actif === false) return; if (t.getAttribute("data-v") === "1") { if (statutAdmin(q) === "rupture") appliquerStatut(q, "aujourdhui", ""); } else appliquerStatut(q, "rupture", ""); });
+      rendreCatalogue(); majSauvegarde(); return sauverCatalogue();
     case "verif-base": return verifBase();
   }
 });
@@ -1393,6 +1421,11 @@ document.addEventListener("change", function(ev){
     if (t.getAttribute("data-st")) appliquerStatut(q, t.value, q.dateDispo || "");
     else appliquerStatut(q, "date", t.value);
     rendreCatalogue(); majSauvegarde(); return;
+  }
+  if (t.getAttribute && t.getAttribute("data-dispo")) {
+    var pd = S.produits && S.produits.find(function(x){ return x.id === t.getAttribute("data-id"); }); if (!pd) return;
+    if (t.checked) { if (statutAdmin(pd) === "rupture") appliquerStatut(pd, "aujourdhui", ""); } else appliquerStatut(pd, "rupture", "");
+    rendreCatalogue(); majSauvegarde(); return sauverCatalogue();
   }
   if (t.matches && t.matches("[data-sw]")) {
     var p = S.produits && S.produits.find(function(x){ return x.id === t.getAttribute("data-id"); }); if (!p) return;

@@ -116,6 +116,8 @@ module.exports = async (req, res) => {
           commissionType: data.commissionType === "fixe" ? "fixe" : "pourcentage",
           commissionValeur: Math.max(0, Number(data.commissionValeur) || 0),
           joursActifs: Array.isArray(data.joursActifs) ? data.joursActifs.map(Number).filter((j) => j >= 0 && j <= 6) : [],
+          maxUtilisations: Math.max(0, parseInt(data.maxUtilisations, 10) || 0),
+          dateFin: /^\d{4}-\d{2}-\d{2}$/.test(String(data.dateFin || "")) ? String(data.dateFin) : "",
           actif: true,
           motDePasseHache: hacherMotDePasse(mdp)
         };
@@ -141,6 +143,8 @@ module.exports = async (req, res) => {
         if (data.commissionType) p.commissionType = data.commissionType === "fixe" ? "fixe" : "pourcentage";
         if (data.commissionValeur !== undefined && data.commissionValeur !== "") p.commissionValeur = Math.max(0, Number(data.commissionValeur) || 0);
         if (Array.isArray(data.joursActifs)) p.joursActifs = data.joursActifs.map(Number).filter((j) => j >= 0 && j <= 6);
+        if (data.maxUtilisations !== undefined) p.maxUtilisations = Math.max(0, parseInt(data.maxUtilisations, 10) || 0);
+        if (data.dateFin !== undefined) p.dateFin = /^\d{4}-\d{2}-\d{2}$/.test(String(data.dateFin || "")) ? String(data.dateFin) : "";
         if (data.nouveauMotDePasse) {
           const m = txt(data.nouveauMotDePasse, 60);
           if (m.length < 4) return res.status(400).json({ erreur: "Mot de passe : 4 caractères minimum" });

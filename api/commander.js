@@ -1,5 +1,5 @@
-const { getPartenaires, setCommande, limiter } = require("./_store");
-const { chargerCatalogue, calculerPanier, jourValide, calculerMontant } = require("./_catalogue");
+const { getPartenaires, setCommande, limiter, getCommandes } = require("./_store");
+const { chargerCatalogue, calculerPanier, jourValide, calculerMontant, dejaUtilise, codeExpire, limiteAtteinte, resoudreAmi } = require("./_catalogue");
 const { ipClient } = require("./_auth");
 const { getReglages } = require("./_store");
 const { fusionner } = require("./_site");
@@ -29,10 +29,20 @@ module.exports = async (req, res) => {
     if (mini && panier.total < mini) return res.status(400).json({ erreur: "Commande minimale : " + mini + " FCFA" });
 
     // Code promo (revalidé ici, jamais fait confiance au navigateur)
-    let remise = 0, commission = 0, partenaireId = null, codeFinal = "";
+    let remise = 0, commission = 0, partenaireId = null, codeFinal = "", parrainTel = "";
     const codeSaisi = nettoyer(d.codePromo || d.partenaireCode, 40).toUpperCase();
     if (codeSaisi) {
-      const p = (await getPartenaires()).find((x) => (x.code || "").toUpperCase() === codeSaisi && x.actif && !x.archive && jourValide(x));
+      let p = (await getPartenaires()).find((x) => (x.code || "").toUpperCase() === codeSaisi && x.actif && !x.archive && jourValide(x));
+      const toutes = await getCommandes();
+      if (p) {
+        if (codeExpire(p)) return res.status(400).json({ erreur: "Ce code n'est plus valable (date dépassée). Retirez le code pour commander." });
+        if (limiteAtteinte(p, toutes)) return res.status(400).json({ erreur: "Ce code n'est plus disponible (nombre maximum d'utilisations atteint). Retirez le code pour commander." });
+        if (dejaUtilise(p, tel, toutes)) return res.status(400).json({ erreur: "Ce code a déjà été utilisé avec ce numéro : il ne sert qu'une fois par client. Retirez le code pour commander." });
+      } else {
+        const ami = resoudreAmi(codeSaisi, tel, toutes, rgl);
+        if (ami && ami.erreur) return res.status(400).json({ erreur: ami.erreur + ". Retirez le code pour commander." });
+        if (ami) { p = ami.p; parrainTel = ami.p.parrain; }
+      }
       if (p) {
         remise = Math.min(panier.total, calculerMontant(p.remiseType, p.remiseValeur, panier.total));
         commission = calculerMontant(p.commissionType, p.commissionValeur, panier.total);
@@ -55,6 +65,7 @@ module.exports = async (req, res) => {
       montantPacks: panier.packs,
       montantTotal: panier.total,
       code: codeFinal,
+      parrainTel,
       remise,
       montantApresRemise: Math.max(0, panier.total - remise),
       // Livraison : incluse pour les packs ; à la charge du client pour les articles seuls (convenue sur WhatsApp)

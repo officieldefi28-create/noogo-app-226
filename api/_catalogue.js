@@ -67,6 +67,36 @@ function calculerPanier(articles, catalogue) {
   return { lignes, produits, packs, packsSans, total: produits + packs, aPack: packs > 0 };
 }
 
+// Une offre client (code sans commission) ne sert qu'une fois par personne, repérée par son numéro de téléphone.
+// Un code de partenaire avec commission reste utilisable plusieurs fois, sauf si "unParClient" est mis à true.
+function codeUnique(p) { return p.unParClient === true || (p.unParClient === undefined && !(Number(p.commissionValeur) > 0)); }
+function chiffres8(t) { return String(t || "").replace(/\D/g, "").slice(-8); }
+function dejaUtilise(p, tel, commandes) {
+  const n = chiffres8(tel); if (!codeUnique(p) || n.length < 8) return false;
+  const code = String(p.code || "").toUpperCase();
+  return (commandes || []).some((c) => c && String(c.code || "").toUpperCase() === code && c.statutLivraison !== "annulee" && chiffres8(c.telClient) === n);
+}
+// Limites d'un code : date de fin et nombre maximum d'utilisations (0 = sans limite)
+function codeExpire(p) { return !!p.dateFin && new Date().toISOString().slice(0, 10) > String(p.dateFin).slice(0, 10); }
+function limiteAtteinte(p, commandes) {
+  const max = Number(p.maxUtilisations) || 0; if (!max) return false;
+  const code = String(p.code || "").toUpperCase();
+  return (commandes || []).filter((c) => c && String(c.code || "").toUpperCase() === code && c.statutLivraison !== "annulee").length >= max;
+}
+// Parrainage : chaque client a un code AMI + 6 derniers chiffres de son numéro. Le filleul (nouveau client) a une remise fixe.
+function codeAmi(tel) { return "AMI" + chiffres8(tel).slice(-6); }
+function resoudreAmi(codeN, tel, commandes, rgl) {
+  const m = /^AMI(\d{6})$/.exec(String(codeN || "").toUpperCase()); if (!m) return null;
+  const remise = parseInt(rgl && rgl.parrainRemise, 10) || 0;
+  if (remise <= 0) return { erreur: "Le parrainage n'est pas actif pour le moment" };
+  const n = chiffres8(tel), liste = (commandes || []).filter((c) => c && c.statutLivraison !== "annulee");
+  const parrains = [...new Set(liste.filter((c) => c.statutLivraison === "livree" && chiffres8(c.telClient).endsWith(m[1])).map((c) => chiffres8(c.telClient)))];
+  if (!parrains.length) return { erreur: "Code ami inconnu" };
+  if (parrains.length > 1) return { erreur: "Code ami ambigu, demandez-en un autre à votre ami" };
+  if (parrains[0] === n) return { erreur: "Vous ne pouvez pas utiliser votre propre code ami" };
+  if (n.length >= 8 && liste.some((c) => chiffres8(c.telClient) === n)) return { erreur: "Le code ami est réservé aux nouveaux clients" };
+  return { p: { id: null, code: String(codeN).toUpperCase(), remiseType: "fixe", remiseValeur: remise, commissionType: "fixe", commissionValeur: 0, parrain: parrains[0] } };
+}
 function jourValide(partenaire) {
   if (!partenaire.joursActifs || partenaire.joursActifs.length === 0) return true;
   // Jour local Ouagadougou (UTC+0)
@@ -78,4 +108,4 @@ function calculerMontant(type, valeur, base) {
   return type === "pourcentage" ? Math.round(base * (v / 100)) : v;
 }
 
-module.exports = { majPhotos, chargerCatalogue, calculerPanier, jourValide, calculerMontant };
+module.exports = { dejaUtilise, codeUnique, codeExpire, limiteAtteinte, codeAmi, resoudreAmi, chiffres8, majPhotos, chargerCatalogue, calculerPanier, jourValide, calculerMontant };

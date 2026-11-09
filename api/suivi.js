@@ -706,8 +706,14 @@ module.exports = async (req, res) => {
         break;
       }
       case "sauvegarde": {
-        const [lots, ventes, pertes, depenses, comptages, config] = await Promise.all([S.suiviListe("lots"), S.suiviListe("ventes"), S.suiviListe("pertes"), S.suiviListe("depenses"), S.suiviListe("comptages"), S.getSuiviConfig()]);
-        return res.status(200).json({ sauvegardeLe: new Date().toISOString(), config, lots, ventes, pertes, depenses, comptages, recus: await S.suiviListe("recus"), demandes: await S.suiviListe("demandes"), equipe: await lireEquipe(), clotures: (await S.getDoc("clotures")) || [], journal: (await S.getDoc("journal")) || [] });
+        // Copie complète : toutes les listes du suivi + les documents importants (sans mots de passe ni clés secrètes)
+        const out = { sauvegardeLe: new Date().toISOString(), version: 2, config: await S.getSuiviConfig() };
+        for (const t of ["lots", "ventes", "pertes", "depenses", "comptages", "recus", "demandes", "encaissements", "comptes_prop", "comptes_esp", "lots_prop", "remises", "depots"]) out[t] = await S.suiviListe(t);
+        out.equipe = await lireEquipe();
+        out.commandes = await S.getCommandes();
+        out.catalogue = await chargerCatalogue();
+        for (const k of ["clotures", "journal", "packs_soir", "numeros", "suivi-supprimes"]) out[k] = (await S.getDoc(k)) || (k === "packs_soir" ? {} : []);
+        return res.status(200).json(out);
       }
       case "nouveau_depart": {
         const jr = date(d.date || new Date().toISOString().slice(0, 10));

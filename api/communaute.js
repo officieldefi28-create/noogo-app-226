@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const S = require("./_store");
 const { adminValide, ipClient } = require("./_auth");
 const SITE = require("./_site");
+const CAT = require("./_catalogue");
 
 const txt = (s, max) => String(s == null ? "" : s).replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
 const bloc = (s, max) => String(s == null ? "" : s).replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, " ").replace(/\r/g, "").trim().slice(0, max);
@@ -92,10 +93,20 @@ module.exports = async (req, res) => {
           fidelite = { seuil, livrees, restant: seuil - cycle, gagne: livrees > 0 && cycle === 0, recompense: rg.fideliteRecompense || "" };
         }
       } catch (e) { fidelite = null; }
+      let parrainage = null;
+      try {
+        let rg = SITE.DEFAUT_REGLAGES; try { rg = SITE.fusionner(await S.getReglages()).reglages || rg; } catch (e) {}
+        const remise = parseInt(rg.parrainRemise, 10) || 0, t8 = CAT.chiffres8(c.telClient);
+        if (remise > 0 && t8.length >= 8) {
+          const amis = (await S.getCommandes()).filter((x) => x && x.statutLivraison === "livree" && x.parrainTel === t8).length;
+          const donnes = Number((await S.hget("noogo:parrain", t8)) || 0);
+          parrainage = { code: CAT.codeAmi(c.telClient), remise, recompense: rg.parrainRecompense || "", amis, aRecevoir: Math.max(0, amis - donnes) };
+        }
+      } catch (e) { parrainage = null; }
       return res.status(200).json({
         id: c.id, date: c.date, etape, retrait: c.modeReception === "retrait",
         articles: (c.articles || []).map((a) => ({ nom: a.nom, qte: a.qte })),
-        total: c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal, fidelite
+        total: c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal, fidelite, parrainage
       });
     }
 
@@ -135,6 +146,25 @@ module.exports = async (req, res) => {
         if (n) notes[cle] = n; else delete notes[cle];
         await S.setDoc("contacts-notes", notes);
         return res.status(200).json({ succes: true });
+      }
+      case "avis_liste": return res.status(200).json({ avis: Object.values(await S.hgetall("noogo:avis")).sort(parDate) });
+      case "stats_site": {
+        const brut = await S.hgetall("noogo:stats"), stats = {};
+        for (const [k, v] of Object.entries(brut)) { const [j, e] = k.split("|"); if (!stats[j]) stats[j] = {}; stats[j][e] = Number(v) || 0; }
+        return res.status(200).json({ stats });
+      }
+      case "parrains": {
+        const cmds = await S.getCommandes(), brut = await S.hgetall("noogo:parrain"), m = {};
+        cmds.forEach((x) => { if (!x || x.statutLivraison !== "livree" || !x.parrainTel) return; const t = x.parrainTel; (m[t] = m[t] || { tel: t, amis: 0 }).amis++; });
+        const noms = {}; cmds.forEach((x) => { if (x && x.nomClient && x.nomClient !== "Non renseigné") noms[CAT.chiffres8(x.telClient)] = x.nomClient; });
+        const liste = Object.values(m).map((o) => ({ tel: o.tel, nom: noms[o.tel] || "", amis: o.amis, donnes: Number(brut[o.tel] || 0) })).sort((a, b) => (b.amis - b.donnes) - (a.amis - a.donnes));
+        return res.status(200).json({ parrains: liste });
+      }
+      case "parrain_donne": {
+        const t = String(d.tel || "").replace(/\D/g, "").slice(-8); if (t.length < 8) return res.status(400).json({ erreur: "Numéro invalide" });
+        const amis = (await S.getCommandes()).filter((x) => x && x.statutLivraison === "livree" && x.parrainTel === t).length, donne = Number((await S.hget("noogo:parrain", t)) || 0);
+        if (donne >= amis) return res.status(400).json({ erreur: "Toutes les récompenses ont déjà été données" });
+        await S.hincr("noogo:parrain", t, 1); return res.status(200).json({ succes: true });
       }
       case "avis_statut": {
         const a = await S.hget("noogo:avis", txt(d.id, 60));

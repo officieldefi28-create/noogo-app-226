@@ -14,6 +14,10 @@ const DEFAUT_REGLAGES = {
   commandeMin: "",
   fideliteSeuil: "5",
   videoAccueil: "",
+  offreJour: "",
+  dlcJours: "60",
+  parrainRemise: "500",
+  parrainRecompense: "1 pot offert",
   accroche: "Glaces naturelles livrées à Karpala · Commandez en 2 minutes",
   puces: "🚚 Livraison rapide · 📱 Orange Money / Wave · 🌿 100\u00a0% naturel",
   fideliteRecompense: "1 pot offert",
@@ -120,6 +124,10 @@ function valider(d) {
   { const mn = parseInt(String(rg.commandeMin || "").replace(/\D/g, ""), 10); r.commandeMin = mn > 0 && mn <= 1000000 ? String(mn) : ""; }
   { const fs = parseInt(String(rg.fideliteSeuil == null ? DEFAUT_REGLAGES.fideliteSeuil : rg.fideliteSeuil).replace(/\D/g, ""), 10); r.fideliteSeuil = String(fs >= 0 && fs <= 50 ? fs : 5); }
   r.fideliteRecompense = txt(rg.fideliteRecompense, 80) || DEFAUT_REGLAGES.fideliteRecompense;
+  r.offreJour = typeof rg.offreJour === "string" ? txt(rg.offreJour, 140) : "";
+  r.dlcJours = String(Math.min(365, Math.max(1, parseInt(rg.dlcJours, 10) || 60)));
+  r.parrainRemise = String(Math.min(5000, Math.max(0, parseInt(rg.parrainRemise == null ? 500 : rg.parrainRemise, 10) || 0)));
+  r.parrainRecompense = txt(rg.parrainRecompense, 80) || DEFAUT_REGLAGES.parrainRecompense;
   // Accueil : phrase d'accroche, rassurances, vidéo facultative (lien https vers un .mp4/.webm ou une vidéo YouTube)
   r.accroche = typeof rg.accroche === "string" ? txt(rg.accroche, 120) : DEFAUT_REGLAGES.accroche;
   r.puces = typeof rg.puces === "string" ? txt(rg.puces, 160) : DEFAUT_REGLAGES.puces;

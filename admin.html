@@ -1066,6 +1066,8 @@ function champsPartenaire(pre, p, edition){
     '<div><label for="' + pre + 'rv">Valeur de la remise</label><input id="' + pre + 'rv" type="number" inputmode="decimal" min="0" value="' + esc(p.remiseValeur) + '"></div></div>' +
     '<div class="rang2 garde"><div><label for="' + pre + 'ct">Commission du partenaire</label><select id="' + pre + 'ct">' + optionsSelect(T, p.commissionType) + '</select></div>' +
     '<div><label for="' + pre + 'cv">Valeur de la commission</label><input id="' + pre + 'cv" type="number" inputmode="decimal" min="0" value="' + esc(p.commissionValeur) + '"></div></div>' +
+    '<div class="rang2 garde"><div><label for="' + pre + 'dfin">Valable jusqu\'au (facultatif)</label><input id="' + pre + 'dfin" type="date" value="' + esc(p.dateFin || "") + '"></div>' +
+    '<div><label for="' + pre + 'max">Nombre maximum d\'utilisations (0 = illimité)</label><input id="' + pre + 'max" type="number" inputmode="numeric" min="0" value="' + esc(p.maxUtilisations || 0) + '"></div></div>' +
     '<label>Jours où le code est valable <span class="gris" style="font-weight:400">(rien de coché = tous les jours)</span></label>' +
     '<div class="jours">' + JOURS_COURTS.map(function(j, i){
       return '<label class="chip"><input type="checkbox" name="' + pre + 'jour" value="' + i + '"' + ((p.joursActifs || []).indexOf(i) >= 0 ? " checked" : "") + '>' + j + '</label>';
@@ -1083,7 +1085,8 @@ function lirePartenaire(pre, edition){
   var jours = Array.prototype.map.call(document.querySelectorAll('input[name="' + pre + 'jour"]:checked'), function(i){ return Number(i.value); });
   var o = { nom: nom, telephone: tel, type: valeurChamp(pre + "type"), code: code,
     remiseType: valeurChamp(pre + "rt"), remiseValeur: Number(valeurChamp(pre + "rv")) || 0,
-    commissionType: valeurChamp(pre + "ct"), commissionValeur: Number(valeurChamp(pre + "cv")) || 0, joursActifs: jours };
+    commissionType: valeurChamp(pre + "ct"), commissionValeur: Number(valeurChamp(pre + "cv")) || 0, joursActifs: jours,
+    dateFin: valeurChamp(pre + "dfin") || "", maxUtilisations: Math.max(0, parseInt(valeurChamp(pre + "max"), 10) || 0) };
   if (mdp) o[edition ? "nouveauMotDePasse" : "motDePasse"] = mdp;
   return o;
 }
@@ -1111,7 +1114,7 @@ function rendrePartenaires(){
       '<div style="display:flex;gap:5px;flex-wrap:wrap">' + etat + (p.reclamationEnCours ? '<span class="badge badge-orange">Réclame</span>' : '') + (p.auto ? '<span class="badge badge-bleu">Code auto</span>' : '') + '</div></div>' +
       '<dl><dt>Téléphone</dt><dd>' + (p.telephone ? '<a href="tel:' + esc(String(p.telephone).replace(/[^\d+]/g, "")) + '">' + esc(p.telephone) + '</a>' : '—') + '</dd>' +
       '<dt>Type</dt><dd>' + esc(typeL) + '</dd><dt>Jours</dt><dd>' + esc(joursTxt(p.joursActifs)) + '</dd>' +
-      '<dt>Remise</dt><dd>' + esc(valeurTxt(p.remiseType, p.remiseValeur)) + '</dd><dt>Commission</dt><dd>' + esc(valeurTxt(p.commissionType, p.commissionValeur)) + '</dd></dl>' +
+      '<dt>Limites</dt><dd>' + esc((p.dateFin ? "jusqu'au " + p.dateFin.split("-").reverse().join("/") : "pas de date de fin") + " · " + (p.maxUtilisations ? p.maxUtilisations + " utilisations max" : "utilisations illimitées")) + '</dd><dt>Remise</dt><dd>' + esc(valeurTxt(p.remiseType, p.remiseValeur)) + '</dd><dt>Commission</dt><dd>' + esc(valeurTxt(p.commissionType, p.commissionValeur)) + '</dd></dl>' +
       '<div class="solde-box"><span>Solde à payer</span><b>' + esc(fcfa(solde)) + '</b></div>' +
       '<div class="actions">' + bt("modifier", "Modifier", "btn-clair") + bt("mdp", "Mot de passe", "btn-clair") +
       (p.archive ? "" : bt("actif", p.actif ? "Désactiver" : "Activer", "btn-clair")) +
@@ -1223,6 +1226,10 @@ var CHAMPS_SITE = [
   ["titre","Grand titre (début)","text"],
   ["titreAccent","Grand titre (partie en couleur)","text"],
   ["intro","Texte d'introduction de l'accueil","area"],
+  ["offreJour","Accueil : OFFRE DU JOUR en bandeau (ex : Aujourd'hui : pack découverte à prix réduit). Videz pour cacher.","text"],
+  ["parrainRemise","Parrainage : remise pour le nouveau client invité par un ami, en FCFA (0 = parrainage arrêté)","number"],
+  ["parrainRecompense","Parrainage : récompense pour celui qui invite (par ami qui reçoit sa 1re commande)","text"],
+  ["dlcJours","Alerte stock : prévenir quand un produit est gardé depuis plus de … jours","number"],
   ["accroche","Accueil : phrase d'accroche sous la photo (pour donner envie de commander)","text"],
   ["puces","Accueil : petites rassurances (ex : 🚚 Livraison rapide · 📱 Orange Money / Wave · 🌿 100 % naturel)","text"],
   ["videoAccueil","Accueil : vidéo à la place de la photo (facultatif). Collez un lien https vers un fichier .mp4 ou une vidéo YouTube, 10 secondes environ. Videz le champ pour remettre la photo.","text"],
@@ -1459,7 +1466,7 @@ setInterval(function(){
 }, 60000);
 
 // Passerelle pour les modules séparés (admin-suivi.js)
-window.NOOGO_ADMIN = { jeton: function(){ return S.jeton; }, commandes: function(){ return S.commandes || []; }, toast: toast, esc: esc, deconnecter: function(m){ deconnecter(m); }, redimensionner: redimensionner, envoyerPhoto: envoyerPhoto, imgSrc: imgSrc };
+window.NOOGO_ADMIN = { jeton: function(){ return S.jeton; }, commandes: function(){ return S.commandes || []; }, partenaires: function(){ return S.partenaires || []; }, reglages: function(){ return (S.site && S.site.reglages) || {}; }, toast: toast, esc: esc, deconnecter: function(m){ deconnecter(m); }, redimensionner: redimensionner, envoyerPhoto: envoyerPhoto, imgSrc: imgSrc };
 
 /* ---------- Démarrage ---------- */
 S.jeton = lireJeton();

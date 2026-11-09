@@ -149,7 +149,26 @@ function optionsPoints(v, vide) {
 function retour(texte, action, valeur) { return '<button class="retour-plus" type="button" data-s="' + action + '"' + (valeur != null ? ' data-v="' + valeur + '"' : "") + '>← ' + texte + '</button>'; }
 
 /* Produits qui restent longtemps au congélateur : on suppose que les plus anciens sont vendus en premier */
-var DLC_JOURS = 60;
+var pubCfg = null;
+function cfg() {
+  var a = (A && A.reglages ? A.reglages() : null) || {};
+  if (pubCfg === null) { pubCfg = {}; fetch("/api/reglages").then(function (r) { return r.json(); }).then(function (j) { pubCfg = j.reglages || {}; rendre(); }).catch(function () {}); }
+  return Object.assign({}, pubCfg, a);
+}
+var com = {};
+function chargerCom(cle, action, extra) {
+  if (com[cle] !== undefined) return com[cle];
+  com[cle] = null;
+  fetch("/api/communaute", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.assign({ action: action, jeton: A.jeton() }, extra || {})) })
+    .then(function (r) { return r.json(); }).then(function (d) { com[cle] = d || {}; rendre(); }).catch(function () { com[cle] = { erreur: "Pas de connexion" }; rendre(); });
+  return null;
+}
+function rechargerCom(cle) { delete com[cle]; }
+function appelCom(action, extra) {
+  return fetch("/api/communaute", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(Object.assign({ action: action, jeton: A.jeton() }, extra || {})) })
+    .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.erreur || "Erreur"); return d; }); });
+}
+function dlcJours() { var n = parseInt(cfg().dlcJours, 10); return n > 0 ? n : 60; }
 function vieuxStock(v) {
   var out = [], lots = (v.lots || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : -1; });
   (v.stock || []).forEach(function (x) {
@@ -158,7 +177,7 @@ function vieuxStock(v) {
     lots.forEach(function (l) { (l.lignes || []).forEach(function (g) { if (g.produitId !== x.id || reste <= 0) return; var q = Math.min(reste, Number(g.qte) || 0); if (q > 0) { reste -= q; plusVieux = { date: l.date, qte: q }; } }); });
     if (!plusVieux) return;
     var age = Math.floor((Date.parse(jourJ(0)) - Date.parse(plusVieux.date)) / 86400000);
-    if (age >= DLC_JOURS) out.push({ nom: x.nom, age: age, qte: plusVieux.qte });
+    if (age >= dlcJours()) out.push({ nom: x.nom, age: age, qte: plusVieux.qte });
   });
   return out;
 }
@@ -187,6 +206,9 @@ function vResume(v) {
   if (nbAValider(v)) al.push('<div class="alerte rouge"><b>' + nbAValider(v) + ' chose' + (nbAValider(v) > 1 ? 's' : '') + ' à valider :</b> ventes, production ou comptage envoyés par l\'équipe. Allez dans Équipe.</div>');
   (v.comptesEsp || []).filter(function (x) { return x.date >= jourJ(-2) && x.ecart < 0 && x.statut !== "accepte"; }).forEach(function (x) { al.push('<div class="alerte rouge"><b>Manque dans la caisse de ' + esc(x.vendeur) + ' :</b> ' + fcfa(-x.ecart) + ' le ' + esc(dateFr(x.date)) + '. Prévenez-la avant de valider.</div>'); });
   if (nbPaiements(v)) al.push('<div class="alerte rouge"><b>' + nbPaiements(v) + ' paiement' + (nbPaiements(v) > 1 ? 's' : '') + ' à confirmer :</b> vérifiez votre téléphone (65 12 09 02) puis allez dans Équipe › la personne.</div>');
+  var dsv = ""; try { dsv = localStorage.getItem("noogo_sauv") || ""; } catch (e) {}
+  var ageSv = dsv ? Math.floor((Date.parse(jourJ(0)) - Date.parse(dsv)) / 86400000) : 999;
+  if (ageSv >= 7) al.push('<div class="alerte rouge"><b>Pensez à sauvegarder :</b> ' + (dsv ? 'dernière sauvegarde il y a ' + ageSv + ' jours.' : 'aucune sauvegarde faite sur ce téléphone.') + ' <button class="btn btn-vert btn-petit" type="button" data-s="sauvegarder">Sauvegarder maintenant</button></div>');
   vieuxStock(v).forEach(function (x) { al.push('<div class="alerte rouge"><b>Produit gardé longtemps :</b> ' + esc(x.nom) + ' (' + x.qte + ' pots produits il y a ' + x.age + ' jours). Vérifiez la qualité et vendez-les en premier.</div>'); });
   var nomsOk = function (l) { return l.map(function (x) { return esc(x.nom) + " (" + x.theorique + ")"; }).join(", "); };
   if (b.alertes.length) al.push('<div class="alerte rouge"><b>Stock négatif :</b> ' + nomsOk(b.alertes) + '. Il manque une production ou un comptage.</div>');
@@ -620,46 +642,125 @@ function vObjectifs(v) {
 /* ----- Plus : les outils rangés ----- */
 function vPlus(v) {
   if (!E.plus) {
-    var M = [["patron", "Accès patron (lecture seule)", "Un lien pour que le patron voie les chiffres, sans rien modifier"], ["relances", "Clients à relancer", "Anciens clients, avec un message prêt à envoyer sur WhatsApp"], ["cloture", "Clôture de la journée", "Compter la caisse du soir, voir s'il manque de l'argent"], ["objectifs", "Objectifs et seuil de rentabilité", "Où j'en suis ce jour et ce mois"], ["envoi", "Envoyer et exporter", "Rapport WhatsApp, Excel, Google Sheets, Drive"], ["journal", "Journal des modifications", "Qui a changé quoi, et quand"], ["params", "Réglages du suivi", "Caisse de départ, coûts, points de vente"]];
+    var M = [["patron", "Accès patron (lecture seule)", "Un lien pour que le patron voie les chiffres, sans rien modifier"], ["avis", "Avis clients", "Valider ou masquer les avis avant qu'ils s'affichent sur le site"], ["stats", "Statistiques du site", "Visiteurs, paniers, commandes : où perdez-vous des clients ?"], ["relances", "Clients et offres", "Fidèles, nouveaux, clients à relancer, avec message et offre prêts"], ["cloture", "Clôture de la journée", "Compter la caisse du soir, voir s'il manque de l'argent"], ["objectifs", "Objectifs et seuil de rentabilité", "Où j'en suis ce jour et ce mois"], ["envoi", "Envoyer et exporter", "Rapport WhatsApp, Excel, Google Sheets, Drive"], ["journal", "Journal des modifications", "Qui a changé quoi, et quand"], ["params", "Réglages du suivi", "Caisse de départ, coûts, points de vente"]];
     return '<div class="carte"><h3>Plus</h3>' + M.map(function (m) { return '<button class="menu-plus" type="button" data-s="vers" data-v="' + m[0] + '"><span><b>' + m[1] + '</b><small>' + m[2] + '</small></span><span>›</span></button>'; }).join("") + '</div>';
   }
-  var corps = { patron: vPatron, relances: vRelances, cloture: vCloture, objectifs: vObjectifs, envoi: vEnvoi, journal: vJournal, params: vParams }[E.plus](v);
+  var corps = { patron: vPatron, relances: vRelances, avis: vAvis, stats: vStats, cloture: vCloture, objectifs: vObjectifs, envoi: vEnvoi, journal: vJournal, params: vParams }[E.plus](v);
   return retour("Plus", "vers", "") + corps;
 }
-/* ----- Clients à relancer : les gens qui ont déjà commandé, avec un message gentil prêt à envoyer ----- */
+
+function vAvis() {
+  var d = chargerCom("avis", "avis_liste"), h = '<div class="carte"><h3>Avis clients</h3><p class="astuce">Un avis ne s\'affiche sur le site qu\'après votre validation.</p>';
+  if (!d) return h + '<p class="gris">Chargement…</p></div>';
+  var l = d.avis || [];
+  if (!l.length) return h + '<p class="gris">Aucun avis pour le moment. Les clients peuvent en laisser depuis l\'accueil du site et depuis « Ma commande ».</p></div>';
+  var nb = l.filter(function (a) { return a.statut === "attente"; }).length;
+  h += (nb ? '<div class="alerte rouge"><b>' + nb + ' avis à valider</b></div>' : '');
+  return h + l.map(function (a) {
+    var et = a.statut === "publie" ? "Affiché" : a.statut === "masque" ? "Masqué" : "À valider";
+    return '<div class="rang" style="display:block"><b>' + esc(a.nom) + '</b>' + (a.quartier ? ' · ' + esc(a.quartier) : '') + ' · ' + "★".repeat(a.note) + "☆".repeat(5 - a.note) + ' <small>(' + et + ' · ' + esc(dateFr(String(a.date || "").slice(0, 10))) + ')</small><p style="margin:4px 0">' + esc(a.texte) + '</p><div style="display:flex;gap:6px;flex-wrap:wrap">' +
+      (a.statut !== "publie" ? '<button class="btn btn-vert btn-petit" type="button" data-s="avis-st" data-id="' + esc(a.id) + '" data-v="publie">Afficher</button>' : '') +
+      (a.statut !== "masque" ? '<button class="btn btn-clair btn-petit" type="button" data-s="avis-st" data-id="' + esc(a.id) + '" data-v="masque">Masquer</button>' : '') +
+      '<button class="btn btn-clair btn-petit" type="button" data-s="avis-sup" data-id="' + esc(a.id) + '">Supprimer</button></div></div>';
+  }).join("") + '</div>';
+}
+function vStats() {
+  var d = chargerCom("stats", "stats_site"), h = '<div class="carte"><h3>Statistiques du site</h3><p class="astuce">Compté à chaque visite du site par un client. Le nombre de commandes vient des commandes envoyées depuis le site.</p>';
+  if (!d) return h + '<p class="gris">Chargement…</p></div>';
+  var st = d.stats || {}, jours = Object.keys(st).sort().reverse();
+  if (!jours.length) return h + '<p class="gris">Pas encore de données. Elles se remplissent quand des clients visitent le site (après la mise à jour).</p></div>';
+  function somme(n) { var t = { visite: 0, carte_vue: 0, ajout_panier: 0, panier_ouvert: 0, commande_envoyee: 0 }; jours.slice(0, n).forEach(function (j) { Object.keys(t).forEach(function (k) { t[k] += (st[j] || {})[k] || 0; }); }); return t; }
+  function bloc(titre, t) {
+    var pct = function (a, b) { return b ? Math.round(a / b * 100) + " %" : "—"; };
+    return '<h4 style="margin:12px 0 6px">' + titre + '</h4><table style="width:100%;border-collapse:collapse">' +
+      [["Visites du site", t.visite, ""], ["Ont regardé les produits", t.carte_vue, pct(t.carte_vue, t.visite)], ["Ont ajouté au panier", t.ajout_panier, pct(t.ajout_panier, t.visite)], ["Ont ouvert le panier", t.panier_ouvert, pct(t.panier_ouvert, t.visite)], ["Commandes envoyées", t.commande_envoyee, pct(t.commande_envoyee, t.visite)]].map(function (r) { return '<tr><td style="padding:5px 0;border-bottom:1px solid #eee">' + r[0] + '</td><td style="text-align:right;border-bottom:1px solid #eee"><b>' + r[1] + '</b></td><td style="text-align:right;border-bottom:1px solid #eee;color:#888">' + r[2] + '</td></tr>'; }).join("") + '</table>';
+  }
+  h += bloc("Les 7 derniers jours", somme(7)) + bloc("Les 30 derniers jours", somme(30));
+  h += '<h4 style="margin:12px 0 6px">Jour par jour (visites → commandes)</h4>' + jours.slice(0, 10).map(function (j) { var x = st[j] || {}; return '<div class="rang"><span>' + esc(dateFr(j)) + '</span><span>' + (x.visite || 0) + ' visites · ' + (x.ajout_panier || 0) + ' paniers · <b>' + (x.commande_envoyee || 0) + ' commandes</b></span></div>'; }).join("");
+  var t7 = somme(7);
+  var conseil = t7.visite < 20 ? "Très peu de visites : le problème vient du trafic. Publiez un statut WhatsApp avec le lien, et envoyez le message aux clients endormis." : (t7.ajout_panier < t7.visite * 0.2 ? "Beaucoup de visites mais peu de paniers : vérifiez que les parfums demandés sont disponibles, et que les prix sont clairs." : (t7.commande_envoyee < t7.panier_ouvert * 0.4 ? "Des paniers ouverts mais peu de commandes : le formulaire ou la livraison fait peut-être fuir les clients. Essayez un code promo ou la livraison offerte." : "Le parcours semble sain : continuez à faire venir du monde."));
+  return h + '<div class="alerte" style="margin-top:12px"><b>Ce que ça veut dire :</b> ' + conseil + '</div></div>';
+}
+function vParrains() {
+  var d = chargerCom("parrains", "parrains"), c = cfg(), remise = parseInt(c.parrainRemise, 10) || 0;
+  var h = '<h4 style="margin:18px 0 4px">Parrainage</h4><p class="astuce">' + (remise ? 'Chaque client reçoit un code ami (affiché dans « Ma commande »). Un nouveau client qui l\'utilise a ' + fcfa(remise) + ' de remise ; celui qui l\'a invité gagne : <b>' + esc(c.parrainRecompense || "1 pot offert") + '</b> à chaque ami dont la commande est livrée.' : 'Parrainage arrêté (remise à 0 dans Site, Réglages).') + '</p>';
+  if (!d) return h + '<p class="gris">Chargement…</p>';
+  var l = d.parrains || []; if (!l.length) return h + '<p class="gris">Aucun parrainage pour le moment.</p>';
+  return h + l.map(function (o) {
+    var reste = o.amis - o.donnes;
+    return '<div class="rang"><div class="g"><b>' + esc(o.nom || "+226 " + o.tel) + '</b><small>' + o.amis + ' ami' + (o.amis > 1 ? 's' : '') + ' livré' + (o.amis > 1 ? 's' : '') + ' · ' + o.donnes + ' récompense' + (o.donnes > 1 ? 's' : '') + ' donnée' + (o.donnes > 1 ? 's' : '') + '</small></div>' + (reste > 0 ? '<button class="btn btn-vert btn-petit" type="button" data-s="parrain-donne" data-tel="' + esc(o.tel) + '">Donné (' + reste + ')</button>' : '<span class="gris">à jour</span>') + '</div>';
+  }).join("");
+}
+/* ----- Clients et offres : groupes automatiques, messages prêts, code promo à joindre ----- */
+var offreCode = "", groupesCl = [];
 function clientsDe() {
   var cm = (A && A.commandes ? A.commandes() : []), m = {};
   cm.forEach(function (c) {
     if (!c || c.statutLivraison === "annulee" || c.archive) return;
     var tel = String(c.telClient || "").replace(/\D/g, ""); if (tel.length < 8) return;
     if (tel.length === 8) tel = "226" + tel;
-    var o = (m[tel] = m[tel] || { tel: tel, nom: "", n: 0, total: 0, dernier: "", art: {} });
+    var o = (m[tel] = m[tel] || { tel: tel, nom: "", n: 0, livrees: 0, total: 0, dernier: "", art: {} });
     if (c.nomClient && c.nomClient !== "Non renseigné") o.nom = c.nomClient;
-    o.n++; o.total += Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0;
+    o.n++; if (c.statutLivraison === "livree") o.livrees++;
+    o.total += Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0;
     var d = String(c.date || "").slice(0, 10); if (d > o.dernier) o.dernier = d;
     (c.articles || []).forEach(function (a) { o.art[a.nom] = (o.art[a.nom] || 0) + (Number(a.qte) || 1); });
   });
   return Object.keys(m).map(function (k) { var o = m[k]; var fav = Object.keys(o.art).sort(function (a, b) { return o.art[b] - o.art[a]; })[0] || ""; o.fav = fav; return o; });
 }
 function joursDepuis(d) { return d ? Math.floor((Date.now() - Date.parse(d + "T00:00:00Z")) / 86400000) : 999; }
-function messageRelance(o) {
-  var pren = (o.nom || "").split(" ")[0];
+function offresActives() {
+  var cm = (A && A.commandes ? A.commandes() : []), auj = new Date().toISOString().slice(0, 10);
+  return (A && A.partenaires ? A.partenaires() : []).filter(function (p) {
+    if (!p || !p.code || !p.actif || p.archive || !(Number(p.remiseValeur) > 0)) return false;
+    if (p.dateFin && auj > String(p.dateFin).slice(0, 10)) return false;
+    if (Number(p.maxUtilisations) > 0 && cm.filter(function (c) { return c && String(c.code || "").toUpperCase() === String(p.code).toUpperCase() && c.statutLivraison !== "annulee"; }).length >= Number(p.maxUtilisations)) return false;
+    return true;
+  });
+}
+function texteOffre(p) { return p.remiseType === "fixe" ? "−" + fcfa(p.remiseValeur) : "−" + p.remiseValeur + " %"; }
+function messageClient(o, type, dem) {
+  var pren = (o.nom || "").split(" ")[0] || "", sal = pren ? "Bonjour " + pren + " 😊 " : "Bonjour 😊 ";
   var fav = (o.fav || "").replace(/^Crème glacée /, "").replace(/^Pack /, "pack ");
-  if (o.n >= 3) return "Bonjour " + pren + " 😊 Merci d'être une cliente aussi fidèle chez Noogó 🍦 Pour vous remercier, votre prochaine commande a une petite attention de notre part. Vos glaces " + (fav ? "(" + fav + ") " : "") + "vous attendent : " + location.origin;
-  return "Bonjour " + pren + " 😊 C'est Noogó 🍦 Nous espérons que vous avez bien aimé vos glaces " + (fav ? "(" + fav + ") " : "") + "! Elles sont de nouveau prêtes aujourd'hui, 100 % naturelles. Commandez en 2 minutes, livraison à Karpala : " + location.origin;
+  var cfg0 = cfg(), seuil = parseInt(cfg0.fideliteSeuil == null ? 5 : cfg0.fideliteSeuil, 10) || 0, rec = cfg0.fideliteRecompense || "1 pot offert";
+  var of = offreCode ? offresActives().filter(function (p) { return p.code === offreCode; })[0] : null;
+  var offre = of ? " Avec le code *" + of.code + "* vous avez " + texteOffre(of) + " sur votre commande." : "";
+  var site = " Commandez en 2 minutes : " + location.origin;
+  if (type === "fidele" || type === "fidele-perdu") {
+    var reste = seuil ? seuil - (o.livrees % seuil) : 0, prog = seuil && reste < seuil ? " Plus que " + reste + " commande" + (reste > 1 ? "s" : "") + " avant votre récompense (" + rec + ") 🎁." : "";
+    return sal + (type === "fidele-perdu" ? "Vous nous manquez chez Noogó 🍦 Vos glaces " + (fav ? "(" + fav + ") " : "") + "vous attendent." : "Merci d'être un(e) client(e) aussi fidèle chez Noogó 🍦") + prog + offre + site;
+  }
+  if (type === "nouveau") return sal + "Merci d'avoir goûté Noogó 🍦 Vos glaces " + (fav ? "(" + fav + ") " : "") + "vous ont plu ? Nos packs sont plus avantageux, et chaque 5 pots livrés vous rapprochent d'une récompense 🎁." + offre + site;
+  return sal + "C'est Noogó 🍦 Ça fait un moment ! Vos glaces " + (fav ? "(" + fav + ") " : "") + "sont de nouveau prêtes, 100 % naturelles, livrées à Karpala." + offre + site;
+}
+function groupesClients(l) {
+  var f = function (fn) { return l.filter(fn).sort(function (a, b) { return a.dernier < b.dernier ? 1 : -1; }); };
+  return [
+    { titre: "Fidèles à ne pas perdre (3 commandes ou plus, absents depuis 14 jours)", type: "fidele-perdu", l: f(function (o) { return o.n >= 3 && joursDepuis(o.dernier) > 14; }) },
+    { titre: "Fidèles actifs (3 commandes ou plus)", type: "fidele", l: f(function (o) { return o.n >= 3 && joursDepuis(o.dernier) <= 14; }) },
+    { titre: "Nouveaux (1 ou 2 commandes, derniers 7 jours) : à remercier", type: "nouveau", l: f(function (o) { return o.n < 3 && joursDepuis(o.dernier) <= 7; }) },
+    { titre: "À relancer (8 à 29 jours sans commande)", type: "relance", l: f(function (o) { return o.n < 3 && joursDepuis(o.dernier) > 7 && joursDepuis(o.dernier) < 30; }) },
+    { titre: "Endormis (30 jours ou plus sans commande)", type: "relance", l: f(function (o) { return o.n < 3 && joursDepuis(o.dernier) >= 30; }) }
+  ];
 }
 function vRelances() {
   var l = clientsDe();
-  var h = '<div class="carte"><h3>Clients à relancer</h3><p class="astuce">Les personnes qui ont déjà commandé, avec un message gentil déjà écrit. Appuyez sur WhatsApp, relisez, envoyez. Ne relancez pas la même personne tous les jours : une fois par semaine suffit.</p>';
+  var h = '<div class="carte"><h3>Clients et offres</h3><p class="astuce">Tous ceux qui ont commandé sur le site, classés automatiquement. Choisissez une offre, puis envoyez le message : un client à la fois (bouton WhatsApp), ou copiez le message pour une liste de diffusion WhatsApp. Ne relancez pas la même personne plus d\'une fois par semaine.</p>';
   if (!l.length) return h + '<p class="gris">Pas encore de client avec un numéro. Les numéros viennent des commandes du site.</p></div>';
-  var groupes = [["Fidèles (3 commandes ou plus)", l.filter(function (o) { return o.n >= 3; })], ["À relancer (plus de 7 jours sans commande)", l.filter(function (o) { return o.n < 3 && joursDepuis(o.dernier) > 7; })], ["Récents (commande dans les 7 derniers jours)", l.filter(function (o) { return o.n < 3 && joursDepuis(o.dernier) <= 7; })]];
-  groupes.forEach(function (g) {
-    if (!g[1].length) return;
-    h += '<h4 style="margin:14px 0 4px">' + g[0] + ' · ' + g[1].length + '</h4>' + g[1].sort(function (a, b) { return a.dernier < b.dernier ? 1 : -1; }).slice(0, 30).map(function (o) {
-      return '<div class="rang"><div class="g"><b>' + esc(o.nom || "Client") + '</b><small>' + o.n + ' commande' + (o.n > 1 ? 's' : '') + ' · ' + fcfa(o.total) + ' · dernière le ' + esc(dateFr(o.dernier)) + (o.fav ? ' · aime : ' + esc(o.fav) : "") + '</small></div><a class="btn btn-vert btn-petit" target="_blank" rel="noopener" href="https://wa.me/' + esc(o.tel) + '?text=' + encodeURIComponent(messageRelance(o)) + '">WhatsApp</a></div>';
-    }).join("");
+  var fid = l.filter(function (o) { return o.n >= 3; }).length, retour = l.filter(function (o) { return o.n >= 2; }).length, dort = l.filter(function (o) { return joursDepuis(o.dernier) >= 30; }).length;
+  h += '<div class="grille2"><div class="rang"><span>Clients</span><b>' + l.length + '</b></div><div class="rang"><span>Fidèles (3+)</span><b>' + fid + '</b></div><div class="rang"><span>Sont revenus</span><b>' + Math.round(retour / l.length * 100) + ' %</b></div><div class="rang"><span>Endormis (30 j+)</span><b>' + dort + '</b></div></div>';
+  var offres = offresActives();
+  h += '<h4 style="margin:14px 0 6px">Offre à joindre au message</h4><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-petit ' + (offreCode ? 'btn-clair' : 'btn-vert') + '" type="button" data-s="offre" data-v="">Aucune offre</button>' + offres.map(function (p) { return '<button class="btn btn-petit ' + (offreCode === p.code ? 'btn-vert' : 'btn-clair') + '" type="button" data-s="offre" data-v="' + esc(p.code) + '">' + esc(p.code) + ' (' + esc(texteOffre(p)) + ')</button>'; }).join("") + '</div>' +
+    (offres.length ? '' : '<p class="astuce">Aucun code promo actif. Créez-en un dans l\'onglet Partenaires (remise client, sans commission), puis revenez ici.</p>');
+  groupesCl = groupesClients(l);
+  groupesCl.forEach(function (g, i) {
+    if (!g.l.length) return;
+    h += '<h4 style="margin:16px 0 4px">' + esc(g.titre) + ' · ' + g.l.length + '</h4><div class="grille2" style="margin-bottom:6px"><button class="btn btn-clair btn-petit" type="button" data-s="cl-copier" data-v="msg" data-g="' + i + '">Copier le message</button><button class="btn btn-clair btn-petit" type="button" data-s="cl-copier" data-v="tels" data-g="' + i + '">Copier les numéros</button></div>' +
+      g.l.slice(0, 30).map(function (o) {
+        return '<div class="rang"><div class="g"><b>' + esc(o.nom || "Client") + '</b><small>' + o.n + ' commande' + (o.n > 1 ? 's' : '') + ' · ' + fcfa(o.total) + ' · dernière le ' + esc(dateFr(o.dernier)) + (o.fav ? ' · aime : ' + esc(o.fav.replace(/^Crème glacée /, "")) : "") + '</small></div><a class="btn btn-vert btn-petit" target="_blank" rel="noopener" href="https://wa.me/' + esc(o.tel) + '?text=' + encodeURIComponent(messageClient(o, g.type)) + '">WhatsApp</a></div>';
+      }).join("");
   });
-  return h + '</div>';
+  return h + vParrains() + '</div>';
 }
 /* ----- Accès patron : un lien secret, lecture seule ----- */
 function lienPatron(v) { return v.patron && v.patron.cle ? location.origin + "/patron.html?k=" + v.patron.cle : ""; }
@@ -677,6 +778,8 @@ function vPatron(v) {
 }
 function vEnvoi(v) {
   return '<div class="carte"><h3>Envoyer et exporter</h3><p class="astuce">Ces boutons ouvrent le menu d\'envoi de votre téléphone : choisissez WhatsApp, Google Drive, Gmail, Sheets… Sur ordinateur, le fichier se télécharge. Les chiffres suivent la période choisie dans le Résumé (' + esc(nomPeriode()) + ').</p>' +
+    '<button class="btn btn-or btn-bloc" type="button" data-s="sauvegarder">Sauvegarde complète (à garder en sécurité)</button>' +
+    '<p class="astuce" style="margin:4px 0 10px">Une copie de tout : ventes, dépenses, stock, caisse, clients, commandes. Faites-la une fois par semaine et gardez le fichier sur Drive. Ne l\'envoyez à personne : il contient les codes de l\'équipe.</p>' +
     '<button class="btn btn-vert btn-bloc" type="button" data-s="rapport-wa">Résumé détaillé sur WhatsApp</button>' +
     '<button class="btn btn-brun btn-bloc" type="button" style="margin-top:8px" data-s="rapport-pdf">Rapport PDF (propre, à garder)</button>' +
     '<button class="btn btn-brun btn-bloc" type="button" style="margin-top:8px" data-s="rapport-complet">Rapport complet (document avec chaque vente et dépense)</button>' +
@@ -1064,7 +1167,7 @@ function clic(ev) {
       window.open("https://wa.me/" + tel + "?text=" + encodeURIComponent(tw), "_blank", "noopener"); return;
     case "fiche": E.fiche = v || null; window.scrollTo(0, 0); return rendre();
     case "saisie": E.saisie = v || null; E.ouvert = ({ vente: "vente", perte: "perte", production: "lot", depense: "depense" })[v] || null; if (v === "production") E.nbLignesLot = 1; window.scrollTo(0, 0); return rendre();
-    case "vers": window.scrollTo(0, 0); if (!v) { E.plus = null; return rendre(); } E.sous = "plus"; E.plus = v; E.ouvert = null; return rendre();
+    case "vers": com = {}; window.scrollTo(0, 0); if (!v) { E.plus = null; return rendre(); } E.sous = "plus"; E.plus = v; E.ouvert = null; return rendre();
     case "autres": E.autres = !E.autres; return rendre();
     case "archiver": return envoyer("archiver", { type: t.getAttribute("data-t"), id: t.getAttribute("data-id"), etat: t.getAttribute("data-etat") !== "0" }, t.getAttribute("data-etat") === "0" ? "Restauré" : "Archivé (il ne compte plus dans les totaux)");
     case "vendeur-archiver":
@@ -1080,6 +1183,16 @@ function clic(ev) {
     case "patron-creer": if (E.vue.patron && E.vue.patron.cle && !confirm("Créer un nouveau lien ? L'ancien ne marchera plus.")) return; return envoyer("patron_lien", { operation: "creer" }, "Lien créé");
     case "patron-off": return envoyer("patron_lien", { operation: "desactiver" }, "Lien désactivé : le patron ne voit plus rien");
     case "patron-on": return envoyer("patron_lien", { operation: "activer" }, "Lien réactivé");
+    case "avis-st": return appelCom("avis_statut", { id: t.getAttribute("data-id"), statut: v }).then(function () { rechargerCom("avis"); rendre(); }).catch(function (e) { A.toast(e.message, "err"); });
+    case "avis-sup": if (!window.confirm("Supprimer cet avis ?")) return; return appelCom("avis_suppr", { id: t.getAttribute("data-id") }).then(function () { rechargerCom("avis"); rendre(); }).catch(function (e) { A.toast(e.message, "err"); });
+    case "parrain-donne": return appelCom("parrain_donne", { tel: t.getAttribute("data-tel") }).then(function () { rechargerCom("parrains"); A.toast("Récompense notée", "ok"); rendre(); }).catch(function (e) { A.toast(e.message, "err"); });
+    case "offre": offreCode = t.getAttribute("data-v") || ""; return rendre();
+    case "cl-copier": {
+      var gg = groupesCl[parseInt(t.getAttribute("data-g"), 10)]; if (!gg || !gg.l.length) return;
+      var txt = t.getAttribute("data-v") === "tels" ? gg.l.map(function (o) { return "+" + o.tel; }).join("\n") : messageClient({ nom: "", fav: "", livrees: 0 }, gg.type);
+      var okc = t.getAttribute("data-v") === "tels" ? "Numéros copiés" : "Message copié";
+      try { navigator.clipboard.writeText(txt).then(function () { A.toast(okc, "ok"); }, function () { window.prompt("Copiez :", txt); }); } catch (e) { window.prompt("Copiez :", txt); } return;
+    }
     case "patron-copier": var lp = lienPatron(E.vue); try { navigator.clipboard.writeText(lp); A.toast("Lien copié", "ok"); } catch (e) { window.prompt("Copiez ce lien :", lp); } return;
     case "patron-wa": window.open("https://wa.me/?text=" + encodeURIComponent("Bonjour 👋\nVoici le tableau Noogó (lecture seule) : tous les chiffres à jour, sur ton téléphone.\n" + lienPatron(E.vue) + "\n\nOuvre le lien avec Chrome. Tu peux l'ajouter à l'écran d'accueil."), "_blank", "noopener"); return;
     case "valider-jour": return envoyer("valider_jour", { vid: t.getAttribute("data-vid"), date: t.getAttribute("data-date"), duId: t.getAttribute("data-duid") || "", solo: !t.getAttribute("data-duid") }, "Journée validée : elle compte maintenant dans la caisse");
@@ -1119,6 +1232,14 @@ function clic(ev) {
       return envoyer("supprimer_recu", { id: t.getAttribute("data-id") }, "Reçu supprimé", function () { E.soir = null; });
     case "rapport-wa": return rapportWA();
     case "rapport-pdf": return rapportPdf();
+    case "sauvegarder": return appel("sauvegarde").then(function (r) {
+      var nom = "sauvegarde-noogo-" + jourJ(0) + ".json", txt = JSON.stringify(r, null, 1);
+      try { localStorage.setItem("noogo_sauv", jourJ(0)); } catch (e) {}
+      try { var f = new File([txt], nom, { type: "application/json" }); if (navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f], title: "Sauvegarde Noogó" }).catch(function () {}); rendre(); return; } } catch (e) {}
+      var u = URL.createObjectURL(new Blob([txt], { type: "application/json" })), a = document.createElement("a");
+      a.href = u; a.download = nom; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 3000);
+      A.toast("Sauvegarde téléchargée. Gardez le fichier sur Drive.", "ok"); rendre();
+    }).catch(function (e) { A.toast(e.message || "Sauvegarde impossible", "err"); });
     case "classeur": return classeurComplet();
     case "rapport-cloture": return rapportCloture();
     case "cloturer": if (val("cl-c") === "") return A.toast("Écrivez les espèces comptées dans la caisse.", "err"); return envoyer("cloture", { date: val("cl-d"), compte: val("cl-c"), fond: val("cl-f"), note: val("cl-n") }, "Journée clôturée");

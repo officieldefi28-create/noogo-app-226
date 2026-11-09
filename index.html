@@ -52,6 +52,10 @@ main{flex:1;min-height:0;position:relative}
 .logo-zone img,.logo-zone video{max-width:100%;max-height:100%;object-fit:contain;border-radius:18px}
 .logo-zone video{width:100%;height:100%;object-fit:cover}
 .logo-zone iframe{width:100%;height:100%;border:0;border-radius:18px}
+.offrejour{margin:0;text-align:center;background:var(--or);color:#1c1608;font-weight:800;font-size:15px;border-radius:12px;padding:9px 12px;cursor:pointer}
+.lien-avis{background:none;border:0;color:var(--vert);font-weight:800;font-size:14px;text-decoration:underline;text-underline-offset:3px;padding:2px;min-height:0}
+.etoiles{display:flex;gap:6px;justify-content:center;margin:8px 0}.etoiles button{font-size:34px;line-height:1;background:none;border:0;color:#c9b27c;min-height:0;padding:2px}.etoiles button.on{color:#e0a800}
+.avis-i{border-top:1px solid #e6dcc0;padding:8px 0;font-size:14px}.avis-i small{color:var(--gris)}
 .accroche{margin:0;text-align:center;font-weight:800;font-size:17px;line-height:1.25;color:var(--vert)}
 .puces{margin:0;text-align:center;font-size:12px;font-weight:700;color:var(--gris)}
 .gros.inst{background:#fff;color:var(--vert);border:2px solid var(--or);min-height:50px;font-size:16px}
@@ -204,7 +208,9 @@ ol.pas-l li{margin:8px 0}
   <!-- ACCUEIL : tout tient sur un seul écran -->
   <section class="vue on" id="v-accueil" aria-label="Accueil">
     <div class="logo-zone" id="zone-hero"><img id="logo-hero" src="/assets/logo-noogo.jpg" alt="Noogó — Glaces naturelles, l'excellence africaine"></div>
+    <p class="offrejour cachee" id="offre-jour" data-vue="produits"></p>
     <p class="accroche" id="accroche"></p>
+    <div style="text-align:center"><button class="lien-avis" id="btn-avis" type="button" data-avis-open="1">⭐ Laisser un avis</button></div>
     <div class="actions">
       <button class="gros vert" type="button" data-vue="aujourdhui">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-12.4 7.4L3 20.5l1.7-5.4A8.4 8.4 0 1 1 21 11.5z"/></svg>
@@ -290,6 +296,23 @@ ol.pas-l li{margin:8px 0}
   </div>
 </div>
 
+<!-- Fenêtre : avis clients -->
+<div class="voile centre cachee" id="voile-avis">
+  <div class="feuille" role="dialog" aria-modal="true" aria-labelledby="t-avis">
+    <div class="feuille-t"><h2 id="t-avis">Avis de nos clients</h2><button class="icone-btn" type="button" data-fermer="voile-avis" aria-label="Fermer">×</button></div>
+    <div class="feuille-c">
+      <div id="avis-liste"></div>
+      <h3 style="margin:14px 0 4px">Laisser votre avis</h3>
+      <div class="etoiles" id="avis-etoiles"><button type="button" data-etoile="1" aria-label="1 étoile">★</button><button type="button" data-etoile="2" aria-label="2 étoiles">★</button><button type="button" data-etoile="3" aria-label="3 étoiles">★</button><button type="button" data-etoile="4" aria-label="4 étoiles">★</button><button type="button" data-etoile="5" aria-label="5 étoiles">★</button></div>
+      <input id="avis-nom" type="text" maxlength="40" placeholder="Votre prénom" autocomplete="given-name" style="width:100%;margin:4px 0">
+      <textarea id="avis-texte" maxlength="400" rows="3" placeholder="Votre avis en quelques mots" style="width:100%;margin:4px 0"></textarea>
+      <input id="avis-site" type="text" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+      <button class="gros" type="button" id="avis-envoyer">Envoyer mon avis</button>
+      <p id="avis-msg" style="text-align:center;margin:8px 0 0;font-weight:700"></p>
+    </div>
+  </div>
+</div>
+
 <!-- Fenêtre : installer l'application -->
 <div class="voile centre cachee" id="voile-inst">
   <div class="feuille" role="dialog" aria-modal="true" aria-labelledby="t-inst">
@@ -327,6 +350,35 @@ const imgUrl = (i) => !i ? "/assets/embleme.jpg" : (/^(https?:|\/)/.test(i) ? i 
 let toastT;
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("on"), 2800); }
 const _vus = {};
+
+function blocParrainage(p) {
+  const msg = "Bonjour 😊 Je t'invite à goûter Noogó, des glaces 100 % naturelles livrées à Karpala. Avec mon code " + p.code + " tu as " + p.remise + " F de remise sur ta 1re commande : " + location.origin;
+  return `<div style="background:var(--creme-2,#f3ead0);border:2px dashed var(--or);border-radius:12px;padding:10px 12px;margin-top:10px"><b>🤝 Parrainez un ami</b><p style="margin:4px 0">Donnez-lui votre code <b style="font-size:18px">${esc(p.code)}</b> : il a <b>${esc(String(p.remise))} F</b> de remise sur sa 1re commande, et vous gagnez <b>${esc(p.recompense || "une récompense")}</b> quand elle est livrée.${p.amis ? ` Déjà <b>${p.amis}</b> ami${p.amis > 1 ? "s" : ""} parrainé${p.amis > 1 ? "s" : ""}${p.aRecevoir ? " : dites-le-nous pour recevoir votre récompense 🎁" : ""}.` : ""}</p><a class="gros" style="display:block;text-align:center;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg)}">Envoyer à un ami sur WhatsApp</a></div>`;
+}
+let avisNote = 0;
+async function chargerAvis() {
+  try {
+    const r = await fetch("/api/communaute", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "avis_lire" }) });
+    const j = await r.json(); if (!r.ok) return;
+    const b = $("#btn-avis"); if (b && j.nombre > 0) b.textContent = "⭐ " + String(j.moyenne).replace(".", ",") + " · " + j.nombre + " avis · voir ou en laisser un";
+    const l = $("#avis-liste"); if (l) l.innerHTML = j.nombre ? (j.avis || []).slice(0, 12).map((a) => `<div class="avis-i"><b>${esc(a.nom)}</b>${a.quartier ? " · " + esc(a.quartier) : ""} <span style="color:#e0a800">${"★".repeat(a.note)}${"☆".repeat(5 - a.note)}</span><br>${esc(a.texte)}</div>`).join("") : "<p>Soyez le premier à donner votre avis 🍦</p>";
+  } catch (e) {}
+}
+document.addEventListener("click", async (e) => {
+  const o = e.target.closest("[data-avis-open]"); if (o) { ouvrirVoile("voile-avis"); chargerAvis(); const n = $("#avis-nom"); const m = lire("noogo_client") || {}; if (n && !n.value && m.nom) n.value = String(m.nom).split(" ")[0]; return; }
+  const st = e.target.closest("[data-etoile]"); if (st) { avisNote = Number(st.dataset.etoile); document.querySelectorAll("#avis-etoiles button").forEach((b) => b.classList.toggle("on", Number(b.dataset.etoile) <= avisNote)); return; }
+  if (e.target.id === "avis-envoyer") {
+    const msg = $("#avis-msg"), bt = e.target; msg.style.color = "var(--rouge)";
+    if (!avisNote) { msg.textContent = "Choisissez une note (les étoiles)."; return; }
+    bt.disabled = true; msg.textContent = "Envoi…";
+    try {
+      const r = await fetch("/api/communaute", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "avis_envoyer", note: avisNote, nom: $("#avis-nom").value, texte: $("#avis-texte").value, site: $("#avis-site").value }) });
+      const j = await r.json(); if (!r.ok) throw new Error(j.erreur || "Envoi impossible");
+      msg.style.color = "var(--vert)"; msg.textContent = "Merci ! Votre avis s'affichera après validation 🙏"; $("#avis-texte").value = ""; avisNote = 0; document.querySelectorAll("#avis-etoiles button").forEach((b) => b.classList.remove("on"));
+    } catch (er) { msg.textContent = er.message; }
+    bt.disabled = false;
+  }
+});
 function suivre(evt) { if (_vus[evt]) return; _vus[evt] = 1; try { fetch("/api/communaute", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "stat", evt }), keepalive: true }).catch(() => {}); } catch (e) {} }
 document.addEventListener("error", (e) => { const t = e.target; if (t && t.tagName === "IMG" && !t.dataset.casse) { t.dataset.casse = "1"; t.src = "/assets/embleme.jpg"; } }, true);
 
@@ -393,6 +445,7 @@ function appliquerReglages() {
   if (ok(CONFIG.couleurFond)) { root.setProperty("--creme", CONFIG.couleurFond); root.setProperty("--creme-2", mix(CONFIG.couleurFond, "#000000", .06)); }
   if (CONFIG.logo) $("#logo-hero").src = CONFIG.logo;
   { const a = $("#accroche"), pc = $("#puces"); a.textContent = CONFIG.accroche == null ? "Glaces naturelles livrées à Karpala · Commandez en 2 minutes" : CONFIG.accroche; a.style.display = a.textContent ? "" : "none"; pc.textContent = CONFIG.puces == null ? "🚚 Livraison rapide · 📱 Orange Money / Wave · 🌿 100\u00a0% naturel" : CONFIG.puces; pc.style.display = pc.textContent ? "" : "none"; }
+  { const oj = $("#offre-jour"); if (oj) { oj.textContent = CONFIG.offreJour ? "🔥 " + CONFIG.offreJour : ""; oj.classList.toggle("cachee", !CONFIG.offreJour); } }
   posterVideoAccueil();
   if (CONFIG.logoRond) $("#logo-rond").src = CONFIG.logoRond;
   $("#pied-adresse").textContent = CONFIG.adresse;
@@ -624,7 +677,7 @@ async function verifierCode(silencieux) {
   if (!code) { promo = null; msgCode = { t: "", c: "" }; if (!$("#voile-panier").classList.contains("cachee")) rendrePanier(); return; }
   if (!silencieux) { msgCode = { t: "Vérification…", c: "var(--gris)" }; const m = $("#msg-code"); if (m) { m.textContent = msgCode.t; m.style.color = msgCode.c; } }
   try {
-    const r = await fetch("/api/verifier-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, articles: lignes().map((l) => ({ id: l.p.id, qte: l.qte })) }) });
+    const r = await fetch("/api/verifier-code", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code, tel: (document.getElementById("f-tel") || {}).value || (lire("noogo_client") || {}).tel || "", articles: lignes().map((l) => ({ id: l.p.id, qte: l.qte })) }) });
     const d = await r.json();
     if (d.valide) { promo = { code: code.toUpperCase(), remise: Number(d.remise) || 0 }; if (!silencieux) msgCode = { t: "Code valide : −" + fmt(promo.remise), c: "var(--vert)" }; }
     else if (d.valide === false && r.status < 500 && r.status !== 429) { promo = null; msgCode = { t: d.message || "Code invalide", c: "var(--rouge)" }; }
@@ -776,7 +829,7 @@ async function suivreCommande() {
     if (j.etape === "annulee") res.innerHTML = `<p style="color:var(--rouge);font-weight:700">Cette commande a été annulée. Écrivez-nous sur WhatsApp si c'est une erreur.</p>`;
     else {
       const ordre = ["recue", "preparation", "en_route", "livree"], noms = ["Reçue", "En préparation", j.retrait ? "Prête à retirer" : "En route", j.retrait ? "Retirée" : "Livrée"], k = ordre.indexOf(j.etape);
-      res.innerHTML = `<div class="etapes">${noms.map((x, i) => `<div class="${i <= k ? "ok" : ""}"><i>${i <= k ? "✓" : i + 1}</i>${x}</div>`).join("")}</div><p><b>${j.articles.map((a) => a.qte + " × " + esc(a.nom)).join(", ")}</b></p><p>Total : <b>${fmt(j.total)}</b></p>${j.fidelite ? `<p style="background:var(--creme-2,#f3ead0);border-radius:12px;padding:10px 12px;margin-top:10px">${j.fidelite.gagne ? "🎁 Bravo ! Vous avez gagné : <b>" + esc(j.fidelite.recompense) + "</b>. Dites-le-nous à votre prochaine commande." : "⭐ Fidélité : encore <b>" + j.fidelite.restant + " commande" + (j.fidelite.restant > 1 ? "s" : "") + "</b> livrée" + (j.fidelite.restant > 1 ? "s" : "") + " pour gagner : " + esc(j.fidelite.recompense)}</p>` : ""}`;
+      res.innerHTML = `<div class="etapes">${noms.map((x, i) => `<div class="${i <= k ? "ok" : ""}"><i>${i <= k ? "✓" : i + 1}</i>${x}</div>`).join("")}</div><p><b>${j.articles.map((a) => a.qte + " × " + esc(a.nom)).join(", ")}</b></p><p>Total : <b>${fmt(j.total)}</b></p>${j.etape === "livree" ? `<p style="margin-top:10px"><button class="gros" type="button" data-avis-open="1">⭐ Donner mon avis</button></p>` : ""}${j.parrainage ? blocParrainage(j.parrainage) : ""}${j.fidelite ? `<p style="background:var(--creme-2,#f3ead0);border-radius:12px;padding:10px 12px;margin-top:10px">${j.fidelite.gagne ? "🎁 Bravo ! Vous avez gagné : <b>" + esc(j.fidelite.recompense) + "</b>. Dites-le-nous à votre prochaine commande." : "⭐ Fidélité : encore <b>" + j.fidelite.restant + " commande" + (j.fidelite.restant > 1 ? "s" : "") + "</b> livrée" + (j.fidelite.restant > 1 ? "s" : "") + " pour gagner : " + esc(j.fidelite.recompense)}</p>` : ""}`;
     }
   } catch (er) { res.innerHTML = `<p style="color:var(--rouge)">${esc(er.message)}</p>`; }
   btn.disabled = false;
@@ -895,7 +948,7 @@ $("#voile-inst").addEventListener("click", (e) => { if (e.target.id === "voile-i
 
 /* ───────── Démarrage ───────── */
 try { const q = new URLSearchParams(location.search).get("code"); if (q && /^[A-Za-z0-9]{2,20}$/.test(q)) ecrire("noogo_code_lien", q.toUpperCase()); } catch (e) {}
-suivre("visite");
+suivre("visite"); chargerAvis();
 afficherVue(vueDepuisHash());
 majBoutonsInstall();
 chargerReglages(); chargerCatalogue();

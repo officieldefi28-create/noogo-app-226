@@ -124,6 +124,25 @@
   },
   {
    "actif": true,
+   "id": "pk-duo",
+   "cat": "cremes",
+   "gr": "petit",
+   "type": "pack",
+   "nom": "Pack Duo — 3 Vanille + 3 Baobab",
+   "info": "3 vanille + 3 baobab · livraison incluse",
+   "prix": 5000,
+   "img": "nv-pack-bao-125.jpg",
+   "packCount": 6,
+   "packLabel": "6 pots · 3 vanille + 3 baobab",
+   "packCompo": {
+    "vanille-p": 3,
+    "baobab-p": 3
+   },
+   "badge": "POPULAIRE",
+   "vedette": true
+  },
+  {
+   "actif": true,
    "id": "pk-van-p",
    "cat": "cremes",
    "gr": "petit",

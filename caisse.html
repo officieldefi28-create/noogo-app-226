@@ -283,6 +283,29 @@ window.addEventListener("online", () => { etat(); synchroniser(); });
 window.addEventListener("offline", etat);
 setInterval(() => { if (jeton && mesFile().length) synchroniser(); }, 20000);
 
+/* ───── Alerte nouvelle commande (livreur) : vérifie toutes les 25 s, sonne et vibre ───── */
+let livVus = null;
+function bipLivreur() {
+  try { if (navigator.vibrate) navigator.vibrate([300, 150, 300, 150, 300]); } catch (e) {}
+  try { const C = window.AudioContext || window.webkitAudioContext; if (!C) return; const x = new C(); [0, 0.35, 0.7].forEach((d) => { const o = x.createOscillator(), g = x.createGain(); o.connect(g); g.connect(x.destination); o.frequency.value = 880; g.gain.value = 0.25; o.start(x.currentTime + d); o.stop(x.currentTime + d + 0.22); }); } catch (e) {}
+}
+async function veilleLivreur() {
+  if (!jeton || !membre || membre.poste !== "livreur" || !navigator.onLine || document.hidden) return;
+  try {
+    const l = (await api("a_livrer")).commandes || [];
+    const ids = l.filter((x) => !x.enRouteAvec).map((x) => x.id);
+    if (livVus) {
+      const neuves = ids.filter((i) => !livVus.has(i));
+      if (neuves.length) { bipLivreur(); toast("🔔 Nouvelle commande à livrer !"); document.title = "🔔 (" + ids.length + ") Livraisons"; }
+    }
+    livVus = new Set(ids);
+    if (!ids.length) document.title = "Noogó — Caisse";
+    const v = $("#v-liv"); if (v && !v.classList.contains("cachee")) chargerLiv();
+  } catch (e) { /* silencieux : on réessaiera */ }
+}
+setInterval(veilleLivreur, 25000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) veilleLivreur(); });
+
 /* ───── Articles ───── */
 const GROUPES = { glaces: (a) => a.type === "produit" && a.cat === "cremes", packs: (a) => a.type === "pack", autres: (a) => a.type === "produit" && a.cat !== "cremes" };
 const NOMS_G = { glaces: "Glaces", packs: "Packs", autres: "Autres" };

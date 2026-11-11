@@ -139,7 +139,8 @@
     "baobab-p": 3
    },
    "badge": "POPULAIRE",
-   "vedette": true
+   "vedette": true,
+   "ordreVedette": 1
   },
   {
    "actif": true,

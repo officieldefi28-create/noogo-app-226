@@ -188,7 +188,7 @@ ol.pas-l li{margin:8px 0}
 .compo-l{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--ligne)}
 #toast{position:absolute;left:50%;bottom:96px;transform:translate(-50%,20px);z-index:90;max-width:88%;background:#1c2a20;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0)}
-.vedettes{display:flex;flex-direction:column;gap:6px;flex:none}.vedettes .vt{margin:0;text-align:center;font-size:12px;letter-spacing:1px;text-transform:uppercase;font-weight:800;color:var(--or-fonce)}.vrow{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--or);border-radius:12px;padding:6px 8px 6px 12px}.vrow .vn{flex:1;min-width:0}.vrow .vn b{display:block;font-size:14.5px;line-height:1.15}.vrow .vn small{display:block;font-size:11.5px;color:#6b5a4a;line-height:1.2}.vrow .vp{font-weight:800;font-size:15px;color:var(--vert);white-space:nowrap}.vrow .ajout{padding:8px 12px;font-size:14px}.vrow .tag-v{font-size:10px;background:var(--or);color:#fff;border-radius:8px;padding:1px 6px;margin-left:4px;vertical-align:middle}
+.vedettes{display:flex;flex-direction:column;gap:6px;flex:0 1 auto;min-height:0;max-height:38vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}.vedettes .vt{margin:0;text-align:center;font-size:12px;letter-spacing:1px;text-transform:uppercase;font-weight:800;color:var(--or-fonce)}.vrow{flex:none;display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--or);border-radius:12px;padding:6px 8px 6px 12px}.vrow .vn{flex:1;min-width:0}.vrow .vn b{display:block;font-size:14.5px;line-height:1.15}.vrow .vn small{display:block;font-size:11.5px;color:#6b5a4a;line-height:1.2}.vrow .vp{font-weight:800;font-size:15px;color:var(--vert);white-space:nowrap}.vrow .ajout{padding:8px 12px;font-size:14px}.vrow .tag-v{font-size:10px;background:var(--or);color:#fff;border-radius:8px;padding:1px 6px;margin-left:4px;vertical-align:middle}
 #app.avec-barre #v-accueil{padding-bottom:84px}
 @media (max-height:640px){.logo-zone{flex-basis:0}.gros{min-height:50px;font-size:16px}}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
@@ -532,17 +532,19 @@ function rendreProduits() {
   $("#liste-produits").innerHTML = l.length ? listeHTML(l, filtre === "tout") : `<div class="vide-box">Rien à afficher ici pour l'instant.</div>`;
 }
 function packsVedettes() {
-  const ok = (p) => p.type === "pack" && p.actif !== false && commandable(p) && statut(p) !== "surcommande" && statut(p) !== "date";
-  let l = CATALOGUE.filter((p) => p.vedette && ok(p));
-  if (l.length < 3) l = l.concat(CATALOGUE.filter((p) => ok(p) && !l.includes(p) && p.cat === "cremes" && p.gr !== "grand").sort((a, b) => a.prix - b.prix));
-  return l.slice(0, 3);
+  const ok = (p) => p.actif !== false && commandable(p) && statut(p) !== "surcommande" && statut(p) !== "date";
+  const regle = CATALOGUE.some((p) => p.ordreVedette != null);   // la vitrine a déjà été réglée dans l'admin : on la respecte à la lettre
+  const l = CATALOGUE.filter((p) => p.vedette && ok(p)).sort((a, b) => (a.ordreVedette || 9999) - (b.ordreVedette || 9999));
+  if (regle) return l;
+  if (l.length < 3) return l.concat(CATALOGUE.filter((p) => p.type === "pack" && ok(p) && !l.includes(p) && p.cat === "cremes" && p.gr !== "grand").sort((a, b) => a.prix - b.prix)).slice(0, 3);
+  return l;
 }
 function rendreVedettes() {
   const z = $("#vedettes"); if (!z) return;
   const l = packsVedettes();
   if (!l.length) { z.classList.add("cachee"); z.innerHTML = ""; return; }
   z.classList.remove("cachee");
-  z.innerHTML = `<p class="vt">⭐ Nos packs · livraison incluse</p>` + l.map((p) => `<div class="vrow"><div class="vn"><b>${esc(courtNom(p.nom).split(" — ")[0])}${p.badge ? `<span class="tag-v">${esc(p.badge)}</span>` : ""}</b><small>${esc(contenuPack(p))}</small></div><span class="vp">${fmtc(p.prix)}</span>${actionHTML(p, panier[p.id] || 0)}</div>`).join("");
+  z.innerHTML = `<p class="vt">⭐ Nos packs</p>` + l.map((p) => `<div class="vrow"><div class="vn"><b>${esc(courtNom(p.nom).split(" — ")[0])}${p.badge ? `<span class="tag-v">${esc(p.badge)}</span>` : ""}</b><small>${esc(contenuPack(p))}${p.type === "pack" ? (p.packLiv === "sans" ? " · + livraison" : " · livraison incluse") : ""}</small></div><span class="vp">${fmtc(p.prix)}</span>${actionHTML(p, panier[p.id] || 0)}</div>`).join("");
 }
 function rendreTout() { rendreVedettes(); rendreAujourdhui(); rendreProduits(); majBarre(); }
 

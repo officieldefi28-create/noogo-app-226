@@ -38,6 +38,7 @@ function validerCatalogue(liste) {
     if (p.badge) o.badge = txt(p.badge, 14).toUpperCase();
     if (p.surCommande) o.surCommande = true;
     if (p.vedette) o.vedette = true;
+    if (p.ordreVedette != null && Number.isFinite(Number(p.ordreVedette))) o.ordreVedette = Math.max(0, Math.min(9999, Math.round(Number(p.ordreVedette))));   // rang dans la vitrine de l'accueil (0 = pas dedans, mais vitrine déjà réglée)
     if (p.dispo === "faible" || p.dispo === "rupture") o.dispo = p.dispo;
     // Disponibilité du jour (réglée dans l'admin) : aujourd'hui · sur commande · bientôt (date) · stock fini
     if (["aujourdhui", "surcommande", "date", "rupture"].includes(p.statut)) o.statut = p.statut;

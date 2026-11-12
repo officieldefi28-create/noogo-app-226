@@ -7,6 +7,22 @@ const { fusionner } = require("./_site");
 const PAIEMENTS = ["especes", "orange", "wave"];
 const nettoyer = (s, max) => String(s == null ? "" : s).replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max);
 
+// Pour les packs « livraison incluse » : valeur des pots au prix normal, et ce qui reste (= la livraison cachée dans le prix)
+function cacheLivraison(panier, catalogue) {
+  let pots = 0, supp = 0;
+  for (const l of (panier && panier.lignes) || []) {
+    if (l.type !== "pack") continue;
+    const p = catalogue.find((x) => x.id === l.id);
+    if (!p || p.packLiv === "sans") continue;
+    let v = null;
+    if (p.packCompo) { v = 0; for (const k of Object.keys(p.packCompo)) { const b = catalogue.find((x) => x.id === k); if (!b) { v = null; break; } v += b.prix * (parseInt(p.packCompo[k], 10) || 0); } }
+    else { const m = /^pk-(van|bao|ban|cho|fra)-(p|g)$/.exec(p.id), BP = { van: "vanille", bao: "baobab", ban: "banane", cho: "choco", fra: "fraise" }, b = m && catalogue.find((x) => x.id === BP[m[1]] + "-" + m[2]); if (b) v = b.prix * (parseInt(p.packCount, 10) || 5); }
+    if (v == null) continue;
+    pots += v * l.qte; if (l.total > v * l.qte) supp += l.total - v * l.qte;
+  }
+  return { pots, supp };
+}
+
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (req.method !== "POST") return res.status(405).json({ erreur: "Méthode non autorisée" });
@@ -70,6 +86,8 @@ module.exports = async (req, res) => {
       montantApresRemise: Math.max(0, panier.total - remise),
       // Livraison : incluse pour les packs ; à la charge du client pour les articles seuls (convenue sur WhatsApp)
       livraison: retrait ? "retrait" : (panier.aPack && panier.produits === 0 ? "incluse" : (panier.aPack ? "packs-inclus" : "a-charge-client")),
+      livraisonCachee: retrait ? 0 : cacheLivraison(panier, catalogue).supp,   // part « livraison » incluse dans les packs (visible seulement par vous)
+      produitsPacks: retrait ? 0 : cacheLivraison(panier, catalogue).pots,
       fraisLivraison: retrait ? 0 : Math.max(0, Math.min(50000, Math.round(Number(d.fraisLivraison) || 0))),   // estimation affichée au client (articles seuls) : payée en espèces au livreur, hors caisse
       quartierLivraison: retrait ? "" : (nettoyer(d.quartier, 60) || ""),
       commission,

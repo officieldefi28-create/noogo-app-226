@@ -3,6 +3,7 @@ const DEFAUT_REGLAGES = {
   annonce: "Commandez 24h/24 · Livraison à Karpala et alentours",
   livraisonTarifs: "0 à 15 km : 1 000 FCFA\n16 à 20 km : 1 500 FCFA\n21 à 25 km : 2 000 FCFA\n26 à 30 km : 2 500 FCFA",
   livraisonQuartiers: "",
+  whatsappLivreur: "",
   delai: "Livraison en général dans l'heure qui suit la confirmation, à Karpala et alentours.",
   adresse: "Karpala, derrière la mairie",
   lienMaps: "https://maps.google.com/?q=12.336911,-1.474793",
@@ -43,7 +44,7 @@ const DEFAUT_REGLAGES = {
   chiffre4Valeur: "", chiffre4Texte: ""
 };
 // Champs que l'admin peut vider volontairement (pour masquer la section sur le site)
-const VIDABLES = ["ferme", "commandeMin", "livraisonTarifs", "livraisonQuartiers", "histoireTitre", "histoireTexte", "fondateurNom", "fondateurPhoto", "chiffre1Valeur", "chiffre1Texte", "chiffre2Valeur", "chiffre2Texte", "chiffre3Valeur", "chiffre3Texte", "chiffre4Valeur", "chiffre4Texte"];
+const VIDABLES = ["ferme", "commandeMin", "livraisonTarifs", "livraisonQuartiers", "whatsappLivreur", "histoireTitre", "histoireTexte", "fondateurNom", "fondateurPhoto", "chiffre1Valeur", "chiffre1Texte", "chiffre2Valeur", "chiffre2Texte", "chiffre3Valeur", "chiffre3Texte", "chiffre4Valeur", "chiffre4Texte"];
 
 const DEFAUT_FAQ = [
   { q: "Comment passer commande ?", a: "Ajoutez vos articles au panier, puis envoyez la commande sur WhatsApp. Votre numéro de téléphone est obligatoire pour la livraison. Nous vous répondons pour confirmer." },
@@ -139,6 +140,7 @@ function valider(d) {
   { const v = txt(rg.videoAccueil, 300); r.videoAccueil = /^https:\/\/[^\s"'<>]+$/i.test(v) && (/\.(mp4|webm|mov)(\?[^\s]*)?$/i.test(v) || /^https:\/\/(www\.)?(youtube\.com\/(watch\?v=|shorts\/|embed\/)|youtu\.be\/)[\w-]{6,20}/i.test(v)) ? v : ""; }
   const wa = String(rg.whatsapp || "").replace(/\D/g, "");
   r.whatsapp = wa.length >= 8 && wa.length <= 15 ? wa : DEFAUT_REGLAGES.whatsapp;
+  { const wl = String(rg.whatsappLivreur || "").replace(/\D/g, ""); r.whatsappLivreur = wl.length >= 8 && wl.length <= 15 ? wl : ""; }
   for (const k of ["couleurPrincipale", "couleurAccent", "couleurFond"]) r[k] = /^#[0-9a-f]{6}$/i.test(String(rg[k] || "")) ? rg[k] : DEFAUT_REGLAGES[k];
   const imgOk = (u) => /^\/(galerie|produits|assets)\/[\w.\-]+$/.test(u) || /^\/api\/photo\?id=[a-f0-9]{16,40}$/.test(u);
   r.logo = imgOk(txt(rg.logo, 200)) ? txt(rg.logo, 200) : DEFAUT_REGLAGES.logo;

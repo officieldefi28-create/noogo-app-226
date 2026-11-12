@@ -219,6 +219,8 @@ module.exports = async (req, res) => {
       case "a_livrer": {
         if (!estLivreur(m)) return res.status(403).json({ erreur: "Réservé aux livreurs" });
         const l = (await S.getCommandes()).filter((c) => c && c.statutLivraison === "en_attente" && !c.archive).sort((a, b) => (a.date < b.date ? -1 : 1)).slice(0, 80).map(resumeLivraison);
+        const fin = (t) => String(t || "").replace(/\D/g, "").slice(-8);   // même client = mêmes 8 derniers chiffres
+        l.forEach((x) => { const k = fin(x.telClient); if (k.length === 8 && !x.retrait) { const autres = l.filter((y) => y.id !== x.id && !y.retrait && fin(y.telClient) === k); if (autres.length) x.memeClient = autres.map((y) => y.id.slice(-6)); } });
         return res.status(200).json({ commandes: l });
       }
       case "en_route": {

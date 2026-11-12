@@ -39,7 +39,7 @@ module.exports = async (req, res) => {
     if (action === "stat") {
       const EV = ["visite", "carte_vue", "ajout_panier", "panier_ouvert", "commande_envoyee"];
       const ev = String(d.evt || "");
-      if (EV.includes(ev) && (await S.limiter("stat:" + ip, 60, 3600))) {
+      if (EV.includes(ev) && (await S.limiter("stat:" + ip, 400, 3600))) {
         try { await S.hincr("noogo:stats", new Date().toISOString().slice(0, 10) + "|" + ev, 1); } catch (e) {}
       }
       return res.status(200).json({ ok: true });

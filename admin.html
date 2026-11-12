@@ -791,14 +791,14 @@ function vitrineListe(){
   return l.sort(function(a, b){ return (a.ordreVedette || 9999) - (b.ordreVedette || 9999); });
 }
 function vitrineRanger(l){
-  S.produits.forEach(function(q){ q.ordreVedette = 0; if (q.type === "pack") delete q.vedette; });
+  S.produits.forEach(function(q){ q.ordreVedette = 0; delete q.vedette; });
   l.forEach(function(q, i){ q.vedette = true; q.ordreVedette = i + 1; });
 }
 function panneauVitrine(){
   var dedans = vitrineListe(), ids = {};
   dedans.forEach(function(p){ ids[p.id] = 1; });
-  var autres = S.produits.filter(function(p){ return p.type === "pack" && p.actif !== false && !ids[p.id]; });
-  var lib = function(p){ return (p.packLiv === "sans" ? "livraison en plus" : "livraison incluse"); };
+  var autres = S.produits.filter(function(p){ return p.actif !== false && !ids[p.id]; }).sort(function(a, b){ return (a.type === "pack" ? 0 : 1) - (b.type === "pack" ? 0 : 1); });
+  var lib = function(p){ return p.type !== "pack" ? "pot seul" : (p.packLiv === "sans" ? "livraison en plus" : "livraison incluse"); };
   var l1 = dedans.map(function(p, i){
     var arr = packArrete(p);
     return '<div style="display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid #eee"><b style="width:22px;text-align:center">' + (i + 1) + '</b><span style="flex:1;min-width:0"><b>' + esc(p.nom) + '</b><br><small style="color:#888">' + esc(String(p.prix)) + ' F · ' + lib(p) + (arr ? ' · <span style="color:#b3261e">stock fini : caché sur le site</span>' : '') + '</small></span>' +
@@ -811,7 +811,7 @@ function panneauVitrine(){
     '<p class="astuce" style="margin:0 0 8px">Les packs que les clients voient en premier sur l\'accueil, avec leur prix. Mettez-en autant que vous voulez, classez-les avec ↑ ↓. Un pack dont une saveur est finie se cache tout seul, et revient tout seul. Ça s\'enregistre tout de suite.</p>' +
     '<div style="display:flex;gap:8px;margin-bottom:6px"><button class="btn btn-clair btn-petit" type="button" data-act="vit-vider"' + (dedans.length ? '' : ' disabled') + '>Tout retirer</button></div>' +
     '<details open><summary style="font-weight:700;cursor:pointer;padding:6px 0">Sur l\'accueil (' + dedans.length + ')</summary>' + (l1 || '<p class="astuce">Rien sur l\'accueil pour l\'instant.</p>') + '</details>' +
-    '<details' + (dedans.length ? '' : ' open') + '><summary style="font-weight:700;cursor:pointer;padding:6px 0">Autres packs (' + autres.length + ')</summary>' + (l2 || '<p class="astuce">Aucun autre pack.</p>') + '</details></div>';
+    '<details' + (dedans.length ? '' : ' open') + '><summary style="font-weight:700;cursor:pointer;padding:6px 0">Autres packs et produits (' + autres.length + ')</summary>' + (l2 || '<p class="astuce">Aucun autre pack.</p>') + '</details></div>';
 }
 /* ----- Disponible aujourd'hui : un interrupteur par produit, les packs suivent tout seuls ----- */
 function estFini(b){ return !!b && (b.actif === false || statutAdmin(b) === "rupture"); }

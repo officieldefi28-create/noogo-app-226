@@ -64,7 +64,7 @@ function resumeLivraison(c) {
   return {
     id: c.id, date: c.date, heure: c.dateLivraison || c.date, nomClient: c.nomClient, telClient: c.telClient || "", localisation: c.localisation || "",
     retrait: c.modeReception === "retrait", paiementPrevu: MODES[c.modePaiement] || "Espèces", total: Number(total) || 0, etape: c.etape || "recue", note: c.note || "",
-    livraison: c.livraison || "", enRouteAvec: c.livreur || "", livreurId: c.livreurId || "",
+    livraison: c.livraison || "", fraisLivraison: Number(c.fraisLivraison) || 0, enRouteAvec: c.livreur || "", livreurId: c.livreurId || "",
     articles: (c.articles || []).map((a) => ({ nom: a.nom, qte: a.qte, detail: Array.isArray(a.compo) && a.compo.length ? a.compo.map((x) => x.qte + " × " + (x.nom || x.id)).join(", ") : "" })),
     paiement: c.encaisse ? c.encaisse.mode : ""
   };

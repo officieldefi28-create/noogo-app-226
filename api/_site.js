@@ -2,6 +2,7 @@
 const DEFAUT_REGLAGES = {
   annonce: "Commandez 24h/24 · Livraison à Karpala et alentours",
   livraisonTarifs: "0 à 15 km : 1 000 FCFA\n16 à 20 km : 1 500 FCFA\n21 à 25 km : 2 000 FCFA\n26 à 30 km : 2 500 FCFA",
+  livraisonQuartiers: "",
   delai: "Livraison en général dans l'heure qui suit la confirmation, à Karpala et alentours.",
   adresse: "Karpala, derrière la mairie",
   lienMaps: "https://maps.google.com/?q=12.336911,-1.474793",
@@ -42,7 +43,7 @@ const DEFAUT_REGLAGES = {
   chiffre4Valeur: "", chiffre4Texte: ""
 };
 // Champs que l'admin peut vider volontairement (pour masquer la section sur le site)
-const VIDABLES = ["ferme", "commandeMin", "livraisonTarifs", "histoireTitre", "histoireTexte", "fondateurNom", "fondateurPhoto", "chiffre1Valeur", "chiffre1Texte", "chiffre2Valeur", "chiffre2Texte", "chiffre3Valeur", "chiffre3Texte", "chiffre4Valeur", "chiffre4Texte"];
+const VIDABLES = ["ferme", "commandeMin", "livraisonTarifs", "livraisonQuartiers", "histoireTitre", "histoireTexte", "fondateurNom", "fondateurPhoto", "chiffre1Valeur", "chiffre1Texte", "chiffre2Valeur", "chiffre2Texte", "chiffre3Valeur", "chiffre3Texte", "chiffre4Valeur", "chiffre4Texte"];
 
 const DEFAUT_FAQ = [
   { q: "Comment passer commande ?", a: "Ajoutez vos articles au panier, puis envoyez la commande sur WhatsApp. Votre numéro de téléphone est obligatoire pour la livraison. Nous vous répondons pour confirmer." },
@@ -114,7 +115,11 @@ function valider(d) {
   }
   {
     const brut = d && d.reglages && typeof d.reglages.livraisonTarifs === "string" ? d.reglages.livraisonTarifs : DEFAUT_REGLAGES.livraisonTarifs;
-    r.livraisonTarifs = brut.split(/\r?\n/).map((l) => txt(l, 70)).filter(Boolean).slice(0, 8).join("\n");
+    r.livraisonTarifs = brut.split(/\r?\n/).map((l) => txt(l, 70)).filter(Boolean).slice(0, 12).join("\n");
+  }
+  {
+    const brut = d && d.reglages && typeof d.reglages.livraisonQuartiers === "string" ? d.reglages.livraisonQuartiers : DEFAUT_REGLAGES.livraisonQuartiers;
+    r.livraisonQuartiers = brut.split(/\r?\n/).map((l) => txt(l, 60)).filter(Boolean).slice(0, 40).join("\n");
   }
   const maps = txt(d && d.reglages && d.reglages.lienMaps, 300);
   r.lienMaps = /^https:\/\/(www\.)?(maps\.google\.com|google\.com\/maps|maps\.app\.goo\.gl|goo\.gl\/maps)([/?#]|$)/i.test(maps) ? maps : DEFAUT_REGLAGES.lienMaps;

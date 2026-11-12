@@ -70,6 +70,8 @@ module.exports = async (req, res) => {
       montantApresRemise: Math.max(0, panier.total - remise),
       // Livraison : incluse pour les packs ; à la charge du client pour les articles seuls (convenue sur WhatsApp)
       livraison: retrait ? "retrait" : (panier.aPack && panier.produits === 0 ? "incluse" : (panier.aPack ? "packs-inclus" : "a-charge-client")),
+      fraisLivraison: retrait ? 0 : Math.max(0, Math.min(50000, Math.round(Number(d.fraisLivraison) || 0))),   // estimation affichée au client (articles seuls) : payée en espèces au livreur, hors caisse
+      quartierLivraison: retrait ? "" : (nettoyer(d.quartier, 60) || ""),
       commission,
       partenaireId,
       statutLivraison: "en_attente",

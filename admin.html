@@ -454,6 +454,23 @@ function ajouterPacksNoogo(){
   rendreCatalogue(); majSauvegarde();
   toast("16 packs ajoutés. Appuyez sur « Enregistrer le catalogue ».", "ok");
 }
+function packsConseilles(){
+  if (!S.produits) return;
+  var V = "vanille-p", B = "banane-p", O = "baobab-p";
+  var L = [
+    ["pk-conseil-maxi", "Pack Maxi Duo", 10500, { V: 6, O: 6 }, "6 vanilles + 6 baobabs · livraison incluse", "nv-pack-bao-125.jpg", "LIVRAISON OFFERTE"],
+    ["pk-conseil-fete", "Pack Fête", 16000, { V: 6, B: 6, O: 6 }, "6 vanilles + 6 bananes + 6 baobabs · livraison incluse", "nv-pack-mix-250.jpg", "LIVRAISON OFFERTE"]
+  ], ids = { V: V, B: B, O: O }, ajoutes = [];
+  L.forEach(function(x){
+    if (S.produits.some(function(p){ return p.id === x[0]; })) return;
+    var compo = {}, n = 0; Object.keys(x[3]).forEach(function(k){ compo[ids[k]] = x[3][k]; n += x[3][k]; });
+    S.produits.push({ id: x[0], cat: "cremes", gr: "petit", type: "pack", nom: x[1], info: x[4], prix: x[2], img: x[5], actif: true, packCount: n, packCompo: compo, badge: x[6] });
+    ajoutes.push(x[1]);
+  });
+  if (!ajoutes.length) return toast("Ces packs existent déjà.", "ok");
+  rendreCatalogue(); majSauvegarde(); sauverCatalogue();
+  toast("Ajoutés : " + ajoutes.join(", ") + ". Mettez-les à l'accueil si vous voulez.", "ok");
+}
 function majBoutonFerme(site){
   var b = $("btn-ferme"); if (!b) return;
   var f = site && site.reglages && site.reglages.ferme === "oui";
@@ -645,6 +662,12 @@ function texteLivraison(c){
     default: return c.modeReception === "retrait" ? ["info", "Retrait au local"] : ["warn", "Livraison : à confirmer sur WhatsApp"];
   }
 }
+function detailLivraison(c){
+  var h = "";
+  if (c.livraisonCachee > 0) h += '<div class="note info"><b>Détail (visible par vous seulement) :</b> produits des packs ' + esc(fcfa(c.produitsPacks)) + ' · livraison cachée dans les packs ≈ ' + esc(fcfa(c.livraisonCachee)) + '</div>';
+  if (c.fraisLivraison > 0) h += '<div class="note warn">Livraison des articles à encaisser par le livreur : <b>' + esc(fcfa(c.fraisLivraison)) + '</b>' + (c.quartierLivraison ? ' (quartier ' + esc(c.quartierLivraison) + ')' : '') + '</div>';
+  return h;
+}
 function carteCommande(c){
   var st = c.statutLivraison;
   var badgeSt = st === "livree" ? '<span class="badge badge-vert">Livrée' + (c.livreur ? ' par ' + esc(c.livreur) : '') + (c.encaisse && c.encaisse.mode ? ' · payée en ' + esc(c.encaisse.mode) : '') + '</span>' : st === "annulee" ? '<span class="badge badge-rouge">Annulée</span>' : '<span class="badge badge-or">' + (c.etape === "en_route" && c.livreur ? 'En route · ' + esc(c.livreur) : 'En attente') + '</span>';
@@ -654,7 +677,7 @@ function carteCommande(c){
     var compo = a.compo && a.compo.length ? '<br><small>↳ ' + a.compo.map(function(x){ return esc(x.qte) + " × " + esc(x.nom); }).join(", ") + '</small>' : "";
     return '<div class="art"><span>' + esc(a.qte) + ' × ' + esc(a.nom) + b + compo + '</span><span>' + esc(fcfa(a.total)) + '</span></div>';
   }).join("");
-  var liv = texteLivraison(c);
+  var liv = texteLivraison(c), detLiv = detailLivraison(c);
   var apres = c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal;
   var remise = c.remise > 0 ? '<div class="ligne"><span>Remise' + (c.code ? ' (code <b class="mono">' + esc(c.code) + '</b>)' : '') + '</span><span>− ' + esc(fcfa(c.remise)) + '</span></div>' : "";
   var comm = "";
@@ -683,14 +706,14 @@ function carteCommande(c){
     (wa ? '<a class="btn btn-petit btn-vert" href="https://wa.me/' + esc(wa) + '" target="_blank" rel="noopener">WhatsApp</a>' +
       '<button class="btn btn-petit btn-clair" type="button" data-act="cmd-relance" data-id="' + id + '">Relancer</button>' : '') +
     '<button class="btn btn-petit btn-clair" type="button" data-act="cmd-contact" data-id="' + id + '">' + (tel ? "Modifier le numéro" : "Ajouter le numéro") + '</button>' +
-    '<button class="btn btn-petit btn-vert" type="button" data-act="cmd-groupe" data-id="' + id + '">Envoyer au groupe</button></div>' +
+    '<button class="btn btn-petit btn-vert" type="button" data-act="cmd-groupe" data-id="' + id + '">' + ((S.site && S.site.reglages && S.site.reglages.whatsappLivreur) ? "📲 Envoyer au livreur" : "Envoyer au groupe") + '</button></div>' +
     (tel ? "" : '<p class="gris petit" style="margin:4px 0 0">Pas de numéro : le client vous a écrit sur WhatsApp. Touchez son numéro dans la conversation, copiez-le, puis « Ajouter le numéro » ici.</p>') +
     '<div class="info-l"><b>' + (c.modeReception === "retrait" ? "Retrait" : "Livraison") + ' :</b> ' + esc(c.localisation).replace(/(https:\/\/maps\.google\.com\/\?q=[-0-9.,]+)/g, '<a href="$1" target="_blank" rel="noopener" class="btn btn-petit btn-or" style="margin-left:4px">Ouvrir la position</a>') + '</div>' + (c.note ? '<div class="info-l"><b>Précisions :</b> ' + esc(c.note) + '</div>' : '') +
     '<div class="info-l"><b>Paiement :</b> ' + esc(PAIEMENTS[c.modePaiement] || c.modePaiement) + '</div>' +
     '<div class="articles">' + arts + '</div>' +
     '<div class="totaux"><div class="ligne"><span>Total articles</span><span>' + esc(fcfa(c.montantTotal)) + '</span></div>' + remise +
     '<div class="ligne final"><span>À payer</span><span>' + esc(fcfa(apres)) + '</span></div></div>' +
-    '<div class="note ' + liv[0] + '">' + esc(liv[1]) + '</div>' + comm +
+    '<div class="note ' + liv[0] + '">' + esc(liv[1]) + '</div>' + detLiv + comm +
     '<div class="actions">' + actions + '</div></article>';
 }
 function rendreCommandes(){
@@ -738,7 +761,7 @@ async function actionCommande(act, id, btn){
     var tot = c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal;
     var art = (c.articles || []).map(function(a){ return "• " + a.qte + " × " + a.nom + (Array.isArray(a.compo) && a.compo.length ? " (" + a.compo.map(function(x){ return x.qte + " × " + (x.nom || x.id); }).join(", ") + ")" : ""); }).join("\n");
     var tg = ["🛵 *COMMANDE À LIVRER* — Noogó", "", "👤 " + (c.nomClient || "Client") + (c.telClient ? " · " + c.telClient : ""), (c.modeReception === "retrait" ? "🏪 Retrait au local" : "📍 " + (c.localisation || "Adresse à confirmer")), "", art, "", "💰 Total : " + fcfa(tot), "💳 Paiement prévu : " + (PAIEMENTS[c.modePaiement] || c.modePaiement || "Espèces"), c.note ? "📝 " + c.note : "", "", "Réf : " + c.id].filter(function(x, i, a){ return x !== "" || (a[i - 1] !== ""); }).join("\n");
-    window.open("https://wa.me/?text=" + encodeURIComponent(tg), "_blank", "noopener"); return;
+    var nl = S.site && S.site.reglages && S.site.reglages.whatsappLivreur; window.open("https://wa.me/" + (nl || "") + "?text=" + encodeURIComponent(tg), "_blank", "noopener"); return;
   }
   if (act === "relance") {
     var wn = telNettoye(c.telClient || ""); if (!wn) return toast("Ajoutez d'abord le numéro du client.", "err");
@@ -809,7 +832,7 @@ function panneauVitrine(){
   }).join("");
   return '<div class="carte" style="border:2px solid #c8962a;margin-bottom:12px"><h3 style="margin:0 0 4px">Vitrine de l\'accueil</h3>' +
     '<p class="astuce" style="margin:0 0 8px">Les packs que les clients voient en premier sur l\'accueil, avec leur prix. Mettez-en autant que vous voulez, classez-les avec ↑ ↓. Un pack dont une saveur est finie se cache tout seul, et revient tout seul. Ça s\'enregistre tout de suite.</p>' +
-    '<div style="display:flex;gap:8px;margin-bottom:6px"><button class="btn btn-clair btn-petit" type="button" data-act="vit-vider"' + (dedans.length ? '' : ' disabled') + '>Tout retirer</button></div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap"><button class="btn btn-vert btn-petit" type="button" data-act="packs-conseilles">➕ Ajouter les packs conseillés</button><button class="btn btn-clair btn-petit" type="button" data-act="vit-vider"' + (dedans.length ? '' : ' disabled') + '>Tout retirer</button></div>' +
     '<details open><summary style="font-weight:700;cursor:pointer;padding:6px 0">Sur l\'accueil (' + dedans.length + ')</summary>' + (l1 || '<p class="astuce">Rien sur l\'accueil pour l\'instant.</p>') + '</details>' +
     '<details' + (dedans.length ? '' : ' open') + '><summary style="font-weight:700;cursor:pointer;padding:6px 0">Autres packs et produits (' + autres.length + ')</summary>' + (l2 || '<p class="astuce">Aucun autre pack.</p>') + '</details></div>';
 }
@@ -1272,6 +1295,7 @@ var CHAMPS_SITE = [
   ["delai","Délai de livraison (affiché dans le panier)","text"],
   ["livraisonTarifs","Tarifs de livraison par distance (une ligne par tranche, ex : 0 à 15 km : 1 000 FCFA). Le site calcule la distance entre le client (position partagée) et le lien Google Maps du local ci-dessous, puis affiche le prix de la tranche. Modifiez les chiffres ici : le site suit. Laissez vide pour masquer.","area"],
   ["livraisonQuartiers","Prix de livraison par quartier (une ligne par quartier, ex : Karpala : 1000). Le client choisit son quartier dans une liste et voit le prix. Laissez vide pour ne pas proposer de liste.","area"],
+  ["whatsappLivreur","Numéro WhatsApp du livreur (le bouton « Envoyer au livreur » ouvre WhatsApp vers lui avec la commande déjà écrite). Ex : 22670123456","text"],
   ["adresse","Adresse du local (retrait)","text"],
   ["lienMaps","Lien Google Maps du local","url"],
   ["infoPaiement","Explication du paiement (affichée dans le panier)","area"],
@@ -1450,6 +1474,7 @@ document.addEventListener("click", function(ev){
       if (!S.produits) return;
       S.produits.forEach(function(q){ if (q.type === "pack" || q.actif === false) return; if (t.getAttribute("data-v") === "1") { if (statutAdmin(q) === "rupture") appliquerStatut(q, "aujourdhui", ""); } else appliquerStatut(q, "rupture", ""); });
       rendreCatalogue(); majSauvegarde(); return sauverCatalogue();
+    case "packs-conseilles": return packsConseilles();
     case "vit-ajouter": case "vit-retirer": case "vit-haut": case "vit-bas": case "vit-vider": {
       if (!S.produits) return;
       var vl = vitrineListe(), vid = t.getAttribute("data-id"), vi = vl.findIndex(function(x){ return x.id === vid; });

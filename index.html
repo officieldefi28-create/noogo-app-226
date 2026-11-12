@@ -834,7 +834,7 @@ function envoyer() {
   m.push("────────────");
   if (reception === "retrait") m.push("🚚 *Livraison :* retrait au local (gratuit)");
   else {
-    if (packsIncl.length) { if (surplus) m.push(`📦 *Produits des packs :* ${fmt(t.packs - surplus)}`, `🚚 *Livraison des packs :* ${fmt(surplus)} (incluse)`); else m.push("🚚 *Livraison des packs :* incluse"); }
+    if (packsIncl.length) m.push("🚚 *Livraison des packs :* incluse");
     if (frais.besoin) m.push(frais.montant ? `🚚 *Livraison articles :* ${fmt(frais.montant)} — à payer au livreur en espèces${quartier && quartier !== "__autre" && !coordsDe(position) ? " (quartier " + quartier + ")" : ""}` : `🚚 *Livraison articles :* à confirmer${frais.min ? " (à partir de " + fmt(frais.min) + ")" : ""}`);
   }
   m.push(`💰 *TOTAL À PAYER : ${fmt(t.apres + (frais.montant || 0))}*${frais.besoin && !frais.montant ? " + livraison des articles" : ""}`);

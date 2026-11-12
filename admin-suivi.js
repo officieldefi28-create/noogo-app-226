@@ -208,6 +208,8 @@ function vResume(v) {
   if (nbPaiements(v)) al.push('<div class="alerte rouge"><b>' + nbPaiements(v) + ' paiement' + (nbPaiements(v) > 1 ? 's' : '') + ' à confirmer :</b> vérifiez votre téléphone (65 12 09 02) puis allez dans Équipe › la personne.</div>');
   var dsv = ""; try { dsv = localStorage.getItem("noogo_sauv") || ""; } catch (e) {}
   var ageSv = dsv ? Math.floor((Date.parse(jourJ(0)) - Date.parse(dsv)) / 86400000) : 999;
+  if (E.sauv) al.unshift(carteSauv());
+  if (b.dette > 0) al.unshift('<div class="alerte rouge"><b>💳 Dette à rembourser : ' + fcfa(b.dette) + '</b><br><small>Argent emprunté, pas encore remboursé. Chaque remboursement se note dans Dépenses → « Remboursement d\'emprunt ».</small></div>');
   if (ageSv >= 7) al.push('<div class="alerte rouge"><b>Pensez à sauvegarder :</b> ' + (dsv ? 'dernière sauvegarde il y a ' + ageSv + ' jours.' : 'aucune sauvegarde faite sur ce téléphone.') + ' <button class="btn btn-vert btn-petit" type="button" data-s="sauvegarder">Sauvegarder maintenant</button></div>');
   vieuxStock(v).forEach(function (x) { al.push('<div class="alerte rouge"><b>Produit gardé longtemps :</b> ' + esc(x.nom) + ' (' + x.qte + ' pots produits il y a ' + x.age + ' jours). Vérifiez la qualité et vendez-les en premier.</div>'); });
   var nomsOk = function (l) { return l.map(function (x) { return esc(x.nom) + " (" + x.theorique + ")"; }).join(", "); };
@@ -229,7 +231,7 @@ function vResume(v) {
   var lc = function (t, val, cls) { return '<div class="rang"><span>' + t + '</span><b class="' + (cls || "") + '">' + val + '</b></div>'; };
   var det = '<p class="astuce">Voici d\'où vient le chiffre « Caisse actuelle » (depuis ' + (cd.depuis ? dateFr(cd.depuis) : "le début") + ').</p>' +
     lc("Caisse de départ", fcfa(cd.depart)) + lc("+ Ventes encaissées", fcfa(cd.ventes), "pos") + (cd.rendu ? lc("+ Argent rendu (livreurs, clients)", fcfa(cd.rendu), "pos") : "") + (cd.nonEncaisse ? lc("(Vendu mais pas encore payé : " + fcfa(cd.nonEncaisse) + ", non compté)", "") : "") + lc("− Production (coût des lots)", fcfa(cd.production), "neg") + lc("− Dépenses", fcfa(cd.depenses), "neg") +
-    (cd.achats ? lc("− Achats de marchandises", fcfa(cd.achats), "neg") : "") + (cd.apports ? lc("+ Apports d'argent", fcfa(cd.apports), "pos") : "") + (cd.remboursements ? lc("− Remboursements d'apport", fcfa(cd.remboursements), "neg") : "") +
+    (cd.achats ? lc("− Achats de marchandises", fcfa(cd.achats), "neg") : "") + (cd.apports ? lc("+ Apports d'argent", fcfa(cd.apports), "pos") : "") + (cd.remboursements ? lc("− Remboursements d'apport", fcfa(cd.remboursements), "neg") : "") + (cd.emprunts ? lc("+ Argent emprunté (à rembourser)", fcfa(cd.emprunts), "pos") : "") + (cd.rembEmprunts ? lc("− Remboursements d'emprunts", fcfa(cd.rembEmprunts), "neg") : "") +
     '<div class="rang" style="font-weight:800"><span>= Caisse actuelle</span><b>' + fcfa(b.caisse) + '</b></div>' +
     '<p class="astuce" style="margin-top:10px">Sur la période affichée : ventes ' + fcfa(b.ca) + ' − argent sorti ' + fcfa(b.sortiesPeriode) + ' (dépenses ' + fcfa(b.charges) + ' + production ' + fcfa(b.production) + (b.achats ? ' + achats ' + fcfa(b.achats) : "") + ') = <b class="' + (b.fluxPeriode >= 0 ? "pos" : "neg") + '">' + signe(b.fluxPeriode) + '</b>.</p>' +
     '<p class="astuce">La caisse monte quand vous vendez et descend quand vous produisez ou dépensez. Pour le <b>résultat net</b>, la production ne compte qu\'au fur et à mesure que les glaces se vendent (coût des produits vendus : ' + fcfa(b.cout) + ') : sinon vous seriez « en perte » le jour où vous produisez, alors que le stock vaut de l\'argent.</p>';
@@ -247,6 +249,7 @@ function vResume(v) {
   h += repliable("Dépenses par catégorie", b.parCategorie.length || b.production ? '<table>' + b.parCategorie.map(function (p) { return '<tr><td>' + esc(p.nom) + '</td><td class="n">' + fcfa(p.total) + '</td></tr>'; }).join("") + (b.production ? '<tr><td>Production (lots)</td><td class="n">' + fcfa(b.production) + '</td></tr>' : "") + '</table>' : '<p class="gris">Aucune dépense.</p>');
   var autres = '<div class="rang"><span>Pertes, offerts (au coût)</span><b>' + fcfa(b.pertes) + '</b></div><div class="rang"><span>Valeur du stock (au coût)</span><b>' + fcfa(b.valeurStock) + '</b></div><div class="rang"><span>Coût des produits vendus</span><b>' + fcfa(b.cout) + '</b></div>';
   if (b.achats) autres += '<div class="rang"><span>Achats de marchandises à revendre</span><b>' + fcfa(b.achats) + '</b></div>';
+  if (b.dette > 0 || b.emprunts) autres += '<div class="rang"><span>Dette à rembourser (emprunts)</span><b style="color:#b3261e">' + fcfa(b.dette) + '</b></div>';
   if (b.apports || b.remboursements) autres += '<div class="rang"><span>Apports d\'argent' + (b.remboursements ? " · remboursés" : "") + '</span><b>' + fcfa(b.apports) + (b.remboursements ? " · " + fcfa(b.remboursements) : "") + '</b></div>';
   h += repliable("Autres chiffres", autres);
   return h;
@@ -438,7 +441,7 @@ function ligneRecu(r, archive) {
       : '<button class="btn btn-brun btn-petit" type="button" data-s="archiver" data-t="recu" data-etat="1" data-id="' + esc(r.id) + '">Archiver</button> <button class="btn btn-clair btn-petit" type="button" data-s="supprimer-recu" data-id="' + esc(r.id) + '">Supprimer</button>') + '</div></div>';
 }
 function ligneDepense(d, archive) {
-  var plus = d.classe === "apport";
+  var plus = d.classe === "apport" || d.classe === "emprunt";
   if (d.auto) return '<div class="rang"><div class="g"><b>' + esc(d.description || d.categorie) + '</b><small>' + esc(dateFr(d.date)) + ' · ' + esc(d.categorie) + (d.vendeur ? " · " + esc(d.vendeur) : "") + ' · automatique, liée à la vente</small></div><div style="text-align:right"><b>' + fcfa(d.montant) + '</b></div></div>';
   return '<div class="rang"><div class="g"><b>' + esc(d.description || d.categorie) + '</b><small>' + esc(dateFr(d.date)) + ' · ' + esc(d.categorie) + (d.vendeur ? " · " + esc(d.vendeur) : "") + (d.mode ? " · " + esc(d.mode) : "") + '</small></div><div style="text-align:right"><b class="' + (plus ? "pos" : "") + '">' + (plus ? "+" : "") + fcfa(d.montant) + '</b><br>' +
     (archive ? '<button class="btn btn-brun btn-petit" type="button" data-s="archiver" data-t="depense" data-etat="0" data-id="' + esc(d.id) + '">Restaurer</button> <button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="depense" data-id="' + esc(d.id) + '">Supprimer</button>'
@@ -777,8 +780,10 @@ function vPatron(v) {
   }
   return h + '</div>';
 }
+function carteSauv() { return E.sauv ? '<div class="carte" style="border:2px solid #c8962a"><b>Sauvegarde prête</b> (' + Math.round(E.sauv.txt.length / 1024) + ' Ko)<p class="astuce">Choisissez comment la garder. Ne l\'envoyez à personne d\'autre que vous : elle contient les codes de l\'équipe.</p><button class="btn btn-vert btn-bloc" type="button" data-s="sauv-partager">📤 Partager / envoyer vers Drive</button><button class="btn btn-brun btn-bloc" type="button" style="margin-top:8px" data-s="sauv-telecharger">⬇️ Télécharger sur le téléphone</button><button class="btn btn-clair btn-bloc" type="button" style="margin-top:8px" data-s="sauv-copier">📋 Copier le texte</button><button class="btn btn-clair btn-petit" type="button" style="margin-top:8px" data-s="sauv-fin">Fermer</button></div>' : ''; }
 function vEnvoi(v) {
   return '<div class="carte"><h3>Envoyer et exporter</h3><p class="astuce">Ces boutons ouvrent le menu d\'envoi de votre téléphone : choisissez WhatsApp, Google Drive, Gmail, Sheets… Sur ordinateur, le fichier se télécharge. Les chiffres suivent la période choisie dans le Résumé (' + esc(nomPeriode()) + ').</p>' +
+    carteSauv() +
     '<button class="btn btn-or btn-bloc" type="button" data-s="sauvegarder">Sauvegarde complète (à garder en sécurité)</button>' +
     '<p class="astuce" style="margin:4px 0 10px">Une copie de tout : ventes, dépenses, stock, caisse, clients, commandes. Faites-la une fois par semaine et gardez le fichier sur Drive. Ne l\'envoyez à personne : il contient les codes de l\'équipe.</p>' +
     '<button class="btn btn-vert btn-bloc" type="button" data-s="rapport-wa">Résumé détaillé sur WhatsApp</button>' +
@@ -877,7 +882,7 @@ function vDepenses(v) {
       var l = it.x;
       return '<div class="rang"><div class="g"><b>Production · ' + esc(l.nom) + '</b><small>' + esc(dateFr(l.date)) + ' · ' + l.lignes.map(function (x) { return x.qte + " × " + esc(noms[x.produitId] || x.produitId); }).join(", ") + ' <span class="badge badge-or">Production</span></small></div><div style="text-align:right"><b>' + fcfa(l.cout) + '</b><br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="lot" data-id="' + esc(l.id) + '">Supprimer</button></div></div>';
     }
-    var d = it.x, plus = d.classe === "apport";
+    var d = it.x, plus = d.classe === "apport" || d.classe === "emprunt";
     if (d.auto) return '<div class="rang"><div class="g"><b>' + esc(d.description || d.categorie) + '</b><small>' + esc(dateFr(d.date)) + ' · ' + esc(d.categorie) + ' · automatique <span class="badge badge-or">Pack</span></small></div><div style="text-align:right"><b>' + fcfa(d.montant) + '</b></div></div>';
     return '<div class="rang"><div class="g"><b>' + esc(d.description || d.categorie) + '</b><small>' + esc(dateFr(d.date)) + ' · ' + esc(d.categorie) + (d.vendeur ? " · " + esc(d.vendeur) : "") + (d.mode ? " · " + esc(d.mode) : "") + '</small></div><div style="text-align:right"><b class="' + (plus ? "pos" : "") + '">' + (plus ? "+" : "") + fcfa(d.montant) + '</b><br><button class="btn btn-brun btn-petit" type="button" data-s="archiver" data-t="depense" data-etat="1" data-id="' + esc(d.id) + '">Archiver</button> <button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="depense" data-id="' + esc(d.id) + '">Supprimer</button></div></div>';
   }).join("") : '<p class="gris">Aucune dépense sur cette période.</p>') + '</div>';
@@ -1052,6 +1057,7 @@ function construireRapport(complet) {
   var mq = (v.comptesEsp || []).filter(function (x) { return dansPeriode(x.date) && x.ecart < 0 && x.statut !== "accepte"; });
   if (mq.length) { T.push("⚠ Manques de caisse : " + fcfa(-mq.reduce(function (a, x) { return a + x.ecart; }, 0))); mq.forEach(function (x) { T.push("   " + dateFr(x.date) + " · " + x.vendeur + " : " + fcfa(-x.ecart)); }); }
   if (b.achats) T.push("Achats de marchandises à revendre : " + fcfa(b.achats));
+  if (b.dette > 0) T.push("Dette à rembourser (emprunts) : " + fcfa(b.dette));
   if (b.apports || b.remboursements) T.push("Apports d'argent : " + fcfa(b.apports) + " · Remboursés : " + fcfa(b.remboursements));
   T.push("", titre("VENTES PAR PRODUIT"));
   if (b.parProduit.length) b.parProduit.forEach(function (p) { T.push("• " + court(p.nom) + " : " + p.qte + " → " + fcfa(p.ca)); }); else T.push("Aucune vente.");
@@ -1068,7 +1074,7 @@ function construireRapport(complet) {
   if (pai.length) { T.push("", titre("MODES DE PAIEMENT")); pai.forEach(function (p) { T.push("• " + p.nom + " : " + fcfa(p.ca)); }); }
   T.push("", titre("VENTES PAR JOUR"));
   if (b.parJour.length) b.parJour.forEach(function (j) { T.push("• " + dateFr(j.date) + " : " + fcfa(j.ca) + " (" + j.qte + " pots)" + (j.depenses ? " · dépenses " + fcfa(j.depenses) : "")); }); else T.push("Aucune vente.");
-  var dep = v.depenses.filter(function (d) { return dansPeriode(d.date) && !/^(Apport|Remboursement)/i.test(d.categorie || ""); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; });
+  var dep = v.depenses.filter(function (d) { return dansPeriode(d.date) && !/^(Apport|Remboursement|Emprunt)/i.test(d.categorie || ""); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; });
   T.push("", titre("DÉPENSES"));
   if (b.parCategorie.length) b.parCategorie.forEach(function (c) { T.push("• " + c.nom + " : " + fcfa(c.total)); }); else T.push("Aucune dépense.");
   T.push("", titre("STOCK ACTUEL"));
@@ -1111,11 +1117,11 @@ function rapportPdf() {
   var kp = function (t, val, c, sub) { return '<div class="k"><small>' + t + '</small><b style="color:' + (c || "#2b1b12") + '">' + val + '</b>' + (sub ? '<small style="display:block;margin-top:1px">' + sub + '</small>' : '') + '</div>'; };
   var tab = function (tete, lignes) { var vide = !tete.join(""); return '<table>' + (vide ? '' : '<tr>') + (vide ? '' : tete.map(function (t, i) { return '<th' + (i && tete[i] !== "Raison" ? ' class="d"' : '') + '>' + t + '</th>'; }).join("") + '</tr>') + lignes.map(function (l) { return '<tr>' + l.map(function (c, i) { return '<td' + ((i > 0 && tete[i] !== "Raison") ? ' class="d"' : '') + '>' + X(c) + '</td>'; }).join("") + '</tr>'; }).join("") + '</table>'; };
   var mq = (v.comptesEsp || []).filter(function (x) { return dansPeriode(x.date) && x.ecart < 0 && x.statut !== "accepte"; });
-  var dep = v.depenses.filter(function (d) { return dansPeriode(d.date) && !/^(Apport|Remboursement)/i.test(d.categorie || ""); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; });
+  var dep = v.depenses.filter(function (d) { return dansPeriode(d.date) && !/^(Apport|Remboursement|Emprunt)/i.test(d.categorie || ""); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; });
   var st = v.stock.filter(function (x) { return (x.theorique || x.vendu) && !x.inconnu && !/^Ancien produit/i.test(x.nom); });
   var h = '<h1>🍦 Noogó — Rapport de gestion</h1><p class="sub">' + X(nomPeriode()) + ' · édité le ' + dateFr(jourJ(0)) + '/' + jourJ(0).slice(0, 4) + '</p>';
   h += '<div class="grid">' + kp("Chiffre d\'affaires", fcfa(b.ca)) + kp("Dépenses", fcfa(b.charges + b.production), "", b.production ? "dont production : " + fcfa(b.production) : "") + kp("Résultat net", signe(b.resultat), b.resultat < 0 ? "#b3261e" : "#1b7a3a") + kp("Marge", fcfa(b.margeBrute) + " (" + b.margePct + " %)") + '</div>';
-  h += '<h2>Caisse et objectifs</h2>' + tab(["", ""], [["Caisse théorique", fcfa(b.caisse)], ["Valeur du stock (au coût)", fcfa(b.valeurStock)], ["Pots vendus", b.quantite], ["Coût des produits vendus", fcfa(b.cout)]].concat(b.pertes ? [["Pertes / offerts (au coût)", fcfa(b.pertes)]] : [], (b.apports || b.remboursements) ? [["Apports d'argent / remboursés", fcfa(b.apports) + " / " + fcfa(b.remboursements)]] : []).concat(mq.length ? [["Manques de caisse non réglés", fcfa(-mq.reduce(function (a, x) { return a + x.ecart; }, 0))]] : [], ob.jour > 0 ? [["Objectif du jour", fcfa(ob.caJour) + " / " + fcfa(ob.jour) + " (" + Math.round(ob.caJour / ob.jour * 100) + " %)"]] : [], ob.mois > 0 ? [["Objectif du mois", fcfa(ob.caMois) + " / " + fcfa(ob.mois) + " (" + Math.round(ob.caMois / ob.mois * 100) + " %)"]] : []));
+  h += '<h2>Caisse et objectifs</h2>' + tab(["", ""], [["Caisse théorique", fcfa(b.caisse)]].concat(b.dette > 0 ? [["Dette à rembourser (emprunts)", fcfa(b.dette)]] : [], [["Valeur du stock (au coût)", fcfa(b.valeurStock)], ["Pots vendus", b.quantite], ["Coût des produits vendus", fcfa(b.cout)]], b.pertes ? [["Pertes / offerts (au coût)", fcfa(b.pertes)]] : [], (b.apports || b.remboursements) ? [["Apports d'argent / remboursés", fcfa(b.apports) + " / " + fcfa(b.remboursements)]] : []).concat(mq.length ? [["Manques de caisse non réglés", fcfa(-mq.reduce(function (a, x) { return a + x.ecart; }, 0))]] : [], ob.jour > 0 ? [["Objectif du jour", fcfa(ob.caJour) + " / " + fcfa(ob.jour) + " (" + Math.round(ob.caJour / ob.jour * 100) + " %)"]] : [], ob.mois > 0 ? [["Objectif du mois", fcfa(ob.caMois) + " / " + fcfa(ob.mois) + " (" + Math.round(ob.caMois / ob.mois * 100) + " %)"]] : []));
   h += '<h2>Ventes par produit</h2>' + (b.parProduit.length ? tab(["Produit", "Qté", "Montant"], b.parProduit.map(function (p) { return [court(p.nom), p.qte, fcfa(p.ca)]; })) : '<p>Aucune vente.</p>');
   if (pk.liste.length) { var LP = lignesPacks(v); h += '<h2>Packs vendus</h2><table><tr><th>Pack</th><th class="d">Vendus</th><th>Contient</th><th class="d">Prix</th><th class="d">Gain/pack</th></tr>' + LP.map(function (x) { return '<tr><td>' + X(x.nom) + '</td><td class="d">' + x.qte + '</td><td>' + X(x.contenu) + '</td><td class="d">' + fcfa(x.prix) + '</td><td class="d" style="color:' + (x.gain < 0 ? "#b3261e" : "#1b7a3a") + ';font-weight:bold">' + (x.gain < 0 ? "−" : "+") + fcfa(Math.abs(x.gain)) + (x.choix ? "*" : "") + '</td></tr>'; }).join("") + '</table><p style="margin:3px 0;color:#777;font-size:11px">Pots dans des packs : ' + pk.pots + ' · à l\'unité : ' + Math.max(0, b.quantite - pk.pots) + (LP.some(function (x) { return x.choix; }) ? ' · * estimé (pack au choix)' : '') + '</p>'; }
   var lieux = b.parPoint.filter(function (p) { return p.nom && p.nom !== "Non précisé"; });
@@ -1238,14 +1244,27 @@ function clic(ev) {
       return envoyer("supprimer_recu", { id: t.getAttribute("data-id") }, "Reçu supprimé", function () { E.soir = null; });
     case "rapport-wa": return rapportWA();
     case "rapport-pdf": return rapportPdf();
-    case "sauvegarder": return appel("sauvegarde").then(function (r) {
-      var nom = "sauvegarde-noogo-" + jourJ(0) + ".json", txt = JSON.stringify(r, null, 1);
-      try { localStorage.setItem("noogo_sauv", jourJ(0)); } catch (e) {}
-      try { var f = new File([txt], nom, { type: "application/json" }); if (navigator.canShare && navigator.canShare({ files: [f] })) { navigator.share({ files: [f], title: "Sauvegarde Noogó" }).catch(function () {}); rendre(); return; } } catch (e) {}
-      var u = URL.createObjectURL(new Blob([txt], { type: "application/json" })), a = document.createElement("a");
-      a.href = u; a.download = nom; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 3000);
-      A.toast("Sauvegarde téléchargée. Gardez le fichier sur Drive.", "ok"); rendre();
+    case "sauvegarder": A.toast("Préparation de la sauvegarde…", "ok"); return appel("sauvegarde").then(function (r) {
+      E.sauv = { nom: "sauvegarde-noogo-" + jourJ(0) + ".json", txt: JSON.stringify(r, null, 1) }; rendre();
     }).catch(function (e) { A.toast(e.message || "Sauvegarde impossible", "err"); });
+    case "sauv-partager": if (!E.sauv) return;
+      try {
+        var fs = new File([E.sauv.txt], E.sauv.nom, { type: "application/json" });
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [fs] })) return navigator.share({ files: [fs], title: "Sauvegarde Noogó" }).then(function () { try { localStorage.setItem("noogo_sauv", jourJ(0)); } catch (e) {} A.toast("Sauvegarde envoyée.", "ok"); rendre(); }).catch(function (e) { if (e && e.name !== "AbortError") A.toast("Le partage a échoué. Essayez « Télécharger » ou « Copier ».", "err"); });
+      } catch (e) {}
+      return A.toast("Le partage de fichier n'est pas possible sur ce téléphone. Utilisez « Télécharger » ou « Copier ».", "err");
+    case "sauv-telecharger": if (!E.sauv) return;
+      try {
+        var u = URL.createObjectURL(new Blob([E.sauv.txt], { type: "application/json" })), a = document.createElement("a");
+        a.href = u; a.download = E.sauv.nom; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 20000);
+        try { localStorage.setItem("noogo_sauv", jourJ(0)); } catch (e) {}
+        A.toast("Téléchargement lancé. Regardez dans « Téléchargements » de votre téléphone.", "ok"); return rendre();
+      } catch (e) { return A.toast("Téléchargement impossible. Utilisez « Copier ».", "err"); }
+    case "sauv-copier": if (!E.sauv) return;
+      var okc = function () { try { localStorage.setItem("noogo_sauv", jourJ(0)); } catch (e) {} A.toast("Texte copié. Collez-le dans une note ou un message pour vous-même.", "ok"); rendre(); };
+      if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(E.sauv.txt).then(okc, function () { window.prompt("Copiez ce texte :", E.sauv.txt.slice(0, 2000)); });
+      return window.prompt("Copiez ce texte :", E.sauv.txt.slice(0, 2000));
+    case "sauv-fin": E.sauv = null; return rendre();
     case "classeur": return classeurComplet();
     case "rapport-cloture": return rapportCloture();
     case "cloturer": if (val("cl-c") === "") return A.toast("Écrivez les espèces comptées dans la caisse.", "err"); return envoyer("cloture", { date: val("cl-d"), compte: val("cl-c"), fond: val("cl-f"), note: val("cl-n") }, "Journée clôturée");

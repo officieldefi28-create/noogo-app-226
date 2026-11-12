@@ -335,7 +335,7 @@ ol.pas-l li{margin:8px 0}
 const CONFIG = {
   whatsapp: "22661682706", orangeMoney: "65 12 09 02", wave: "65 12 09 02",
   adresse: "Karpala, derrière la mairie", lienMaps: "https://maps.google.com/?q=12.336911,-1.474793",
-  livraisonTarifs: "", delai: "Livraison en général dans l'heure qui suit la confirmation, à Karpala et alentours.",
+  livraisonTarifs: "", livraisonQuartiers: "", delai: "Livraison en général dans l'heure qui suit la confirmation, à Karpala et alentours.",
   infoPaiement: "Espèces : vous payez au livreur ou au local. Orange Money / Wave : nous vous confirmons la commande sur WhatsApp, puis vous envoyez le montant au numéro indiqué.",
   couleurPrincipale: "", couleurAccent: "", couleurFond: "", logo: "", logoRond: ""
 };
@@ -388,7 +388,7 @@ document.addEventListener("error", (e) => { const t = e.target; if (t && t.tagNa
 let CATALOGUE = [];
 let panier = lire("noogo_panier") || {};
 let compo = lire("noogo_compo") || {};
-let filtre = "tout", promo = null, position = "", reception = "livraison", paiement = "especes", vueActive = "accueil", avertiInfos = false;
+let quartier = "", filtre = "tout", promo = null, position = "", reception = "livraison", paiement = "especes", vueActive = "accueil", avertiInfos = false;
 let msgCode = { t: "", c: "" };
 const produit = (id) => CATALOGUE.find((p) => p.id === id);
 
@@ -589,11 +589,47 @@ function majBarre() {
   $("#barre-total").textContent = fmt(t.sous);
   $("#barre-n").textContent = t.n + (t.n > 1 ? " articles" : " article");
 }
+/* ───── Prix de la livraison (articles seuls) : par position GPS ou par quartier ───── */
+const nbr = (x) => parseInt(String(x).replace(/[^\d]/g, ""), 10) || 0;
+function tranches() {
+  return tarifsLignes().map((l) => { const m = /(\d+(?:[.,]\d+)?)\s*(?:à|a|-|–|—)\s*(\d+(?:[.,]\d+)?)\s*km\s*[:=-]?\s*(.*)$/i.exec(l); return m ? { de: parseFloat(m[1].replace(",", ".")), a: parseFloat(m[2].replace(",", ".")), prix: nbr(m[3]) } : null; }).filter((x) => x && x.prix).sort((x, y) => x.a - y.a);
+}
+function quartiers() {
+  return String(CONFIG.livraisonQuartiers || "").split("\n").map((l) => { const m = /^(.+?)\s*[:=]\s*([\d\s.\u00a0\u202f]+)\s*(?:F|FCFA)?\s*$/i.exec(l.trim()); return m ? { nom: m[1].trim(), prix: nbr(m[2]) } : null; }).filter((x) => x && x.prix);
+}
+const coordsDe = (u) => { const m = /[?&]q=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/.exec(String(u || "")); return m ? [parseFloat(m[1]), parseFloat(m[2])] : null; };
+function distKm(a, b) {
+  const R = 6371, r = (x) => x * Math.PI / 180, dLa = r(b[0] - a[0]), dLo = r(b[1] - a[1]);
+  const h = Math.sin(dLa / 2) ** 2 + Math.cos(r(a[0])) * Math.cos(r(b[0])) * Math.sin(dLo / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h)) * 1.3;   // ×1,3 : la route est plus longue que la ligne droite
+}
+function fraisLivraison(t) {
+  if (reception === "retrait" || !t.aProduit) return { besoin: false, montant: null, min: 0, info: "" };
+  const T = tranches(), Q = quartiers(), min = Math.min(...T.map((x) => x.prix).concat(Q.map((x) => x.prix)), Infinity);
+  const out = { besoin: true, montant: null, min: isFinite(min) ? min : 0, info: "" };
+  const a = coordsDe(position), b = coordsDe(CONFIG.lienMaps);
+  if (a && b && T.length) {
+    const d = distKm(a, b), tr = T.find((x) => d <= x.a);
+    if (tr) { out.montant = tr.prix; out.info = `Votre position est à environ ${d < 10 ? d.toFixed(1).replace(".", ",") : Math.round(d)} km : prix estimé, confirmé à l'appel du livreur.`; }
+    else out.info = `Votre position est loin (environ ${Math.round(d)} km) : le tarif vous sera annoncé.`;
+    return out;
+  }
+  const q = Q.find((x) => x.nom === quartier);
+  if (q) { out.montant = q.prix; out.info = `Quartier ${q.nom} : prix confirmé à l'appel du livreur.`; }
+  return out;
+}
+function valeurPots(p) {
+  if (p.packCompo) { let s = 0; for (const k of Object.keys(p.packCompo)) { const x = produit(k); if (!x) return null; s += x.prix * p.packCompo[k]; } return s; }
+  const m = /^pk-(van|bao|ban|cho|fra)-(p|g)$/.exec(p.id), b = m && produit(PACKBASE[m[1]] + "-" + m[2]);
+  return b ? b.prix * nbPots(p) : null;
+}
 function texteLivraison(t) {
   if (reception === "retrait") return { v: "Retrait au local — gratuit", note: CONFIG.adresse + "." };
   if (t.aPack && !t.aProduit) return { v: "Incluse dans le pack", note: "" };
-  if (t.aPack) return { v: "Incluse pour les packs", note: "Pour les articles à l'unité, la livraison est à la charge du client (tarif confirmé sur WhatsApp)." };
-  return { v: "À la charge du client", note: "Le tarif dépend de votre quartier : nous vous l'annonçons sur WhatsApp." };
+  const f = fraisLivraison(t), prefixe = t.aPack ? "Packs : incluse · articles seuls : " : "";
+  if (f.montant) return { v: prefixe + fmt(f.montant), note: f.info + " À payer au livreur en espèces." };
+  const aide = f.min ? (quartiers().length ? "Choisissez votre quartier ou partagez votre position pour voir le prix exact." : "Partagez votre position pour voir le prix exact.") : "Le tarif dépend de votre quartier : nous vous l'annonçons sur WhatsApp.";
+  return { v: prefixe + (f.min ? "à partir de " + fmt(f.min) : "à la charge du client"), note: (f.info ? f.info + " " : "") + aide };
 }
 const tarifsLignes = () => String(CONFIG.livraisonTarifs || "").split("\n").map((x) => x.trim()).filter(Boolean);
 
@@ -608,7 +644,7 @@ function rendrePanier() {
   const val = (id) => { const e = $("#" + id); return e ? e.value : null; };
   const sauv = { nom: val("f-nom"), tel: val("f-tel"), lieu: val("f-lieu"), code: val("f-code"), note: val("f-note") };
   const mem = lire("noogo_client") || {};
-  const t = totaux(), liv = texteLivraison(t);
+  const t = totaux(), liv = texteLivraison(t), fl = fraisLivraison(t);
   const att = L.filter((l) => aAttendre(l.p)).map((l) => l.p.nom);
   corps.innerHTML = `
     ${installable() ? `<div class="info" style="display:flex;gap:10px;align-items:center;justify-content:space-between"><span><b>Installez Noogó</b> pour commander plus vite la prochaine fois.</span><button type="button" class="btn or petit" data-inst="1">Installer</button></div>` : ""}
@@ -636,6 +672,7 @@ function rendrePanier() {
       <label class="l">Lieu de livraison</label>
       <button type="button" class="btn wa" id="btn-position">${position ? "✓ Position partagée (actualiser)" : "Partager ma position (le plus simple)"}</button>
       <p class="aide">Un seul appui : le livreur reçoit votre position exacte.</p>
+      ${t.aProduit && quartiers().length ? `<label class="l" for="f-quartier">Votre quartier <span class="opt">(pour voir le prix de livraison)</span></label><select id="f-quartier"><option value="">Choisir mon quartier…</option>${quartiers().map((q) => `<option value="${esc(q.nom)}" ${quartier === q.nom ? "selected" : ""}>${esc(q.nom)} — ${fmt(q.prix)}</option>`).join("")}<option value="__autre" ${quartier === "__autre" ? "selected" : ""}>Autre quartier (tarif annoncé)</option></select>` : ""}
       <label class="l" for="f-lieu">Ou votre quartier / un repère <span class="opt">(facultatif)</span></label>
       <input type="text" id="f-lieu" autocomplete="street-address" placeholder="Ex : Karpala, près de la mairie" value="${esc(sauv.lieu != null ? sauv.lieu : (mem.lieu && mem.lieu !== "Position partagée" ? mem.lieu : ""))}">
     </div>
@@ -662,6 +699,7 @@ function rendrePanier() {
       ${t.remise ? `<div style="color:var(--vert)"><span>Remise (${esc(promo.code)})</span><span>−${fmt(t.remise)}</span></div>` : ""}
       <div><span>Livraison</span><span>${esc(liv.v)}</span></div>
       <div class="total"><span>Total des articles</span><b>${fmt(t.apres)}</b></div>
+      ${fl.montant ? `<div class="total"><span>Total à payer (livraison comprise)</span><b>${fmt(t.apres + fl.montant)}</b></div>` : ""}
       ${liv.note ? `<span class="note">${esc(liv.note)}</span>` : ""}
       ${(parseInt(CONFIG.commandeMin, 10) || 0) ? `<span class="note" style="${t.apres < parseInt(CONFIG.commandeMin, 10) ? "color:var(--rouge);font-weight:700" : ""}">Commande minimale : ${fmt(parseInt(CONFIG.commandeMin, 10))}${t.apres < parseInt(CONFIG.commandeMin, 10) ? " — il vous manque " + fmt(parseInt(CONFIG.commandeMin, 10) - t.apres) : " ✓"}</span>` : ""}
       ${att.length ? `<span class="note">À confirmer sur WhatsApp : ${esc(att.join(", "))}.</span>` : ""}
@@ -787,13 +825,26 @@ function envoyer() {
   if (packs.length) { m.push("🎁 *PACKS*"); packs.forEach((l) => { m.push(`• ${l.p.nom} ×${l.qte} = ${fmt(l.p.prix * l.qte)}${marque(l.p)}`); m.push(`   📦 ${estMix(l.p) ? "Saveurs : " + texteCompo(l.p.id) : contenuPack(l.p)}`); }); m.push(""); }
   if (note) m.push(`📝 *Précisions :* ${note}`, "");
   if (t.remise) m.push(`🎟️ Remise : −${fmt(t.remise)}`);
-  m.push(`🚚 *Livraison :* ${liv.v}`, `💰 *TOTAL DES ARTICLES : ${fmt(t.apres)}*`, "", "Merci de me confirmer la disponibilité et, pour une livraison d'articles seuls, le tarif. 🙏");
-  const payload = { nomClient: nom, telClient: tel, localisation: [lieu, position].filter(Boolean).join(" — "), modePaiement: paiement, modeReception: reception, articles: L.map((l) => (estMix(l.p) ? { id: l.p.id, qte: l.qte, compo: compo[l.p.id] } : { id: l.p.id, qte: l.qte })), note, codePromo: promo ? promo.code : "", source: "site" };
+  // Produits et livraison séparés (même quand la livraison est incluse dans un pack)
+  const packsIncl = packs.filter((l) => l.p.packLiv !== "sans");
+  const vp = packsIncl.map((l) => valeurPots(l.p)), connu = vp.length > 0 && vp.every((x) => x != null);
+  let surplus = 0;
+  if (connu) packsIncl.forEach((l, i) => { const s = l.p.prix * l.qte - vp[i] * l.qte; if (s > 0) surplus += s; });
+  const frais = fraisLivraison(t);
+  m.push("────────────");
+  if (reception === "retrait") m.push("🚚 *Livraison :* retrait au local (gratuit)");
+  else {
+    if (packsIncl.length) { if (surplus) m.push(`📦 *Produits des packs :* ${fmt(t.packs - surplus)}`, `🚚 *Livraison des packs :* ${fmt(surplus)} (incluse)`); else m.push("🚚 *Livraison des packs :* incluse"); }
+    if (frais.besoin) m.push(frais.montant ? `🚚 *Livraison articles :* ${fmt(frais.montant)} — à payer au livreur en espèces${quartier && quartier !== "__autre" && !coordsDe(position) ? " (quartier " + quartier + ")" : ""}` : `🚚 *Livraison articles :* à confirmer${frais.min ? " (à partir de " + fmt(frais.min) + ")" : ""}`);
+  }
+  m.push(`💰 *TOTAL À PAYER : ${fmt(t.apres + (frais.montant || 0))}*${frais.besoin && !frais.montant ? " + livraison des articles" : ""}`);
+  if (frais.besoin && !frais.montant) m.push("", "Merci de me confirmer la disponibilité et le tarif de livraison. 🙏"); else m.push("", "Merci de me confirmer la disponibilité. 🙏");
+  const payload = { nomClient: nom, telClient: tel, localisation: [lieu, position].filter(Boolean).join(" — "), modePaiement: paiement, modeReception: reception, articles: L.map((l) => (estMix(l.p) ? { id: l.p.id, qte: l.qte, compo: compo[l.p.id] } : { id: l.p.id, qte: l.qte })), note, codePromo: promo ? promo.code : "", fraisLivraison: frais.montant || 0, quartier: quartier && quartier !== "__autre" ? quartier : "", source: "site" };
   try { fetch("/api/commander", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), keepalive: true }).then((r) => r.json()).then((j) => { if (j && j.commandeId) { ecrire("noogo_derniere", j.commandeId); toast("Code de suivi : " + j.commandeId); suivre("commande_envoyee"); } else toast("Commande non enregistrée sur le site : envoyez bien le message WhatsApp."); }).catch(() => toast("Commande non enregistrée sur le site : envoyez bien le message WhatsApp.")); } catch (e) {}
-  const url = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(m.join("\n"));
+  const url = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(m.filter((x, i) => !(x === "" && m[i - 1] === "")).join("\n"));
   const w = window.open(url, "_blank", "noopener"); if (!w) location.href = url;
   ecrire("noogo_dernier_panier", { panier: JSON.parse(JSON.stringify(panier)), compo: JSON.parse(JSON.stringify(compo)) });
-  panier = {}; compo = {}; ecrire("noogo_panier", panier); ecrire("noogo_compo", compo); promo = null; position = ""; avertiInfos = false;
+  panier = {}; compo = {}; ecrire("noogo_panier", panier); ecrire("noogo_compo", compo); promo = null; position = ""; quartier = ""; avertiInfos = false;
   fermerVoile("voile-panier"); rendreTout();
   toast("Commande prête : envoyez le message sur WhatsApp");
 }
@@ -955,6 +1006,7 @@ document.addEventListener("click", (e) => {
 document.addEventListener("change", (e) => {
   if (e.target.name === "reception") { reception = e.target.value; rendrePanier(); }
   if (e.target.name === "paiement") paiement = e.target.value;
+  if (e.target.id === "f-quartier") { quartier = e.target.value; rendrePanier(); }
 });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") fermerTout();

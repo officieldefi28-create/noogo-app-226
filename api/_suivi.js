@@ -18,7 +18,9 @@ const CATEGORIES_DEPENSE = [
   "Autre dépense",
   "Achat marchandises (à revendre)",
   "Apport d'argent (+)",
-  "Remboursement d'apport (−)"
+  "Remboursement d'apport (−)",
+  "Emprunt reçu (+, à rembourser)",
+  "Remboursement d'emprunt (−)"
 ];
 const TYPES_PERTE = { gate: "Gâté", offert: "Offert", degustation: "Dégustation" };
 const POINTS_VENTE_DEFAUT = ["La Jeunesse", "Aube Nouvelle", "Local"];
@@ -28,6 +30,8 @@ const CANAL_DEFAUT = "Non précisé";
 const classeDepense = (cat) => {
   const c = String(cat || "");
   if (c.indexOf("Apport") === 0) return "apport";
+  if (c.indexOf("Emprunt") === 0) return "emprunt";               // argent emprunté : entre en caisse, mais c'est une dette (ni vente, ni bénéfice, ni apport)
+  if (c.indexOf("Remboursement d'emprunt") === 0) return "rembEmprunt";
   if (c.indexOf("Remboursement") === 0) return "remb";
   if (c.indexOf("Achat marchandises") === 0) return "achat";
   return "charge";
@@ -231,6 +235,10 @@ function bilan(donnees, du, au) {
   const achats = somme(D.filter((x) => x.classe === "achat"), (x) => nombre(x.montant));
   const apports = somme(D.filter((x) => x.classe === "apport"), (x) => nombre(x.montant));
   const rembs = somme(D.filter((x) => x.classe === "remb"), (x) => nombre(x.montant));
+  const emprunts = somme(D.filter((x) => x.classe === "emprunt"), (x) => nombre(x.montant)), rembEmprunts = somme(D.filter((x) => x.classe === "rembEmprunt"), (x) => nombre(x.montant));
+  // Dette : tout ce qui a été emprunté moins tout ce qui a été remboursé, sur toutes les dates
+  const toutes = (donnees.depenses || []).filter((x) => x && !x.archive);
+  const detteEmprunte = somme(toutes.filter((x) => classeDepense(x.categorie) === "emprunt"), (x) => nombre(x.montant)), detteRembourse = somme(toutes.filter((x) => classeDepense(x.categorie) === "rembEmprunt"), (x) => nombre(x.montant));
   const productionCout = somme(L, (x) => nombre(x.cout));
   const margeBrute = ca - cogs;
 
@@ -263,12 +271,13 @@ function bilan(donnees, du, au) {
   const cAchats = somme(cD.filter((x) => x.classe === "achat"), (x) => nombre(x.montant));
   const cApports = somme(cD.filter((x) => x.classe === "apport"), (x) => nombre(x.montant));
   const cRembs = somme(cD.filter((x) => x.classe === "remb"), (x) => nombre(x.montant));
-  const caisse = nombre(cfg.caisseDepart) + cV - cL - cCharges - cAchats + cApports - cRembs;
-  const caisseDetail = { depart: arrondi(cfg.caisseDepart), depuis, ventes: arrondi(cV0 - cDu), rendu: arrondi(cEnc), nonEncaisse: arrondi(cDu), production: arrondi(cL), depenses: arrondi(cCharges), achats: arrondi(cAchats), apports: arrondi(cApports), remboursements: arrondi(cRembs) };
+  const cEmprunts = somme(cD.filter((x) => x.classe === "emprunt"), (x) => nombre(x.montant)), cRembEmprunts = somme(cD.filter((x) => x.classe === "rembEmprunt"), (x) => nombre(x.montant));
+  const caisse = nombre(cfg.caisseDepart) + cV - cL - cCharges - cAchats + cApports - cRembs + cEmprunts - cRembEmprunts;
+  const caisseDetail = { depart: arrondi(cfg.caisseDepart), depuis, ventes: arrondi(cV0 - cDu), rendu: arrondi(cEnc), nonEncaisse: arrondi(cDu), production: arrondi(cL), depenses: arrondi(cCharges), achats: arrondi(cAchats), apports: arrondi(cApports), remboursements: arrondi(cRembs), emprunts: arrondi(cEmprunts), rembEmprunts: arrondi(cRembEmprunts) };
   // Sur la période choisie : l'argent entré (ventes) moins l'argent sorti (dépenses + production + achats)
   const livraisonPacks = somme(V, (x) => nombre(x.supp));   // surplus des packs (livraison incluse) : hors ventes, hors caisse
   const sortiesPeriode = charges + productionCout + achats;
-  const fluxPeriode = ca + apports - rembs - sortiesPeriode;
+  const fluxPeriode = ca + apports - rembs + emprunts - rembEmprunts - sortiesPeriode;
 
   // Argent à récupérer : ce que chaque livreur ou client doit encore (toutes dates)
   const cr = {};
@@ -284,7 +293,7 @@ function bilan(donnees, du, au) {
     ca: arrondi(ca), cout: arrondi(cogs), margeBrute: arrondi(margeBrute), margePct: ca > 0 ? Math.round((margeBrute / ca) * 1000) / 10 : 0,
     quantite: qte, pertes: arrondi(pertesCout), charges: arrondi(charges), achats: arrondi(achats),
     resultat: arrondi(margeBrute - pertesCout - charges),
-    apports: arrondi(apports), remboursements: arrondi(rembs), production: arrondi(productionCout),
+    apports: arrondi(apports), remboursements: arrondi(rembs), emprunts: arrondi(emprunts), rembEmprunts: arrondi(rembEmprunts), dette: arrondi(Math.max(0, detteEmprunte - detteRembourse)), detteEmprunte: arrondi(detteEmprunte), detteRembourse: arrondi(detteRembourse), production: arrondi(productionCout),
     livraisonPacks: arrondi(livraisonPacks), creances, resteADuTotal: arrondi(creances.reduce((m, o) => m + Math.max(0, o.reste), 0)), depensesTotales: arrondi(charges + productionCout), sortiesPeriode: arrondi(sortiesPeriode), fluxPeriode: arrondi(fluxPeriode),
     caisse: arrondi(caisse), caisseDetail, valeurStock: arrondi(valeurStock), alertes,
     parProduit, parPoint, parVendeur, parPaiement, parCategorie, parJour
@@ -368,8 +377,8 @@ function journee(donnees, date) {
   for (const v of V) if (v.vendeur) vend[v.vendeur] = (vend[v.vendeur] || 0) + v.montant;
   const espVentes = somme(V.filter((v) => v.paiement === "Espèces" || (!v.paiement && v.source !== "site")), (v) => v.montant);
   const especeDep = (x) => !x.mode || eEsp.test(x.mode);
-  const sorties = somme(D.filter((x) => (x.classe === "charge" || x.classe === "achat" || x.classe === "remb") && especeDep(x)), (x) => nombre(x.montant));
-  const entrees = somme(D.filter((x) => x.classe === "apport" && especeDep(x)), (x) => nombre(x.montant)) + somme((donnees.encaissements || []).filter((x) => x && !x.archive && jour(x.date) === date), (x) => nombre(x.montant));
+  const sorties = somme(D.filter((x) => (x.classe === "charge" || x.classe === "achat" || x.classe === "remb" || x.classe === "rembEmprunt") && especeDep(x)), (x) => nombre(x.montant));
+  const entrees = somme(D.filter((x) => (x.classe === "apport" || x.classe === "emprunt") && especeDep(x)), (x) => nombre(x.montant)) + somme((donnees.encaissements || []).filter((x) => x && !x.archive && jour(x.date) === date), (x) => nombre(x.montant));
   return {
     date, ca: arrondi(somme(V, (v) => v.montant)), qte: somme(V, (v) => v.qte),
     parPaiement: Object.keys(modes).map((k) => ({ nom: k, total: arrondi(modes[k]) })).sort((a, b) => b.total - a.total),

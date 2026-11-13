@@ -109,7 +109,7 @@ module.exports = async (req, res) => {
       const b = v.bilan;
       return res.status(200).json({
         genereLe: new Date().toISOString(),
-        bilan: { ca: b.ca, resultat: b.resultat, margeBrute: b.margeBrute, margePct: b.margePct, charges: b.charges, production: b.production, depensesTotales: b.depensesTotales, caisse: b.caisse, dette: b.dette, valeurStock: b.valeurStock, quantite: b.quantite, parProduit: b.parProduit.slice(0, 12), parVendeur: b.parVendeur, parPoint: b.parPoint, parJour: b.parJour.slice(-31), creances: b.creances, resteADuTotal: b.resteADuTotal, livraisonPacks: b.livraisonPacks },
+        bilan: { ca: b.ca, resultat: b.resultat, chargesFixes: b.chargesFixes, margeBrute: b.margeBrute, margePct: b.margePct, charges: b.charges, production: b.production, depensesTotales: b.depensesTotales, caisse: b.caisse, dette: b.dette, valeurStock: b.valeurStock, quantite: b.quantite, parProduit: b.parProduit.slice(0, 12), parVendeur: b.parVendeur, parPoint: b.parPoint, parJour: b.parJour.slice(-31), creances: b.creances, resteADuTotal: b.resteADuTotal, livraisonPacks: b.livraisonPacks },
         stock: v.stock.filter((x) => x.actif).map((x) => ({ nom: x.nom, stock: x.theorique, valeur: x.valeur })),
         aValider: (dn.recus || []).filter((r) => r.attente).length,
         manques: (v.comptesEsp || []).filter((x) => x.ecart < 0 && x.statut !== "accepte").slice(0, 10).map((x) => ({ date: x.date, vendeur: x.vendeur, ecart: x.ecart })),

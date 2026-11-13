@@ -241,6 +241,15 @@ function bilan(donnees, du, au) {
   const detteEmprunte = somme(toutes.filter((x) => classeDepense(x.categorie) === "emprunt"), (x) => nombre(x.montant)), detteRembourse = somme(toutes.filter((x) => classeDepense(x.categorie) === "rembEmprunt"), (x) => nombre(x.montant));
   const productionCout = somme(L, (x) => nombre(x.cout));
   const margeBrute = ca - cogs;
+  // Charges fixes mensuelles (salaires, loyer, courant…) comptées au prorata des jours, sans les noter une par une
+  const cf = (donnees.config && donnees.config.chargesFixes) || [];
+  const cfMois = cf.reduce((s, x) => s + nombre(x.montant), 0);
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const cfDebut = [du || "", (donnees.config && (donnees.config.chargesFixesDepuis || donnees.config.depuis)) || ""].sort().pop();
+  const cfFin = au && au < aujourdhui ? au : aujourdhui;
+  const cfJours = cfMois > 0 && cfDebut && cfDebut <= cfFin ? Math.round((Date.parse(cfFin) - Date.parse(cfDebut)) / 86400000) + 1 : 0;
+  const chargesFixes = cfJours > 0 ? Math.round((cfMois * cfJours) / 30) : 0;
+  const chargesFixesDetail = cfJours > 0 ? cf.map((x) => ({ nom: x.nom, mois: arrondi(x.montant), periode: Math.round((nombre(x.montant) * cfJours) / 30) })) : [];
 
   const groupe = (arr, cle, champs) => {
     const m = {};
@@ -292,7 +301,8 @@ function bilan(donnees, du, au) {
     periode: { du: du || null, au: au || null },
     ca: arrondi(ca), cout: arrondi(cogs), margeBrute: arrondi(margeBrute), margePct: ca > 0 ? Math.round((margeBrute / ca) * 1000) / 10 : 0,
     quantite: qte, pertes: arrondi(pertesCout), charges: arrondi(charges), achats: arrondi(achats),
-    resultat: arrondi(margeBrute - pertesCout - charges),
+    chargesFixes: arrondi(chargesFixes), chargesFixesMois: arrondi(cfMois), chargesFixesJours: cfJours, chargesFixesDetail,
+    resultat: arrondi(margeBrute - pertesCout - charges - chargesFixes),
     apports: arrondi(apports), remboursements: arrondi(rembs), emprunts: arrondi(emprunts), rembEmprunts: arrondi(rembEmprunts), dette: arrondi(Math.max(0, detteEmprunte - detteRembourse)), detteEmprunte: arrondi(detteEmprunte), detteRembourse: arrondi(detteRembourse), production: arrondi(productionCout),
     livraisonPacks: arrondi(livraisonPacks), creances, resteADuTotal: arrondi(creances.reduce((m, o) => m + Math.max(0, o.reste), 0)), depensesTotales: arrondi(charges + productionCout), sortiesPeriode: arrondi(sortiesPeriode), fluxPeriode: arrondi(fluxPeriode),
     caisse: arrondi(caisse), caisseDetail, valeurStock: arrondi(valeurStock), alertes,
@@ -352,7 +362,8 @@ function analyse(donnees, auj) {
   const mois = auj.slice(0, 7);
   const Vm = r.ventes.filter((v) => v.date.slice(0, 7) === mois && v.date <= auj);
   const ca = Vm.reduce((sm, v) => sm + v.montant, 0), cg = Vm.reduce((sm, v) => sm + v.cout, 0);
-  const charges = (donnees.depenses || []).filter((x) => jour(x.date).slice(0, 7) === mois && classeDepense(x.categorie) === "charge").reduce((sm, x) => sm + nombre(x.montant), 0);
+  const chargesFixesMois = ((cfg.chargesFixes) || []).reduce((sm, x) => sm + nombre(x.montant), 0);
+  const charges = chargesFixesMois + (donnees.depenses || []).filter((x) => jour(x.date).slice(0, 7) === mois && classeDepense(x.categorie) === "charge").reduce((sm, x) => sm + nombre(x.montant), 0);
   const margePct = ca > 0 ? (ca - cg) / ca : 0;
   const caSeuil = margePct > 0 ? Math.round(charges / margePct) : null;
   const jourDuMois = Number(auj.slice(8, 10)), nbJours = new Date(Date.UTC(Number(auj.slice(0, 4)), Number(auj.slice(5, 7)), 0)).getUTCDate();

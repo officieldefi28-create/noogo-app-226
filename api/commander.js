@@ -90,6 +90,7 @@ module.exports = async (req, res) => {
       produitsPacks: retrait ? 0 : cacheLivraison(panier, catalogue).pots,
       fraisLivraison: retrait ? 0 : Math.max(0, Math.min(50000, Math.round(Number(d.fraisLivraison) || 0))),   // estimation affichée au client (articles seuls) : payée en espèces au livreur, hors caisse
       quartierLivraison: retrait ? "" : (nettoyer(d.quartier, 60) || ""),
+      source: (nettoyer(d.source, 30) || "").toLowerCase().replace(/[^a-z0-9_-]/g, "") || "direct",
       commission,
       partenaireId,
       statutLivraison: "en_attente",

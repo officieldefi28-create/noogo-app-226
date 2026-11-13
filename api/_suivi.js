@@ -280,8 +280,16 @@ function bilan(donnees, du, au) {
   const cAchats = somme(cD.filter((x) => x.classe === "achat"), (x) => nombre(x.montant));
   const cApports = somme(cD.filter((x) => x.classe === "apport"), (x) => nombre(x.montant));
   const cRembs = somme(cD.filter((x) => x.classe === "remb"), (x) => nombre(x.montant));
-  const cEmprunts = somme(cD.filter((x) => x.classe === "emprunt"), (x) => nombre(x.montant)), cRembEmprunts = somme(cD.filter((x) => x.classe === "rembEmprunt"), (x) => nombre(x.montant));
-  const caisse = nombre(cfg.caisseDepart) + cV - cL - cCharges - cAchats + cApports - cRembs + cEmprunts - cRembEmprunts;
+  const cEmprunts = somme(cD.filter((x) => x.classe === "emprunt"), (x) => nombre(x.montant)), cRembEmprunts = somme(cD.filter((x) => x.classe === "rembEmprunt" && !/hors.?caisse/i.test(x.note || "")), (x) => nombre(x.montant));   // un remboursement fait avec son argent personnel ("hors caisse") ne touche pas la caisse
+  const caisseBrute = nombre(cfg.caisseDepart) + cV - cL - cCharges - cAchats + cApports - cRembs + cEmprunts - cRembEmprunts;
+  // Quand le calcul de la caisse passe sous zéro, l'argent manquant a forcément été avancé : il devient automatiquement une dette à rembourser.
+  const detteAuto = Math.max(0, -caisseBrute);
+  const detteEnreg = detteEmprunte - detteRembourse;
+  const detteTotale = Math.max(0, detteEnreg + detteAuto);
+  const caisse = Math.max(0, caisseBrute);
+  const mouvementsArgent = toutes.map((x) => ({ x, c: classeDepense(x.categorie) })).filter((y) => ["apport", "remb", "emprunt", "rembEmprunt"].includes(y.c))
+    .map((y) => ({ id: y.x.id, date: jour(y.x.date), type: y.c, montant: arrondi(nombre(y.x.montant)), description: y.x.description || "", mode: y.x.mode || "", horsCaisse: /hors.?caisse/i.test(y.x.note || "") }))
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
   const caisseDetail = { depart: arrondi(cfg.caisseDepart), depuis, ventes: arrondi(cV0 - cDu), rendu: arrondi(cEnc), nonEncaisse: arrondi(cDu), production: arrondi(cL), depenses: arrondi(cCharges), achats: arrondi(cAchats), apports: arrondi(cApports), remboursements: arrondi(cRembs), emprunts: arrondi(cEmprunts), rembEmprunts: arrondi(cRembEmprunts) };
   // Sur la période choisie : l'argent entré (ventes) moins l'argent sorti (dépenses + production + achats)
   const livraisonPacks = somme(V, (x) => nombre(x.supp));   // surplus des packs (livraison incluse) : hors ventes, hors caisse
@@ -303,7 +311,7 @@ function bilan(donnees, du, au) {
     quantite: qte, pertes: arrondi(pertesCout), charges: arrondi(charges), achats: arrondi(achats),
     chargesFixes: arrondi(chargesFixes), chargesFixesMois: arrondi(cfMois), chargesFixesJours: cfJours, chargesFixesDetail,
     resultat: arrondi(margeBrute - pertesCout - charges - chargesFixes),
-    apports: arrondi(apports), remboursements: arrondi(rembs), emprunts: arrondi(emprunts), rembEmprunts: arrondi(rembEmprunts), dette: arrondi(Math.max(0, detteEmprunte - detteRembourse)), detteEmprunte: arrondi(detteEmprunte), detteRembourse: arrondi(detteRembourse), production: arrondi(productionCout),
+    apports: arrondi(apports), remboursements: arrondi(rembs), emprunts: arrondi(emprunts), rembEmprunts: arrondi(rembEmprunts), dette: arrondi(detteTotale), detteAuto: arrondi(detteAuto), detteEnreg: arrondi(detteEnreg), caisseBrute: arrondi(caisseBrute), mouvementsArgent, detteEmprunte: arrondi(detteEmprunte), detteRembourse: arrondi(detteRembourse), production: arrondi(productionCout),
     livraisonPacks: arrondi(livraisonPacks), creances, resteADuTotal: arrondi(creances.reduce((m, o) => m + Math.max(0, o.reste), 0)), depensesTotales: arrondi(charges + productionCout), sortiesPeriode: arrondi(sortiesPeriode), fluxPeriode: arrondi(fluxPeriode),
     caisse: arrondi(caisse), caisseDetail, valeurStock: arrondi(valeurStock), alertes,
     parProduit, parPoint, parVendeur, parPaiement, parCategorie, parJour

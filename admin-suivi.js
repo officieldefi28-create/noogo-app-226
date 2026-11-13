@@ -195,7 +195,7 @@ function vResume(v) {
   };
   var h = selPeriode();
   h += '<div class="kpis"><div class="kpi gros"><small>Chiffre d\'affaires · ' + esc(nomPeriode()) + '</small><b>' + fcfa(b.ca) + '</b><small>' + b.quantite + ' pièces vendues</small>' + (pr ? delta(b.ca, pr.ca) : "") + '</div>' +
-    kpi("Résultat net", signe(b.resultat), b.resultat >= 0 ? "pos" : "neg", "ce que vous gagnez vraiment") +
+    kpi("Résultat net", signe(b.resultat), b.resultat >= 0 ? "pos" : "neg", b.chargesFixes ? "après charges fixes (" + fcfa(b.chargesFixes) + ")" : "ce que vous gagnez vraiment") +
     kpi("Caisse actuelle", fcfa(b.caisse), b.caisse >= 0 ? "" : "neg", "argent attendu en caisse") +
     kpi("Dépenses", fcfa(b.depensesTotales), "", b.production ? "dont production " + fcfa(b.production) : "frais, publicité, salaires…") +
     kpi("Marge brute", fcfa(b.margeBrute), b.margeBrute >= 0 ? "pos" : "neg", b.margePct + " % du CA") + '</div>';
@@ -645,10 +645,10 @@ function vObjectifs(v) {
 /* ----- Plus : les outils rangés ----- */
 function vPlus(v) {
   if (!E.plus) {
-    var M = [["patron", "Accès patron (lecture seule)", "Un lien pour que le patron voie les chiffres, sans rien modifier"], ["avis", "Avis clients", "Valider ou masquer les avis avant qu'ils s'affichent sur le site"], ["stats", "Statistiques du site", "Visiteurs, paniers, commandes : où perdez-vous des clients ?"], ["relances", "Clients et offres", "Fidèles, nouveaux, clients à relancer, avec message et offre prêts"], ["cloture", "Clôture de la journée", "Compter la caisse du soir, voir s'il manque de l'argent"], ["objectifs", "Objectifs et seuil de rentabilité", "Où j'en suis ce jour et ce mois"], ["envoi", "Envoyer et exporter", "Rapport WhatsApp, Excel, Google Sheets, Drive"], ["journal", "Journal des modifications", "Qui a changé quoi, et quand"], ["params", "Réglages du suivi", "Caisse de départ, coûts, points de vente"]];
+    var M = [["prospects", "Prospection (boutiques, entreprises…)", "Clients à convaincre, rappels, d'où viennent les commandes"], ["simulateur", "Objectif 5 000 000 F", "Combien vendre chaque jour pour y arriver (calcul, pas promesse)"], ["patron", "Accès patron (lecture seule)", "Un lien pour que le patron voie les chiffres, sans rien modifier"], ["avis", "Avis clients", "Valider ou masquer les avis avant qu'ils s'affichent sur le site"], ["stats", "Statistiques du site", "Visiteurs, paniers, commandes : où perdez-vous des clients ?"], ["relances", "Clients et offres", "Fidèles, nouveaux, clients à relancer, avec message et offre prêts"], ["cloture", "Clôture de la journée", "Compter la caisse du soir, voir s'il manque de l'argent"], ["objectifs", "Objectifs et seuil de rentabilité", "Où j'en suis ce jour et ce mois"], ["envoi", "Envoyer et exporter", "Rapport WhatsApp, Excel, Google Sheets, Drive"], ["journal", "Journal des modifications", "Qui a changé quoi, et quand"], ["params", "Réglages du suivi", "Caisse de départ, charges fixes, coûts, points de vente"]];
     return '<div class="carte"><h3>Plus</h3>' + M.map(function (m) { return '<button class="menu-plus" type="button" data-s="vers" data-v="' + m[0] + '"><span><b>' + m[1] + '</b><small>' + m[2] + '</small></span><span>›</span></button>'; }).join("") + '</div>';
   }
-  var corps = { patron: vPatron, relances: vRelances, avis: vAvis, stats: vStats, cloture: vCloture, objectifs: vObjectifs, envoi: vEnvoi, journal: vJournal, params: vParams }[E.plus](v);
+  var corps = { prospects: vProspects, simulateur: vSimulateur, patron: vPatron, relances: vRelances, avis: vAvis, stats: vStats, cloture: vCloture, objectifs: vObjectifs, envoi: vEnvoi, journal: vJournal, params: vParams }[E.plus](v);
   return retour("Plus", "vers", "") + corps;
 }
 
@@ -889,18 +889,94 @@ function vDepenses(v) {
   return h;
 }
 
+/* ----- Prospection : boutiques, entreprises, partenaires ----- */
+var STAT_PR = { "a-contacter": "À contacter", contacte: "Contacté", devis: "Devis envoyé", gagne: "Client gagné ✅", perdu: "Perdu" };
+var TYPE_PR = { boutique: "Boutique", entreprise: "Entreprise", partenaire: "Partenaire", evenement: "Événement", autre: "Autre" };
+function vProspects(v) {
+  var L = v.prospects || [], auj = jourJ(0), P = E.pr || (E.pr = { edit: null, filtre: "actifs" });
+  var enCours = L.filter(function (x) { return x.statut !== "gagne" && x.statut !== "perdu"; });
+  var relances = enCours.filter(function (x) { return x.prochaine && x.prochaine <= auj; });
+  var gagnes = L.filter(function (x) { return x.statut === "gagne"; });
+  var somme = function (a) { return a.reduce(function (m, x) { return m + (x.mensuel || 0); }, 0); };
+  var h = '<div class="carte"><h3>Prospection</h3><p class="astuce">Les boutiques, entreprises et partenaires à convaincre. Notez chaque contact, la date où le rappeler, et ce qu\'il pourrait commander par mois. Les chiffres ci-dessous sont des <b>espoirs</b> : seuls les clients « gagnés » comptent.</p>' +
+    '<div class="kpis"><div class="kpi"><small>À suivre</small><b>' + enCours.length + '</b></div><div class="kpi"><small>Clients gagnés</small><b class="pos">' + gagnes.length + '</b><small>' + fcfa(somme(gagnes)) + ' / mois</small></div><div class="kpi"><small>Espoir en cours</small><b>' + fcfa(somme(enCours)) + '</b><small>par mois, pas acquis</small></div></div>' +
+    '<button class="btn btn-or btn-bloc" type="button" data-s="pr-nouveau">+ Nouveau prospect</button></div>';
+  if (relances.length) h += '<div class="alerte rouge"><b>📞 ' + relances.length + ' à rappeler aujourd\'hui ou en retard :</b><br>' + relances.map(function (x) { return esc(x.nom) + " (" + dateFr(x.prochaine) + ")"; }).join(" · ") + '</div>';
+  if (P.edit) {
+    var x = P.edit === "new" ? { statut: "a-contacter", type: "boutique", prochaine: jourJ(2) } : (L.filter(function (y) { return y.id === P.edit; })[0] || {});
+    var opt = function (o, cur) { return Object.keys(o).map(function (k) { return '<option value="' + k + '"' + (k === cur ? " selected" : "") + '>' + esc(o[k]) + '</option>'; }).join(""); };
+    h += '<div class="carte"><h3>' + (P.edit === "new" ? "Nouveau prospect" : "Modifier") + '</h3><div class="formulaire">' +
+      '<label for="pr-nom">Nom (boutique, entreprise…)</label><input type="text" id="pr-nom" maxlength="80" value="' + esc(x.nom || "") + '">' +
+      '<div class="grille2"><div><label for="pr-type">Type</label><select id="pr-type">' + opt(TYPE_PR, x.type) + '</select></div><div><label for="pr-stat">Où j\'en suis</label><select id="pr-stat">' + opt(STAT_PR, x.statut) + '</select></div></div>' +
+      '<div class="grille2"><div><label for="pr-contact">Personne à voir</label><input type="text" id="pr-contact" maxlength="60" value="' + esc(x.contact || "") + '"></div><div><label for="pr-tel">Téléphone</label><input type="tel" id="pr-tel" inputmode="tel" value="' + esc(x.tel || "") + '"></div></div>' +
+      '<div class="grille2"><div><label for="pr-pro">Rappeler le</label><input type="date" id="pr-pro" value="' + esc(x.prochaine || "") + '"></div><div><label for="pr-men">Peut commander par mois (F)</label><input type="number" id="pr-men" inputmode="numeric" min="0" value="' + (x.mensuel || "") + '"></div></div>' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="pr-rec"' + (x.recurrent ? " checked" : "") + '> Commande régulière (chaque semaine / chaque mois)</label>' +
+      '<label for="pr-note">Note (ce qu\'il a dit, ce qu\'il veut)</label><textarea id="pr-note" rows="3" maxlength="400">' + esc(x.note || "") + '</textarea>' +
+      '<div style="display:flex;gap:10px;margin-top:8px"><button class="btn btn-or" type="button" data-s="pr-enregistrer" data-id="' + (P.edit === "new" ? "" : esc(P.edit)) + '">Enregistrer</button><button class="btn btn-clair" type="button" data-s="pr-fermer">Annuler</button></div></div></div>';
+  }
+  var filtres = [["actifs", "En cours"], ["gagne", "Gagnés"], ["perdu", "Perdus"], ["tous", "Tous"]];
+  h += '<div class="sous">' + filtres.map(function (f) { return '<button type="button" data-s="pr-filtre" data-v="' + f[0] + '" aria-pressed="' + (P.filtre === f[0]) + '">' + f[1] + '</button>'; }).join("") + '</div>';
+  var vis = L.filter(function (x) { return P.filtre === "tous" || (P.filtre === "actifs" ? (x.statut !== "gagne" && x.statut !== "perdu") : x.statut === P.filtre); });
+  h += vis.length ? vis.map(function (x) {
+    var tel = String(x.tel || "").replace(/\D/g, ""); if (tel.length === 8) tel = "226" + tel;
+    var msg = "Bonjour " + (x.contact || "") + ", c'est Noogó (glaces naturelles, Karpala). Je vous appelle pour vous proposer nos glaces pour " + x.nom + ". Puis-je vous passer un échantillon ?";
+    return '<div class="rang" style="align-items:flex-start"><div class="g"><b>' + esc(x.nom) + '</b><small>' + esc(TYPE_PR[x.type] || "") + ' · ' + esc(STAT_PR[x.statut] || "") + (x.prochaine ? ' · rappeler le ' + esc(dateFr(x.prochaine)) : "") + (x.mensuel ? ' · ' + fcfa(x.mensuel) + '/mois' : "") + (x.recurrent ? " · régulier" : "") + '</small>' + (x.note ? '<small>' + esc(x.note) + '</small>' : "") + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px">' + (tel ? '<a class="btn btn-vert btn-petit" target="_blank" rel="noopener" href="https://wa.me/' + tel + '?text=' + encodeURIComponent(msg) + '">WhatsApp</a>' : "") + '<button class="btn btn-clair btn-petit" type="button" data-s="pr-modifier" data-id="' + esc(x.id) + '">Modifier</button></div></div>';
+  }).join("") : '<p class="gris">Rien ici pour l\'instant.</p>';
+  var S2 = v.sources || [];
+  if (S2.length) h += repliable("D'où viennent mes commandes", '<p class="astuce">Ajoutez <b>?src=facebook</b> (ou tiktok, whatsapp, boutique…) au bout du lien du site dans chaque publicité. Les commandes sans lien comptent « direct ».</p>' + S2.map(function (x) { return '<div class="rang"><span style="flex:1">' + esc(x.source) + '</span><span>' + x.commandes + ' cmd · livrées ' + x.livrees + ' · ' + fcfa(x.ca) + '</span></div>'; }).join(""));
+  return h;
+}
+
+/* ----- Simulateur d'objectif (jamais présenté comme acquis) ----- */
+function vSimulateur(v) {
+  var o = v.objectif || {}, b = o.b || {}, auj = jourJ(0), cf = v.config;
+  var j = function (a, c) { return Math.round((Date.parse(c) - Date.parse(a)) / 86400000); };
+  var fin = o.au < auj ? o.au : auj;
+  var ecoules = Math.max(1, j(o.du, fin) + 1), restants = Math.max(0, j(auj, o.au));
+  var caJour = b.ca / ecoules, potsJour = b.quantite / ecoules;
+  var margePot = b.quantite > 0 ? b.margeBrute / b.quantite : 0, caPot = b.quantite > 0 ? b.ca / b.quantite : 0;
+  var autresJour = (b.charges || 0) / ecoules, fixesJour = (b.chargesFixesMois || 0) / 30;
+  var reste = o.net - b.resultat;
+  var h = '<div class="carte"><h3>Objectif : ' + fcfa(o.net) + ' de bénéfice net</h3><p class="astuce">Du ' + dateFr(o.du) + ' au ' + dateFr(o.au) + ' · ' + restants + ' jour' + (restants > 1 ? "s" : "") + ' restant' + (restants > 1 ? "s" : "") + '. <b>C\'est un calcul à partir de vos vrais chiffres, pas un résultat : rien n\'est acquis.</b></p>' +
+    '<div class="kpis"><div class="kpi"><small>Bénéfice net réel jusqu\'ici</small><b class="' + (b.resultat >= 0 ? "pos" : "neg") + '">' + signe(b.resultat) + '</b></div><div class="kpi"><small>Il reste à gagner</small><b>' + fcfa(Math.max(0, reste)) + '</b></div></div>';
+  if (reste <= 0) h += '<div class="alerte">Objectif dépassé sur le papier. Vérifiez que toutes les dépenses sont notées.</div>';
+  else if (restants <= 0) h += '<div class="alerte rouge">La période est terminée : il manque ' + fcfa(reste) + '.</div>';
+  else if (margePot <= 0) h += '<div class="alerte rouge">Pas assez de ventes notées pour calculer la marge par pot.</div>';
+  else {
+    var netJour = reste / restants, potsReq = (netJour + autresJour + fixesJour) / margePot, caReq = potsReq * caPot;
+    h += '<h4>Ce qu\'il faut chaque jour, jusqu\'au ' + dateFr(o.au) + '</h4>' +
+      '<div class="rang"><span style="flex:1">Bénéfice net par jour</span><b>' + fcfa(netJour) + '</b></div>' +
+      '<div class="rang"><span style="flex:1">+ charges fixes par jour</span><b>' + fcfa(fixesJour) + '</b></div>' +
+      '<div class="rang"><span style="flex:1">+ pub et autres dépenses par jour (rythme actuel)</span><b>' + fcfa(autresJour) + '</b></div>' +
+      '<div class="rang"><span style="flex:1">÷ gain moyen par pot (' + fcfa(margePot) + ')</span><b>' + Math.ceil(potsReq) + ' pots par jour</b></div>' +
+      '<div class="rang"><span style="flex:1">Ventes nécessaires par jour</span><b>' + fcfa(caReq) + '</b></div>' +
+      '<div class="rang"><span style="flex:1">Ventes réelles par jour (moyenne)</span><b>' + fcfa(caJour) + ' · ' + Math.round(potsJour * 10) / 10 + ' pots</b></div>' +
+      '<div class="alerte ' + (caReq > caJour * 3 ? "rouge" : "") + '"><b>Il faut vendre ' + (caJour > 0 ? "environ " + Math.round(caReq / caJour * 10) / 10 + " fois plus" : "beaucoup plus") + ' qu\'aujourd\'hui.</b><br><small>Les clients réguliers (boutiques, entreprises, événements) sont le moyen le plus réaliste d\'augmenter. Voir Prospection.</small></div>';
+    var ga = (v.prospects || []).filter(function (x) { return x.statut === "gagne"; }), mens = ga.reduce(function (m, x) { return m + (x.mensuel || 0); }, 0);
+    var mp = b.ca > 0 ? b.margeBrute / b.ca : 0;
+    h += '<div class="rang"><span style="flex:1">Déjà signés (' + ga.length + ' clients gagnés)</span><b>' + fcfa(mens) + '/mois → ≈ ' + fcfa(mens * mp * restants / 30) + ' de gain d\'ici la fin</b></div>';
+  }
+  h += '</div>';
+  h += repliable("Changer l'objectif", '<div class="formulaire"><label for="ob-net">Bénéfice net visé (F)</label><input type="number" id="ob-net" inputmode="numeric" value="' + o.net + '"><div class="grille2"><div><label for="ob-du">Du</label><input type="date" id="ob-du" value="' + esc(o.du) + '"></div><div><label for="ob-au">Au</label><input type="date" id="ob-au" value="' + esc(o.au) + '"></div></div><button class="btn btn-or btn-bloc" type="button" data-s="ob-enregistrer" style="margin-top:8px">Enregistrer l\'objectif</button></div>');
+  return h;
+}
+
 /* ----- Réglages ----- */
 function vParams(v) {
   var c = v.config;
-  var h = '<div class="carte"><h3>Caisse</h3><p class="astuce">Argent que vous aviez en caisse à la date de départ. La caisse actuelle = ce départ + ventes − productions − dépenses + apports.</p>' +
+  var h1 = '<div class="carte"><h3>Caisse</h3><p class="astuce">Argent que vous aviez en caisse à la date de départ. La caisse actuelle = ce départ + ventes − productions − dépenses + apports.</p>' +
     '<div class="grille2"><div><label for="pa-cd">Caisse de départ (F)</label><input type="number" id="pa-cd" inputmode="numeric" value="' + c.caisseDepart + '"></div><div><label for="pa-dep">À partir du</label><input type="date" id="pa-dep" value="' + esc(c.depuis) + '"></div></div></div>';
-  h += '<div class="carte"><h3>Objectifs de vente</h3><p class="astuce">Ils s\'affichent avec une barre de progression dans « Analyse ». Laissez 0 pour ne pas en avoir.</p><div class="grille2"><div><label for="pa-oj">Objectif du jour (F)</label><input type="number" id="pa-oj" inputmode="numeric" min="0" value="' + (c.objectifJour || 0) + '"></div><div><label for="pa-om">Objectif du mois (F)</label><input type="number" id="pa-om" inputmode="numeric" min="0" value="' + (c.objectifMois || 0) + '"></div></div></div>';
-  h += '<div class="carte"><h3>Points de vente</h3><p class="astuce">Un par ligne. Facultatif : « En ligne » existe toujours (commandes du site).</p><textarea id="pa-pv" rows="4">' + esc(c.pointsVente.join("\n")) + '</textarea></div>';
-  h += '<div class="carte"><h3>Coût de revient par défaut</h3><p class="astuce">Utilisé seulement tant qu\'aucune production n\'est notée pour ce produit (sinon c\'est le coût réel des lots).</p>' +
+  var cf = (c.chargesFixes || []).map(function (x) { return x.nom + " : " + x.montant; }).join("\n");
+  h1 += '<div class="carte"><h3>Charges fixes du mois</h3><p class="astuce">Une par ligne, « nom : montant par mois ». Elles sont comptées automatiquement dans votre résultat, au prorata des jours. <b>Ne les notez plus en Dépenses</b> (sinon elles comptent deux fois). Les emprunts n\'en font pas partie.</p><textarea id="pa-cf" rows="8" placeholder="Loyer : 20000">' + esc(cf) + '</textarea><div class="grille2" style="align-items:end"><div><label for="pa-cfd">Compter à partir du</label><input type="date" id="pa-cfd" value="' + esc(c.chargesFixesDepuis || c.depuis || "") + '"></div><button class="btn btn-clair" type="button" data-s="cf-modele">Mettre mes charges habituelles</button></div><p class="astuce">Total par mois : <b>' + fcfa((c.chargesFixes || []).reduce(function (m, x) { return m + x.montant; }, 0)) + '</b> · Ce qui n\'est pas fixe (publicité, imprévus) se note en Dépenses.</p></div>';
+  var h2 = '<div class="carte"><h3>Objectifs de vente</h3><p class="astuce">Ils s\'affichent avec une barre de progression dans « Analyse ». Laissez 0 pour ne pas en avoir.</p><div class="grille2"><div><label for="pa-oj">Objectif du jour (F)</label><input type="number" id="pa-oj" inputmode="numeric" min="0" value="' + (c.objectifJour || 0) + '"></div><div><label for="pa-om">Objectif du mois (F)</label><input type="number" id="pa-om" inputmode="numeric" min="0" value="' + (c.objectifMois || 0) + '"></div></div></div>';
+  h2 += '<div class="carte"><h3>Points de vente</h3><p class="astuce">Un par ligne. Facultatif : « En ligne » existe toujours (commandes du site).</p><textarea id="pa-pv" rows="4">' + esc(c.pointsVente.join("\n")) + '</textarea></div>';
+  var h3 = '<div class="carte"><h3>Coût de revient par défaut</h3><p class="astuce">Utilisé seulement tant qu\'aucune production n\'est notée pour ce produit (sinon c\'est le coût réel des lots).</p>' +
     v.produits.filter(function (p) { return p.actif || p.interne; }).map(function (p) { return '<div class="rang"><span style="flex:1">' + esc(p.nom) + '</span><input type="number" inputmode="numeric" min="0" style="width:110px;min-height:40px" data-cout="' + esc(p.id) + '" value="' + (c.couts[p.id] || "") + '" placeholder="0"></div>'; }).join("") + '</div>';
-  h += '<div class="carte"><h3>Produits non vendus sur le site</h3><p class="astuce">Ex : un petit pot à 400 F, des esquimaux… Ils sont suivis (stock, marge) mais n\'apparaissent pas sur le site.</p>' +
+  h3 += '<div class="carte"><h3>Produits non vendus sur le site</h3><p class="astuce">Ex : un petit pot à 400 F, des esquimaux… Ils sont suivis (stock, marge) mais n\'apparaissent pas sur le site.</p>' +
     c.internes.map(function (p, i) { return '<div class="grille2" style="margin-bottom:6px;align-items:center"><input type="text" data-int-nom="' + i + '" value="' + esc(p.nom) + '"><div style="display:flex;gap:6px"><input type="number" inputmode="numeric" min="0" data-int-prix="' + i + '" value="' + p.prix + '"><button class="btn btn-clair btn-petit" type="button" data-s="retirer-interne" data-i="' + i + '">✕</button></div></div>'; }).join("") +
     '<div class="grille2" style="align-items:center"><input type="text" id="pa-in-nom" placeholder="Nom du produit"><input type="number" id="pa-in-prix" inputmode="numeric" min="0" placeholder="Prix (F)"></div></div>';
+  var h = repliable("💰 Caisse et charges fixes", h1, true) + repliable("🎯 Objectifs et points de vente", h2) + repliable("📦 Produits et coûts", h3);
   h += '<button class="btn btn-or btn-bloc" type="button" data-s="enregistrer-params">Enregistrer les réglages</button>';
   var av = "";
   av += '<div class="carte"><h3>Reprendre mon ancien classeur</h3><p class="astuce">Ajoute les productions, ventes, dépenses et pertes du 03 au 08 octobre déjà notées dans votre classeur. À faire une seule fois (refaire ne crée pas de doublons).</p><button class="btn btn-clair" type="button" data-s="importer">Reprendre l\'historique</button></div>';
@@ -931,6 +1007,8 @@ function envoyer(action, extra, msg, fin) {
 function paramsLus() {
   var c = JSON.parse(JSON.stringify(E.vue.config));
   c.caisseDepart = Number(val("pa-cd")) || 0; c.depuis = val("pa-dep"); c.objectifJour = Number(val("pa-oj")) || 0; c.objectifMois = Number(val("pa-om")) || 0;
+  c.chargesFixes = val("pa-cf").split("\n").map(function (l) { var m = l.match(/^(.*?)[:=]\s*([\d\s.,]+)\s*(?:F|FCFA)?\s*$/i); return m ? { nom: m[1].trim(), montant: Number(m[2].replace(/[^\d]/g, "")) || 0 } : null; }).filter(function (x) { return x && x.nom && x.montant > 0; });
+  c.chargesFixesDepuis = val("pa-cfd");
   c.pointsVente = val("pa-pv").split("\n").map(function (x) { return x.trim(); }).filter(Boolean);
   c.couts = {}; document.querySelectorAll("[data-cout]").forEach(function (e) { if (e.value !== "") c.couts[e.getAttribute("data-cout")] = Number(e.value) || 0; });
   document.querySelectorAll("[data-int-nom]").forEach(function (e) { c.internes[+e.getAttribute("data-int-nom")].nom = e.value; });
@@ -1049,7 +1127,7 @@ function construireRapport(complet) {
   if (pr && pr.ca) T.push("   vs période d'avant : " + (b.ca >= pr.ca ? "▲ +" : "▼ ") + Math.round((b.ca - pr.ca) / pr.ca * 100) + " % (" + fcfa(pr.ca) + ")");
   T.push("Coût des produits vendus : " + fcfa(b.cout), "Marge brute : " + fcfa(b.margeBrute) + " (" + b.margePct + " %)");
   if (b.pertes) T.push("Pertes / offerts (au coût) : " + fcfa(b.pertes));
-  T.push("Dépenses (hors production) : " + fcfa(b.charges), "Production payée : " + fcfa(b.production), "*RÉSULTAT NET : " + signe(b.resultat) + "*");
+  T.push("Dépenses (hors production) : " + fcfa(b.charges)); if (b.chargesFixes) { T.push("Charges fixes (salaires, loyer, courant… au prorata) : " + fcfa(b.chargesFixes)); (b.chargesFixesDetail || []).forEach(function (x) { T.push("   · " + x.nom + " : " + fcfa(x.periode)); }); } T.push("Production payée : " + fcfa(b.production), "*RÉSULTAT NET : " + signe(b.resultat) + "*");
   T.push("", titre("TRÉSORERIE ET STOCK"), "Caisse théorique : *" + fcfa(b.caisse) + "*", "Valeur du stock (au coût) : " + fcfa(b.valeurStock));
   var ob = v.analyse && v.analyse.objectifs;
   if (ob && ob.jour > 0) T.push("Objectif du jour : " + fcfa(ob.caJour) + " / " + fcfa(ob.jour) + " (" + Math.round(ob.caJour / ob.jour * 100) + " %)");
@@ -1120,7 +1198,7 @@ function rapportPdf() {
   var dep = v.depenses.filter(function (d) { return dansPeriode(d.date) && !/^(Apport|Remboursement|Emprunt)/i.test(d.categorie || ""); }).sort(function (x, y) { return x.date < y.date ? -1 : 1; });
   var st = v.stock.filter(function (x) { return (x.theorique || x.vendu) && !x.inconnu && !/^Ancien produit/i.test(x.nom); });
   var h = '<h1>🍦 Noogó — Rapport de gestion</h1><p class="sub">' + X(nomPeriode()) + ' · édité le ' + dateFr(jourJ(0)) + '/' + jourJ(0).slice(0, 4) + '</p>';
-  h += '<div class="grid">' + kp("Chiffre d\'affaires", fcfa(b.ca)) + kp("Dépenses", fcfa(b.charges + b.production), "", b.production ? "dont production : " + fcfa(b.production) : "") + kp("Résultat net", signe(b.resultat), b.resultat < 0 ? "#b3261e" : "#1b7a3a") + kp("Marge", fcfa(b.margeBrute) + " (" + b.margePct + " %)") + '</div>';
+  h += '<div class="grid">' + kp("Chiffre d\'affaires", fcfa(b.ca)) + kp("Dépenses", fcfa(b.charges + b.production + (b.chargesFixes || 0)), "", (b.production ? "dont production : " + fcfa(b.production) : "") + (b.chargesFixes ? " · charges fixes : " + fcfa(b.chargesFixes) : "")) + kp("Résultat net", signe(b.resultat), b.resultat < 0 ? "#b3261e" : "#1b7a3a") + kp("Marge", fcfa(b.margeBrute) + " (" + b.margePct + " %)") + '</div>';
   h += '<h2>Caisse et objectifs</h2>' + tab(["", ""], [["Caisse théorique", fcfa(b.caisse)]].concat(b.dette > 0 ? [["Dette à rembourser (emprunts)", fcfa(b.dette)]] : [], [["Valeur du stock (au coût)", fcfa(b.valeurStock)], ["Pots vendus", b.quantite], ["Coût des produits vendus", fcfa(b.cout)]], b.pertes ? [["Pertes / offerts (au coût)", fcfa(b.pertes)]] : [], (b.apports || b.remboursements) ? [["Apports d'argent / remboursés", fcfa(b.apports) + " / " + fcfa(b.remboursements)]] : []).concat(mq.length ? [["Manques de caisse non réglés", fcfa(-mq.reduce(function (a, x) { return a + x.ecart; }, 0))]] : [], ob.jour > 0 ? [["Objectif du jour", fcfa(ob.caJour) + " / " + fcfa(ob.jour) + " (" + Math.round(ob.caJour / ob.jour * 100) + " %)"]] : [], ob.mois > 0 ? [["Objectif du mois", fcfa(ob.caMois) + " / " + fcfa(ob.mois) + " (" + Math.round(ob.caMois / ob.mois * 100) + " %)"]] : []));
   h += '<h2>Ventes par produit</h2>' + (b.parProduit.length ? tab(["Produit", "Qté", "Montant"], b.parProduit.map(function (p) { return [court(p.nom), p.qte, fcfa(p.ca)]; })) : '<p>Aucune vente.</p>');
   if (pk.liste.length) { var LP = lignesPacks(v); h += '<h2>Packs vendus</h2><table><tr><th>Pack</th><th class="d">Vendus</th><th>Contient</th><th class="d">Prix</th><th class="d">Gain/pack</th></tr>' + LP.map(function (x) { return '<tr><td>' + X(x.nom) + '</td><td class="d">' + x.qte + '</td><td>' + X(x.contenu) + '</td><td class="d">' + fcfa(x.prix) + '</td><td class="d" style="color:' + (x.gain < 0 ? "#b3261e" : "#1b7a3a") + ';font-weight:bold">' + (x.gain < 0 ? "−" : "+") + fcfa(Math.abs(x.gain)) + (x.choix ? "*" : "") + '</td></tr>'; }).join("") + '</table><p style="margin:3px 0;color:#777;font-size:11px">Pots dans des packs : ' + pk.pots + ' · à l\'unité : ' + Math.max(0, b.quantite - pk.pots) + (LP.some(function (x) { return x.choix; }) ? ' · * estimé (pack au choix)' : '') + '</p>'; }
@@ -1133,6 +1211,7 @@ function rapportPdf() {
   var pe = v.pertes.filter(function (x) { return dansPeriode(x.date); });
   if (pe.length) h += '<h2>Pertes, offerts, dégustations</h2>' + tab(["Date", "Produit", "Coût"], pe.map(function (x) { return [dateFr(x.date), x.qte + " " + court(x.nom) + " · " + (v.typesPerte[x.type] || x.type), fcfa(x.cout)]; }));
   h += '<h2>Dépenses (hors production)</h2>' + (dep.length ? tab(["Date", "Raison", "Montant"], dep.map(function (d) { return [dateFr(d.date), (d.categorie || "") + (d.description ? " — " + d.description : ""), fcfa(d.montant)]; })) : '<p>Aucune dépense hors production.</p>');
+  if (b.chargesFixes) h += '<h2>Charges fixes (au prorata des jours)</h2>' + tab(["Charge", "Par mois", "Sur la période"], (b.chargesFixesDetail || []).map(function (x) { return [x.nom, fcfa(x.mois), fcfa(x.periode)]; }));
   h += '<h2>Stock restant</h2>' + (st.length ? '<div class="deux">' + st.map(function (x) { return '<div class="l"><span>' + X(court(x.nom)) + '</span><b>' + x.theorique + '</b></div>'; }).join("") + '</div>' : '<p>Aucun stock.</p>');
   h += '<p class="pied">Noogó · glaces naturelles, Karpala</p>';
   var css = '*{box-sizing:border-box}html,body{width:100%;max-width:100%}body{font-family:Arial,sans-serif;color:#2b1b12;margin:0;padding:14px;font-size:11.5px;overflow-wrap:anywhere;word-break:break-word}.deux{display:grid;grid-template-columns:1fr 1fr;column-gap:16px}.l{display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:3px 4px}h1{font-size:20px;margin:0}.sub{color:#777;margin:2px 0 12px}h2{font-size:13px;margin:10px 0 4px;color:#7a3e12;border-bottom:2px solid #f0d9c0;padding-bottom:3px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.k{background:#fbf3ea;border-radius:8px;padding:6px 9px}.k small{display:block;color:#777}.k b{font-size:15px}table{width:100%;max-width:100%;border-collapse:collapse}.l span{min-width:0}th{background:#f6e7d4;text-align:left;padding:3px 5px}td{padding:3px 5px;border-bottom:1px solid #eee}.d{text-align:right}th.d{text-align:right}tr{page-break-inside:avoid}.pied{color:#999;text-align:center;margin-top:10px}.bar{position:sticky;top:0;background:#7a3e12;color:#fff;padding:10px;margin:-14px -14px 10px;text-align:center}@media print{.bar{display:none}}';
@@ -1303,6 +1382,13 @@ function clic(ev) {
         if (!confirm("Sauvegarde téléchargée. Tout effacer maintenant et repartir de zéro avec la caisse de " + caisseND + " F ?")) throw Object.assign(new Error("Annulé"), { silencieux: true });
         return charge("nouveau_depart", { date: val("nd-date") || jourJ(0), caisse: caisseND, items: itemsND });
       }).then(function () { E.depart = false; E.ouvert = null; E.soir = null; ok("Nouveau départ fait : tout repart de zéro"); rendre(); }).catch(function (e) { if (!e.silencieux) A.toast(e.message, "err"); });
+    case "cf-modele": $("pa-cf").value = "Salaire 1 : 35000\nSalaire 2 : 60000\nCourant : 30000\nLoyer : 20000\nWifi : 15000\nEau : 5000\nImpôt : 5000"; if (!val("pa-cfd")) $("pa-cfd").value = E.vue.config.depuis || jourJ(0); return;
+    case "pr-nouveau": E.pr = E.pr || {}; E.pr.edit = "new"; return rendre();
+    case "pr-modifier": E.pr = E.pr || {}; E.pr.edit = t.getAttribute("data-id"); return rendre();
+    case "pr-fermer": E.pr.edit = null; return rendre();
+    case "pr-filtre": E.pr.filtre = t.getAttribute("data-v"); return rendre();
+    case "pr-enregistrer": return envoyer("prospect_save", { id: t.getAttribute("data-id") || "", nom: val("pr-nom"), type: val("pr-type"), statut: val("pr-stat"), contact: val("pr-contact"), tel: val("pr-tel"), prochaine: val("pr-pro"), mensuel: Number(val("pr-men")) || 0, recurrent: !!($("pr-rec") && $("pr-rec").checked), note: val("pr-note") }, "Prospect enregistré", function () { E.pr.edit = null; });
+    case "ob-enregistrer": var co = JSON.parse(JSON.stringify(E.vue.config)); co.objectifNet = Number(val("ob-net")) || 0; co.objectifDu = val("ob-du"); co.objectifAu = val("ob-au"); return envoyer("config", { config: co }, "Objectif enregistré");
     case "enregistrer-params": return envoyer("config", { config: paramsLus() }, "Réglages enregistrés");
     case "importer":
       if (!confirm("Reprendre l'historique du 03 au 08 octobre depuis votre ancien classeur ?")) return;

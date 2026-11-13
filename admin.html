@@ -182,6 +182,11 @@
   .toast{pointer-events:auto;background:var(--brun);color:#fff;padding:12px 18px;border-radius:12px;font-size:14.5px;font-weight:500;box-shadow:var(--ombre);max-width:520px}
   .toast.ok{background:var(--vert)} .toast.err{background:var(--rouge)}
   .bloque{overflow:hidden}
+  .carte.repl>h3{cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin:0;min-height:44px;-webkit-tap-highlight-color:transparent}
+  .carte.repl>h3::after{content:"▾";color:#a06a1e;font-size:18px;margin-left:10px}
+  .carte.repl.ferme>*:not(h3){display:none}
+  .carte.repl.ferme>h3::after{content:"▸"}
+  .carte.repl:not(.ferme)>h3{margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -664,6 +669,7 @@ function texteLivraison(c){
 }
 function detailLivraison(c){
   var h = "";
+  if (c.source && c.source !== "direct") h += '<div class="note info">Vient de : <b>' + esc(c.source) + '</b></div>';
   if (c.livraisonCachee > 0) h += '<div class="note info"><b>Détail (visible par vous seulement) :</b> produits des packs ' + esc(fcfa(c.produitsPacks)) + ' · livraison cachée dans les packs ≈ ' + esc(fcfa(c.livraisonCachee)) + '</div>';
   if (c.fraisLivraison > 0) h += '<div class="note warn">Livraison des articles à encaisser par le livreur : <b>' + esc(fcfa(c.fraisLivraison)) + '</b>' + (c.quartierLivraison ? ' (quartier ' + esc(c.quartierLivraison) + ')' : '') + '</div>';
   return h;
@@ -1354,12 +1360,27 @@ function rendreSite(){
   $("site-faq").innerHTML = S.site.faq.map(function(x, i){
     return '<div class="carte" style="padding:10px;margin-bottom:8px"><input type="text" maxlength="160" placeholder="Question" data-faq-q="' + i + '" value="' + esc(x.q) + '" style="margin-bottom:6px"><textarea rows="3" maxlength="700" placeholder="Réponse" data-faq-a="' + i + '">' + esc(x.a) + '</textarea><button class="btn btn-rouge btn-petit" type="button" data-act="faq-retirer" data-id="' + i + '" style="margin-top:6px">Retirer</button></div>';
   }).join("") + '<button class="btn btn-clair btn-petit" type="button" data-act="faq-ajouter">+ Ajouter une question</button>';
-  $("site-champs").innerHTML = CHAMPS_SITE.map(function(c){
+  var GROUPES_SITE = [
+    ["🏠 Accueil du site", ["surtitre","titre","titreAccent","intro","accroche","puces","videoAccueil","offreJour","annonce","slogan"]],
+    ["🛒 Commandes", ["whatsapp","ferme","messageFerme","commandeMin","delai"]],
+    ["🚚 Livraison", ["livraisonTarifs","livraisonQuartiers","whatsappLivreur","adresse","lienMaps"]],
+    ["🎁 Fidélité et parrainage", ["parrainRemise","parrainRecompense","fideliteSeuil","fideliteRecompense"]]
+  ];
+  var deja = {}; GROUPES_SITE.forEach(function(g){ g[1].forEach(function(k){ deja[k] = 1; }); });
+  var reste = CHAMPS_SITE.filter(function(c){ return !deja[c[0]]; }).map(function(c){ return c[0]; });
+  if (reste.length) GROUPES_SITE.push(["⚙️ Autres réglages", reste]);
+  window.__ouvSite = window.__ouvSite || {};
+  var champHtml = function(c){
     var v = esc(S.site.reglages[c[0]] || "");
     return '<label for="sc-' + c[0] + '">' + esc(c[1]) + '</label>' + (c[2] === "area"
       ? '<textarea id="sc-' + c[0] + '" rows="3" maxlength="400" data-site-champ="' + c[0] + '">' + v + '</textarea>'
       : '<input id="sc-' + c[0] + '" type="' + (c[2] === "url" ? "url" : "text") + '" maxlength="300" data-site-champ="' + c[0] + '" value="' + v + '">');
+  };
+  $("site-champs").innerHTML = GROUPES_SITE.map(function(g, gi){
+    var champs = g[1].map(function(k){ return CHAMPS_SITE.filter(function(c){ return c[0] === k; })[0]; }).filter(Boolean);
+    return '<details class="manuel" data-gs="' + gi + '"' + (window.__ouvSite[gi] ? ' open' : '') + '><summary>' + g[0] + ' <span style="color:#888;font-weight:400;margin-left:6px;font-size:12px">(' + champs.length + ')</span></summary>' + champs.map(champHtml).join("") + '</details>';
   }).join("");
+  document.querySelectorAll("#site-champs details[data-gs]").forEach(function(d){ d.addEventListener("toggle", function(){ window.__ouvSite[d.getAttribute("data-gs")] = d.open; }); });
 }
 async function ajouterPhotosGalerie(fichiers){
   if (!S.site) return;
@@ -1538,6 +1559,27 @@ if (S.jeton) demarrerApp(); else afficherLogin("");
 })();
 </script>
 <script src="/admin-suivi.js" defer></script>
-<script src="/admin-communaute.js" defer></script>
+<script src="/admin-communaute.js" defer>
+</script>
+<script>
+/* Cases repliables : chaque grande carte des sections Site, Clients, Partenaires et Réglages se plie / se déplie d'un appui sur son titre */
+(function(){
+  function init(){
+    ["p-site","p-reglages","p-communaute","p-partenaires"].forEach(function(id){
+      var sec = document.getElementById(id); if (!sec) return;
+      Array.prototype.forEach.call(sec.children, function(c){
+        if (!c.classList || !c.classList.contains("carte")) return;
+        var h = c.firstElementChild; if (!h || h.tagName !== "H3") return;
+        c.classList.add("repl", "ferme");
+        h.setAttribute("role", "button"); h.setAttribute("tabindex", "0");
+        var bascule = function(){ c.classList.toggle("ferme"); };
+        h.addEventListener("click", bascule);
+        h.addEventListener("keydown", function(e){ if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bascule(); } });
+      });
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+})();
+</script>
 </body>
 </html>

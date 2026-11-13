@@ -192,6 +192,14 @@ ol.pas-l li{margin:8px 0}
 #app.avec-barre #v-accueil{padding-bottom:84px}
 @media (max-height:640px){.logo-zone{flex-basis:0}.gros{min-height:50px;font-size:16px}}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
+details.grp{grid-column:1/-1;margin:0 0 4px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;overflow:hidden}
+details.grp>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:48px;padding:0 14px;font-weight:700;cursor:pointer}
+details.grp>summary::-webkit-details-marker{display:none}
+details.grp>summary small{background:rgba(0,0,0,.07);border-radius:99px;padding:2px 10px;font-weight:600}
+details.grp>summary::after{content:"▾";margin-left:10px;opacity:.6}
+details.grp:not([open])>summary::after{content:"▸"}
+details.grp .gg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px}
+details.grp[open]>summary{border-bottom:1px solid rgba(0,0,0,.06)}
 </style>
 </head>
 <body>
@@ -509,16 +517,31 @@ function carteHTML(p) {
       <span class="puce ${s}">${esc(libelleStatut(p))}</span></div>
     <div class="act">${actionHTML(p, q)}</div></article>`;
 }
+const grpOuv = {};   // cases ouvertes / fermées, gardées quand la liste se redessine
+function caseHTML(titre, l, premier) {
+  const cle = titre, o = grpOuv[cle] != null ? grpOuv[cle] : premier;
+  return `<details class="grp" data-g="${esc(cle)}"${o ? " open" : ""}><summary><span>${esc(titre)}</span><small>${l.length}</small></summary><div class="gg">${l.map(carteHTML).join("")}</div></details>`;
+}
+/* D'où vient le client ? Lien de publicité du type https://noogo-app-226.vercel.app/?src=facebook (ou tiktok, whatsapp, boutique…). On le garde pour sa commande. */
+function sourceVisite() {
+  try {
+    const u = new URLSearchParams(location.search).get("src");
+    if (u) { const v = u.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 30); if (v) localStorage.setItem("noogo_src", v); }
+    return localStorage.getItem("noogo_src") || "direct";
+  } catch (e) { return "direct"; }
+}
+sourceVisite();
 function listeHTML(items, titres) {
-  let html = "", reste = items.slice();
+  let html = "", reste = items.slice(), n = 0;
   for (const g of GROUPES) {
     const l = items.filter(g.ok); if (!l.length) continue;
     reste = reste.filter((p) => !g.ok(p));
-    html += (titres ? `<div class="groupe-t">${esc(g.t)}</div>` : "") + l.map(carteHTML).join("");
+    html += titres ? caseHTML(g.t, l, n++ === 0) : l.map(carteHTML).join("");
   }
-  if (reste.length) html += (titres ? `<div class="groupe-t">Autres</div>` : "") + reste.map(carteHTML).join("");
+  if (reste.length) html += titres ? caseHTML("Autres", reste, n === 0) : reste.map(carteHTML).join("");
   return html;
 }
+document.addEventListener("toggle", (e) => { const d = e.target; if (d && d.classList && d.classList.contains("grp")) grpOuv[d.getAttribute("data-g")] = d.open; }, true);
 function rendreAujourdhui() {
   const l = CATALOGUE.filter((p) => statut(p) === "aujourdhui");
   $("#liste-aujourdhui").innerHTML = l.length ? listeHTML(l, true)
@@ -839,7 +862,7 @@ function envoyer() {
   }
   m.push(`💰 *TOTAL À PAYER : ${fmt(t.apres + (frais.montant || 0))}*${frais.besoin && !frais.montant ? " + livraison des articles" : ""}`);
   if (frais.besoin && !frais.montant) m.push("", "Merci de me confirmer la disponibilité et le tarif de livraison. 🙏"); else m.push("", "Merci de me confirmer la disponibilité. 🙏");
-  const payload = { nomClient: nom, telClient: tel, localisation: [lieu, position].filter(Boolean).join(" — "), modePaiement: paiement, modeReception: reception, articles: L.map((l) => (estMix(l.p) ? { id: l.p.id, qte: l.qte, compo: compo[l.p.id] } : { id: l.p.id, qte: l.qte })), note, codePromo: promo ? promo.code : "", fraisLivraison: frais.montant || 0, quartier: quartier && quartier !== "__autre" ? quartier : "", source: "site" };
+  const payload = { source: sourceVisite(), nomClient: nom, telClient: tel, localisation: [lieu, position].filter(Boolean).join(" — "), modePaiement: paiement, modeReception: reception, articles: L.map((l) => (estMix(l.p) ? { id: l.p.id, qte: l.qte, compo: compo[l.p.id] } : { id: l.p.id, qte: l.qte })), note, codePromo: promo ? promo.code : "", fraisLivraison: frais.montant || 0, quartier: quartier && quartier !== "__autre" ? quartier : "", source: "site" };
   try { fetch("/api/commander", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), keepalive: true }).then((r) => r.json()).then((j) => { if (j && j.commandeId) { ecrire("noogo_derniere", j.commandeId); toast("Code de suivi : " + j.commandeId); suivre("commande_envoyee"); } else toast("Commande non enregistrée sur le site : envoyez bien le message WhatsApp."); }).catch(() => toast("Commande non enregistrée sur le site : envoyez bien le message WhatsApp.")); } catch (e) {}
   const url = "https://wa.me/" + CONFIG.whatsapp + "?text=" + encodeURIComponent(m.filter((x, i) => !(x === "" && m[i - 1] === "")).join("\n"));
   const w = window.open(url, "_blank", "noopener"); if (!w) location.href = url;

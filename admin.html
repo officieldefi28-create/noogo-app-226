@@ -187,6 +187,26 @@
   .carte.repl.ferme>*:not(h3){display:none}
   .carte.repl.ferme>h3::after{content:"▸"}
   .carte.repl:not(.ferme)>h3{margin-bottom:8px}
+  details.tuile-adm{background:#fff;border:1px solid var(--bord);border-radius:18px;margin:0 0 12px;box-shadow:0 2px 8px rgba(60,40,10,.06);overflow:hidden}
+  details.tuile-adm>summary{list-style:none;display:flex;align-items:center;gap:14px;min-height:68px;padding:10px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  details.tuile-adm>summary::-webkit-details-marker{display:none}
+  details.tuile-adm>summary::after{content:"›";margin-left:auto;font-size:28px;color:#a06a1e;transition:transform .15s}
+  details.tuile-adm[open]>summary::after{transform:rotate(90deg)}
+  details.tuile-adm[open]>summary{border-bottom:1px solid var(--bord);background:#fbf6ea}
+  .ta-i{font-size:28px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:#f5ecd6;border-radius:12px;flex:none}
+  .ta-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .ta-t b{font-size:17px;line-height:1.2}
+  .ta-t small{font-size:13px;color:var(--gris);font-weight:500}
+  .ta-c{padding:10px 12px 14px}
+  .ta-c>.carte{box-shadow:none;border-left:0;border-right:0}
+  .ta-c .art-ligne{padding:8px 4px;border:0;border-bottom:1px solid var(--bord);box-shadow:none;border-radius:0;background:transparent}
+  .ta-c .art-ligne + .art-ligne{margin-top:0}
+  .ta-c .art-ligne .sous{display:none}
+  .ta-c .art-ligne .miniature{width:52px;height:52px}
+  .ta-c .art-ctrl{flex-wrap:nowrap;gap:8px;border-top:0;padding-top:2px}
+  .ta-c .art-ctrl select{flex:1 1 auto;min-width:0;min-height:38px;font-size:13px}
+  .ta-c .art-ctrl .btn{flex:none}
+  .ta-c .art-ctrl .sw{flex:none}
 </style>
 </head>
 <body>
@@ -804,15 +824,30 @@ function rendreCatalogue(){
   var zone = $("liste-cat");
   $("msg-cat").innerHTML = S.catErreur ? '<div class="msg msg-err">Impossible de lire le catalogue enregistré (' + esc(S.catErreur) + '). Voici le catalogue d\'origine : vous ne pourrez pas enregistrer tant que le problème n\'est pas réglé.</div>' : "";
   if (!S.produits) { zone.innerHTML = '<div class="vide"><div class="roue"></div>Chargement du catalogue…<br><button class="btn btn-clair btn-petit" type="button" data-act="cat-recharger" style="margin-top:10px">Réessayer</button></div>'; return; }
-  var html = panneauVitrine() + panneauDispo();
+  S.catOuv = S.catOuv || "";
+  var tuile = function(cle, icone, titre, sous, corps){
+    return '<details class="tuile-adm" data-k="' + esc(cle) + '"' + (S.catOuv === cle ? ' open' : '') + '><summary><span class="ta-i">' + icone + '</span><span class="ta-t"><b>' + esc(titre) + '</b><small>' + esc(sous) + '</small></span></summary><div class="ta-c">' + corps + '</div></details>';
+  };
+  var nbVit = S.produits.filter(function(p){ return p.vedette && p.actif !== false; }).length;
+  var nbDispo = S.produits.filter(function(p){ return p.type !== "pack" && p.actif !== false && statutAdmin(p) !== "rupture"; }).length;
+  var html = tuile("vitrine", "⭐", "Vitrine de l'accueil", nbVit + " pack" + (nbVit > 1 ? "s" : "") + " mis en avant", panneauVitrine()) +
+    tuile("dispo", "✅", "Disponible aujourd'hui", nbDispo + " produit" + (nbDispo > 1 ? "s" : "") + " en stock", panneauDispo());
+  var ICONES = { cremes: "🍨", popcorn: "🍿", pain: "🥖", esquimau: "🍦", gros: "🎉" };
   CATS.forEach(function(cat){
     var items = S.produits.filter(function(p){ return p.cat === cat[0]; });
     if (!items.length) return;
-    html += '<div class="groupe"><h3>' + esc(cat[1]) + ' <small>(' + items.length + ')</small></h3>' + items.map(ligneArticle).join("") + '</div>';
+    var vis = items.filter(function(p){ return p.actif !== false; }).length;
+    html += tuile("cat-" + cat[0], ICONES[cat[0]] || "📦", cat[1], items.length + " article" + (items.length > 1 ? "s" : "") + " · " + vis + " visible" + (vis > 1 ? "s" : ""), items.map(ligneArticle).join(""));
   });
   var autres = S.produits.filter(function(p){ return !CATS.some(function(c){ return c[0] === p.cat; }); });
-  if (autres.length) html += '<div class="groupe"><h3>Autres</h3>' + autres.map(ligneArticle).join("") + '</div>';
+  if (autres.length) html += tuile("cat-autres", "📦", "Autres", autres.length + " article" + (autres.length > 1 ? "s" : ""), autres.map(ligneArticle).join(""));
   zone.innerHTML = html || '<div class="vide">Le catalogue est vide. Ajoutez un article.</div>';
+  zone.querySelectorAll("details.tuile-adm").forEach(function(d){
+    d.addEventListener("toggle", function(){
+      if (d.open) { S.catOuv = d.getAttribute("data-k"); zone.querySelectorAll("details.tuile-adm").forEach(function(o){ if (o !== d && o.open) o.open = false; }); }
+      else if (S.catOuv === d.getAttribute("data-k")) S.catOuv = "";
+    });
+  });
 }
 /* ----- Vitrine de l'accueil : quels packs, dans quel ordre ----- */
 function vitrineListe(){

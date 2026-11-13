@@ -45,11 +45,13 @@ css.textContent = [
   "#p-suivi .sous.principal button{flex:1 1 0;padding:9px 4px;border-radius:12px;font-size:14px;text-align:center}",
   "#p-suivi .ligne-edit{display:flex;gap:8px;align-items:center;margin:6px 0}#p-suivi .ligne-edit span{flex:1}#p-suivi .ligne-edit input{width:90px;text-align:right}",
   "#p-suivi .pastille{display:inline-block;background:#c62828;color:#fff;border-radius:999px;font-size:11px;min-width:18px;padding:1px 5px;margin-left:2px}",
-  "#p-suivi details.rep{background:#fff;border:1px solid var(--bord);border-radius:14px;margin:8px 0;padding:0 14px}",
-  "#p-suivi details.rep summary{cursor:pointer;font-weight:700;color:var(--brun-3);padding:14px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:44px}",
+  "#p-suivi details.rep{background:#fff;border:1px solid var(--bord);border-radius:16px;margin:10px 0;padding:0 14px;box-shadow:0 2px 8px rgba(60,40,10,.05)}",
+  "#p-suivi details.rep .ri{font-size:22px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:#f5ecd6;border-radius:10px;margin-right:12px;flex:none}",
+  "#p-suivi details.rep .rt{flex:1;text-align:left}",
+  "#p-suivi details.rep summary{cursor:pointer;font-weight:700;font-size:16px;color:var(--brun-3);padding:10px 0;list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:58px}",
   "#p-suivi details.rep summary::-webkit-details-marker{display:none}",
-  "#p-suivi details.rep summary::after{content:'▾';color:var(--gris);font-size:13px}",
-  "#p-suivi details.rep[open] summary::after{content:'▴'}",
+  "#p-suivi details.rep summary::after{content:'›';color:#a06a1e;font-size:28px;margin-left:8px;transition:transform .15s}",
+  "#p-suivi details.rep[open] summary::after{transform:rotate(90deg)}",
   "#p-suivi details.rep .corps{padding:0 0 12px}",
   "#p-suivi .tuiles-ajout{display:grid;grid-template-columns:1fr 1fr;gap:10px}",
   "#p-suivi .tuiles-ajout button{background:#fff;border:1.5px solid var(--bord);border-radius:16px;padding:16px 12px;text-align:left;cursor:pointer;min-height:112px;display:flex;flex-direction:column;gap:2px}",
@@ -131,7 +133,9 @@ function nbDemandes(v) { return (v.demandes || []).filter(function (d) { return 
 /* Bloc repliable : l'état ouvert/fermé est retenu même quand la page se met à jour */
 function repliable(titre, corps, ouvert) {
   var o = E.ouv[titre] != null ? E.ouv[titre] : !!ouvert;
-  return '<details class="rep" data-t="' + esc(titre) + '"' + (o ? " open" : "") + '><summary>' + titre + '</summary><div class="corps">' + corps + '</div></details>';
+  var IC = { "Bilan du jour": "📅", "Détail de la caisse": "💰", "Ventes par jour": "📈", "Par produit": "🍨", "Par point de vente": "📍", "Par vendeur (caisse)": "👤", "Dépenses par catégorie": "🧾", "Autres chiffres": "📊", "D'où viennent mes commandes": "🔎", "Changer l'objectif": "🎯" };
+  var ic = IC[titre] || (/^Argent à récupérer/.test(titre) ? "💳" : "");
+  return '<details class="rep" data-t="' + esc(titre) + '"' + (o ? " open" : "") + '><summary>' + (ic ? '<span class="ri">' + ic + '</span>' : "") + '<span class="rt">' + titre + '</span></summary><div class="corps">' + corps + '</div></details>';
 }
 function selPeriode() {
   var extra = PERIODES_PLUS.some(function (p) { return p[0] === E.periode; });
@@ -200,7 +204,7 @@ function vResume(v) {
     kpi("Dépenses", fcfa(b.depensesTotales), "", b.production ? "dont production " + fcfa(b.production) : "frais, publicité, salaires…") +
     kpi("Marge brute", fcfa(b.margeBrute), b.margeBrute >= 0 ? "pos" : "neg", b.margePct + " % du CA") + '</div>';
 
-  h += blocBilanJour(v);
+  h += repliable("Bilan du jour", blocBilanJour(v));
   /* À surveiller : deux alertes visibles, le reste se déplie */
   var al = [];
   if (nbAValider(v)) al.push('<div class="alerte rouge"><b>' + nbAValider(v) + ' chose' + (nbAValider(v) > 1 ? 's' : '') + ' à valider :</b> ventes, production ou comptage envoyés par l\'équipe. Allez dans Équipe.</div>');

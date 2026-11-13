@@ -192,14 +192,15 @@ ol.pas-l li{margin:8px 0}
 #app.avec-barre #v-accueil{padding-bottom:84px}
 @media (max-height:640px){.logo-zone{flex-basis:0}.gros{min-height:50px;font-size:16px}}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
-details.grp{grid-column:1/-1;margin:0 0 4px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:14px;overflow:hidden}
-details.grp>summary{list-style:none;display:flex;justify-content:space-between;align-items:center;min-height:48px;padding:0 14px;font-weight:700;cursor:pointer}
-details.grp>summary::-webkit-details-marker{display:none}
-details.grp>summary small{background:rgba(0,0,0,.07);border-radius:99px;padding:2px 10px;font-weight:600}
-details.grp>summary::after{content:"▾";margin-left:10px;opacity:.6}
-details.grp:not([open])>summary::after{content:"▸"}
-details.grp .gg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:10px}
-details.grp[open]>summary{border-bottom:1px solid rgba(0,0,0,.06)}
+.tuile-cat{grid-column:1/-1;display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:18px;padding:10px 14px 10px 10px;min-height:84px;box-shadow:0 2px 8px rgba(0,0,0,.05);position:relative}
+.tuile-cat:active{transform:scale(.99)}
+.tuile-cat img{width:64px;height:64px;border-radius:14px;object-fit:cover;flex:none;background:var(--creme-2)}
+.tuile-cat .tc-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.tuile-cat .tc-t b{font-size:16.5px;line-height:1.2;color:var(--vert)}
+.tuile-cat .tc-t small{font-size:13px;color:#6b6b5e}
+.tuile-cat .tc-f{font-size:26px;color:var(--or-fonce);flex:none}
+.tuile-cat .tc-n{position:absolute;top:8px;right:40px;background:var(--vert);color:#fff;border-radius:99px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;padding:0 6px}
+.retour-cat{grid-column:1/-1;justify-self:start;min-height:40px;padding:0 16px;border-radius:999px;background:var(--vert);color:#fff;font-weight:700;font-size:14px}
 </style>
 </head>
 <body>
@@ -517,11 +518,6 @@ function carteHTML(p) {
       <span class="puce ${s}">${esc(libelleStatut(p))}</span></div>
     <div class="act">${actionHTML(p, q)}</div></article>`;
 }
-const grpOuv = {};   // cases ouvertes / fermées, gardées quand la liste se redessine
-function caseHTML(titre, l, premier) {
-  const cle = titre, o = grpOuv[cle] != null ? grpOuv[cle] : premier;
-  return `<details class="grp" data-g="${esc(cle)}"${o ? " open" : ""}><summary><span>${esc(titre)}</span><small>${l.length}</small></summary><div class="gg">${l.map(carteHTML).join("")}</div></details>`;
-}
 /* D'où vient le client ? Lien de publicité du type https://noogo-app-226.vercel.app/?src=facebook (ou tiktok, whatsapp, boutique…). On le garde pour sa commande. */
 function sourceVisite() {
   try {
@@ -532,27 +528,43 @@ function sourceVisite() {
 }
 sourceVisite();
 function listeHTML(items, titres) {
-  let html = "", reste = items.slice(), n = 0;
+  let html = "", reste = items.slice();
   for (const g of GROUPES) {
     const l = items.filter(g.ok); if (!l.length) continue;
     reste = reste.filter((p) => !g.ok(p));
-    html += titres ? caseHTML(g.t, l, n++ === 0) : l.map(carteHTML).join("");
+    html += (titres ? `<div class="groupe-t">${esc(g.t)}</div>` : "") + l.map(carteHTML).join("");
   }
-  if (reste.length) html += titres ? caseHTML("Autres", reste, n === 0) : reste.map(carteHTML).join("");
+  if (reste.length) html += (titres ? `<div class="groupe-t">Autres</div>` : "") + reste.map(carteHTML).join("");
   return html;
 }
-document.addEventListener("toggle", (e) => { const d = e.target; if (d && d.classList && d.classList.contains("grp")) grpOuv[d.getAttribute("data-g")] = d.open; }, true);
+/* Nos produits : de grandes cases (une par catégorie). On touche une case, la catégorie s'ouvre sur son propre écran. */
+let catOuverte = null;
+function groupesPresents() {
+  const out = [];
+  let reste = CATALOGUE.slice();
+  for (const g of GROUPES) { const l = CATALOGUE.filter(g.ok); if (l.length) { out.push({ t: g.t, l }); reste = reste.filter((p) => !g.ok(p)); } }
+  if (reste.length) out.push({ t: "Autres", l: reste });
+  return out;
+}
+function tuileCat(g) {
+  const prix = g.l.map((p) => p.prix).filter((x) => x > 0), min = prix.length ? Math.min.apply(null, prix) : 0;
+  const dispo = g.l.filter((p) => commandable(p)).length;
+  const sel = g.l.reduce((m, p) => m + (panier[p.id] || 0), 0);
+  const img = (g.l.find((p) => p.img) || g.l[0]).img;
+  return `<button type="button" class="tuile-cat" data-cat="${esc(g.t)}"><img src="${esc(imgUrl(img))}" alt="" width="64" height="64" loading="lazy"><span class="tc-t"><b>${esc(g.t)}</b><small>${g.l.length} produit${g.l.length > 1 ? "s" : ""}${min ? " · dès " + fmtc(min) : ""}${dispo === 0 ? " · bientôt" : ""}</small></span>${sel ? `<span class="tc-n">${sel}</span>` : ""}<span class="tc-f">›</span></button>`;
+}
 function rendreAujourdhui() {
   const l = CATALOGUE.filter((p) => statut(p) === "aujourdhui");
   $("#liste-aujourdhui").innerHTML = l.length ? listeHTML(l, true)
     : `<div class="vide-box"><p><b>Rien n'est prêt à livrer pour l'instant.</b></p><p>Vous pouvez quand même précommander dans « Nos produits ».</p><button class="btn or petit" type="button" data-vue="produits">Voir nos produits</button></div>`;
 }
 function rendreProduits() {
-  const presentes = CATS.filter(([k]) => k === "tout" || CATALOGUE.some((p) => (k === "packs" ? p.type === "pack" : p.cat === k && p.type !== "pack")));
-  if (!presentes.some(([k]) => k === filtre)) filtre = "tout";
-  $("#chips").innerHTML = presentes.map(([k, n]) => `<button type="button" data-f="${k}" class="${k === filtre ? "on" : ""}">${n}</button>`).join("");
-  const l = CATALOGUE.filter((p) => filtre === "tout" || (filtre === "packs" ? p.type === "pack" : p.cat === filtre && p.type !== "pack"));
-  $("#liste-produits").innerHTML = l.length ? listeHTML(l, filtre === "tout") : `<div class="vide-box">Rien à afficher ici pour l'instant.</div>`;
+  $("#chips").innerHTML = ""; $("#chips").style.display = "none";
+  const G = groupesPresents(), g = catOuverte && G.find((x) => x.t === catOuverte);
+  if (!g) catOuverte = null;
+  if (!g) { $("#liste-produits").innerHTML = G.length ? G.map(tuileCat).join("") : `<div class="vide-box">Rien à afficher ici pour l'instant.</div>`; return; }
+  $("#liste-produits").innerHTML = `<button type="button" class="retour-cat" data-cat-retour="1">‹ Toutes les catégories</button><div class="groupe-t">${esc(g.t)}</div>` + g.l.map(carteHTML).join("");
+  $("#liste-produits").scrollTop = 0;
 }
 function packsVedettes() {
   const ok = (p) => p.actif !== false && commandable(p) && statut(p) !== "surcommande" && statut(p) !== "date";
@@ -1011,6 +1023,8 @@ document.addEventListener("click", (e) => {
   if (c.dataset.plusArt) { const id = c.dataset.plusArt, pp = produit(id); changer(id, 1); if (estMix(pp) && $("#voile-panier").classList.contains("cachee") && !compoComplete(pp)) ouvrirCompo(id); return; }
   if (c.dataset.moins) return changer(c.dataset.moins, -1);
   if (c.dataset.f) { filtre = c.dataset.f; rendreProduits(); return; }
+  if (c.dataset.cat) { catOuverte = c.dataset.cat; rendreProduits(); return; }
+  if (c.dataset.catRetour) { catOuverte = null; rendreProduits(); return; }
   if (c.dataset.zoom) { const p = produit(c.dataset.zoom); if (p) { $("#zoom-img").src = imgUrl(p.img); $("#zoom-img").alt = p.nom; $("#zoom-leg").textContent = p.nom + " — " + fmt(p.prix); ouvrirVoile("voile-zoom"); } return; }
   switch (c.id) {
     case "btn-plus": return ouvrirPlus("suivi");

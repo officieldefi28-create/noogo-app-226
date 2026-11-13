@@ -1,0 +1,315 @@
+{
+ "internes": [
+  {
+   "id": "vanille-400",
+   "nom": "Vanille petit pot 400 F",
+   "prix": 400
+  }
+ ],
+ "config": {
+  "caisseDepart": 0,
+  "depuis": "2026-10-03",
+  "pointsVente": [
+   "La Jeunesse",
+   "Aube Nouvelle",
+   "Local"
+  ]
+ },
+ "lots": [
+  {
+   "id": "h-lot-vanille-1",
+   "date": "2026-09-30",
+   "nom": "Vanille 1",
+   "cout": 26600,
+   "lignes": [
+    {
+     "produitId": "vanille-p",
+     "qte": 50
+    }
+   ],
+   "note": "Payée avant le 03/10"
+  },
+  {
+   "id": "h-lot-baobab-1",
+   "date": "2026-09-30",
+   "nom": "Baobab 1",
+   "cout": 34800,
+   "lignes": [
+    {
+     "produitId": "baobab-p",
+     "qte": 50
+    }
+   ],
+   "note": "Payée avant le 03/10. 9 pièces non expliquées au 03/10"
+  },
+  {
+   "id": "h-lot-baobab-2",
+   "date": "2026-10-05",
+   "nom": "Baobab 2",
+   "cout": 34800,
+   "lignes": [
+    {
+     "produitId": "baobab-p",
+     "qte": 50
+    },
+    {
+     "produitId": "baobab-g",
+     "qte": 2
+    }
+   ],
+   "note": ""
+  },
+  {
+   "id": "h-lot-vanille-2",
+   "date": "2026-10-07",
+   "nom": "Vanille 2",
+   "cout": 26600,
+   "lignes": [
+    {
+     "produitId": "vanille-p",
+     "qte": 50
+    },
+    {
+     "produitId": "vanille-400",
+     "qte": 10
+    },
+    {
+     "produitId": "vanille-g",
+     "qte": 2
+    }
+   ],
+   "note": ""
+  }
+ ],
+ "ventes": [
+  {
+   "id": "h-v0",
+   "date": "2026-10-03",
+   "produitId": "baobab-p",
+   "qte": 8,
+   "pointVente": "",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-v1",
+   "date": "2026-10-04",
+   "produitId": "vanille-p",
+   "qte": 11,
+   "pointVente": "",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-v2",
+   "date": "2026-10-04",
+   "produitId": "baobab-p",
+   "qte": 24,
+   "pointVente": "",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-v3",
+   "date": "2026-10-05",
+   "produitId": "vanille-p",
+   "qte": 16,
+   "pointVente": "En ligne",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-v4",
+   "date": "2026-10-05",
+   "produitId": "vanille-p",
+   "qte": 1,
+   "pointVente": "Aube Nouvelle",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-v5",
+   "date": "2026-10-05",
+   "produitId": "baobab-p",
+   "qte": 4,
+   "pointVente": "",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-v6",
+   "date": "2026-10-06",
+   "produitId": "vanille-p",
+   "qte": 9,
+   "pointVente": "",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-v7",
+   "date": "2026-10-06",
+   "produitId": "baobab-p",
+   "qte": 2,
+   "pointVente": "",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-v8",
+   "date": "2026-10-07",
+   "produitId": "vanille-p",
+   "qte": 10,
+   "pointVente": "",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-v9",
+   "date": "2026-10-07",
+   "produitId": "baobab-p",
+   "qte": 3,
+   "pointVente": "",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-v10",
+   "date": "2026-10-07",
+   "produitId": "baobab-g",
+   "qte": 1,
+   "pointVente": "",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-v11",
+   "date": "2026-10-08",
+   "produitId": "vanille-p",
+   "qte": 2,
+   "pointVente": "",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-v12",
+   "date": "2026-10-08",
+   "produitId": "baobab-p",
+   "qte": 9,
+   "pointVente": "",
+   "note": "Repris de l'ancien classeur"
+  }
+ ],
+ "pertes": [
+  {
+   "id": "h-p0",
+   "date": "2026-10-06",
+   "produitId": "vanille-p",
+   "qte": 3,
+   "type": "gate",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-p1",
+   "date": "2026-10-07",
+   "produitId": "baobab-g",
+   "qte": 1,
+   "type": "offert",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-p2",
+   "date": "2026-10-08",
+   "produitId": "vanille-p",
+   "qte": 1,
+   "type": "degustation",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-p3",
+   "date": "2026-10-08",
+   "produitId": "vanille-400",
+   "qte": 1,
+   "type": "degustation",
+   "note": "Repris de l'ancien classeur"
+  },
+  {
+   "id": "h-p4",
+   "date": "2026-10-08",
+   "produitId": "baobab-p",
+   "qte": 1,
+   "type": "degustation",
+   "note": "Repris de l'ancien classeur"
+  }
+ ],
+ "depenses": [
+  {
+   "id": "h-d0",
+   "date": "2026-10-04",
+   "categorie": "Autre dépense",
+   "description": "Hamed",
+   "montant": 5000,
+   "mode": "",
+   "note": ""
+  },
+  {
+   "id": "h-d1",
+   "date": "2026-10-05",
+   "categorie": "Impôt / taxe",
+   "description": "Impôt forfaitaire",
+   "montant": 10000,
+   "mode": "",
+   "note": "Couvre peut-être 2 mois"
+  },
+  {
+   "id": "h-d2",
+   "date": "2026-10-05",
+   "categorie": "Apport d'argent (+)",
+   "description": "Apport",
+   "montant": 20000,
+   "mode": "",
+   "note": ""
+  },
+  {
+   "id": "h-d3",
+   "date": "2026-10-06",
+   "categorie": "Achat marchandises (à revendre)",
+   "description": "Pain anglais",
+   "montant": 45000,
+   "mode": "",
+   "note": ""
+  },
+  {
+   "id": "h-d4",
+   "date": "2026-10-06",
+   "categorie": "Apport d'argent (+)",
+   "description": "Apport",
+   "montant": 30000,
+   "mode": "",
+   "note": ""
+  },
+  {
+   "id": "h-d5",
+   "date": "2026-10-07",
+   "categorie": "Loyer / courant / gaz / eau",
+   "description": "Courant",
+   "montant": 10000,
+   "mode": "",
+   "note": ""
+  },
+  {
+   "id": "h-d6",
+   "date": "2026-10-07",
+   "categorie": "Loyer / courant / gaz / eau",
+   "description": "Gaz",
+   "montant": 2500,
+   "mode": "",
+   "note": ""
+  },
+  {
+   "id": "h-d7",
+   "date": "2026-10-07",
+   "categorie": "Apport d'argent (+)",
+   "description": "Caisse remise à zéro (déficit de 23 100 F effacé)",
+   "montant": 23100,
+   "mode": "",
+   "note": ""
+  },
+  {
+   "id": "h-d8",
+   "date": "2026-10-08",
+   "categorie": "Autre dépense",
+   "description": "Impression",
+   "montant": 2000,
+   "mode": "",
+   "note": ""
+  }
+ ]
+}

@@ -81,6 +81,9 @@ main{padding:12px 14px 40px;max-width:640px;margin:0 auto}
       '<div class="kpi"><small>Caisse actuelle</small><b>' + F(b.caisse) + '</b></div>' +
       (b.dette > 0 ? '<div class="kpi"><small>Dette à rembourser (emprunts)</small><b class="neg">' + F(b.dette) + '</b></div>' : '') +
       '<div class="kpi"><small>Dépenses (production incluse)</small><b>' + F(b.depensesTotales) + '</b></div></div>';
+    var MAr = (b.mouvementsArgent || []).slice().reverse(), NOMS = { apport: ["Apport d'argent", 1], emprunt: ["Emprunt reçu", 1], rembEmprunt: ["Remboursement d'emprunt", -1], remb: ["Apport repris", -1] };
+    if (b.dette > 0 || MAr.length) h += '<div class="carte"><h2>Argent apporté et emprunté</h2>' + (b.dette > 0 ? '<div class="rang"><span>Dette à rembourser<small>' + (b.detteAuto ? 'dont ' + F(b.detteAuto) + ' de manque en caisse, ajouté automatiquement' : 'emprunts non encore rendus') + '</small></span><b class="neg">' + F(b.dette) + '</b></div>' : '') +
+      MAr.map(function (m) { var n = NOMS[m.type] || [m.type, 1]; return '<div class="rang"><span>' + esc(n[0]) + (m.description ? ' · ' + esc(m.description) : '') + '<small>' + dateFr(m.date) + '</small></span><b class="' + (n[1] > 0 ? 'pos' : 'neg') + '">' + (n[1] > 0 ? '+' : '−') + F(m.montant) + '</b></div>'; }).join('') + '</div>';
     if (b.resteADuTotal > 0) h += '<div class="carte"><h2>Argent à récupérer : ' + F(b.resteADuTotal) + '</h2>' + b.creances.filter(function (c) { return c.reste > 0; }).map(function (c) { return '<div class="rang"><span>' + esc(c.nom) + '<small>' + (c.type === "livreur" ? "Livreur" : "Client à crédit") + (c.echeance ? " · avant le " + dateFr(c.echeance) : "") + '</small></span><b class="neg">' + F(c.reste) + '</b></div>'; }).join("") + '</div>';
     if (b.parProduit.length) { var mx = Math.max.apply(null, b.parProduit.map(function (p) { return p.ca; }).concat([1])); h += '<div class="carte"><h2>Ventes par produit</h2>' + b.parProduit.map(function (p) { return '<div><div class="rang" style="border:0;padding-bottom:0"><span>' + esc(court(p.nom)) + '<small>' + p.qte + ' vendus</small></span><b>' + F(p.ca) + '</b></div><div class="barre"><i style="width:' + Math.max(3, p.ca / mx * 100) + '%"></i></div></div>'; }).join("") + '</div>'; }
     if (j.packs && (j.packs.liste.length || b.quantite)) { var pk = j.packs, un = Math.max(0, (b.quantite || 0) - (pk.pots || 0)); h += '<div class="carte"><h2>Packs et unités vendus</h2>' + (pk.liste.length ? pk.liste.map(function (x) { return '<div class="rang"><span>' + esc(x.nom) + '</span><b>' + x.qte + '</b></div>'; }).join("") : '<p class="gris" style="margin:0">Aucun pack.</p>') + '<div class="rang"><span>Pots à l\'unité<small>' + (pk.pots || 0) + ' pots dans des packs</small></span><b>' + un + '</b></div></div>'; }
@@ -95,6 +98,14 @@ main{padding:12px 14px 40px;max-width:640px;margin:0 auto}
   }
   document.querySelector(".onglets").addEventListener("click", function (e) { var t = e.target.closest("button"); if (!t) return; courant = t.dataset.p; document.querySelectorAll(".onglets button").forEach(function (b) { b.setAttribute("aria-pressed", String(b === t)); }); charger(); });
   if (!cle) erreur("Lien incomplet. Demandez le lien complet au responsable."); else { charger(); setInterval(charger, 120000); }
+})();
+
+/* Bouton « retour » du téléphone : deux appuis de plus avant de quitter vraiment */
+(function(){
+  try {
+    if (!(history.state && history.state.nv)) { history.replaceState({ nv: 1, garde: true }, ""); history.pushState({ nv: 1, garde: true }, ""); history.pushState({ nv: 1 }, ""); }
+    window.addEventListener("popstate", function(e){ if (e.state && e.state.garde) { try { (function(){var t=document.createElement("div");t.textContent="Appuyez encore pour quitter";t.style.cssText="position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#173f1f;color:#fff;padding:10px 18px;border-radius:99px;z-index:9999;font:600 14px sans-serif";document.body.appendChild(t);setTimeout(function(){t.remove()},2200)})(); } catch (x) {} } });
+  } catch (x) {}
 })();
 </script>
 </body>

@@ -593,9 +593,27 @@ function afficherVue(v) {
   $("#bandeau").classList.add("cachee");
   majBarre();
 }
-function ouvrirVue(v) { if (v === vueActive) return; afficherVue(v); try { history.pushState({ v }, "", v === "accueil" ? location.pathname + location.search : "#" + v); } catch (e) {} if (v !== "accueil") suivre("carte_vue"); }
+/* Bouton « retour » du téléphone : chaque écran, chaque catégorie, chaque fenêtre ouverte est un pas. Retour = toujours l'écran d'avant.
+   Sur l'accueil, deux retours de plus montrent « Appuyez encore pour quitter » avant de sortir vraiment. */
+const profondeur = () => (history.state && history.state.p) || 0;
+function pousser(etat, url) { try { history.pushState(Object.assign({ nv: 1, p: profondeur() + 1 }, etat), "", url); } catch (e) {} }
+let silence = false, minuteurRetour = null;
+function ouvrirVue(v) {
+  if (v === vueActive) return;
+  if (v === "accueil" && profondeur() > 0) { history.go(-profondeur()); return; }   // revenir à l'accueil en défaisant les pas
+  afficherVue(v); catOuverte = null;
+  pousser({ v }, v === "accueil" ? location.pathname + location.search : "#" + v);
+  if (v !== "accueil") suivre("carte_vue");
+}
 function vueDepuisHash() { const h = decodeURIComponent((location.hash || "").slice(1)); return VUES.includes(h) ? h : (ALIAS[h] || "accueil"); }
-window.addEventListener("popstate", () => { fermerTout(); afficherVue(vueDepuisHash()); });
+window.addEventListener("popstate", (e) => {
+  if (silence) { silence = false; return; }
+  const st = e.state || {};
+  fermerTout();
+  if (st.garde) { catOuverte = null; afficherVue("accueil"); rendreProduits(); toast("Appuyez encore pour quitter"); return; }
+  if (st.voile) { history.back(); return; }                      // fenêtre déjà fermée : on saute cette étape
+  afficherVue(vueDepuisHash()); catOuverte = st.cat || null; rendreProduits();
+});
 
 /* ───────── Panier ───────── */
 function lignes() { return Object.entries(panier).map(([id, qte]) => ({ p: produit(id), qte })).filter((l) => l.p && l.qte > 0); }
@@ -668,8 +686,12 @@ function texteLivraison(t) {
 }
 const tarifsLignes = () => String(CONFIG.livraisonTarifs || "").split("\n").map((x) => x.trim()).filter(Boolean);
 
-function ouvrirVoile(id) { $("#" + id).classList.remove("cachee"); }
-function fermerVoile(id) { $("#" + id).classList.add("cachee"); }
+function ouvrirVoile(id) { const el = $("#" + id), etait = !el.classList.contains("cachee"); el.classList.remove("cachee"); if (!etait) pousser({ v: vueActive, cat: catOuverte, voile: id }); }
+function fermerVoile(id) {
+  $("#" + id).classList.add("cachee");
+  clearTimeout(minuteurRetour);
+  minuteurRetour = setTimeout(() => { if (history.state && history.state.voile && !document.querySelector(".voile:not(.cachee)")) { silence = true; history.back(); } }, 0);
+}
 function fermerTout() { document.querySelectorAll(".voile").forEach((v) => v.classList.add("cachee")); modalOuverte = false; }
 
 function ouvrirPanier() { suivre("panier_ouvert"); rendrePanier(); ouvrirVoile("voile-panier"); if (!promo && lire("noogo_code_lien") && lignes().length) verifierCode(true); }
@@ -1023,8 +1045,8 @@ document.addEventListener("click", (e) => {
   if (c.dataset.plusArt) { const id = c.dataset.plusArt, pp = produit(id); changer(id, 1); if (estMix(pp) && $("#voile-panier").classList.contains("cachee") && !compoComplete(pp)) ouvrirCompo(id); return; }
   if (c.dataset.moins) return changer(c.dataset.moins, -1);
   if (c.dataset.f) { filtre = c.dataset.f; rendreProduits(); return; }
-  if (c.dataset.cat) { catOuverte = c.dataset.cat; rendreProduits(); return; }
-  if (c.dataset.catRetour) { catOuverte = null; rendreProduits(); return; }
+  if (c.dataset.cat) { catOuverte = c.dataset.cat; pousser({ v: vueActive, cat: catOuverte }); rendreProduits(); return; }
+  if (c.dataset.catRetour) { if (history.state && history.state.cat) history.back(); else { catOuverte = null; rendreProduits(); } return; }
   if (c.dataset.zoom) { const p = produit(c.dataset.zoom); if (p) { $("#zoom-img").src = imgUrl(p.img); $("#zoom-img").alt = p.nom; $("#zoom-leg").textContent = p.nom + " — " + fmt(p.prix); ouvrirVoile("voile-zoom"); } return; }
   switch (c.id) {
     case "btn-plus": return ouvrirPlus("suivi");
@@ -1057,6 +1079,13 @@ $("#voile-inst").addEventListener("click", (e) => { if (e.target.id === "voile-i
 try { const q = new URLSearchParams(location.search).get("code"); if (q && /^[A-Za-z0-9]{2,20}$/.test(q)) ecrire("noogo_code_lien", q.toUpperCase()); } catch (e) {}
 suivre("visite"); chargerAvis();
 afficherVue(vueDepuisHash());
+if (!(history.state && history.state.nv)) {   // une seule fois par visite (pas à chaque rechargement)
+  try {
+    history.replaceState({ nv: 1, garde: true, p: 0 }, "");
+    history.pushState({ nv: 1, garde: true, p: 0 }, "");
+    history.pushState({ nv: 1, v: vueActive, p: 0 }, "");
+  } catch (e) {}
+}
 majBoutonsInstall();
 chargerReglages(); chargerCatalogue();
 // Fenêtre d'installation : à chaque ouverture tant que l'application n'est pas installée

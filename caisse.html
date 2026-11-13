@@ -807,6 +807,14 @@ async function ouvrirParLien(lien) {
 const lienPerso = new URLSearchParams(location.search).get("c");
 if (lienPerso) { try { history.replaceState(null, "", "/caisse.html"); } catch (e) {} ouvrirParLien(lienPerso); }
 else if (jeton && membre) ouvrirCaisse(); else montrerCode();
+
+/* Bouton « retour » du téléphone : deux appuis de plus avant de quitter vraiment */
+(function(){
+  try {
+    if (!(history.state && history.state.nv)) { history.replaceState({ nv: 1, garde: true }, ""); history.pushState({ nv: 1, garde: true }, ""); history.pushState({ nv: 1 }, ""); }
+    window.addEventListener("popstate", function(e){ if (e.state && e.state.garde) { try { toast("Appuyez encore pour quitter"); } catch (x) {} } });
+  } catch (x) {}
+})();
 </script>
 </body>
 </html>

@@ -1586,7 +1586,7 @@ setInterval(function(){
 }, 60000);
 
 // Passerelle pour les modules séparés (admin-suivi.js)
-window.NOOGO_ADMIN = { jeton: function(){ return S.jeton; }, commandes: function(){ return S.commandes || []; }, partenaires: function(){ return S.partenaires || []; }, reglages: function(){ return (S.site && S.site.reglages) || {}; }, toast: toast, esc: esc, deconnecter: function(m){ deconnecter(m); }, redimensionner: redimensionner, envoyerPhoto: envoyerPhoto, imgSrc: imgSrc };
+window.NOOGO_ADMIN = { onglet: function(){ return S.onglet; }, allerOnglet: changerOnglet, modalOuvert: function(){ return !$("modal").classList.contains("cachee"); }, fermerModal: fermerModal, jeton: function(){ return S.jeton; }, commandes: function(){ return S.commandes || []; }, partenaires: function(){ return S.partenaires || []; }, reglages: function(){ return (S.site && S.site.reglages) || {}; }, toast: toast, esc: esc, deconnecter: function(m){ deconnecter(m); }, redimensionner: redimensionner, envoyerPhoto: envoyerPhoto, imgSrc: imgSrc };
 
 /* ---------- Démarrage ---------- */
 S.jeton = lireJeton();
@@ -1594,7 +1594,54 @@ if (S.jeton) demarrerApp(); else afficherLogin("");
 })();
 </script>
 <script src="/admin-suivi.js" defer></script>
-<script src="/admin-communaute.js" defer>
+<script src="/admin-communaute.js" defer></script>
+<script>
+/* Bouton « retour » du téléphone : revient toujours à l'écran d'avant (onglet, sous-écran du Suivi, fenêtre ouverte).
+   Pour sortir de l'application il faut appuyer encore 2 fois (message « Appuyez encore pour quitter »). */
+(function(){
+  var pile = [], applique = false;
+  function AD(){ return window.NOOGO_ADMIN; }
+  function $(i){ return document.getElementById(i); }
+  function etat(){
+    var e = { tab: AD().onglet() || "commandes", modal: AD().modalOuvert() };
+    if (e.tab === "suivi" && window.NOOGO_SUIVI_NAV) e.suivi = window.NOOGO_SUIVI_NAV.get();
+    return e;
+  }
+  function sig(e){ return JSON.stringify(e); }
+  function p(){ return (history.state && history.state.p) || 0; }
+  function verifier(){
+    if (applique || !AD() || !AD().jeton()) return;
+    var e = etat(), sg = sig(e), cur = history.state || {};
+    if (cur.sg === sg) return;
+    if (cur.p > 0 && pile[cur.p - 1] === sg) { applique = true; history.back(); setTimeout(function(){ applique = false; }, 60); return; }   // on est revenu à l'écran d'en dessous
+    try { history.pushState({ nv: 1, p: p() + 1, sg: sg, e: e }, ""); pile[p()] = sg; } catch (x) {}
+  }
+  function planifier(){ setTimeout(verifier, 0); setTimeout(verifier, 350); }
+  document.addEventListener("click", planifier, true);
+  document.addEventListener("change", planifier, true);
+  window.addEventListener("popstate", function(ev){
+    var st = ev.state || {};
+    if (applique) return;
+    if (st.garde) { try { var t = document.createElement("div"); t.textContent = "Appuyez encore pour quitter"; t.style.cssText = "position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#173f1f;color:#fff;padding:10px 18px;border-radius:99px;z-index:99999;font:600 14px sans-serif"; document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 2200); } catch (x) {} return; }
+    var e = st.e; if (!e) return;
+    if (e.modal) { history.back(); return; }                       // fenêtre déjà fermée : on saute
+    applique = true;
+    try {
+      if (AD().modalOuvert()) AD().fermerModal();
+      if (e.tab !== AD().onglet()) AD().allerOnglet(e.tab);
+      if (e.tab === "suivi" && e.suivi && window.NOOGO_SUIVI_NAV) window.NOOGO_SUIVI_NAV.set(e.suivi);
+    } catch (x) {}
+    pile.length = (st.p || 0) + 1; pile[st.p || 0] = st.sg;
+    setTimeout(function(){ applique = false; }, 120);
+  });
+  if (!(history.state && history.state.nv)) {
+    try {
+      history.replaceState({ nv: 1, garde: true, p: 0 }, "");
+      history.pushState({ nv: 1, garde: true, p: 0 }, "");
+      var e0 = etat(); history.pushState({ nv: 1, p: 0, sg: sig(e0), e: e0 }, ""); pile[0] = sig(e0);
+    } catch (x) {}
+  } else if (history.state.sg) pile[history.state.p || 0] = history.state.sg;
+})();
 </script>
 <script>
 /* Cases repliables : chaque grande carte des sections Site, Clients, Partenaires et Réglages se plie / se déplie d'un appui sur son titre */

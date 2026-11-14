@@ -79,10 +79,19 @@ main{padding:12px 14px 40px;max-width:640px;margin:0 auto}
       '<div class="kpi"><small>Résultat net</small><b class="' + (b.resultat >= 0 ? "pos" : "neg") + '">' + F(b.resultat) + '</b></div>' +
       '<div class="kpi"><small>Marge brute</small><b>' + F(b.margeBrute) + '</b><small>' + b.margePct + ' %</small></div>' +
       '<div class="kpi"><small>Caisse actuelle</small><b>' + F(b.caisse) + '</b></div>' +
-      (b.dette > 0 ? '<div class="kpi"><small>Dette à rembourser (emprunts)</small><b class="neg">' + F(b.dette) + '</b></div>' : '') +
+      (b.dette > 0 ? '<div class="kpi"><small>Emprunts à rendre</small><b class="neg">' + F(b.dette) + '</b></div>' : '') +
       '<div class="kpi"><small>Dépenses (production incluse)</small><b>' + F(b.depensesTotales) + '</b></div></div>';
     var MAr = (b.mouvementsArgent || []).slice().reverse(), NOMS = { apport: ["Apport d'argent", 1], emprunt: ["Emprunt reçu", 1], rembEmprunt: ["Remboursement d'emprunt", -1], remb: ["Apport repris", -1] };
-    if (b.dette > 0 || MAr.length) h += '<div class="carte"><h2>Argent apporté et emprunté</h2>' + (b.dette > 0 ? '<div class="rang"><span>Dette à rembourser<small>' + (b.detteAuto ? 'dont ' + F(b.detteAuto) + ' de manque en caisse, ajouté automatiquement' : 'emprunts non encore rendus') + '</small></span><b class="neg">' + F(b.dette) + '</b></div>' : '') +
+    var lm = function (m) { var n = NOMS[m.type] || [m.type, 1]; return '<div class="rang"><span>' + esc(n[0]) + (m.description ? ' · ' + esc(m.description) : '') + '<small>' + dateFr(m.date) + '</small></span><b class="' + (n[1] > 0 ? 'pos' : 'neg') + '">' + (n[1] > 0 ? '+' : '−') + F(m.montant) + '</b></div>'; };
+    var mE = MAr.filter(function (m) { return m.type === 'emprunt' || m.type === 'rembEmprunt'; }), mA = MAr.filter(function (m) { return m.type === 'apport' || m.type === 'remb'; });
+    var dus = (b.dettesParPersonne || []).filter(function (x) { return x.reste > 0; });
+    if (b.dette > 0 || b.ecart > 0 || MAr.length) h += '<div class="carte"><h2>Argent : caisse, apports, emprunts</h2>' +
+      '<div class="rang"><span>Argent en caisse</span><b>' + F(b.caisse) + '</b></div>' +
+      '<div class="rang"><span>Emprunts à rendre<small>ce que le patron doit</small></span><b class="neg">' + F(b.dette) + '</b></div>' +
+      dus.map(function (x) { return '<div class="rang"><span>· ' + esc(x.nom) + '</span><b>' + F(x.reste) + '</b></div>'; }).join('') +
+      (b.ecart > 0 ? '<div class="rang"><span>⚠️ À expliquer<small>manque en caisse : le patron doit dire si c\'est un emprunt ou son argent</small></span><b>' + F(b.ecart) + '</b></div>' : '') +
+      '<h3 style="margin:14px 0 4px">Emprunts et remboursements</h3>' + (mE.length ? mE.map(lm).join('') : '<p>Aucun.</p>') +
+      '<h3 style="margin:14px 0 4px">Apports (argent du patron, pas une dette)</h3>' + (mA.length ? mA.map(lm).join('') : '<p>Aucun.</p>') + '</div>';
       MAr.map(function (m) { var n = NOMS[m.type] || [m.type, 1]; return '<div class="rang"><span>' + esc(n[0]) + (m.description ? ' · ' + esc(m.description) : '') + '<small>' + dateFr(m.date) + '</small></span><b class="' + (n[1] > 0 ? 'pos' : 'neg') + '">' + (n[1] > 0 ? '+' : '−') + F(m.montant) + '</b></div>'; }).join('') + '</div>';
     if (b.resteADuTotal > 0) h += '<div class="carte"><h2>Argent à récupérer : ' + F(b.resteADuTotal) + '</h2>' + b.creances.filter(function (c) { return c.reste > 0; }).map(function (c) { return '<div class="rang"><span>' + esc(c.nom) + '<small>' + (c.type === "livreur" ? "Livreur" : "Client à crédit") + (c.echeance ? " · avant le " + dateFr(c.echeance) : "") + '</small></span><b class="neg">' + F(c.reste) + '</b></div>'; }).join("") + '</div>';
     if (b.parProduit.length) { var mx = Math.max.apply(null, b.parProduit.map(function (p) { return p.ca; }).concat([1])); h += '<div class="carte"><h2>Ventes par produit</h2>' + b.parProduit.map(function (p) { return '<div><div class="rang" style="border:0;padding-bottom:0"><span>' + esc(court(p.nom)) + '<small>' + p.qte + ' vendus</small></span><b>' + F(p.ca) + '</b></div><div class="barre"><i style="width:' + Math.max(3, p.ca / mx * 100) + '%"></i></div></div>'; }).join("") + '</div>'; }

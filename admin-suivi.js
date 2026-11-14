@@ -213,7 +213,9 @@ function vResume(v) {
   var dsv = ""; try { dsv = localStorage.getItem("noogo_sauv") || ""; } catch (e) {}
   var ageSv = dsv ? Math.floor((Date.parse(jourJ(0)) - Date.parse(dsv)) / 86400000) : 999;
   if (E.sauv) al.unshift(carteSauv());
-  if (b.dette > 0) al.unshift('<div class="alerte rouge"><b>💳 Dette à rembourser : ' + fcfa(b.dette) + '</b><br><small>Argent emprunté, pas encore remboursé. Chaque emprunt ou remboursement se note dans l\'onglet Argent.</small><br><button class="btn btn-clair btn-petit" type="button" data-s="sous" data-v="argent" style="margin-top:6px">Ouvrir Argent</button></div>');
+  var cArg = cartesArgent(b);
+  if (b.dette > 0) al.unshift('<div class="alerte rouge"><b>💳 Emprunts à rendre : ' + fcfa(b.dette) + '</b><br><small>Argent emprunté, pas encore rendu. Tout se note dans l\'onglet Argent.</small><br><button class="btn btn-clair btn-petit" type="button" data-s="sous" data-v="argent" style="margin-top:6px">Ouvrir Argent</button></div>');
+  if (cArg) al.unshift(cArg);
   if (ageSv >= 7) al.push('<div class="alerte rouge"><b>Pensez à sauvegarder :</b> ' + (dsv ? 'dernière sauvegarde il y a ' + ageSv + ' jours.' : 'aucune sauvegarde faite sur ce téléphone.') + ' <button class="btn btn-vert btn-petit" type="button" data-s="sauvegarder">Sauvegarder maintenant</button></div>');
   vieuxStock(v).forEach(function (x) { al.push('<div class="alerte rouge"><b>Produit gardé longtemps :</b> ' + esc(x.nom) + ' (' + x.qte + ' pots produits il y a ' + x.age + ' jours). Vérifiez la qualité et vendez-les en premier.</div>'); });
   var nomsOk = function (l) { return l.map(function (x) { return esc(x.nom) + " (" + x.theorique + ")"; }).join(", "); };
@@ -902,30 +904,50 @@ var TYPES_ARGENT = {
   rembEmprunt: { cat: "Remboursement d'emprunt (−)", titre: "Remboursement d'emprunt", signe: -1, aide: "Vous rendez de l'argent emprunté : la dette diminue.", libelle: "Rendu à qui" },
   remb: { cat: "Remboursement d'apport (−)", titre: "Apport repris", signe: -1, aide: "Vous reprenez de l'argent que vous aviez apporté.", libelle: "Pourquoi" }
 };
+function totArgent(b) {
+  var t = { apport: 0, remb: 0, emprunt: 0, rembEmprunt: 0 };
+  (b.mouvementsArgent || []).forEach(function (m) { t[m.type] = (t[m.type] || 0) + m.montant; });
+  return t;
+}
+function plusTardArgent(k) { try { return localStorage.getItem("noogo_pt_" + k) === jourJ(0); } catch (e) { return false; } }
+/* Les deux cartes de décision : manque en caisse (à expliquer) et remboursement possible. Affichées dans le Résumé et dans Argent. */
+function cartesArgent(b) {
+  var h = "";
+  if (b.ecart > 0 && !plusTardArgent("ecart")) h += '<div class="alerte"><b>⚠️ ' + fcfa(b.ecart) + ' manquent en caisse</b><br><small>Les dépenses (production, achats…) ont dépassé l\'argent qui était en caisse. D\'où vient cet argent ?</small>' +
+    '<div class="grille2" style="margin-top:8px"><button class="btn btn-or btn-petit" type="button" data-s="arg-ouvrir" data-v="emprunt" data-m="' + b.ecart + '">C\'est un emprunt</button><button class="btn btn-clair btn-petit" type="button" data-s="arg-ouvrir" data-v="apport" data-m="' + b.ecart + '">C\'est mon argent (apport)</button></div>' +
+    '<button class="btn btn-clair btn-petit" type="button" data-s="arg-plustard" data-v="ecart" style="margin-top:6px">Plus tard</button></div>';
+  if (b.caisse > 0 && b.dette > 0 && !plusTardArgent("remb")) h += '<div class="alerte vert"><b>💡 Vous avez ' + fcfa(b.caisse) + ' en caisse et ' + fcfa(b.dette) + ' à rendre.</b><br><small>Voulez-vous rembourser une partie ? Les ventes restent dans la caisse tant que vous ne validez pas.</small>' +
+    '<div class="grille2" style="margin-top:8px"><button class="btn btn-vert btn-petit" type="button" data-s="arg-ouvrir" data-v="rembEmprunt" data-m="' + Math.min(b.caisse, b.dette) + '">Rembourser</button><button class="btn btn-clair btn-petit" type="button" data-s="arg-plustard" data-v="remb">Plus tard</button></div></div>';
+  return h;
+}
+function ligneMvt(m) {
+  var T = TYPES_ARGENT[m.type] || { titre: m.type, signe: 1 };
+  return '<div class="rang" style="align-items:flex-start"><div class="g"><b>' + esc(T.titre) + (m.description ? " · " + esc(m.description) : "") + '</b><small>' + esc(dateFr(m.date)) + (m.mode ? " · " + esc(m.mode) : "") + (m.horsCaisse ? " · argent personnel" : "") + '</small></div><div style="text-align:right"><b class="' + (T.signe > 0 ? "pos" : "neg") + '">' + (T.signe > 0 ? "+" : "−") + fcfa(m.montant) + '</b><br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="depense" data-id="' + esc(m.id) + '">Supprimer</button></div></div>';
+}
 function vArgent(v) {
-  var b = v.bilan, A = E.arg || (E.arg = { ouvert: null }), M = (b.mouvementsArgent || []).slice().reverse();
-  var tot = function (t) { return M.filter(function (m) { return m.type === t; }).reduce(function (s, m) { return s + m.montant; }, 0); };
-  var h = '<div class="kpis"><div class="kpi"><small>Caisse actuelle</small><b>' + fcfa(b.caisse) + '</b><small>jamais en dessous de 0</small></div>' +
-    '<div class="kpi"><small>Dette à rembourser</small><b class="' + (b.dette > 0 ? "neg" : "pos") + '">' + fcfa(b.dette) + '</b><small>' + (b.dette > 0 ? "à rendre un jour" : "rien à rendre ✅") + '</small></div></div>';
-  if (b.dette > 0) h += '<div class="carte"><h3>D\'où vient la dette</h3>' +
-    '<div class="rang"><span style="flex:1">Emprunts notés</span><b>' + fcfa(tot("emprunt")) + '</b></div>' +
-    '<div class="rang"><span style="flex:1">− déjà remboursés</span><b>' + fcfa(tot("rembEmprunt")) + '</b></div>' +
-    (b.detteAuto > 0 ? '<div class="rang"><span style="flex:1">+ Manque dans la caisse, ajouté automatiquement<br><small class="gris">La caisse ne peut pas être négative : l\'argent qui manque a forcément été avancé.</small></span><b>' + fcfa(b.detteAuto) + '</b></div>' : "") +
-    '<div class="rang" style="font-weight:800"><span style="flex:1">= Dette à rembourser</span><b class="neg">' + fcfa(b.dette) + '</b></div></div>';
+  var b = v.bilan, A = E.arg || (E.arg = { ouvert: null }), M = (b.mouvementsArgent || []).slice().reverse(), t = totArgent(b);
+  var dts = (b.dettesParPersonne || []);
+  var h = '<div class="kpis"><div class="kpi"><small>Argent en caisse</small><b>' + fcfa(b.caisse) + '</b><small>ventes − dépenses, jamais sous 0</small></div>' +
+    '<div class="kpi"><small>Emprunts à rendre</small><b class="' + (b.dette > 0 ? "neg" : "pos") + '">' + fcfa(b.dette) + '</b><small>' + (b.dette > 0 ? "ce que vous devez" : "rien à rendre ✅") + '</small></div></div>';
+  h += cartesArgent(b);
   h += '<div class="grille2" style="margin:10px 0"><button class="btn btn-or" type="button" data-s="arg-ouvrir" data-v="apport">+ Apport d\'argent</button><button class="btn btn-or" type="button" data-s="arg-ouvrir" data-v="emprunt">+ Emprunt reçu</button>' +
     '<button class="btn btn-vert" type="button" data-s="arg-ouvrir" data-v="rembEmprunt">− Rembourser un emprunt</button><button class="btn btn-clair" type="button" data-s="arg-ouvrir" data-v="remb">− Reprendre un apport</button></div>';
   if (A.ouvert && TYPES_ARGENT[A.ouvert]) {
-    var T = TYPES_ARGENT[A.ouvert];
-    h += '<div class="formulaire"><h3>' + T.titre + '</h3><p class="astuce">' + T.aide + '</p><div class="grille2"><div><label for="ag-d">Date</label><input type="date" id="ag-d" value="' + jourJ(0) + '"></div><div><label for="ag-m">Montant (F)</label><input type="number" id="ag-m" inputmode="numeric" min="1"></div></div>' +
-      '<label for="ag-t">' + T.libelle + '</label><input type="text" id="ag-t" maxlength="120" placeholder="Ex : Papa, un ami, la banque…">' +
-      (A.ouvert === "rembEmprunt" ? '<label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="ag-hc"> Payé avec mon argent personnel (pas avec la caisse)</label>' : '') + '<label for="ag-mode">Moyen (facultatif)</label><select id="ag-mode"><option value="">—</option><option>Espèces</option><option>Orange Money</option><option>Moov Money</option><option>Wave</option><option>Autre</option></select>' +
+    var T = TYPES_ARGENT[A.ouvert], reste = dts.filter(function (x) { return x.reste > 0; });
+    var qui = A.ouvert === "rembEmprunt" && reste.length
+      ? '<label for="ag-t">À qui vous rendez</label><select id="ag-t">' + reste.map(function (x) { return '<option value="' + esc(x.nom) + '">' + esc(x.nom) + ' — reste ' + fcfa(x.reste) + '</option>'; }).join("") + '</select>'
+      : '<label for="ag-t">' + T.libelle + '</label><input type="text" id="ag-t" maxlength="120" placeholder="Nom de la personne ou de la banque">' +
+        ((A.ouvert === "emprunt" && dts.length) ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">' + dts.map(function (x) { return '<button class="btn btn-clair btn-petit" type="button" data-s="arg-nom" data-v="' + esc(x.nom) + '">' + esc(x.nom) + '</button>'; }).join("") + '</div>' : "");
+    h += '<div class="formulaire"><h3>' + T.titre + '</h3><p class="astuce">' + T.aide + '</p><div class="grille2"><div><label for="ag-d">Date</label><input type="date" id="ag-d" value="' + jourJ(0) + '"></div><div><label for="ag-m">Montant (F)</label><input type="number" id="ag-m" inputmode="numeric" min="1" value="' + (A.montant || "") + '"></div></div>' + qui +
+      (A.ouvert === "rembEmprunt" ? '<label style="display:flex;gap:8px;align-items:center;margin-top:8px"><input type="checkbox" id="ag-hc"> Payé avec mon argent personnel (pas avec la caisse)</label>' : '') +
+      '<label for="ag-mode">Moyen (facultatif)</label><select id="ag-mode"><option value="">—</option><option>Espèces</option><option>Orange Money</option><option>Moov Money</option><option>Wave</option><option>Autre</option></select>' +
       '<div style="display:flex;gap:10px;margin-top:8px"><button class="btn btn-or" type="button" data-s="arg-enregistrer" data-v="' + A.ouvert + '">Enregistrer</button><button class="btn btn-clair" type="button" data-s="arg-fermer">Annuler</button></div></div>';
   }
-  h += '<div class="carte"><h3>Journal de l\'argent (du début à aujourd\'hui)</h3><p class="astuce">Apports : ' + fcfa(tot("apport")) + ' · Emprunts : ' + fcfa(tot("emprunt")) + ' · Remboursés : ' + fcfa(tot("rembEmprunt")) + (tot("remb") ? ' · Apports repris : ' + fcfa(tot("remb")) : "") + '</p>' +
-    (M.length ? M.map(function (m) {
-      var T = TYPES_ARGENT[m.type] || { titre: m.type, signe: 1 };
-      return '<div class="rang" style="align-items:flex-start"><div class="g"><b>' + esc(T.titre) + (m.description ? " · " + esc(m.description) : "") + '</b><small>' + esc(dateFr(m.date)) + (m.mode ? " · " + esc(m.mode) : "") + (m.horsCaisse ? " · argent personnel" : "") + '</small></div><div style="text-align:right"><b class="' + (T.signe > 0 ? "pos" : "neg") + '">' + (T.signe > 0 ? "+" : "−") + fcfa(m.montant) + '</b><br><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="depense" data-id="' + esc(m.id) + '">Supprimer</button></div></div>';
-    }).join("") : '<p class="gris">Aucun apport ni emprunt noté pour l\'instant.</p>') + '</div>';
+  var dus = dts.filter(function (x) { return x.reste > 0; });
+  if (dus.length) h += '<div class="carte"><h3>Qui je dois rembourser</h3>' + dus.map(function (x) { return '<div class="rang"><span style="flex:1">' + esc(x.nom) + '<br><small class="gris">emprunté ' + fcfa(x.emprunte) + ' · rendu ' + fcfa(x.rembourse) + '</small></span><b class="neg">' + fcfa(x.reste) + '</b></div>'; }).join("") + '<div class="rang" style="font-weight:800"><span style="flex:1">Total à rendre</span><b class="neg">' + fcfa(b.dette) + '</b></div></div>';
+  var emp = M.filter(function (m) { return m.type === "emprunt" || m.type === "rembEmprunt"; }), apo = M.filter(function (m) { return m.type === "apport" || m.type === "remb"; });
+  h += '<div class="carte"><h3>Emprunts et remboursements</h3><p class="astuce">Emprunté : ' + fcfa(t.emprunt) + ' · Rendu : ' + fcfa(t.rembEmprunt) + '</p>' + (emp.length ? emp.map(ligneMvt).join("") : '<p class="gris">Aucun emprunt noté.</p>') + '</div>';
+  h += '<div class="carte"><h3>Apports (argent à vous)</h3><p class="astuce">Total apporté : ' + fcfa(t.apport) + (t.remb ? ' · repris : ' + fcfa(t.remb) : "") + '. Ce n\'est pas une dette.</p>' + (apo.length ? apo.map(ligneMvt).join("") : '<p class="gris">Aucun apport noté.</p>') + '</div>';
   return h;
 }
 
@@ -1175,11 +1197,14 @@ function construireRapport(complet) {
   var mq = (v.comptesEsp || []).filter(function (x) { return dansPeriode(x.date) && x.ecart < 0 && x.statut !== "accepte"; });
   if (mq.length) { T.push("⚠ Manques de caisse : " + fcfa(-mq.reduce(function (a, x) { return a + x.ecart; }, 0))); mq.forEach(function (x) { T.push("   " + dateFr(x.date) + " · " + x.vendeur + " : " + fcfa(-x.ecart)); }); }
   if (b.achats) T.push("Achats de marchandises à revendre : " + fcfa(b.achats));
-  var MA = b.mouvementsArgent || [];
-  T.push("", titre("ARGENT APPORTÉ ET EMPRUNTÉ"), "Dette à rembourser : *" + fcfa(b.dette) + "*");
-  if (b.dette > 0) T.push("   dont emprunts notés : " + fcfa(b.detteEnreg) + (b.detteAuto ? " · manque de caisse ajouté automatiquement : " + fcfa(b.detteAuto) : ""));
-  if (MA.length) MA.forEach(function (m) { var TT = TYPES_ARGENT[m.type] || { titre: m.type, signe: 1 }; T.push("   " + dateFr(m.date) + " · " + TT.titre + (m.description ? " (" + m.description + ")" : "") + " : " + (TT.signe > 0 ? "+" : "−") + fcfa(m.montant)); });
-  else T.push("   Aucun apport ni emprunt noté.");
+  var MA = b.mouvementsArgent || [], TA = totArgent(b), ligneWA = function (m) { var TT = TYPES_ARGENT[m.type] || { titre: m.type, signe: 1 }; return "   " + dateFr(m.date) + " · " + TT.titre + (m.description ? " (" + m.description + ")" : "") + " : " + (TT.signe > 0 ? "+" : "−") + fcfa(m.montant) + (m.horsCaisse ? " (argent personnel)" : ""); };
+  T.push("", titre("ARGENT : CAISSE, APPORTS, EMPRUNTS"), "Argent en caisse : " + fcfa(b.caisse), "Apports reçus (argent à vous, pas une dette) : " + fcfa(TA.apport - TA.remb), "Emprunts à rendre : *" + fcfa(b.dette) + "*");
+  (b.dettesParPersonne || []).filter(function (x) { return x.reste > 0; }).forEach(function (x) { T.push("   · " + x.nom + " : " + fcfa(x.reste)); });
+  T.push("Déjà rendu : " + fcfa(TA.rembEmprunt));
+  if (b.ecart > 0) T.push("⚠️ À expliquer : " + fcfa(b.ecart) + " manquent en caisse (dépenses plus grandes que l'argent en caisse).");
+  var mE = MA.filter(function (m) { return m.type === "emprunt" || m.type === "rembEmprunt"; }), mA = MA.filter(function (m) { return m.type === "apport" || m.type === "remb"; });
+  T.push("", "Emprunts et remboursements :"); if (mE.length) mE.forEach(function (m) { T.push(ligneWA(m)); }); else T.push("   Aucun.");
+  T.push("Apports :"); if (mA.length) mA.forEach(function (m) { T.push(ligneWA(m)); }); else T.push("   Aucun.");
   T.push("", titre("VENTES PAR PRODUIT"));
   if (b.parProduit.length) b.parProduit.forEach(function (p) { T.push("• " + court(p.nom) + " : " + p.qte + " → " + fcfa(p.ca)); }); else T.push("Aucune vente.");
   if (pk.liste.length) {
@@ -1242,10 +1267,14 @@ function rapportPdf() {
   var st = v.stock.filter(function (x) { return (x.theorique || x.vendu) && !x.inconnu && !/^Ancien produit/i.test(x.nom); });
   var h = '<h1>🍦 Noogó — Rapport de gestion</h1><p class="sub">' + X(nomPeriode()) + ' · édité le ' + dateFr(jourJ(0)) + '/' + jourJ(0).slice(0, 4) + '</p>';
   h += '<div class="grid">' + kp("Chiffre d\'affaires", fcfa(b.ca)) + kp("Dépenses", fcfa(b.charges + b.production + (b.chargesFixes || 0)), "", (b.production ? "dont production : " + fcfa(b.production) : "") + (b.chargesFixes ? " · charges fixes : " + fcfa(b.chargesFixes) : "")) + kp("Résultat net", signe(b.resultat), b.resultat < 0 ? "#b3261e" : "#1b7a3a") + kp("Marge", fcfa(b.margeBrute) + " (" + b.margePct + " %)") + '</div>';
-  h += '<h2>Caisse et objectifs</h2>' + tab(["", ""], [["Caisse théorique", fcfa(b.caisse)]].concat(b.dette > 0 ? [["Dette à rembourser (emprunts)", fcfa(b.dette)]] : [], [["Valeur du stock (au coût)", fcfa(b.valeurStock)], ["Pots vendus", b.quantite], ["Coût des produits vendus", fcfa(b.cout)]], b.pertes ? [["Pertes / offerts (au coût)", fcfa(b.pertes)]] : [], (b.apports || b.remboursements) ? [["Apports d'argent / remboursés", fcfa(b.apports) + " / " + fcfa(b.remboursements)]] : []).concat(mq.length ? [["Manques de caisse non réglés", fcfa(-mq.reduce(function (a, x) { return a + x.ecart; }, 0))]] : [], ob.jour > 0 ? [["Objectif du jour", fcfa(ob.caJour) + " / " + fcfa(ob.jour) + " (" + Math.round(ob.caJour / ob.jour * 100) + " %)"]] : [], ob.mois > 0 ? [["Objectif du mois", fcfa(ob.caMois) + " / " + fcfa(ob.mois) + " (" + Math.round(ob.caMois / ob.mois * 100) + " %)"]] : []));
-  h += '<h2>Argent apporté et emprunté</h2>' + tab(["", ""], [["Caisse actuelle", fcfa(b.caisse)], ["Dette à rembourser", fcfa(b.dette)]].concat(b.dette > 0 ? [["   dont emprunts notés", fcfa(b.detteEnreg)]] : [], b.detteAuto ? [["   dont manque de caisse (ajouté automatiquement)", fcfa(b.detteAuto)]] : []));
-  var MAp = b.mouvementsArgent || [];
-  h += MAp.length ? tab(["Date", "Type", "Détail", "Montant"], MAp.map(function (m) { var TT = TYPES_ARGENT[m.type] || { titre: m.type, signe: 1 }; return [dateFr(m.date) + "/" + String(m.date).slice(0, 4), TT.titre, m.description || "", (TT.signe > 0 ? "+" : "−") + fcfa(m.montant)]; })) : '<p>Aucun apport ni emprunt noté.</p>';
+  h += '<h2>Caisse et objectifs</h2>' + tab(["", ""], [["Caisse théorique", fcfa(b.caisse)]].concat([["Valeur du stock (au coût)", fcfa(b.valeurStock)], ["Pots vendus", b.quantite], ["Coût des produits vendus", fcfa(b.cout)]], b.pertes ? [["Pertes / offerts (au coût)", fcfa(b.pertes)]] : [], (b.apports || b.remboursements) ? [["Apports d'argent / remboursés", fcfa(b.apports) + " / " + fcfa(b.remboursements)]] : []).concat(mq.length ? [["Manques de caisse non réglés", fcfa(-mq.reduce(function (a, x) { return a + x.ecart; }, 0))]] : [], ob.jour > 0 ? [["Objectif du jour", fcfa(ob.caJour) + " / " + fcfa(ob.jour) + " (" + Math.round(ob.caJour / ob.jour * 100) + " %)"]] : [], ob.mois > 0 ? [["Objectif du mois", fcfa(ob.caMois) + " / " + fcfa(ob.mois) + " (" + Math.round(ob.caMois / ob.mois * 100) + " %)"]] : []));
+  var TAp = totArgent(b), MAp = b.mouvementsArgent || [], ligP = function (m) { var TT = TYPES_ARGENT[m.type] || { titre: m.type, signe: 1 }; return [dateFr(m.date) + "/" + String(m.date).slice(0, 4), TT.titre, (m.description || "") + (m.horsCaisse ? " (argent personnel)" : ""), (TT.signe > 0 ? "+" : "−") + fcfa(m.montant)]; };
+  h += '<h2>Argent : caisse, apports, emprunts</h2>' + tab(["", ""], [["Argent en caisse", fcfa(b.caisse)], ["Apports reçus (argent à vous, pas une dette)", fcfa(TAp.apport - TAp.remb)], ["Emprunts à rendre", fcfa(b.dette)], ["Déjà rendu", fcfa(TAp.rembEmprunt)]].concat(b.ecart > 0 ? [["⚠️ À expliquer : manque en caisse", fcfa(b.ecart)]] : []));
+  var duP = (b.dettesParPersonne || []).filter(function (x) { return x.reste > 0; });
+  if (duP.length) h += '<h3>À qui je dois</h3>' + tab(["Personne", "Emprunté", "Rendu", "Reste"], duP.map(function (x) { return [x.nom, fcfa(x.emprunte), fcfa(x.rembourse), fcfa(x.reste)]; }));
+  var pE = MAp.filter(function (m) { return m.type === "emprunt" || m.type === "rembEmprunt"; }), pA = MAp.filter(function (m) { return m.type === "apport" || m.type === "remb"; });
+  h += '<h3>Emprunts et remboursements</h3>' + (pE.length ? tab(["Date", "Type", "Détail", "Montant"], pE.map(ligP)) : '<p>Aucun.</p>');
+  h += '<h3>Apports</h3>' + (pA.length ? tab(["Date", "Type", "Détail", "Montant"], pA.map(ligP)) : '<p>Aucun.</p>');
   h += '<h2>Ventes par produit</h2>' + (b.parProduit.length ? tab(["Produit", "Qté", "Montant"], b.parProduit.map(function (p) { return [court(p.nom), p.qte, fcfa(p.ca)]; })) : '<p>Aucune vente.</p>');
   if (pk.liste.length) { var LP = lignesPacks(v); h += '<h2>Packs vendus</h2><table><tr><th>Pack</th><th class="d">Vendus</th><th>Contient</th><th class="d">Prix</th><th class="d">Gain/pack</th></tr>' + LP.map(function (x) { return '<tr><td>' + X(x.nom) + '</td><td class="d">' + x.qte + '</td><td>' + X(x.contenu) + '</td><td class="d">' + fcfa(x.prix) + '</td><td class="d" style="color:' + (x.gain < 0 ? "#b3261e" : "#1b7a3a") + ';font-weight:bold">' + (x.gain < 0 ? "−" : "+") + fcfa(Math.abs(x.gain)) + (x.choix ? "*" : "") + '</td></tr>'; }).join("") + '</table><p style="margin:3px 0;color:#777;font-size:11px">Pots dans des packs : ' + pk.pots + ' · à l\'unité : ' + Math.max(0, b.quantite - pk.pots) + (LP.some(function (x) { return x.choix; }) ? ' · * estimé (pack au choix)' : '') + '</p>'; }
   var lieux = b.parPoint.filter(function (p) { return p.nom && p.nom !== "Non précisé"; });
@@ -1429,7 +1458,9 @@ function clic(ev) {
         return charge("nouveau_depart", { date: val("nd-date") || jourJ(0), caisse: caisseND, items: itemsND });
       }).then(function () { E.depart = false; E.ouvert = null; E.soir = null; ok("Nouveau départ fait : tout repart de zéro"); rendre(); }).catch(function (e) { if (!e.silencieux) A.toast(e.message, "err"); });
     case "cf-modele": $("pa-cf").value = "Salaire 1 : 35000\nSalaire 2 : 60000\nCourant : 30000\nLoyer : 20000\nWifi : 15000\nEau : 5000\nImpôt : 5000"; if (!val("pa-cfd")) $("pa-cfd").value = E.vue.config.depuis || jourJ(0); return;
-    case "arg-ouvrir": E.arg = E.arg || {}; E.arg.ouvert = t.getAttribute("data-v"); return rendre();
+    case "arg-ouvrir": E.arg = E.arg || {}; E.arg.ouvert = t.getAttribute("data-v"); E.arg.montant = Number(t.getAttribute("data-m")) || ""; E.sous = "argent"; rendre(); window.scrollTo(0, 0); return;
+    case "arg-nom": $("ag-t").value = t.getAttribute("data-v"); return;
+    case "arg-plustard": try { localStorage.setItem("noogo_pt_" + t.getAttribute("data-v"), jourJ(0)); } catch (e) {} return rendre();
     case "arg-fermer": E.arg.ouvert = null; return rendre();
     case "arg-enregistrer": var TA = TYPES_ARGENT[t.getAttribute("data-v")]; return envoyer("ajouter_depense", { date: val("ag-d"), categorie: TA.cat, description: val("ag-t"), montant: val("ag-m"), mode: val("ag-mode"), note: ($("ag-hc") && $("ag-hc").checked) ? "hors caisse" : "" }, TA.titre + " enregistré", function () { E.arg.ouvert = null; });
     case "pr-nouveau": E.pr = E.pr || {}; E.pr.edit = "new"; return rendre();

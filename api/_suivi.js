@@ -283,9 +283,20 @@ function bilan(donnees, du, au) {
   const cEmprunts = somme(cD.filter((x) => x.classe === "emprunt"), (x) => nombre(x.montant)), cRembEmprunts = somme(cD.filter((x) => x.classe === "rembEmprunt" && !/hors.?caisse/i.test(x.note || "")), (x) => nombre(x.montant));   // un remboursement fait avec son argent personnel ("hors caisse") ne touche pas la caisse
   const caisseBrute = nombre(cfg.caisseDepart) + cV - cL - cCharges - cAchats + cApports - cRembs + cEmprunts - cRembEmprunts;
   // Quand le calcul de la caisse passe sous zéro, l'argent manquant a forcément été avancé : il devient automatiquement une dette à rembourser.
-  const detteAuto = Math.max(0, -caisseBrute);
+  // La dette = seulement ce que le patron a noté et validé (emprunts − remboursements). Elle ne bouge pas toute seule quand on vend.
+  // Si l'argent des dépenses dépasse la caisse, le manque est montré à part ("à expliquer") : emprunt ou apport, c'est le patron qui décide.
+  const ecart = Math.max(0, -caisseBrute);
   const detteEnreg = detteEmprunte - detteRembourse;
-  const detteTotale = Math.max(0, detteEnreg + detteAuto);
+  const detteTotale = Math.max(0, detteEnreg);
+  const parPers = {};
+  for (const x of toutes) {
+    const c = classeDepense(x.categorie); if (c !== "emprunt" && c !== "rembEmprunt") continue;
+    const nom = String(x.description || "").trim() || "Non précisé", k = nom.toLowerCase();
+    const o = (parPers[k] = parPers[k] || { nom, emprunte: 0, rembourse: 0 });
+    if (c === "emprunt") o.emprunte += nombre(x.montant); else o.rembourse += nombre(x.montant);
+  }
+  const dettesParPersonne = Object.values(parPers).map((o) => ({ nom: o.nom, emprunte: arrondi(o.emprunte), rembourse: arrondi(o.rembourse), reste: arrondi(o.emprunte - o.rembourse) })).sort((a, b) => b.reste - a.reste);
+  const preteurs = dettesParPersonne.map((o) => o.nom);
   const caisse = Math.max(0, caisseBrute);
   const mouvementsArgent = toutes.map((x) => ({ x, c: classeDepense(x.categorie) })).filter((y) => ["apport", "remb", "emprunt", "rembEmprunt"].includes(y.c))
     .map((y) => ({ id: y.x.id, date: jour(y.x.date), type: y.c, montant: arrondi(nombre(y.x.montant)), description: y.x.description || "", mode: y.x.mode || "", horsCaisse: /hors.?caisse/i.test(y.x.note || "") }))
@@ -311,7 +322,7 @@ function bilan(donnees, du, au) {
     quantite: qte, pertes: arrondi(pertesCout), charges: arrondi(charges), achats: arrondi(achats),
     chargesFixes: arrondi(chargesFixes), chargesFixesMois: arrondi(cfMois), chargesFixesJours: cfJours, chargesFixesDetail,
     resultat: arrondi(margeBrute - pertesCout - charges - chargesFixes),
-    apports: arrondi(apports), remboursements: arrondi(rembs), emprunts: arrondi(emprunts), rembEmprunts: arrondi(rembEmprunts), dette: arrondi(detteTotale), detteAuto: arrondi(detteAuto), detteEnreg: arrondi(detteEnreg), caisseBrute: arrondi(caisseBrute), mouvementsArgent, detteEmprunte: arrondi(detteEmprunte), detteRembourse: arrondi(detteRembourse), production: arrondi(productionCout),
+    apports: arrondi(apports), remboursements: arrondi(rembs), emprunts: arrondi(emprunts), rembEmprunts: arrondi(rembEmprunts), dette: arrondi(detteTotale), ecart: arrondi(ecart), dettesParPersonne, preteurs, detteEnreg: arrondi(detteEnreg), caisseBrute: arrondi(caisseBrute), mouvementsArgent, detteEmprunte: arrondi(detteEmprunte), detteRembourse: arrondi(detteRembourse), production: arrondi(productionCout),
     livraisonPacks: arrondi(livraisonPacks), creances, resteADuTotal: arrondi(creances.reduce((m, o) => m + Math.max(0, o.reste), 0)), depensesTotales: arrondi(charges + productionCout), sortiesPeriode: arrondi(sortiesPeriode), fluxPeriode: arrondi(fluxPeriode),
     caisse: arrondi(caisse), caisseDetail, valeurStock: arrondi(valeurStock), alertes,
     parProduit, parPoint, parVendeur, parPaiement, parCategorie, parJour

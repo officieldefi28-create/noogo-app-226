@@ -47,14 +47,38 @@ async function charger() {
   ]);
   const motCaisse = (await S.getDoc("caisse-mot")) || "bingo";
   const prospects = (await S.suiviListe("prospects")) || [];
+  const ajustOk = ((await S.getDoc("ajust-ok")) || {}).cles || [];
   const cfg = configPropre(config);
   const actifs = (l) => (l || []).filter((x) => x && !x.archive), archives = (l) => (l || []).filter((x) => x && x.archive);
   const archivesDonnees = { recus: archives(recus), depenses: archives(depenses) };
   // « Nouveau départ » : les commandes du site livrées avant ce moment ne comptent plus dans le suivi
   const cmds = cfg.debutHeure ? commandes.filter((c) => String(c.dateLivraison || c.date || "") >= cfg.debutHeure) : commandes;
-  return { catalogue, config: cfg, lots, ventes: actifs(ventes), pertes, depenses: actifs(depenses).filter((x) => !x.attente), encaissements: actifs(encaissements), propositions: propositions || [], comptesEsp: (comptesEsp || []).filter((x) => x && x.statut !== "supprime"), remises: (remisesL || []).filter((x) => x && !x.archive), depots: DEP.annoter(depotsL), packsSoir: packsSoir || {}, sms: smsCfg ? { actif: !!smsCfg.actif, cle: smsCfg.cle || "" } : null, lotsProp: lotsProp || [], patron: patron || null, prospects: prospects.filter((x) => x && !x.archive), comptages, commandes: cmds, equipe, recus: actifs(recus), archives: archivesDonnees, demandes, motCaisse, journal: Array.isArray(journal) ? journal : [], clotures: Array.isArray(clotures) ? clotures : [] };
+  return { catalogue, config: cfg, lots, ventes: actifs(ventes), pertes, depenses: actifs(depenses).filter((x) => !x.attente), encaissements: actifs(encaissements), propositions: propositions || [], comptesEsp: (comptesEsp || []).filter((x) => x && x.statut !== "supprime"), remises: (remisesL || []).filter((x) => x && !x.archive), depots: DEP.annoter(depotsL), packsSoir: packsSoir || {}, sms: smsCfg ? { actif: !!smsCfg.actif, cle: smsCfg.cle || "" } : null, lotsProp: lotsProp || [], patron: patron || null, prospects: prospects.filter((x) => x && !x.archive), ajustOk, comptages, commandes: cmds, equipe, recus: actifs(recus), archives: archivesDonnees, demandes, motCaisse, journal: Array.isArray(journal) ? journal : [], clotures: Array.isArray(clotures) ? clotures : [] };
 }
 
+/* Commandé → livré → argent confirmé : où en sont les commandes du site */
+function pipelineCommandes(cmds) {
+  const vivantes = (cmds || []).filter((c) => c && !c.archive);
+  const mt = (c) => Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0;
+  const etape = (c) => (c.statutLivraison === "annulee" ? "annulee" : c.statutLivraison === "livree" ? (c.encaisse && c.encaisse.attente !== false && c.encaisse.verifie !== true && c.encaisse.mode !== "Espèces" ? "livree-a-confirmer" : "livree") : "a-livrer");
+  const g = { "a-livrer": { n: 0, m: 0 }, "livree-a-confirmer": { n: 0, m: 0 }, livree: { n: 0, m: 0 }, annulee: { n: 0, m: 0 } };
+  for (const c of vivantes) { const e = etape(c); g[e].n++; g[e].m += mt(c); }
+  const liste = vivantes.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 40).map((c) => ({ id: c.id, date: c.date, nom: c.nomClient, tel: c.telClient, montant: mt(c), etape: etape(c), source: c.source || "direct", mode: c.modeReception }));
+  return { etapes: g, aRecuperer: g["a-livrer"].m + g["livree-a-confirmer"].m, liste };
+}
+/* Clients du site : qui commande, combien, depuis quand */
+function clientsDeCommandes(cmds) {
+  const m = {};
+  for (const c of cmds || []) {
+    if (!c || c.archive || c.statutLivraison === "annulee") continue;
+    const tel = String(c.telClient || "").replace(/\D/g, ""); if (tel.length < 8) continue;
+    const k = tel.slice(-8), o = (m[k] = m[k] || { tel, nom: c.nomClient, nb: 0, ca: 0, premiere: c.date, derniere: c.date, dernier: "" });
+    o.nb++; if (c.statutLivraison === "livree") o.ca += Number(c.montantApresRemise != null ? c.montantApresRemise : c.montantTotal) || 0;
+    if (c.date >= o.derniere) { o.derniere = c.date; o.nom = c.nomClient || o.nom; o.dernier = (c.articles || []).slice(0, 3).map((a) => (a.nom || a.id || "")).filter(Boolean).join(", "); }
+    if (c.date < o.premiere) o.premiere = c.date;
+  }
+  return Object.values(m).sort((a, b) => (a.derniere < b.derniere ? 1 : -1)).slice(0, 300);
+}
 function sourcesCommandes(cmds) {
   const m = {};
   for (const c of cmds) {
@@ -77,6 +101,7 @@ function configPropre(c) {
   const chargesFixes = (Array.isArray(c.chargesFixes) ? c.chargesFixes : []).slice(0, 25)
     .map((x) => ({ nom: txt(x && x.nom, 60), montant: Math.max(0, Math.min(100000000, Math.round(Number(x && x.montant) || 0))) })).filter((x) => x.nom && x.montant > 0);
   return {
+    pubMaxPct: Math.max(0, Math.min(100, Math.round(Number(c.pubMaxPct) || 0))),
     objectifNet: Math.max(0, Math.min(1000000000000, Math.round(Number(c.objectifNet) || 0))),
     objectifDu: /^\d{4}-\d{2}-\d{2}$/.test(String(c.objectifDu || "")) ? c.objectifDu : "", objectifAu: /^\d{4}-\d{2}-\d{2}$/.test(String(c.objectifAu || "")) ? c.objectifAu : "",
     chargesFixes, chargesFixesDepuis: /^\d{4}-\d{2}-\d{2}$/.test(String(c.chargesFixesDepuis || "")) ? c.chargesFixesDepuis : "",
@@ -182,7 +207,7 @@ function controles(donnees, calc) {
   const sansPrix = calc.ventes.filter((v) => v.montant === 0 && v.qte > 0 && v.source !== "manuel");
   if (sansPrix.length) liste.push({ niveau: "orange", titre: "Ventes à 0 F", texte: sansPrix.length + " vente(s) comptées sans prix : vérifiez le prix du produit." });
   const surplus = (calc.ajustements || []).filter((a) => a.date >= new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10));
-  if (surplus.length) liste.push({ niveau: "orange", titre: "Surplus au comptage (7 jours)", texte: surplus.length + " fois vous aviez plus que prévu : production oubliée ou vente notée en double ?" });
+  if (surplus.length) liste.push({ niveau: "orange", titre: "Surplus au comptage (7 jours)", vers: "ecarts", texte: "Vous avez compté plus de pots que prévu " + surplus.length + " fois. Cause fréquente : une production pas notée, ou une vente notée deux fois. Touchez « Voir et corriger »." });
   const hier = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   const cl = donnees.clotures || [];
   if (calc.ventes.some((v) => v.date === hier) && !cl.some((c) => c.date === hier)) liste.push({ niveau: "info", titre: "Journée d'hier non clôturée", texte: "Allez dans « Clôture » pour compter la caisse et vérifier qu'il ne manque rien." });
@@ -209,6 +234,8 @@ function decorerDepenses(liste, demandes) {
 function vue(donnees, d) {
   const [du, au] = periode(d || {});
   const calc = U.calculer(donnees);
+  const okSet = new Set(donnees.ajustOk || []);
+  calc.ajustements = (calc.ajustements || []).filter((a) => !okSet.has(a.ref + "|" + a.produitId));   // surplus que le patron a déclaré « sans importance »
   return {
     config: donnees.config,
     produits: calc.suivis,
@@ -230,7 +257,7 @@ function vue(donnees, d) {
     lotsProp: (donnees.lotsProp || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 40),
     comptesEsp: (donnees.comptesEsp || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 120),
     prospects: (donnees.prospects || []).sort((a, b) => ((a.prochaine || "9999") < (b.prochaine || "9999") ? -1 : 1)).slice(0, 500),
-    sources: sourcesCommandes(donnees.commandes || []),
+    sources: sourcesCommandes(donnees.commandes || []), pipeline: pipelineCommandes(donnees.commandes || []), clients: clientsDeCommandes(donnees.commandes || []),
     objectif: (() => { const cf = donnees.config || {}; const du = cf.objectifDu || "2026-11-12", au = cf.objectifAu || "2026-12-31"; const b = U.bilan(donnees, du, au); return { net: cf.objectifNet || 5000000, du, au, b: { ca: b.ca, cout: b.cout, margeBrute: b.margeBrute, quantite: b.quantite, charges: b.charges, chargesFixes: b.chargesFixes, chargesFixesMois: b.chargesFixesMois, pertes: b.pertes, resultat: b.resultat } }; })(),
     depots: (donnees.depots || []).slice(0, 200), sms: donnees.sms || null,
     remises: (donnees.remises || []).sort((a, b) => ((a.cree || "") < (b.cree || "") ? 1 : -1)).slice(0, 120),
@@ -288,6 +315,7 @@ module.exports = async (req, res) => {
       }
       case "ajouter_vente": {
         await verifierProduits([idPropre(d.produitId)]);
+        if (!txt(d.pointVente, 40)) throw new Error("Dites où la vente a été faite (point de vente).");
         const v = { id: d.id ? idPropre(d.id) : nouvelId("v"), date: date(d.date), produitId: idPropre(d.produitId), qte: entier(d.qte, 1, 100000, "Quantité"), pointVente: txt(d.pointVente, 40), remise: entier(d.remise || 0, 0, 100000000, "Remise"), note: txt(d.note, 200) };
         if (d.prix !== undefined && d.prix !== "" && d.prix !== null) v.prix = entier(d.prix, 0, 10000000, "Prix");
         else { const pm = await prixActuels(); if (pm[v.produitId] != null) v.prix = pm[v.produitId]; }   // prix figé à la saisie
@@ -309,12 +337,20 @@ module.exports = async (req, res) => {
         const id = /^pr-[a-z0-9]+$/.test(String(d.id || "")) ? d.id : nouvelId("pr");
         const x = { id, nom: txt(d.nom, 80), type: TYPES.includes(d.type) ? d.type : "autre", contact: txt(d.contact, 60), tel: txt(d.tel, 30).replace(/[^\d+ ]/g, ""),
           statut: STAT.includes(d.statut) ? d.statut : "a-contacter", prochaine: /^\d{4}-\d{2}-\d{2}$/.test(String(d.prochaine || "")) ? d.prochaine : "",
-          mensuel: Math.max(0, Math.min(1000000000, Math.round(Number(d.mensuel) || 0))), recurrent: !!d.recurrent, note: txt(d.note, 400), maj: new Date().toISOString() };
+          mensuel: Math.max(0, Math.min(1000000000, Math.round(Number(d.mensuel) || 0))), recurrent: !!d.recurrent, frequence: [7, 14, 30].includes(Number(d.frequence)) ? Number(d.frequence) : 0, derniere: /^\d{4}-\d{2}-\d{2}$/.test(String(d.derniere || "")) ? d.derniere : "", produits: txt(d.produits, 600), note: txt(d.note, 400), maj: new Date().toISOString() };
         if (!x.nom) throw new Error("Donnez un nom");
         const avant = ((await S.suiviListe("prospects")) || []).find((y) => y && y.id === id);
         x.cree = (avant && avant.cree) || x.maj;
         await S.suiviSet("prospects", id, x);
         trace = [avant ? "Prospect modifié" : "Prospect ajouté", x.nom + " · " + x.statut];
+        break;
+      }
+      case "ajust_ok": {
+        const doc = (await S.getDoc("ajust-ok")) || { cles: [] };
+        const nv = d.tous ? ((await charger(), U.calculer(await charger())).ajustements || []).map((a) => a.ref + "|" + a.produitId) : [String(d.cle || "").slice(0, 120)].filter(Boolean);
+        doc.cles = Array.from(new Set((doc.cles || []).concat(nv))).slice(-2000);
+        await S.setDoc("ajust-ok", doc);
+        trace = ["Surplus de comptage accepté", d.tous ? "tous" : String(d.cle || "")];
         break;
       }
       case "prospect_supprimer": {
@@ -336,6 +372,7 @@ module.exports = async (req, res) => {
         // Reste du soir : une ligne par produit compté ; une ligne vide = produit non compté
         const jr = date(d.date);
         const pv = txt(d.pointVente, 40);
+        if (!pv) throw new Error("Dites où se fait ce comptage (point de vente).");
         const items = (Array.isArray(d.items) ? d.items : []).slice(0, 300);
         const pm = await prixActuels();
         let nbC = 0;

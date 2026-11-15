@@ -200,10 +200,12 @@ function vResume(v) {
   var h = selPeriode();
   h += '<div class="kpis"><div class="kpi gros"><small>Chiffre d\'affaires · ' + esc(nomPeriode()) + '</small><b>' + fcfa(b.ca) + '</b><small>' + b.quantite + ' pièces vendues</small>' + (pr ? delta(b.ca, pr.ca) : "") + '</div>' +
     kpi("Résultat net", signe(b.resultat), b.resultat >= 0 ? "pos" : "neg", b.chargesFixes ? "après charges fixes (" + fcfa(b.chargesFixes) + ")" : "ce que vous gagnez vraiment") +
-    kpi("Caisse actuelle", fcfa(b.caisse), "", b.dette > 0 ? "le manque est compté en dette" : "argent attendu en caisse") +
+    kpi("Caisse actuelle", fcfa(b.caisse), "", b.ecart > 0 ? "manque à expliquer (voir Argent)" : "argent attendu en caisse") +
     kpi("Dépenses", fcfa(b.depensesTotales), "", b.production ? "dont production " + fcfa(b.production) : "frais, publicité, salaires…") +
     kpi("Marge brute", fcfa(b.margeBrute), b.margeBrute >= 0 ? "pos" : "neg", b.margePct + " % du CA") + '</div>';
 
+  var pl = v.pipeline;
+  if (pl && (pl.aRecuperer > 0 || ((pl.etapes["a-livrer"] || {}).n))) h += '<button class="menu-plus" type="button" data-s="vers" data-v="commandes"><span><b>📦 Commandes du site : ' + ((pl.etapes["a-livrer"] || {}).n || 0) + ' à livrer</b><small>' + fcfa(pl.aRecuperer) + ' encore à récupérer</small></span><span>›</span></button>';
   h += repliable("Bilan du jour", blocBilanJour(v));
   /* À surveiller : deux alertes visibles, le reste se déplie */
   var al = [];
@@ -214,6 +216,8 @@ function vResume(v) {
   var ageSv = dsv ? Math.floor((Date.parse(jourJ(0)) - Date.parse(dsv)) / 86400000) : 999;
   if (E.sauv) al.unshift(carteSauv());
   var cArg = cartesArgent(b);
+  var pubP = pubDuPeriode(v), seuilP = (v.config && v.config.pubMaxPct) || 0;
+  if (seuilP && b.ca > 0 && pubP / b.ca * 100 > seuilP) al.push('<div class="alerte rouge"><b>📣 La publicité coûte trop cher : ' + Math.round(pubP / b.ca * 100) + ' % des ventes</b><br><small>Vous aviez fixé ' + seuilP + ' %. Pub : ' + fcfa(pubP) + ' pour ' + fcfa(b.ca) + ' de ventes.</small></div>');
   if (b.dette > 0) al.unshift('<div class="alerte rouge"><b>💳 Emprunts à rendre : ' + fcfa(b.dette) + '</b><br><small>Argent emprunté, pas encore rendu. Tout se note dans l\'onglet Argent.</small><br><button class="btn btn-clair btn-petit" type="button" data-s="sous" data-v="argent" style="margin-top:6px">Ouvrir Argent</button></div>');
   if (cArg) al.unshift(cArg);
   if (ageSv >= 7) al.push('<div class="alerte rouge"><b>Pensez à sauvegarder :</b> ' + (dsv ? 'dernière sauvegarde il y a ' + ageSv + ' jours.' : 'aucune sauvegarde faite sur ce téléphone.') + ' <button class="btn btn-vert btn-petit" type="button" data-s="sauvegarder">Sauvegarder maintenant</button></div>');
@@ -225,7 +229,7 @@ function vResume(v) {
   var dernier = (v.comptages || []).length ? v.comptages[0].date : "";
   if ((v.ventes || []).length && dernier < jourJ(-1)) al.push('<div class="alerte"><b>Comptage du soir manquant :</b> dernier comptage ' + (dernier ? dateFr(dernier) : "jamais") + '. Sans lui, les ventes ne sont pas fiables.</div>');
   if (b.margeBrute < 0) al.push('<div class="alerte rouge"><b>Marge négative :</b> vous vendez moins cher que le coût de revient. Vérifiez les coûts dans Plus › Réglages.</div>');
-  (v.controles || []).forEach(function (c) { if (c.titre === "Stock négatif") return; al.push('<div class="alerte' + (c.niveau === "rouge" ? " rouge" : "") + '"><b>' + esc(c.titre) + ' :</b> ' + esc(c.texte) + '</div>'); });
+  (v.controles || []).forEach(function (c) { if (c.titre === "Stock négatif") return; al.push('<div class="alerte' + (c.niveau === "rouge" ? " rouge" : "") + '"><b>' + esc(c.titre) + ' :</b> ' + esc(c.texte) + (c.vers ? '<br><button class="btn btn-or btn-petit" type="button" data-s="vers" data-v="' + esc(c.vers) + '" style="margin-top:6px">Voir et corriger</button>' : "") + '</div>'); });
   if (!al.length && b.ca > 0) al.push('<div class="alerte vert">Tout est en ordre : pas de stock négatif, comptage à jour.</div>');
   h += al.slice(0, 2).join("");
   if (al.length > 2) h += repliable((al.length - 2) + " autre" + (al.length > 3 ? "s" : "") + " alerte" + (al.length > 3 ? "s" : ""), al.slice(2).join(""));
@@ -553,7 +557,7 @@ function vSoir(v) {
   var s = E.soir;
   var h = '<div class="carte soir"><h3>Le reste du soir</h3><p class="astuce">Comptez ce qu\'il vous reste de chaque produit. Le logiciel calcule tout seul ce qui a été vendu, en tenant compte des commandes du site déjà livrées et des pertes notées. Laissez vide ce que vous ne comptez pas.</p>' +
     '<div class="grille2"><div><label for="so-date">Jour</label><input type="date" id="so-date" value="' + esc(E.soirDate) + '"></div>' +
-    '<div><label for="so-pv">Point de vente (facultatif)</label><select id="so-pv">' + optionsPoints(v, "— non précisé —") + '</select></div></div>';
+    '<div><label for="so-pv">Point de vente (obligatoire)</label><select id="so-pv">' + optionsPoints(v, "— choisir le lieu —") + '</select></div></div>';
   if (!s || s.date !== E.soirDate) { h += '<p class="gris">Chargement…</p></div>'; chargerSoir(); return h; }
   var ligne = function (p) {
     var deja = s.deja[p.id], att = s.avant[p.id] || 0;
@@ -583,7 +587,7 @@ function vVentes(v, mode) {
   if (mode === "vente" && E.ouvert === "vente") {
     h += '<div class="formulaire"><h3>Nouvelle vente</h3><label for="fv-p">Produit</label><select id="fv-p">' + optionsProduits(v) + '</select>' +
       '<div class="grille2"><div><label for="fv-q">Quantité</label><input type="number" id="fv-q" inputmode="numeric" min="1" value="1"></div><div><label for="fv-d">Jour</label><input type="date" id="fv-d" value="' + jourJ(0) + '"></div></div>' +
-      '<label for="fv-pv">Point de vente (facultatif)</label><select id="fv-pv">' + optionsPoints(v, "— non précisé —") + '</select>' +
+      '<label for="fv-pv">Point de vente (obligatoire)</label><select id="fv-pv">' + optionsPoints(v, "— choisir le lieu —") + '</select>' +
       '<div class="grille2"><div><label for="fv-px">Prix unitaire (vide = prix du site)</label><input type="number" id="fv-px" inputmode="numeric" min="0"></div><div><label for="fv-r">Remise totale (F)</label><input type="number" id="fv-r" inputmode="numeric" min="0" value="0"></div></div>' +
       '<div style="display:flex;gap:10px;margin-top:12px"><button class="btn btn-or" type="button" data-s="enregistrer-vente">Enregistrer</button><button class="btn btn-clair" type="button" data-s="fermer">Annuler</button></div></div>';
   }
@@ -611,7 +615,7 @@ function vStock(v) {
     v.stock.filter(function (s) { return s.produit || s.vendu || s.theorique; }).map(function (s) {
       return '<tr><td>' + esc(s.nom) + '<br><small class="gris">' + (s.dernierComptage ? "compté le " + esc(dateFr(s.dernierComptage.date)) : "jamais compté") + '</small></td><td class="n ' + (s.theorique < 0 ? "neg" : "") + '"><b>' + s.theorique + '</b></td><td class="n">' + fcfa(s.valeur) + '</td></tr>';
     }).join("") + '</table></div>';
-  if (v.ajustements.length) h += repliable("Surplus constatés au comptage", '<p class="astuce">Vous aviez plus que prévu (production oubliée ?).</p>' + v.ajustements.map(function (a) { return '<div class="rang"><span>' + esc(dateFr(a.date)) + ' · ' + esc(a.nom) + '</span><b>+' + a.qte + '</b></div>'; }).join(""));
+  if (v.ajustements.length) h += repliable("Surplus constatés au comptage", '<p class="astuce">Vous aviez plus que prévu (production oubliée ?).</p><button class="btn btn-or btn-petit" type="button" data-s="vers" data-v="ecarts" style="margin-bottom:8px">Voir et corriger</button>' + v.ajustements.map(function (a) { return '<div class="rang"><span>' + esc(dateFr(a.date)) + ' · ' + esc(a.nom) + '</span><b>+' + a.qte + '</b></div>'; }).join(""));
   return h;
 }
 function vStockOnglet(v) {
@@ -651,10 +655,10 @@ function vObjectifs(v) {
 /* ----- Plus : les outils rangés ----- */
 function vPlus(v) {
   if (!E.plus) {
-    var M = [["prospects", "Prospection (boutiques, entreprises…)", "Clients à convaincre, rappels, d'où viennent les commandes"], ["simulateur", "Objectif 5 000 000 F", "Combien vendre chaque jour pour y arriver (calcul, pas promesse)"], ["patron", "Accès patron (lecture seule)", "Un lien pour que le patron voie les chiffres, sans rien modifier"], ["avis", "Avis clients", "Valider ou masquer les avis avant qu'ils s'affichent sur le site"], ["stats", "Statistiques du site", "Visiteurs, paniers, commandes : où perdez-vous des clients ?"], ["relances", "Clients et offres", "Fidèles, nouveaux, clients à relancer, avec message et offre prêts"], ["cloture", "Clôture de la journée", "Compter la caisse du soir, voir s'il manque de l'argent"], ["objectifs", "Objectifs et seuil de rentabilité", "Où j'en suis ce jour et ce mois"], ["envoi", "Envoyer et exporter", "Rapport WhatsApp, Excel, Google Sheets, Drive"], ["journal", "Journal des modifications", "Qui a changé quoi, et quand"], ["params", "Réglages du suivi", "Caisse de départ, charges fixes, coûts, points de vente"]];
+    var M = [["ecarts", "Écarts de stock", "Pots comptés en plus que prévu : comprendre et corriger"], ["commandes", "Commandé · livré · payé", "Où en sont les commandes du site, argent à récupérer"], ["prospects", "Prospection (boutiques, entreprises…)", "Clients à convaincre, rappels, d'où viennent les commandes"], ["pub", "Liens de publicité", "Liens à copier, quelle pub rapporte, alerte si trop chère"], ["simulateur", "Objectif 5 000 000 F", "Combien vendre chaque jour pour y arriver (calcul, pas promesse)"], ["patron", "Accès patron (lecture seule)", "Un lien pour que le patron voie les chiffres, sans rien modifier"], ["avis", "Avis clients", "Valider ou masquer les avis avant qu'ils s'affichent sur le site"], ["stats", "Statistiques du site", "Visiteurs, paniers, commandes : où perdez-vous des clients ?"], ["relances", "Clients et offres", "Fidèles, nouveaux, clients à relancer, avec message et offre prêts"], ["cloture", "Clôture de la journée", "Compter la caisse du soir, voir s'il manque de l'argent"], ["objectifs", "Objectifs et seuil de rentabilité", "Où j'en suis ce jour et ce mois"], ["envoi", "Envoyer et exporter", "Rapport WhatsApp, Excel, Google Sheets, Drive"], ["journal", "Journal des modifications", "Qui a changé quoi, et quand"], ["params", "Réglages du suivi", "Caisse de départ, charges fixes, coûts, points de vente"]];
     return '<div class="carte"><h3>Plus</h3>' + M.map(function (m) { return '<button class="menu-plus" type="button" data-s="vers" data-v="' + m[0] + '"><span><b>' + m[1] + '</b><small>' + m[2] + '</small></span><span>›</span></button>'; }).join("") + '</div>';
   }
-  var corps = { prospects: vProspects, simulateur: vSimulateur, patron: vPatron, relances: vRelances, avis: vAvis, stats: vStats, cloture: vCloture, objectifs: vObjectifs, envoi: vEnvoi, journal: vJournal, params: vParams }[E.plus](v);
+  var corps = { ecarts: vEcarts, commandes: vCommandes, pub: vPub, prospects: vProspects, simulateur: vSimulateur, patron: vPatron, relances: vRelances, avis: vAvis, stats: vStats, cloture: vCloture, objectifs: vObjectifs, envoi: vEnvoi, journal: vJournal, params: vParams }[E.plus](v);
   return retour("Plus", "vers", "") + corps;
 }
 
@@ -892,6 +896,58 @@ function vDepenses(v) {
     if (d.auto) return '<div class="rang"><div class="g"><b>' + esc(d.description || d.categorie) + '</b><small>' + esc(dateFr(d.date)) + ' · ' + esc(d.categorie) + ' · automatique <span class="badge badge-or">Pack</span></small></div><div style="text-align:right"><b>' + fcfa(d.montant) + '</b></div></div>';
     return '<div class="rang"><div class="g"><b>' + esc(d.description || d.categorie) + '</b><small>' + esc(dateFr(d.date)) + ' · ' + esc(d.categorie) + (d.vendeur ? " · " + esc(d.vendeur) : "") + (d.mode ? " · " + esc(d.mode) : "") + '</small></div><div style="text-align:right"><b class="' + (plus ? "pos" : "") + '">' + (plus ? "+" : "") + fcfa(d.montant) + '</b><br><button class="btn btn-brun btn-petit" type="button" data-s="archiver" data-t="depense" data-etat="1" data-id="' + esc(d.id) + '">Archiver</button> <button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="depense" data-id="' + esc(d.id) + '">Supprimer</button></div></div>';
   }).join("") : '<p class="gris">Aucune dépense sur cette période.</p>') + '</div>';
+  return h;
+}
+
+/* ----- Écarts de stock : « vous avez compté plus que prévu » ----- */
+function vEcarts(v) {
+  var L = (v.ajustements || []).slice().reverse();
+  var h = '<div class="carte"><h3>Écarts de stock</h3><p class="astuce"><b>Qu\'est-ce que c\'est ?</b> Chaque soir vous comptez ce qu\'il reste. Ici, vous avez compté <b>plus de pots</b> que ce que l\'application pensait avoir. Le plus souvent : une production que vous n\'avez pas notée, ou une vente notée deux fois. <b>L\'argent n\'est pas touché</b> : le stock est simplement remis à jour avec votre comptage.</p>' +
+    (L.length ? '<button class="btn btn-clair btn-bloc" type="button" data-s="ecart-tous">Tout accepter (ne plus m\'alerter pour ces ' + L.length + ' écarts)</button>' : '') + '</div>';
+  if (!L.length) return h + '<div class="alerte vert"><b>Rien à corriger ✅</b><br><small>Aucun surplus à vérifier.</small></div>';
+  h += L.map(function (a) {
+    var st = (v.stock || []).filter(function (x) { return x.produitId === a.produitId || x.id === a.produitId; })[0] || {};
+    var cm = Math.round((st.coutMoyen || 0) * a.qte);
+    var vs = (v.ventes || []).filter(function (x) { return x.produitId === a.produitId && x.date === a.date; }).slice(0, 8);
+    return '<div class="carte"><b>' + esc(dateFr(a.date)) + ' · ' + esc(a.nom) + '</b><p style="margin:6px 0">Vous avez compté <b>' + a.qte + ' pot' + (a.qte > 1 ? "s" : "") + ' de plus</b> que prévu.</p>' +
+      '<p class="astuce"><b>Cas 1 :</b> vous avez fait ' + a.qte + ' pot(s) sans le noter.</p>' +
+      '<button class="btn btn-or btn-bloc" type="button" data-s="ecart-direct" data-d="' + esc(a.date) + '" data-p="' + esc(a.produitId) + '" data-q="' + a.qte + '" data-c="' + cm + '">✅ Oui, noter ' + a.qte + ' pot(s) produits' + (cm ? ' (coût estimé ' + fcfa(cm) + ')' : '') + '</button>' +
+      '<p class="astuce" style="margin-top:10px"><b>Cas 2 :</b> une vente a été notée deux fois' + (vs.length ? ' — touchez « Supprimer » sur la vente en double :' : '. Aucune vente de ce produit ce jour-là.') + '</p>' +
+      vs.map(function (x) { return '<div class="rang" style="align-items:center"><span style="flex:1">' + x.qte + ' × ' + esc(a.nom) + (x.pointVente ? ' · ' + esc(x.pointVente) : '') + '</span><button class="btn btn-clair btn-petit" type="button" data-s="supprimer" data-t="vente" data-id="' + esc(x.id) + '">Supprimer</button></div>'; }).join("") +
+      '<p class="astuce" style="margin-top:10px"><b>Cas 3 :</b> vous ne savez pas / ce n\'est pas grave.</p>' +
+      '<button class="btn btn-clair btn-bloc" type="button" data-s="ecart-ok" data-cle="' + esc(a.ref + "|" + a.produitId) + '">Ne plus m\'alerter pour celui-ci</button></div>';
+  }).join("");
+  return h;
+}
+
+/* ----- Commandé / livré / payé ----- */
+var ETAPES_CMD = { "a-livrer": ["À livrer", "Commandées, pas encore livrées"], "livree-a-confirmer": ["Livrées, paiement à confirmer", "Livrées : vérifiez le paiement mobile"], livree: ["Livrées et payées", "Terminées"], annulee: ["Annulées", ""] };
+function vCommandes(v) {
+  var p = v.pipeline || { etapes: {}, aRecuperer: 0, liste: [] }, g = p.etapes || {};
+  var h = '<div class="carte"><h3>Commandé · livré · payé</h3><p class="astuce">Où en sont les commandes passées sur le site.</p>' +
+    '<div class="kpis"><div class="kpi"><small>Argent encore à récupérer</small><b class="' + (p.aRecuperer > 0 ? "neg" : "pos") + '">' + fcfa(p.aRecuperer) + '</b><small>livraisons à faire + paiements à confirmer</small></div>' +
+    '<div class="kpi"><small>Livrées et payées</small><b class="pos">' + fcfa((g.livree || {}).m || 0) + '</b><small>' + ((g.livree || {}).n || 0) + ' commande(s)</small></div></div>';
+  ["a-livrer", "livree-a-confirmer", "livree", "annulee"].forEach(function (k) {
+    var x = g[k] || { n: 0, m: 0 }; h += '<div class="rang"><span style="flex:1"><b>' + ETAPES_CMD[k][0] + '</b>' + (ETAPES_CMD[k][1] ? '<br><small class="gris">' + ETAPES_CMD[k][1] + '</small>' : "") + '</span><span style="text-align:right"><b>' + x.n + '</b><br><small class="gris">' + fcfa(x.m) + '</small></span></div>';
+  });
+  h += '</div><div class="carte"><h3>Dernières commandes</h3>' + ((p.liste || []).length ? p.liste.map(function (c) {
+    var couleur = c.etape === "livree" ? "pos" : c.etape === "annulee" ? "gris" : "neg";
+    return '<div class="rang" style="align-items:flex-start"><div class="g"><b>' + esc(c.nom || "Client") + '</b><small>' + esc(dateFr(String(c.date).slice(0, 10))) + ' · ' + esc(c.source) + ' · ' + esc(c.mode === "retrait" ? "retrait" : "livraison") + '</small></div><div style="text-align:right"><b>' + fcfa(c.montant) + '</b><br><small class="' + couleur + '">' + esc(ETAPES_CMD[c.etape][0]) + '</small></div></div>';
+  }).join("") : '<p class="gris">Aucune commande pour l\'instant.</p>') + '</div>';
+  return h;
+}
+
+/* ----- Liens de publicité ----- */
+var CANAUX_PUB = [["facebook", "Facebook"], ["tiktok", "TikTok"], ["instagram", "Instagram"], ["whatsapp", "Statut WhatsApp"], ["affiche", "Affiche / flyer"], ["boutique", "Boutique partenaire"]];
+function pubDuPeriode(v) { var s = 0; (v.depenses || []).forEach(function (d) { if (dansPeriode(d.date) && /Publicité/i.test(d.categorie || "")) s += d.montant || 0; }); return s; }
+function vPub(v) {
+  var base = location.origin, S2 = v.sources || [], pct = (v.config && v.config.pubMaxPct) || 0, pub = pubDuPeriode(v), ca = v.bilan.ca || 0;
+  var h = '<div class="carte"><h3>Liens de publicité</h3><p class="astuce">Mettez le bon lien dans chaque publicité. Chaque commande garde son origine, et vous voyez ci-dessous quelle pub rapporte.</p>' +
+    CANAUX_PUB.map(function (c) { var l = base + "/?src=" + c[0]; var st = S2.filter(function (x) { return x.source === c[0]; })[0]; return '<div class="rang" style="align-items:center"><div class="g"><b>' + c[1] + '</b><small style="word-break:break-all">' + esc(l) + '</small>' + (st ? '<small class="pos">' + st.commandes + ' commande(s) · ' + fcfa(st.ca) + ' livrés</small>' : '<small class="gris">pas encore de commande</small>') + '</div><button class="btn btn-clair btn-petit" type="button" data-s="pub-copier" data-v="' + esc(l) + '">Copier</button></div>'; }).join("") + '</div>';
+  var autres = S2.filter(function (x) { return !CANAUX_PUB.some(function (c) { return c[0] === x.source; }); });
+  if (autres.length) h += '<div class="carte"><h3>Autres provenances</h3>' + autres.map(function (x) { return '<div class="rang"><span style="flex:1">' + esc(x.source) + '</span><span>' + x.commandes + ' cmd · ' + fcfa(x.ca) + '</span></div>'; }).join("") + '</div>';
+  h += '<div class="carte"><h3>Dépense de publicité</h3><div class="rang"><span style="flex:1">Pub sur la période</span><b>' + fcfa(pub) + '</b></div><div class="rang"><span style="flex:1">Ventes sur la période</span><b>' + fcfa(ca) + '</b></div><div class="rang"><span style="flex:1">La pub représente</span><b class="' + (pct && ca > 0 && pub / ca * 100 > pct ? "neg" : "") + '">' + (ca > 0 ? Math.round(pub / ca * 100) + " %" : "—") + '</b></div>' +
+    '<label for="pb-pct">M\'alerter si la pub dépasse (% des ventes)</label><input type="number" id="pb-pct" inputmode="numeric" min="0" max="100" value="' + (pct || "") + '" placeholder="Ex : 20"><button class="btn btn-or btn-bloc" type="button" data-s="pub-seuil" style="margin-top:8px">Enregistrer le seuil</button></div>';
   return h;
 }
 
@@ -1429,7 +1485,7 @@ function clic(ev) {
     case "fermer": E.ouvert = null; return rendre();
     case "ligne-lot": E.nbLignesLot++; var prev = { d: val("fl-d"), n: val("fl-n"), c: val("fl-c"), p: [].map.call(document.querySelectorAll(".fl-p"), function (e) { return e.value; }), q: [].map.call(document.querySelectorAll(".fl-q"), function (e) { return e.value; }) }; rendre();
       $("fl-d").value = prev.d; $("fl-n").value = prev.n; $("fl-c").value = prev.c; document.querySelectorAll(".fl-p").forEach(function (e, i) { if (prev.p[i]) e.value = prev.p[i]; }); document.querySelectorAll(".fl-q").forEach(function (e, i) { if (prev.q[i]) e.value = prev.q[i]; }); return;
-    case "enregistrer-vente": return envoyer("ajouter_vente", { date: val("fv-d"), produitId: val("fv-p"), qte: val("fv-q"), pointVente: val("fv-pv"), prix: val("fv-px"), remise: val("fv-r") }, "Vente enregistrée");
+    case "enregistrer-vente": if (!val("fv-pv")) return A.toast("Choisissez le point de vente.", "err"); return envoyer("ajouter_vente", { date: val("fv-d"), produitId: val("fv-p"), qte: val("fv-q"), pointVente: val("fv-pv"), prix: val("fv-px"), remise: val("fv-r") }, "Vente enregistrée");
     case "enregistrer-perte": return envoyer("ajouter_perte", { date: val("fp-d"), produitId: val("fp-p"), qte: val("fp-q"), type: val("fp-t") }, "Perte enregistrée");
     case "enregistrer-depense": return envoyer("ajouter_depense", { date: val("fd-d"), categorie: val("fd-c"), description: val("fd-t"), montant: val("fd-m"), mode: val("fd-mode") }, "Dépense enregistrée");
     case "enregistrer-lot":
@@ -1438,6 +1494,7 @@ function clic(ev) {
     case "enregistrer-soir":
       var items = [].map.call(document.querySelectorAll("input.reste"), function (e) { return { produitId: e.getAttribute("data-pid"), restant: e.value }; });
       E.soirResume = true;
+      if (!val("so-pv")) return A.toast("Choisissez le point de vente.", "err");
       return charge("comptage", { date: E.soirDate, pointVente: val("so-pv"), items: items, packs: packsDe("so"), du: E.soirDate, au: E.soirDate }).then(function () { E.soir = null; ok("Comptage enregistré"); chargerSoir(); }).catch(function () {});
     case "supprimer":
       if (!confirm("Supprimer cette ligne ? Les chiffres seront recalculés.")) return;
@@ -1458,6 +1515,15 @@ function clic(ev) {
         return charge("nouveau_depart", { date: val("nd-date") || jourJ(0), caisse: caisseND, items: itemsND });
       }).then(function () { E.depart = false; E.ouvert = null; E.soir = null; ok("Nouveau départ fait : tout repart de zéro"); rendre(); }).catch(function (e) { if (!e.silencieux) A.toast(e.message, "err"); });
     case "cf-modele": $("pa-cf").value = "Salaire 1 : 35000\nSalaire 2 : 60000\nCourant : 30000\nLoyer : 20000\nWifi : 15000\nEau : 5000\nImpôt : 5000"; if (!val("pa-cfd")) $("pa-cfd").value = E.vue.config.depuis || jourJ(0); return;
+    case "ecart-ok": return envoyer("ajust_ok", { cle: t.getAttribute("data-cle") }, "C'est noté, plus d'alerte pour celui-ci");
+    case "ecart-tous": return envoyer("ajust_ok", { tous: true }, "Tous les écarts sont acceptés");
+    case "ecart-direct": return envoyer("ajouter_lot", { date: t.getAttribute("data-d"), nom: "Production oubliée", cout: t.getAttribute("data-c") || 0, lignes: [{ produitId: t.getAttribute("data-p"), qte: +t.getAttribute("data-q") }], moment: "avant" }, "Production notée : l'écart est corrigé");
+    case "ecart-prod": E.sous = "ajout"; E.plus = null; E.saisie = "production"; E.ouvert = "lot"; E.nbLignesLot = 1; rendre(); window.scrollTo(0, 0);
+      var dP = t.getAttribute("data-d"), pP = t.getAttribute("data-p"), qP = t.getAttribute("data-q");
+      setTimeout(function () { var d1 = $("fl-d"), p1 = document.querySelector(".fl-p"), q1 = document.querySelector(".fl-q"); if (d1) d1.value = dP; if (p1) p1.value = pP; if (q1) q1.value = qP; A.toast("Complétez le coût du lot puis enregistrez.", "ok"); }, 80);
+      return;
+    case "pub-copier": var lk = t.getAttribute("data-v"); try { navigator.clipboard.writeText(lk).then(function () { A.toast("Lien copié", "ok"); }, function () { window.prompt("Copiez :", lk); }); } catch (e) { window.prompt("Copiez :", lk); } return;
+    case "pub-seuil": var cp = JSON.parse(JSON.stringify(E.vue.config)); cp.pubMaxPct = Number(val("pb-pct")) || 0; return envoyer("config", { config: cp }, "Seuil enregistré");
     case "arg-ouvrir": E.arg = E.arg || {}; E.arg.ouvert = t.getAttribute("data-v"); E.arg.montant = Number(t.getAttribute("data-m")) || ""; E.sous = "argent"; rendre(); window.scrollTo(0, 0); return;
     case "arg-nom": $("ag-t").value = t.getAttribute("data-v"); return;
     case "arg-plustard": try { localStorage.setItem("noogo_pt_" + t.getAttribute("data-v"), jourJ(0)); } catch (e) {} return rendre();

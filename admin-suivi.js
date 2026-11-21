@@ -25,6 +25,7 @@ css.textContent = [
   "#p-suivi .kpi{background:#fff;border:1px solid var(--bord);border-radius:14px;padding:12px 14px}",
   "#p-suivi .kpi small{display:block;color:var(--gris);font-size:12.5px;font-weight:600}",
   "#p-suivi .kpi b{display:block;font-size:20px;font-family:var(--police-titre);margin-top:2px}",
+  "#p-suivi .kpi:not(.gros):nth-of-type(4n+2){background:#eef6ea}#p-suivi .kpi:not(.gros):nth-of-type(4n+3){background:#fdf0d5}#p-suivi .kpi:not(.gros):nth-of-type(4n+0){background:#e8eff9}#p-suivi .kpi:not(.gros):nth-of-type(4n+1){background:#fde6d6}",
   "#p-suivi .kpi.gros{grid-column:1/-1;background:var(--brun);color:#fff;border-color:var(--brun)}",
   "#p-suivi .kpi.gros small{color:var(--or-clair)}#p-suivi .kpi.gros b{font-size:28px;color:#fff}",
   "#p-suivi .pos{color:#1b7a34}#p-suivi .neg{color:#c62828}",

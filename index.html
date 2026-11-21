@@ -201,6 +201,26 @@ ol.pas-l li{margin:8px 0}
 .tuile-cat .tc-f{font-size:26px;color:var(--or-fonce);flex:none}
 .tuile-cat .tc-n{position:absolute;top:8px;right:40px;background:var(--vert);color:#fff;border-radius:99px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;padding:0 6px}
 .retour-cat{grid-column:1/-1;justify-self:start;min-height:40px;padding:0 16px;border-radius:999px;background:var(--vert);color:#fff;font-weight:700;font-size:14px}
+
+/* Couleurs douces par rubrique (apparence seulement) */
+.tuile-cat{border-color:transparent;box-shadow:0 2px 8px rgba(60,40,10,.07)}
+.tuile-cat[data-cat*="petit pot"]{background:#e8f3e4}
+.tuile-cat[data-cat*="grand pot"]{background:#fdf0d5}
+.tuile-cat[data-cat*="Packs"]{background:#fde6d6}
+.tuile-cat[data-cat*="Popcorn"]{background:#fff3c4}
+.tuile-cat[data-cat*="Pain"]{background:#f1e6da}
+.tuile-cat[data-cat*="Esquimaux"]{background:#e3eefb}
+.tuile-cat[data-cat*="Gros"]{background:#ece6f7}
+.tuile-cat .tc-t small{color:#555}
+/* Une teinte par saveur dans les listes */
+.carte{border-left-width:6px}
+.carte[data-id^="vanille"],.carte[data-id*="-van-"]{border-left-color:#e7d9a8}
+.carte[data-id^="baobab"],.carte[data-id*="-bao-"]{border-left-color:#d9c3a0}
+.carte[data-id^="banane"],.carte[data-id*="-ban-"]{border-left-color:#f2d33c}
+.carte[data-id^="choco"],.carte[data-id*="-cho-"]{border-left-color:#8a5a3c}
+.carte[data-id^="fraise"],.carte[data-id*="-fra-"]{border-left-color:#ef8aa0}
+.carte.sel{border-left-color:var(--vert)!important}
+.groupe-t{background:linear-gradient(90deg,#f3ead0,transparent);border-radius:8px;padding:6px 10px}
 </style>
 </head>
 <body>

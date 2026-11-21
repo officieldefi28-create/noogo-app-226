@@ -494,8 +494,8 @@ function nettoyerPanier() {
 /* ───────── Affichage des listes ───────── */
 const CATS = [["tout", "Tout"], ["cremes", "Crèmes glacées"], ["packs", "Packs"], ["popcorn", "Popcorn"], ["pain", "Pain anglais"], ["esquimau", "Esquimaux"], ["gros", "Gros format"]];
 const GROUPES = [
-  { t: "Crèmes glacées · pot 125 ml", ok: (p) => p.cat === "cremes" && p.type === "produit" && p.gr !== "grand", c: "cremes" },
-  { t: "Crèmes glacées · grand pot 250 ml", ok: (p) => p.cat === "cremes" && p.type === "produit" && p.gr === "grand", c: "cremes" },
+  { t: "Crèmes glacées · petit pot", ok: (p) => p.cat === "cremes" && p.type === "produit" && p.gr !== "grand", c: "cremes" },
+  { t: "Crèmes glacées · grand pot", ok: (p) => p.cat === "cremes" && p.type === "produit" && p.gr === "grand", c: "cremes" },
   { t: "Packs & promos", ok: (p) => p.cat === "cremes" && p.type === "pack", c: "packs" },
   { t: "Popcorn au lait", ok: (p) => p.cat === "popcorn", c: "popcorn" },
   { t: "Pain anglais", ok: (p) => p.cat === "pain", c: "pain" },
@@ -657,7 +657,7 @@ function distKm(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h)) * 1.3;   // ×1,3 : la route est plus longue que la ligne droite
 }
 function fraisLivraison(t) {
-  if (reception === "retrait" || !t.aProduit) return { besoin: false, montant: null, min: 0, info: "" };
+  if (reception === "retrait" || !t.aProduit || t.aPack) return { besoin: false, montant: null, min: 0, info: "" };
   const T = tranches(), Q = quartiers(), min = Math.min(...T.map((x) => x.prix).concat(Q.map((x) => x.prix)), Infinity);
   const out = { besoin: true, montant: null, min: isFinite(min) ? min : 0, info: "" };
   const a = coordsDe(position), b = coordsDe(CONFIG.lienMaps);
@@ -678,7 +678,7 @@ function valeurPots(p) {
 }
 function texteLivraison(t) {
   if (reception === "retrait") return { v: "Retrait au local — gratuit", note: CONFIG.adresse + "." };
-  if (t.aPack && !t.aProduit) return { v: "Incluse dans le pack", note: "" };
+  if (t.aPack) return { v: t.aProduit ? "Incluse pour toute la commande" : "Incluse dans le pack", note: t.aProduit ? "Vos articles sont livrés avec votre pack, sans frais en plus." : "" };
   const f = fraisLivraison(t), prefixe = t.aPack ? "Packs : incluse · articles seuls : " : "";
   if (f.montant) return { v: prefixe + fmt(f.montant), note: f.info + " À payer au livreur en espèces." };
   const aide = f.min ? (quartiers().length ? "Choisissez votre quartier ou partagez votre position pour voir le prix exact." : "Partagez votre position pour voir le prix exact.") : "Le tarif dépend de votre quartier : nous vous l'annonçons sur WhatsApp.";
@@ -879,7 +879,17 @@ function envoyer() {
   if (promo) m.push(`🎟️ *Code promo :* ${promo.code}`);
   m.push(`💳 *Paiement :* ${PAY[paiement]}`, "");
   if (prods.length) { m.push("📦 *ARTICLES*"); prods.forEach((l) => m.push(`• ${l.p.nom} (${l.p.info || ""}) ×${l.qte} = ${fmt(l.p.prix * l.qte)}${marque(l.p)}`)); m.push(""); }
-  if (packs.length) { m.push("🎁 *PACKS*"); packs.forEach((l) => { m.push(`• ${l.p.nom} ×${l.qte} = ${fmt(l.p.prix * l.qte)}${marque(l.p)}`); m.push(`   📦 ${estMix(l.p) ? "Saveurs : " + texteCompo(l.p.id) : contenuPack(l.p)}`); }); m.push(""); }
+  if (packs.length) { m.push("🎁 *PACKS*"); packs.forEach((l) => { m.push(`• ${l.p.nom} ×${l.qte} = ${fmt(l.p.prix * l.qte)}${marque(l.p)}`); m.push(`   📦 ${estMix(l.p) ? "Saveurs : " + texteCompo(l.p.id) : (l.qte > 1 ? l.qte + " packs, chacun avec : " : "") + contenuPack(l.p)}`); }); m.push(""); }
+  // Récapitulatif simple pour le livreur : combien de pots de chaque saveur, pour CETTE commande seulement
+  const rec = {}; let totalPots = 0;
+  const ajoutPots = (p, n) => { if (!p || !(n > 0)) return; const k = courtNom(p.nom) + (p.gr === "grand" ? " (grand pot)" : " (petit pot)"); rec[k] = (rec[k] || 0) + n; totalPots += n; };
+  L.forEach((l) => {
+    if (l.p.type !== "pack") return ajoutPots(l.p, l.qte);
+    if (l.p.packCompo) return Object.keys(l.p.packCompo).forEach((k) => ajoutPots(produit(k), l.p.packCompo[k] * l.qte));
+    if (estMix(l.p)) return Object.entries(compo[l.p.id] || {}).forEach(([k, q]) => ajoutPots(produit(k), q));
+    const mm = /^pk-(van|bao|ban|cho|fra)-(p|g)$/.exec(l.p.id); if (mm) ajoutPots(produit(PACKBASE[mm[1]] + "-" + mm[2]), nbPots(l.p) * l.qte);
+  });
+  if (totalPots) { m.push(`🧾 *À PRÉPARER POUR CE CLIENT : ${totalPots} pot${totalPots > 1 ? "s" : ""} en tout*`); Object.keys(rec).forEach((k) => m.push(`   ✅ ${rec[k]} × ${k}`)); m.push("⚠️ Cette commande est pour UN seul client : ne pas la mélanger avec une autre.", ""); }
   if (note) m.push(`📝 *Précisions :* ${note}`, "");
   if (t.remise) m.push(`🎟️ Remise : −${fmt(t.remise)}`);
   // Produits et livraison séparés (même quand la livraison est incluse dans un pack)
@@ -891,10 +901,10 @@ function envoyer() {
   m.push("────────────");
   if (reception === "retrait") m.push("🚚 *Livraison :* retrait au local (gratuit)");
   else {
-    if (packsIncl.length) m.push("🚚 *Livraison des packs :* incluse");
-    if (frais.besoin) m.push(frais.montant ? `🚚 *Livraison articles :* ${fmt(frais.montant)} — à payer au livreur en espèces${quartier && quartier !== "__autre" && !coordsDe(position) ? " (quartier " + quartier + ")" : ""}` : `🚚 *Livraison articles :* à confirmer${frais.min ? " (à partir de " + fmt(frais.min) + ")" : ""}`);
+    if (packsIncl.length) m.push(prods.length ? "🚚 *Livraison :* INCLUSE pour toute la commande (packs + articles) : ne rien demander de plus au client" : "🚚 *Livraison des packs :* incluse");
+    if (frais.besoin) m.push(frais.montant ? `🚚 *Livraison articles :* ${fmt(frais.montant)} — à payer au livreur en espèces${quartier && quartier !== "__autre" && !coordsDe(position) ? " (quartier " + quartier + ")" : ""}` : `🚚 *Livraison (NON incluse) :* tarif à convenir avec le client AVANT de partir${frais.min ? " (à partir de " + fmt(frais.min) + ")" : ""}`);
   }
-  m.push(`💰 *TOTAL À PAYER : ${fmt(t.apres + (frais.montant || 0))}*${frais.besoin && !frais.montant ? " + livraison des articles" : ""}`);
+  m.push(`💰 *TOTAL À PAYER : ${fmt(t.apres + (frais.montant || 0))}*${frais.besoin && !frais.montant ? " (sans la livraison, à convenir)" : ""}`);
   if (frais.besoin && !frais.montant) m.push("", "Merci de me confirmer la disponibilité et le tarif de livraison. 🙏"); else m.push("", "Merci de me confirmer la disponibilité. 🙏");
   const payload = { source: sourceVisite(), nomClient: nom, telClient: tel, localisation: [lieu, position].filter(Boolean).join(" — "), modePaiement: paiement, modeReception: reception, articles: L.map((l) => (estMix(l.p) ? { id: l.p.id, qte: l.qte, compo: compo[l.p.id] } : { id: l.p.id, qte: l.qte })), note, codePromo: promo ? promo.code : "", fraisLivraison: frais.montant || 0, quartier: quartier && quartier !== "__autre" ? quartier : "", source: "site" };
   try { fetch("/api/commander", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), keepalive: true }).then((r) => r.json()).then((j) => { if (j && j.commandeId) { ecrire("noogo_derniere", j.commandeId); toast("Code de suivi : " + j.commandeId); suivre("commande_envoyee"); } else toast("Commande non enregistrée sur le site : envoyez bien le message WhatsApp."); }).catch(() => toast("Commande non enregistrée sur le site : envoyez bien le message WhatsApp.")); } catch (e) {}

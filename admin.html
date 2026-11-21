@@ -284,6 +284,7 @@
         <h2>Catalogue</h2>
         <span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-or" type="button" data-act="art-nouveau">+ Article</button><button class="btn btn-brun" type="button" data-act="art-pack">+ Pack promo</button><button class="btn btn-vert" type="button" data-act="packs-noogo">Mettre mes 16 packs</button></span>
       </div>
+      <div class="carte" style="margin:0 0 8px"><b>🆕 Nouveaux pots et étiquettes</b><p class="astuce" style="margin:4px 0 8px">Un seul bouton : toutes les saveurs du site (Baobab, Vanille, Banane, Chocolat, Fraise) passent aux nouvelles étiquettes. Les grands pots sont cachés pour l'instant, pas supprimés. Vous pouvez revenir en arrière.</p><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-or" type="button" data-act="gamme-nouvelle">Passer aux nouveaux pots</button><button class="btn btn-clair" type="button" data-act="gamme-ancienne">Revenir à l'ancienne gamme</button></span></div>
       <div class="msg msg-info" style="margin:0 0 6px">Modifiez vos prix, photos et disponibilités. Rien n'est visible sur le site tant que vous n'avez pas appuyé sur <b>Enregistrer le catalogue</b>.</div>
       <div id="msg-cat"></div>
       <div id="liste-cat"></div>
@@ -478,6 +479,43 @@ function ajouterPacksNoogo(){
   });
   rendreCatalogue(); majSauvegarde();
   toast("16 packs ajoutés. Appuyez sur « Enregistrer le catalogue ».", "ok");
+}
+function gammeNouvelle(){
+  if (!S.produits) return toast("Le catalogue n'est pas encore chargé.", "err");
+  if (!confirm("Passer aux nouveaux pots ?\n• toutes les saveurs avec les nouvelles étiquettes comme photos\n• grands pots et packs grand format cachés (pas supprimés)\nLe site change tout de suite. Vous pourrez revenir en arrière.")) return;
+  var IMG = { "vanille-p": "etiq-vanille.jpg", "baobab-p": "etiq-baobab.jpg", "banane-p": "etiq-banane.jpg", "choco-p": "etiq-choco.jpg", "fraise-p": "etiq-fraise.jpg" };
+  var SAV = { "vanille": "etiq-vanille.jpg", "baobab": "etiq-baobab.jpg", "banane": "etiq-banane.jpg", "choco": "etiq-choco.jpg", "fraise": "etiq-fraise.jpg" };
+  var avant = {};
+  S.produits.forEach(function(p){
+    var cree = p.cat === "cremes";
+    if (!cree || p.id === "creme-6250") return;
+    var cible = null, cache = false;
+    if (p.type === "pack") {
+      var k = Object.keys(p.packCompo || {}).map(function(x){ return x.replace(/-[pg]$/, ""); });
+      if (!k.length) { var m = /^pk-(van|bao|ban|cho|fra)-/.exec(p.id); if (m) k = [{ van: "vanille", bao: "baobab", ban: "banane", cho: "choco", fra: "fraise" }[m[1]]]; else if (/^pk-mix/.test(p.id)) k = ["vanille", "baobab", "banane", "choco"]; }
+      if (p.gr === "grand" || /-g$/.test(p.id)) cache = true;
+      else if (k.length === 1 && SAV[k[0]]) cible = SAV[k[0]];
+      else if (k.length === 2) cible = "etiq-duo.jpg";
+      else if (k.length > 2) cible = "etiq-mix.jpg";
+    } else {
+      if (p.gr === "grand") cache = true; else if (IMG[p.id]) cible = IMG[p.id];
+    }
+    if (!cible && !cache) return;
+    avant[p.id] = { img: p.img, actif: p.actif, info: p.info };
+    if (cache) p.actif = false;
+    if (cible) { p.img = cible; if (p.type !== "pack" && /125 ?ml/i.test(p.info || "")) p.info = "Petit pot"; }
+  });
+  try { localStorage.setItem("noogo_gamme_avant", JSON.stringify(avant)); } catch (e) {}
+  rendreCatalogue(); majSauvegarde(); sauverCatalogue();
+  toast("Nouveaux pots appliqués. Vérifiez le site.", "ok");
+}
+function gammeAncienne(){
+  var avant = null; try { avant = JSON.parse(localStorage.getItem("noogo_gamme_avant") || "null"); } catch (e) {}
+  if (!avant) return toast("Rien à annuler sur ce téléphone. Remettez les articles à la main (Actif / Photo).", "err");
+  if (!confirm("Revenir à l'ancienne gamme (anciennes photos, grands pots de nouveau visibles) ?")) return;
+  S.produits.forEach(function(p){ var a = avant[p.id]; if (!a) return; p.img = a.img; p.info = a.info; if (a.actif === undefined) delete p.actif; else p.actif = a.actif; });
+  rendreCatalogue(); majSauvegarde(); sauverCatalogue();
+  toast("Ancienne gamme remise.", "ok");
 }
 function packsConseilles(){
   if (!S.produits) return;
@@ -1531,6 +1569,8 @@ document.addEventListener("click", function(ev){
       S.produits.forEach(function(q){ if (q.type === "pack" || q.actif === false) return; if (t.getAttribute("data-v") === "1") { if (statutAdmin(q) === "rupture") appliquerStatut(q, "aujourdhui", ""); } else appliquerStatut(q, "rupture", ""); });
       rendreCatalogue(); majSauvegarde(); return sauverCatalogue();
     case "packs-conseilles": return packsConseilles();
+    case "gamme-nouvelle": return gammeNouvelle();
+    case "gamme-ancienne": return gammeAncienne();
     case "vit-ajouter": case "vit-retirer": case "vit-haut": case "vit-bas": case "vit-vider": {
       if (!S.produits) return;
       var vl = vitrineListe(), vid = t.getAttribute("data-id"), vi = vl.findIndex(function(x){ return x.id === vid; });

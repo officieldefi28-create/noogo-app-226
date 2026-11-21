@@ -8,9 +8,9 @@
    "gr": "petit",
    "type": "produit",
    "nom": "Crème glacée Vanille",
-   "info": "Pot 125 ml",
+   "info": "Petit pot",
    "prix": 700,
-   "img": "nv-vanille-125.jpg",
+   "img": "etiq-vanille.jpg",
    "desc": "Une saveur naturelle, 100 % locale et rafraîchissante."
   },
   {
@@ -20,9 +20,9 @@
    "gr": "petit",
    "type": "produit",
    "nom": "Crème glacée Baobab — Pain de singe",
-   "info": "Pot 125 ml",
+   "info": "Petit pot",
    "prix": 1000,
-   "img": "nv-baobab-125.jpg",
+   "img": "etiq-baobab.jpg",
    "desc": "Le goût authentique du baobab, riche en vitamines."
   },
   {
@@ -32,10 +32,10 @@
    "gr": "petit",
    "type": "produit",
    "nom": "Crème glacée Banane",
-   "info": "Pot 125 ml",
+   "info": "Petit pot",
    "prix": 1000,
    "surCommande": true,
-   "img": "nv-banane-125.jpg",
+   "img": "etiq-banane.jpg",
    "desc": "Douce et naturelle, avec de vrais morceaux de banane."
   },
   {
@@ -45,10 +45,10 @@
    "gr": "petit",
    "type": "produit",
    "nom": "Crème glacée Chocolat cacao au lait",
-   "info": "Pot 125 ml",
+   "info": "Petit pot",
    "prix": 600,
    "surCommande": true,
-   "img": "nv-choco-125.jpg"
+   "img": "etiq-choco.jpg"
   },
   {
    "actif": true,
@@ -57,10 +57,10 @@
    "gr": "petit",
    "type": "produit",
    "nom": "Crème glacée Fraise",
-   "info": "Pot 125 ml",
+   "info": "Petit pot",
    "prix": 700,
    "surCommande": true,
-   "img": "nv-fraise-125.jpg"
+   "img": "etiq-fraise.jpg"
   },
   {
    "actif": true,
